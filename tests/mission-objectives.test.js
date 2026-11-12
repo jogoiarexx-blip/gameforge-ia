@@ -4,7 +4,7 @@ const world=require('../js/world-rules')();
 const parser=require('../js/parser');
 const campaign=require('../js/campaign-editor');
 const dev=require('../js/development-engine');
-require('../js/runtime-template');require('../js/shooter-runtime');require('../js/three-runtime');require('../js/world-rules');require('../js/software-renderer');require('../js/strategy-rules');
+require('../js/runtime-template');require('../js/shooter-runtime');require('../js/expanded-2d-runtime');require('../js/three-runtime');require('../js/world-rules');require('../js/software-renderer');require('../js/strategy-rules');
 require('../vendor/three-source');
 const generator=require('../js/generator');
 const vm=require('node:vm');

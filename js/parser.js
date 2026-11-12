@@ -5,7 +5,7 @@
   function detectGenre(text) {
     const t = normalize(text);
     if(/\b(block tower td|block tower defense|blocos? td|blocos? tower|torres? (em|de) blocos|defesa de blocos)\b/.test(t))return 'block-td';
-    if(/(plants?\s*(vs\.?|versus)\s*zomb|plantas?\s*(contra|vs)\s*zumbis?|defesa por linhas|garden defense|defesa do jardim|jardim contra zumbis)/.test(t))return 'lane-defense';
+    if(/(plants?\s*(vs\.?|versus)\s*zomb|plantas?\s*(contra|vs)\s*zumbis?|defesa por linhas|garden defense|defesa do jardim|jardim contra zumbis|tower.?defen[cs]e.{0,35}(por linhas|por faixas|cinco linhas|5x9))/.test(t))return 'lane-defense';
     if(/\b(tower.?defen[cs]e|defesa de torres)\b/.test(t))return 'tower-defense';
     if(/\b(fps|first.person|primeira pessoa)\b/.test(t))return 'fps';
     if(/\b(rpg|role.playing|roguelike|roguelite)\b/.test(t))return 'rpg';

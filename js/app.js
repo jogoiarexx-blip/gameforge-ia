@@ -3,8 +3,9 @@
   'use strict';
   const $=id=>document.getElementById(id);
   const state={files:{},spec:null,selected:null,mode:'offline',generation:0};
-  const allowed=['index.html','style.css','game.js','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md'];
+  const allowed=['index.html','style.css','game.js','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md'];
   const example=$('gdd').value;
+  const shooterExamples={"navinha":"# ARMADA DO ECLIPSE\n\n## Visão geral\nJogo de navinha espacial shoot em up vertical com chefes e armas evolutivas.\n\n## Mecânicas\n- Controlar nave com WASD/setas e atirar com espaço\n- Três níveis de arma, escudo, cura, créditos e power-ups\n- Ondas de inimigos com formações lineares, V e zigzag\n- Padrões de tiros inimigos e chefe de várias fases\n- Controles touch para celular, pausa e HUD\n\n## Fase 1 — Patrulha Estelar\nInimigos scouts em linha e formação V; chefe Sentinela Zero.\n\n## Fase 2 — Cinturão de Meteoros\nOndas zigzag e escolta com invasores resistentes.\n\n## Fase 3 — Núcleo Escarlate\nEnfrentar chefe final com três padrões de ataques.\n","neon":"# NEON SKY: O ÚLTIMO PILOTO\n\n## Visão geral\nShoot em up de nave cyberpunk com cidade neon, disparos luminosos e ondas de inimigos.\n\n## Mecânicas\n- Piloto da nave pode mover-se em quatro direções, atirar e usar escudo\n- Inimigos em linha, V, zigzag, cruzamento e enxame\n- Chefes com múltiplas etapas e dificuldade crescente\n- Melhorias de armas e power-ups\n- Qualidade gráfica adaptativa, partículas limitadas, áudio e controles touch\n\n## Fase 1 — Cidade Neon\nCombates sobre os prédios luminosos contra patrulhas.\n\n## Fase 2 — Estação Orbital\nOndas de escolta e franco-atiradores mecânicos.\n\n## Fase 3 — Núcleo Neon\nDerrote APEX OMEGA após o último enxame.\n","dragao":"# DRAGÕES DO CREPÚSCULO\n\n## Visão geral\nJogo de dragão voador no estilo Dragon Fury, shoot em up vertical, com magia e chefes.\n\n## Mecânicas\n- Dragão ataca com rajadas de fogo evolutivas\n- Ondas de águias, harpias e dragões inimigos\n- Inimigos com movimento zigzag, onda, escolta e tiros direcionados\n- Power-ups de energia, escudo e fogo\n- Chefes com etapas de batalha, pausa e controles touch\n\n## Fase 1 — Céu Sereno\nEnfrentar águias e caçadores do vale.\n\n## Fase 2 — Tempestade Iminente\nHarpias e dragões elementais cercam o herói.\n\n## Fase 3 — Fúria Ardente\nO Guardião Ancestral aparece com três fases de ataque.\n"};
   const repoKnowledge=globalThis.GameForgeRepoKnowledge;
   let pinnedReferences=[];
   function references(){
@@ -121,6 +122,7 @@
     if(qaState.last){
       files['QA_inicio.png']=screenshotBytes(qaState.last.before.image);
       files['QA_movimento.png']=screenshotBytes(qaState.last.after.image);
+      if(qaState.last.shot?.image)files['QA_disparo.png']=screenshotBytes(qaState.last.shot.image);
     }
     if(qaState.baseline)files['QA_referencia.png']=screenshotBytes(qaState.baseline.after.image);
     if(state.spec)files['index.html']=GameForgeGenerator.shell(state.spec.title,files['style.css'],files['game.js'],false);
@@ -180,7 +182,7 @@
       }
       state.generation++;state.spec=spec;
       qaState.last=null;qaState.baseline=null;qaState.vision=null;
-      $('qa-before').removeAttribute('src');$('qa-after').removeAttribute('src');
+      $('qa-before').removeAttribute('src');$('qa-after').removeAttribute('src');$('qa-shot').removeAttribute('src');
       $('qa-report').textContent='Nenhuma inspeção realizada.'; qaButtons();
       listFiles();selectFile('game.js');runPreview();saveState();
     }catch(e){
@@ -227,6 +229,7 @@
       qaState.last=report;qaState.vision=null;
       $('qa-before').src=report.before.image;
       $('qa-after').src=report.after.image;
+      if(report.shot?.image)$('qa-shot').src=report.shot.image;else $('qa-shot').removeAttribute('src');
       document.querySelector('#qa-before').nextElementSibling.textContent='Início do teste';
       document.querySelector('#qa-after').nextElementSibling.textContent='Após movimento';
       $('qa-report').textContent=fmtReport(report);
@@ -398,6 +401,14 @@
     $('file-indicator').textContent=file.name;feedback('GDD carregado: '+file.name);saveState();
   });
   document.querySelectorAll('input[name=mode]').forEach(radio=>radio.addEventListener('change',()=>{state.mode=radio.value;$('ai-settings').classList.toggle('hidden',state.mode!=='ai');$('generate').textContent=state.mode==='ai'?'✦ Criar / melhorar com IA':'▶ Gerar jogo a partir do GDD';qaButtons();}));
+  for(const name of ['navinha','neon','dragao']){
+    $('example-'+name).addEventListener('click',()=>{
+      $('gdd').value=shooterExamples[name];$('instruction').value='';
+      $('project-name').value=(shooterExamples[name].split('\n')[0].replace(/^#\s*/,''));
+      $('file-indicator').textContent='Exemplo '+name+' · editável';
+      analyze();saveState();feedback('GDD de '+name+' carregado. Agora clique em Gerar jogo.');
+    });
+  }
   $('generate').addEventListener('click',generate);
   $('rerun').addEventListener('click',runPreview);
   $('apply-edit').addEventListener('click',applyEdit);

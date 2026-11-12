@@ -63,3 +63,9 @@
 .eng-anim-panel details{border-top:1px solid #2d4a57;padding-top:8px}
 .eng-anim-panel summary{cursor:pointer;color:#c5e4f9;font-size:11px}
 #eng-telemetry-results{border-left:3px solid #397968;padding:6px 10px;white-space:pre-wrap;word-break:break-word}
+
+/* v0.8 - seletor de exemplos de jogos de nave */
+.shooter-examples{border:1px solid #2d5f76;border-radius:9px;background:#10283a;padding:9px;margin:10px 0;display:grid;gap:6px}
+.shooter-examples>span{font-size:11px;font-weight:800;color:#8ff7e3}
+.shooter-example-buttons{display:flex;gap:5px;flex-wrap:wrap}
+.shooter-example-buttons button{flex:1;min-width:90px;padding:7px 9px;font-size:10px}

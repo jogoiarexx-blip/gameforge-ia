@@ -81,6 +81,19 @@
        report.issues.push({type:'render-freeze',severity:'warning',message:'O personagem se moveu internamente, mas a imagem mudou menos de 0,1%.'});
      }
      report.passes.push('Comparação temporal: '+pixels.changedPct+'% dos pixels mudaram durante o comando.');
+     if(genre==='shooter'){
+       onUpdate('Testando disparos da nave...');
+       await t.send('press',{key:' '});
+       await sleep(380);
+       const shot=await t.send('capture');
+       await t.send('release',{key:' '});
+       report.shot=shot;
+       const shots=shot.telemetry?.playerBullets;
+       if(typeof shots==='number'){
+         if(shots>0)report.passes.push('Disparos testados: '+shots+' projétil(is) da nave durante o comando.');
+         else report.issues.push({type:'shooter-fire',severity:'warning',message:'Espaço pressionado, mas nenhum projétil de nave foi observado.'});
+       }else report.notes.push('Jogo de nave sem telemetria de projéteis: disparos não puderam ser confirmados.');
+     }
      onUpdate('Inspeção finalizada.');
      return {...report,before,after};
    }finally{

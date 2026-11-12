@@ -1,3 +1,13 @@
+# GameForge Studio Web v0.8.0 — GDD de navinha
+
+**Novo:** gere navinha espacial, neon ou jogo de dragão a partir de um GDD Markdown. Três botões de exemplo carregam documentos editáveis. O gerador sem IA já produz nave desenhada, combate, ondas, chefes e progressão com power-ups e loja entre fases. Código 100% Canvas 2D independente de bibliotecas.
+
+**Banco de referências:** 29 padrões de 12 projetos, inclusive `navinha-arcade`, `Neon-Sky-Force` e `Dragon-Fury`. As técnicas estão resumidas e verificadas por arquivo; não são uma rede neural treinada com os jogos nem contêm os seus sprites e músicas.
+
+**Teste:** abrir `index.html` e clicar em um botão de exemplo, gerar, jogar, verificar QA, exportar ZIP. Para IA precisa conectar o backend Python; GitHub Pages só hospeda a interface estática.
+
+---
+
 # GameForge Studio Web v0.7.0 (GitHub Pages)
 
 **Novo laboratório 07:** a interface agora pode controlar a telemetria temporal de jogos Three.js quando estiver conectada ao **backend v0.7.0**. A página estática **não** executa o Chromium/Playwright nem instala código nos jogos sozinha; esses recursos exigem backend local com dependências instaladas. Para jogos sem backend, o gerador 2D por GDD e a biblioteca de referências continuam disponíveis.

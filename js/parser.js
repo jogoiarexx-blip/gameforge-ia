@@ -5,6 +5,7 @@
   function detectGenre(text) {
     const t = normalize(text);
     const tests = {
+      shooter: [/(navinha|nave(?:s)?\b|shoot.?em.?up|shmup|jogo de nave|space shooter|star fighter|tiro vertical|ataque espacial|combate aereo|scroll vertical|drag[aã]o.*atira|dragon fury|neon sky force)/g, 5],
       racing: [/(caminh|corrida|racing|road rash|veicul|carro|moto|truck|piloto|velocidade|oficina)/g, 2],
       platform: [/(plataforma|platformer|pular|salto|side.scroll|sidescroll|super mario|crash bandicoot)/g, 2],
       arena: [/(terror|horror|zumbi|rpg|shooter|tiro|monstro|sobreviven|combate|inventario|exploracao)/g, 1]
@@ -27,7 +28,7 @@
     const norm = normalize(combined);
     const genre = detectGenre(combined);
     const levelHeads = headings.filter(x => /\b(fase|missao|ato|capitulo|level|stage)\s*[0-9ivx]+\b/i.test(normalize(x)));
-    const levels = unique(levelHeads).slice(0, 8);
+    const levels = unique(levelHeads).slice(0, 10);
     const features = {
       inventory: /inventario|item|colet[aá]v|mochila|loot/i.test(norm),
       enemies: /inimig|monstro|zumbi|chefe|boss|combate|ataque|tiro/i.test(norm),
@@ -55,17 +56,21 @@
     const colorPalettes = {
       racing: { bg: '#132335', accent: '#f9bd4b', ground: '#243647', enemy: '#ff6b69' },
       platform: { bg: '#143e54', accent: '#65e0b7', ground: '#263b59', enemy: '#ff8a76' },
+      shooter: { bg: '#050c25', accent: '#68f5ef', ground: '#1c2855', enemy: '#ff719d' },
       arena: { bg: '#11192b', accent: '#73f7ce', ground: '#1b2d43', enemy: '#ff7474' }
     };
+    const shooterTheme = /dragon|dragao|drag[oõ]es|fogo|asas|harpia|reino|magia|medieval/.test(norm) ? 'dragon' : /neon|cyber|cidade futurista|sintetico|synthwave/.test(norm) ? 'neon' : 'space';
+    const shooterOptions = { theme: shooterTheme, autofire: /tiro automatico|auto.?fire|disparo automatico/.test(norm), waves: /onda|wave|formac|esquadrao|enxame|ataque em v|zigzag|escolta/.test(norm), boss: genre === 'shooter' || features.bosses, powerups: genre === 'shooter', parallax: true };
     return {
-      title: title.slice(0, 90), genre, stages,
+      title: title.slice(0, 90), genre, stages, shooterOptions,
       summary: headings.slice(0, 14), enemyNames, features, world,
       sourceLength: source.length, instructions: extra,
       colors: colorPalettes[genre],
-      detected: [`Gênero: ${genre === 'racing' ? 'Corrida' : genre === 'platform' ? 'Plataforma' : 'Aventura / ação'}`,
+      detected: [`Gênero: ${genre === 'racing' ? 'Corrida' : genre === 'platform' ? 'Plataforma' : genre === 'shooter' ? 'Nave / shoot’em up vertical' : 'Aventura / ação'}`,
         `${stages.length} fase(s)`, `${enemyNames.length} nome(s) de inimigos encontrados`,
         ...Object.keys(features).filter(k => features[k]).map(k => ({inventory:'Inventário',enemies:'Inimigos',bosses:'Chefes',quests:'Objetivos',checkpoints:'Checkpoints',upgrades:'Melhorias',mobile:'Controles mobile',timer:'Cronômetro',audio:'Áudio previsto'})[k])],
       limitations: [
+        ...(genre === 'shooter' ? ['O shoot’em up usa desenhos e formações procedurais; não copia sprites nem reproduz campanhas específicas dos projetos usados como referência.', 'As fases possuem chefes, ondas e melhorias configuráveis, mas objetivos especiais descritos livremente no GDD exigem IA ou código manual.'] : []),
         'O gerador sem IA usa mecânicas pré-programadas e não interpreta regras inéditas livremente.',
         'Modelos 3D, personagens detalhados, animações GLB e narrativa completa exigem uma etapa adicional.',
         'Imagens, áudios e fases específicas mencionadas no GDD não são criados automaticamente neste modo.'

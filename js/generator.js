@@ -17,14 +17,23 @@
     return head+`<link rel="stylesheet" href="style.css"></head><body>${content}<script src="game.js" defer></script></body></html>`;
   }
   function generationReport(spec){
-    return `# Relatório da geração\n\n## Dados interpretados\n\n- Título: ${spec.title}\n- Estilo: ${spec.genre}\n- Fases: ${spec.stages.join(' / ')}\n- Inimigos reconhecidos: ${spec.enemyNames.join(', ')||'não nomeados'}\n\n## Funcionalidades inferidas\n\n${spec.detected.map(x=>'- '+x).join('\n')}\n\n## Limitações do modo sem IA\n\n${spec.limitations.map(x=>'- '+x).join('\n')}\n\n## Como jogar\n\nAbra index.html no navegador. Você pode publicar os 3 arquivos de jogo em hospedagem estática como GitHub Pages.\n`;
+    return `# Relatório da geração\n\n## Dados interpretados\n\n- Título: ${spec.title}\n- Estilo: ${spec.genre}\n${spec.genre === 'shooter' ? '- Tema: '+spec.shooterOptions.theme+'\n- Motor: Canvas 2D procedural com ondas e chefes\n' : ''}- Fases: ${spec.stages.join(' / ')}\n- Inimigos reconhecidos: ${spec.enemyNames.join(', ')||'não nomeados'}\n\n## Funcionalidades inferidas\n\n${spec.detected.map(x=>'- '+x).join('\n')}\n\n## Limitações do modo sem IA\n\n${spec.limitations.map(x=>'- '+x).join('\n')}\n\n## Como jogar\n\nAbra index.html no navegador. Você pode publicar os 3 arquivos de jogo em hospedagem estática como GitHub Pages.\n`;
   }
   function generate(spec, gdd) {
-    if (typeof gameForgeBoot !== 'function')throw new Error('Modelo de jogo não carregado');
+    if (typeof gameForgeBoot !== 'function')throw new Error('Modelo básico não carregado');
+    if(spec.genre==='shooter' && typeof gameForgeShooterBoot !== 'function')throw new Error('Motor de nave não carregado');
     const data=JSON.stringify(spec).replace(/<\//g,'<\\/');
-    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n('+gameForgeBoot.toString()+')();\n';
+    const runtime=spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
+    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n('+runtime.toString()+')();\n';
     const css=BASE_CSS;
+    const shooterManifest=spec.genre==='shooter' ? {'MANIFESTO_SHMUP.md':
+      '# Estrutura do shoot em up\n\nTema: '+spec.shooterOptions.theme+'\n\n'+spec.stages.map((name,i)=>
+      '## '+name+'\n- Formação: '+['line','v','zigzag','escort','cross','swarm'][i%6]+
+      '\n- Inimigos por fase: '+(7+i*3)+'\n- Vida do chefe: '+(24+i*14)+'\n').join('\n')+
+      '\n## Referências técnicas\n- navinha-arcade: fases e padrões de tiro.\n- Neon-Sky-Force: registros e formações por fase.\n- Dragon-Fury: comportamento de chefes e limites de partículas.\n\nA configuração executável fica no arquivo game.js; este manifesto é documentação, não um arquivo de configurações carregado pelo jogo.\n'
+    }:{};
     return {
+      ...shooterManifest,
       'index.html':shell(spec.title,css,code,false),
       'style.css':css,
       'game.js':code,

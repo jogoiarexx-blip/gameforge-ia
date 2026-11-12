@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#10192a">
-  <title>GameForge Studio v0.6 — GDD + Engenheiro de Jogos</title>
+  <title>GameForge Studio v0.8 — GDD + Engenheiro de Jogos</title>
   <meta name="description" content="Leia um GDD em Markdown e gere protótipos de jogos no navegador, com ou sem inteligência artificial.">
   <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.6 · ENGENHEIRO DE JOGOS</small></span></a>
+    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.8 · CRIADOR DE JOGOS</small></span></a>
     <nav class="top-actions"><span id="storage-tag" class="chip">Projeto no navegador</span><a class="subtle-link" href="./examples/gdd-exemplo.md" download>Exemplo .md</a><button class="small outline" id="export-top">Exportar ZIP ↗</button></nav>
   </header>
   <main class="studio">
@@ -20,6 +20,7 @@
         <label for="project-name">Nome do projeto</label><input id="project-name" type="text" maxlength="90" value="Meu jogo" placeholder="Nome do jogo">
         <div class="label-row"><label for="gdd">Documento GDD (.md)</label><span id="file-indicator" class="muted tiny">Até 100 mil caracteres</span></div>
         <div class="file-pick"><label for="md-file" class="file-btn">📁 Carregar arquivo .md</label><input type="file" id="md-file" accept=".md,.markdown,text/markdown,text/plain"><button id="example" class="small outline" type="button">Usar exemplo</button></div>
+        <div class="shooter-examples" aria-label="Exemplos de jogos de nave"><span>Novos exemplos de navinha</span><div class="shooter-example-buttons"><button class="outline small" id="example-navinha" type="button">Nave espacial</button><button class="outline small" id="example-neon" type="button">Neon</button><button class="outline small" id="example-dragao" type="button">Dragão</button></div></div>
         <textarea id="gdd" class="gdd-editor" spellcheck="false" aria-label="Conteúdo Markdown do GDD" placeholder="# Nome do Jogo&#10;&#10;## História&#10;..."># SOMBRAS DO VALE
 
 ## Gênero
@@ -53,8 +54,8 @@ Derrote o chefe.
         <div id="analysis" class="analysis muted">Clique em analisar para identificar gênero, fases e funcionalidades.</div>
         <section class="repo-learning" aria-label="Biblioteca de conhecimento dos jogos">
           <div class="mini-head"><span>05 / Biblioteca dos seus jogos</span><button type="button" id="knowledge-refresh" class="small outline">Buscar padrões</button></div>
-          <p class="hint">Referências de código verificadas em seus repositórios do GitHub. Funciona offline. A IA usa os padrões recomendados para orientar a geração e a correção; o modo sem IA apenas sugere.</p>
-          <div class="repo-learning-count" id="knowledge-count">21 padrões indexados</div>
+          <p class="hint">Referências de código verificadas em seus repositórios do GitHub. Funciona offline. Os 29 padrões orientam a IA; no gerador sem IA, os sistemas de nave foram integrados ao motor Canvas 2D, enquanto outras técnicas permanecem como referência.</p>
+          <div class="repo-learning-count" id="knowledge-count">29 padrões indexados</div>
           <div id="knowledge-results" class="repo-learning-results" aria-live="polite"></div>
           <button type="button" id="knowledge-clear" class="small outline">Limpar referências fixadas</button>
         </section>
@@ -89,11 +90,11 @@ Derrote o chefe.
         </div>
         <div id="qa-status" class="hint" role="status">Execute o jogo e depois inicie a inspeção automática.</div>
         <div id="qa-report" class="qa-report muted">Nenhuma inspeção realizada.</div>
-        <div class="qa-frames"><figure><img id="qa-before" alt="Cena inicial da inspeção"><figcaption>Antes · começo do teste</figcaption></figure><figure><img id="qa-after" alt="Cena após movimentação"><figcaption>Depois · após controle</figcaption></figure></div>
+        <div class="qa-frames"><figure><img id="qa-before" alt="Cena inicial da inspeção"><figcaption>Antes · começo do teste</figcaption></figure><figure><img id="qa-after" alt="Cena após movimentação"><figcaption>Depois · após controle</figcaption></figure><figure><img id="qa-shot" alt="Cena durante os disparos da nave"><figcaption>Durante os disparos</figcaption></figure></div>
         <div id="qa-candidate" class="qa-candidate hidden"><strong>Correção candidata — ainda não salva</strong><p id="qa-candidate-message" class="hint">Teste a prévia antes de aceitar.</p><div class="qa-controls"><button id="qa-accept" class="primary small">Aceitar correção</button><button id="qa-reject" class="outline small">Descartar e restaurar</button></div></div>
       </section>
       <section class="eng-workbench" aria-label="Engenheiro automático de jogos Three.js">
-        <div class="qa-workbench-title"><span class="eyebrow">06 / MOTOR PRÓPRIO DE CÓDIGO</span><strong>Engenheiro de Jogos · v0.7</strong></div>
+        <div class="qa-workbench-title"><span class="eyebrow">06 / MOTOR PRÓPRIO DE CÓDIGO</span><strong>Engenheiro de Jogos · v0.8</strong></div>
         <p class="hint">Para projetos Three.js completos com backend local: analisar funções, detectar erros, compilar, abrir em Chromium e revisar correções do OpenCode. Sem backend, esta seção permanece indisponível; o gerador 2D acima continua funcionando offline. A telemetria avançada exige que o jogo registre explicitamente seu ator e seu loop de renderização.</p>
         <div class="eng-row"><div><label for="eng-project">Projeto do backend</label><select id="eng-project" aria-label="Projeto Three.js"><option value="">Conecte o backend</option></select></div><button class="outline small" id="eng-refresh">Conectar / listar projetos</button></div>
         <div class="eng-row"><div><label for="eng-new-name">Novo projeto Three.js</label><input id="eng-new-name" maxlength="60" placeholder="Nome do novo jogo"></div><button class="outline small" id="eng-new">Criar no backend</button></div>
@@ -128,6 +129,7 @@ Derrote o chefe.
   </main>
   <script src="./js/parser.js"></script>
   <script src="./js/runtime-template.js"></script>
+  <script src="./js/shooter-runtime.js"></script>
   <script src="./js/qa-bridge.js"></script>
   <script src="./js/generator.js"></script>
   <script src="./js/zip.js"></script>

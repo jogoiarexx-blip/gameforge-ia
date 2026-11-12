@@ -247,7 +247,7 @@ function gameForgeAdvancedTDBoot(){
   const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/Math.max(1,r.width),y=(e.clientY-r.top)*H/Math.max(1,r.height);
   const gx=(x-originX)/cellX,gy=(y-originY)/cellY;
   if(mode==='lane'){
-   const hit=R.collectDrop(d,gx,gy);
+   const hit=R.collectDrop(d,gx,gy,Math.max(32,22*W/Math.max(1,r.width)));
    if(hit.ok){note('+'+hit.value+' '+resourceName);publish();canvas.focus();return;}
   }
   place(gx,gy);canvas.focus();

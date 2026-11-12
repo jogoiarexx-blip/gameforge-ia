@@ -122,9 +122,9 @@ function gameForgeTDRulesFactory(){
    if(d.fx.length<110)d.fx.push({x:.25,y:e.lane+.5,tx:d.cols,ty:e.lane+.5,life:.5,type:'mower'});
   }else{d.base=d.mode==='lane'?0:Math.max(0,d.base-(e.boss?35:20));}
  }
- function collectDrop(d,x,y){
+ function collectDrop(d,x,y,radiusPixels=32){
   if(d.mode!=='lane'||d.over)return {ok:false,reason:'Sem recurso'};
-  const star=d.drops.find(p=>Math.hypot((p.x-x)*88,(p.y-y)*72)<=32);
+  const star=d.drops.find(p=>Math.hypot((p.x-x)*88,(p.y-y)*72)<=Math.max(32,Math.min(100,Number(radiusPixels)||32)));
   if(!star)return {ok:false,reason:'Sem recurso nessa posição'};
   d.drops.splice(d.drops.indexOf(star),1);d.money=Math.min(9999,d.money+star.value);
   return {ok:true,value:star.value};

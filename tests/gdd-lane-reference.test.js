@@ -41,7 +41,7 @@ test('Brilhos aparecem, podem ser coletados, expiram e não são concedidos auto
  assert.equal(R.collectDrop(d,star.x,star.y).ok,true);
  assert.equal(d.money,start+25);
  assert.equal(d.drops.length,0);
- step(d,12);
+ step(d,13.1); // next spawn occurs within at most 13 seconds
  assert.ok(d.drops.length>=1);
  const left=d.drops.length;step(d,8.1);
  assert.ok(d.drops.length<=left+1);
@@ -56,7 +56,7 @@ test('ondas com plano definido têm faixas reproduzíveis e chefes só no oitavo
  const specified=[[{kind:'runner',lane:4}],[{kind:'grunt',lane:0}]];
  const c=R.create('lane',1,{},{waves:2,wavePlan:specified});
  assert.deepEqual(c.lanePlan,specified);
- assert.equal(R.begin(c),true);step(c,.6);
+ assert.equal(R.begin(c),true);step(c,.7);
  assert.equal(c.enemies[0].lane,4);
  assert.equal(c.enemies[0].kind,'runner');
 });

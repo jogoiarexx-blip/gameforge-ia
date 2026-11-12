@@ -36,7 +36,7 @@ function normalize(snap){
   roadmapRecords:records(snap.roadmapRecords),selectedTaskId:text(snap.selectedTaskId??'',160,'Tarefa selecionada'),
   pinnedReferences:Array.isArray(snap.pinnedReferences)?snap.pinnedReferences.filter(x=>typeof x==='string'&&x.length<160).slice(0,5):[],
   deepPlan:snap.deepPlan!==false,
-  creationOptions:object(snap.creationOptions)?{dimension:['2d','3d'].includes(snap.creationOptions.dimension)?snap.creationOptions.dimension:'auto',genre:['arena','shooter','racing','platform','rpg','fps','tower-defense'].includes(snap.creationOptions.genre)?snap.creationOptions.genre:'auto',theme:['forest','desert','neon','ruins'].includes(snap.creationOptions.theme)?snap.creationOptions.theme:'auto',size:snap.creationOptions.size===72?72:48,quality:['low','high'].includes(snap.creationOptions.quality)?snap.creationOptions.quality:'auto'}:undefined,
+  creationOptions:object(snap.creationOptions)?{dimension:['2d','3d'].includes(snap.creationOptions.dimension)?snap.creationOptions.dimension:'auto',genre:['arena','shooter','racing','platform','rpg','fps','tower-defense','lane-defense','block-td'].includes(snap.creationOptions.genre)?snap.creationOptions.genre:'auto',theme:['forest','desert','neon','ruins'].includes(snap.creationOptions.theme)?snap.creationOptions.theme:'auto',size:snap.creationOptions.size===72?72:48,quality:['low','high'].includes(snap.creationOptions.quality)?snap.creationOptions.quality:'auto'}:undefined,
   history:history.map(h=>{
    if(!object(h))throw Error('Versão anterior inválida.');
    return {instruction:text(h.instruction,1000,'Descrição'),at:text(h.at,100,'Data'),gdd:text(h.gdd,1000000,'GDD anterior'),files:files(h.files),taskRecords:records(h.taskRecords)};
@@ -44,7 +44,7 @@ function normalize(snap){
  return result;
 }
 function encode(snap){
- const encoded=JSON.stringify({format:'gameforge-project',version:1,studioVersion:'0.14.0',savedAt:new Date().toISOString(),project:normalize(snap)});
+ const encoded=JSON.stringify({format:'gameforge-project',version:1,studioVersion:'0.15.0',savedAt:new Date().toISOString(),project:normalize(snap)});
  if(bytes(encoded)>20000000)throw Error('Backup acima de 20 MB. Reduza o histórico antes de exportar.');
  return encoded;
 }

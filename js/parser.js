@@ -4,6 +4,8 @@
   const normalize = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   function detectGenre(text) {
     const t = normalize(text);
+    if(/\b(block tower td|block tower defense|blocos? td|blocos? tower|torres? (em|de) blocos|defesa de blocos)\b/.test(t))return 'block-td';
+    if(/(plants?\s*(vs\.?|versus)\s*zomb|plantas?\s*(contra|vs)\s*zumbis?|defesa por linhas|garden defense|defesa do jardim|jardim contra zumbis)/.test(t))return 'lane-defense';
     if(/\b(tower.?defen[cs]e|defesa de torres)\b/.test(t))return 'tower-defense';
     if(/\b(fps|first.person|primeira pessoa)\b/.test(t))return 'fps';
     if(/\b(rpg|role.playing|roguelike|roguelite)\b/.test(t))return 'rpg';
@@ -21,8 +23,8 @@
     return best;
   }
   function unique(items) { return [...new Set(items.map(x => x.trim()).filter(Boolean))]; }
-  const labels={arena:'Aventura / ação',shooter:'Nave / shoot’em up vertical',racing:'Corrida',platform:'Plataforma',rpg:'RPG de ação',fps:'FPS / primeira pessoa','tower-defense':'Defesa de torres'};
-  const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense'],'3d':['arena','fps','racing','platform']};
+  const labels={arena:'Aventura / ação',shooter:'Nave / shoot’em up vertical',racing:'Corrida',platform:'Plataforma',rpg:'RPG de ação',fps:'FPS / primeira pessoa','tower-defense':'Defesa de torres (caminhos)','lane-defense':'Defesa por linhas / Jardim','block-td':'Defesa de torres em blocos'};
+  const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','racing','platform']};
   function parseGdd(md, instruction = '', options = {}) {
     const source = String(md || ''); // GDD integral: nenhum corte silencioso
     const extra = String(instruction || '').slice(0, 12000);
@@ -73,11 +75,14 @@
     };
     colorPalettes.rpg={bg:'#0c2524',accent:'#b7ef99',ground:'#204b39',enemy:'#e27d78'};
     colorPalettes['tower-defense']={bg:'#102631',accent:'#78dfdd',ground:'#294e50',enemy:'#e5a373'};
+    colorPalettes['lane-defense']={bg:'#274f4e',accent:'#f2d985',ground:'#4d8266',enemy:'#c58f80'};
+    colorPalettes['block-td']={bg:'#152f42',accent:'#9fdfc8',ground:'#376251',enemy:'#daa27a'};
     colorPalettes.fps=colorPalettes.arena;
     const shooterTheme = /dragon|dragao|drag[oõ]es|fogo|asas|harpia|reino|magia|medieval/.test(norm) ? 'dragon' : /neon|cyber|cidade futurista|sintetico|synthwave/.test(norm) ? 'neon' : 'space';
     const shooterOptions = { theme: shooterTheme, autofire: /tiro automatico|auto.?fire|disparo automatico/.test(norm), waves: /onda|wave|formac|esquadrao|enxame|ataque em v|zigzag|escolta/.test(norm), boss: genre === 'shooter' || features.bosses, powerups: genre === 'shooter', parallax: true };
     return {
       title: title.slice(0, 90), genre, dimension, stages, shooterOptions,
+      defenseOptions:{mode:genre==='lane-defense'?'lane':genre==='block-td'?'blocks':'path',heightLevels:genre==='block-td'?3:0,upgradeChoices:genre==='block-td'},
       campaign:{maxStages:30,detectedStages:allLevels.length,omittedStages:Math.max(0,allLevels.length-30)},
       worldOptions:{theme:['forest','desert','neon','ruins'].includes(options.theme)?options.theme:/neon|cyber|futur/.test(norm)?'neon':/deserto|desert|areia/.test(norm)?'desert':/ruina|horror|terror|templo/.test(norm)?'ruins':'forest',size:Number(options.size)===72?72:48,quality:['low','high'].includes(options.quality)?options.quality:'auto',seed:12345},
       summary: headings.slice(0, 14), enemyNames, features, world,
@@ -89,6 +94,7 @@
       limitations: [
         ...(allLevels.length>30?[`O GDD contém ${allLevels.length} fases; este motor utiliza as primeiras 30. O documento original permanece completo.`]:[]),
         ...(dimension==='3d'?['O motor 3D usa cenários e personagens low poly procedurais com Three.js local; requer WebGL2. GLBs detalhados, animações importadas e campanha escrita livremente ainda exigem trabalho adicional.']:[]),
+        ...(['lane-defense','block-td'].includes(genre)?['Dois motores originais de Tower Defense com regras predefinidas. Não copia personagens, nomes, arte, níveis nem unidades de jogos comerciais.']:[]),
         ...(genre === 'shooter' ? ['O shoot’em up usa desenhos e formações procedurais; não copia sprites nem reproduz campanhas específicas dos projetos usados como referência.', 'As fases possuem chefes, ondas e melhorias configuráveis, mas objetivos especiais descritos livremente no GDD exigem IA ou código manual.'] : []),
         'O gerador sem IA usa mecânicas pré-programadas e não interpreta regras inéditas livremente.',
         'Personagens detalhados, animações GLB e narrativa completa exigem uma etapa adicional.',

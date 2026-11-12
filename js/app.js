@@ -155,7 +155,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const available=GameForgeCampaign.maxEnemies(spec),genre=spec.genre,three=spec.dimension==='3d';
     $('stage-enemies').max=String(available);$('stage-enemies').disabled=!available;
     $('stage-boss').disabled=!['arena','fps','shooter','rpg'].includes(genre);
-    $('stage-waves').disabled=genre!=='tower-defense';
+    $('stage-waves').disabled=!['tower-defense','lane-defense','block-td'].includes(genre);
     $('stage-laps').disabled=!(three&&genre==='racing');
     $('stage-theme').disabled=!three;
     const missionAvailable=GameForgeCampaign.combatMission(spec)&&GameForgeCampaign.hasMissionRuntime(state.files);
@@ -755,6 +755,8 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   const expandedExamples={
     rpg:{dimension:'2d',genre:'rpg',title:'GUARDIÕES DO VALE',theme:'forest',idea:'RPG de ação com mapa amplo, experiência, níveis, poções, inventário e combate. Recolher os selos, enfrentar os guardiões e entrar no portal.'},
     defense:{dimension:'2d',genre:'tower-defense',title:'FORTALEZA DAS MARÉS',theme:'forest',idea:'Defesa de torres com construção por grade, melhoria de torres, ondas inimigas, créditos e defesa da base.'},
+    lanes:{dimension:'2d',genre:'lane-defense',title:'JARDINS DA AURORA',theme:'forest',idea:'Defesa por linhas estilo Plants vs. Zombies mas com unidades originais: cinco linhas, geradores de energia, vigias que atiram, barreiras que bloqueiam, gelo que desacelera, invasores com diferentes classes e chefe final.'},
+    blocks:{dimension:'2d',genre:'block-td',title:'TORRES DO ARQUIPÉLAGO',theme:'forest',idea:'Tower Defense em blocos estilo Block Tower TD com criação de terreno por blocos, torres elevadas, extratores de recursos, ataque com alcance ampliado, upgrades de torres e bônus roguelike entre ondas.'},
     adventure3d:{dimension:'3d',genre:'arena',title:'O VALE DOS GUARDIÕES',theme:'forest',idea:'Aventura 3D em terceira pessoa. Explorar floresta com personagens low poly animados, encontrar cristais, combater criaturas e liberar o portal.'},
     fps3d:{dimension:'3d',genre:'fps',title:'POSTO NÉON',theme:'neon',idea:'FPS 3D. Explorar o posto, usar WASD para andar e Q/E para mirar, eliminar sentinelas, coletar energia e abrir a saída.'},
     racing3d:{dimension:'3d',genre:'racing',title:'CIRCUITO DO POENTE',theme:'desert',idea:'Corrida 3D. Dirigir entre checkpoints em ordem, evitar tráfego e completar as voltas do circuito.'},

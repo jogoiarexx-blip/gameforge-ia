@@ -12,7 +12,7 @@ function inspect(files){
  try{const spec=JSON.parse(match[1]);return Array.isArray(spec.stages)&&spec.stages.length>0&&spec.stages.length<=30?spec:null;}catch{return null;}
 }
 function maxEnemies(spec){
- if(spec.genre==='tower-defense'||(spec.dimension==='3d'&&spec.genre==='platform'))return 0;
+ if(['tower-defense','lane-defense','block-td'].includes(spec.genre)||(spec.dimension==='3d'&&spec.genre==='platform'))return 0;
  if(spec.genre==='shooter')return 80;
  if(spec.dimension==='3d')return spec.genre==='racing'?12:24;
  return ({rpg:36,platform:45,racing:60})[spec.genre]||48;
@@ -47,7 +47,7 @@ function edit(files,index,input){
  o.seconds=Math.max(5,o.seconds);
  if(maxEnemies(spec)===0)o.enemies=0;
  if(!['arena','fps','shooter','rpg'].includes(spec.genre))o.boss='auto';
- if(spec.genre!=='tower-defense')o.waves=0;
+ if(!['tower-defense','lane-defense','block-td'].includes(spec.genre))o.waves=0;
  if(spec.genre!=='racing'||spec.dimension!=='3d')o.laps=0;
  if(spec.dimension!=='3d')o.theme='auto';
  if(!combatMission(spec)){o.mission='default';o.seconds=45;}

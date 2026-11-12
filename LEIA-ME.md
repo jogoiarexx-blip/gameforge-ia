@@ -1,3 +1,22 @@
+# GameForge Studio v0.15 — Dois novos motores de Tower Defense
+
+## Jardim — defesa por linhas
+
+Modo `lane-defense`: cinco linhas e nove casas por linha, com **vigias que disparam**, **geradores de recursos**, **barreiras resistentes** e **unidades que congelam**. Os invasores têm classes normal, veloz, blindada e chefe; atacam as unidades da linha, podem ser interceptados por um dispositivo de emergência de uso único, e tiram vida da base quando passam. Os recursos da partida crescem por geradores, eliminações e bônus de ondas. Todas as ondas precisam terminar para concluir a fase. Controles pelo mouse, toque, teclas 1–4/N/U/X ou D-pad.
+
+## Torres — defesa por blocos
+
+Modo `block-td`: tabuleiro de **12×8** casas, estrada sinuosa protegida contra construções, colocação de blocos em células livres, **três níveis de altura**, sentinelas, congelantes, canhões de área e extratores de recursos. A altura aumenta dano e alcance; as torres sobem de nível e podem ser vendidas. Após cada onda, escolha **dano, alcance, economia ou reparo** (conforme o estado da base). Inimigos rápidos, blindados e chefes fazem parte das rodadas.
+
+## Como usar
+
+Abra o Studio, escolha o exemplo **Jardim · Defesa por linhas** ou **Torres · Blocos e altura**, depois clique em **Criar novo jogo** no modo **Sem IA**. Alternativamente, selecione os estilos no seletor 2D ou use um GDD que mencione `Plantas vs. Zumbis/defesa por linhas` ou `Block Tower TD/torres em blocos`.
+
+O código é **gerado integralmente no navegador**, sem API, servidor ou CDN, e exportado como HTML único ou ZIP contendo `game.js` e GDD original. As fases e ondas podem ser editadas pelo painel 11; os sistemas implementados são específicos, não um gerador irrestrito de GDD.
+
+Este projeto não inclui nem copia personagens, nomes ou assets das franquias citadas como referência de mecânicas.
+
+---
 # GameForge Studio v0.14 — Missões com regras reais
 
 ## Novo nesta versão

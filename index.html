@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#10192a">
-  <title>GameForge Studio v0.14.0 — Missões jogáveis e evolução por comandos</title>
+  <title>GameForge Studio v0.15.0 — Tower Defense: jardim e blocos</title>
   <meta name="description" content="Leia um GDD em Markdown e gere protótipos de jogos no navegador, com ou sem inteligência artificial.">
   <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.14 · MISSÕES JOGÁVEIS</small></span></a>
+    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.15 · TOWER DEFENSE AVANÇADO</small></span></a>
     <nav class="top-actions"><span id="storage-tag" class="chip">Projeto no navegador</span><a class="subtle-link" href="./examples/gdd-exemplo.md" download>Exemplo .md</a><button class="small outline" id="export-top">Exportar ZIP ↗</button></nav>
   </header>
   <main class="studio">
@@ -35,6 +35,7 @@
         </section>
         <div class="label-row"><label for="gdd">Documento GDD (.md)</label><span id="file-indicator" class="muted tiny">Importação de GDD até 1 MB · documento completo</span></div>
         <div class="file-pick"><label for="md-file" class="file-btn">📁 Carregar arquivo .md</label><input type="file" id="md-file" accept=".md,.markdown,text/markdown,text/plain"><button id="example" class="small outline" type="button">Usar exemplo</button></div>
+        <div class="shooter-examples" aria-label="Modelos avançados de Tower Defense"><span>Novos motores de Tower Defense</span><div class="shooter-example-buttons"><button class="outline small" id="example-lanes" type="button">Jardim · Defesa por linhas</button><button class="outline small" id="example-blocks" type="button">Torres · Blocos e altura</button></div><p class="hint">Dois jogos próprios inspirados nas mecânicas do gênero, com personagens e gráficos originais.</p></div>
         <div class="shooter-examples" aria-label="Exemplos de jogos de nave"><span>Novos exemplos de navinha</span><div class="shooter-example-buttons"><button class="outline small" id="example-navinha" type="button">Nave espacial</button><button class="outline small" id="example-neon" type="button">Neon</button><button class="outline small" id="example-dragao" type="button">Dragão</button></div></div>
         <textarea id="gdd" class="gdd-editor" spellcheck="false" aria-label="Conteúdo Markdown do GDD" placeholder="# Nome do Jogo&#10;&#10;## História&#10;..."># SOMBRAS DO VALE
 
@@ -190,6 +191,8 @@ Derrote o chefe.
   <script src="./js/three-runtime.js"></script>
   <script src="./js/strategy-rules.js"></script>
   <script src="./js/expanded-2d-runtime.js"></script>
+  <script src="./js/advanced-td-rules.js"></script>
+  <script src="./js/advanced-td-runtime.js"></script>
   <script src="./js/qa-bridge.js"></script>
   <script src="./js/generator.js"></script>
   <script src="./js/development-engine.js"></script>

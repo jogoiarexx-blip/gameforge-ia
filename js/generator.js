@@ -17,7 +17,7 @@
     return head+`<link rel="stylesheet" href="style.css"></head><body>${content}${files['engine-3d.js']?'<script src="engine-3d.js" defer></script>':''}<script src="game.js" defer></script></body></html>`;
   }
   function generationReport(spec){
-    const mechanics={rpg:'Mapa de 2400 × 1600 com câmera, combate, XP, poções, inventário, guardião e relíquias para liberar o portal.','tower-defense':'Construção de torres por grade, dois tipos de torre, melhorias, ondas, recursos e defesa da base.',fps:'Câmera em primeira pessoa, movimento, mira por teclado/toque, tiros e recarga.',arena:'Exploração, combate, coleta e saída por objetivos.',racing:'Direção, obstáculos e progressão.',platform:'Movimento, saltos e progressão.'};
+    const mechanics={rpg:'Mapa de 2400 × 1600 com câmera, combate, XP, poções, inventário, guardião e relíquias para liberar o portal.','tower-defense':'Construção de torres por grade, dois tipos de torre, melhorias, ondas, recursos e defesa da base.','lane-defense':'Cinco linhas, quatro unidades originais, economia geradora, inimigos atacando unidades, chefes, ondas e dispositivos de emergência por linha.','block-td':'Campo em blocos, três alturas, quatro tipos de torre/extrator, bônus de altura, escolhas permanentes entre ondas e chefes.',fps:'Câmera em primeira pessoa, movimento, mira por teclado/toque, tiros e recarga.',arena:'Exploração, combate, coleta e saída por objetivos.',racing:'Direção, obstáculos e progressão.',platform:'Movimento, saltos e progressão.'};
     return `# Relatório da geração\n\n- Título: ${spec.title}\n- Estilo: ${spec.genre}\n- Dimensão: ${spec.dimension||'2d'}\n- Fases: ${spec.stages.join(' / ')}\n- Motor: ${spec.dimension==='3d'?'Three.js r180 local, personagens e ambientes procedurais; uma fase carregada por vez':'Canvas 2D local'}\n- Modelo: ${mechanics[spec.genre]||'Shoot’em up com ondas, melhorias e chefes.'}\n\n## Interpretação do GDD\n\n${spec.detected.map(x=>'- '+x).join('\n')}\n\n## Limites\n\n${spec.limitations.map(x=>'- '+x).join('\n')}\n\n## Como jogar e publicar\n\nAbra index.html e mantenha todos os arquivos do ZIP juntos. No 3D, engine-3d.js e sua licença acompanham o projeto. O HTML único também inclui a biblioteca; não baixa código de CDN. As regras livres do GDD não são implementadas automaticamente pelo modo sem IA.\n`;
   }
   function generate(spec, gdd) {
@@ -25,10 +25,12 @@
     if(spec.genre==='shooter' && typeof gameForgeShooterBoot !== 'function')throw new Error('Motor de nave não carregado');
     const data=JSON.stringify(spec).replace(/<\//g,'<\\/');
     const three=spec.dimension==='3d';const expanded=!three&&['rpg','tower-defense'].includes(spec.genre);
-    const runtime=three?root.gameForgeThreeBoot:expanded?root.gameForgeExpanded2DBoot:spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
+    const advanced=!three&&['lane-defense','block-td'].includes(spec.genre);
+    const runtime=three?root.gameForgeThreeBoot:advanced?root.gameForgeAdvancedTDBoot:expanded?root.gameForgeExpanded2DBoot:spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
     if(typeof runtime!=='function')throw Error('Motor '+spec.genre+' '+(spec.dimension||'2d')+' não carregado. Atualize o Studio.');
     if(three&&!root.GameForgeThreeSource)throw Error('Biblioteca 3D local ausente. Atualize o Studio.');
-    const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
+    if(advanced&&typeof root.gameForgeTDRulesFactory!=='function')throw Error('Motor de regras Tower Defense não carregado. Atualize o Studio.');
+    const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n':advanced?'const GameForgeTDRules = ('+root.gameForgeTDRulesFactory.toString()+')();\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
     const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+rules+'('+runtime.toString()+')();\n';
     const css=BASE_CSS;
     const dependencies=three?{'engine-3d.js':root.GameForgeThreeSource,'THREE-LICENSE.txt':root.GameForgeThreeLicense}:{};

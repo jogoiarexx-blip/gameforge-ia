@@ -26,7 +26,7 @@ function requirements(title,kind){
 }
 function build(markdown,previous=[]){
  const md=String(markdown||'');const previousMap=new Map((previous||[]).filter(x=>x&&typeof x.id==='string').map(x=>[x.id,x]));
- const lines=md.split(/\r?\n/);let position=0,inFence=false,fence='',stack=[],chunks=[];
+ const lines=md.split('\n');let position=0,inFence=false,fence='',stack=[],chunks=[];
  for(let lineNum=0;lineNum<lines.length;lineNum++){
    const line=lines[lineNum];const trimmed=line.trim();
    const f=trimmed.match(/^(`{3,}|~{3,})/);
@@ -44,9 +44,9 @@ function build(markdown,previous=[]){
  if(!chunks.length&&md.trim())chunks=[{title:'Requisitos gerais',level:1,path:'Requisitos gerais',line:1,start:0,end:md.length}];
  const counter=new Map();
  return chunks.filter(c=>c.title&&c.level>1 || chunks.length===1).map(c=>{
-    const body=md.slice(c.start,c.end);const kind=group(c.title,body);const base=c.path+'\n'+body.slice(0,280);
+    const body=md.slice(c.start,c.end);const kind=group(c.title,body);const base=c.path+'\n'+body.replace(/\r\n/g,'\n');
     const fp=fingerprint(base);const repeats=counter.get(fp)||0;counter.set(fp,repeats+1);
-    const id=fp+(repeats?'-'+repeats:'');const prior=previousMap.get(id);
+    const id='v2-'+fp+(repeats?'-'+repeats:'');const prior=previousMap.get(id);
     const status=statusOptions.includes(prior?.status)?prior.status:'pendente';
     return {id,title:c.title,path:c.path,line:c.line,start:c.start,end:c.end,kind,status,
      checks:requirements(c.title,kind),notes:typeof prior?.notes==='string'?prior.notes.slice(0,450):'',

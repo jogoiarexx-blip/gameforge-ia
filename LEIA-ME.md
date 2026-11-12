@@ -1,3 +1,19 @@
+# GameForge Studio v0.11 — Continuar projetos com backup
+
+- **Baixar backup** salva um arquivo `.gameforge.json` com código, GDD completo, tarefas, notas, referências fixadas e até quatro versões para desfazer.
+- **Abrir backup** valida o arquivo e mostra o projeto antes de pedir confirmação da troca. A prévia só executa o código após confirmar. Abra backups de fontes confiáveis.
+- O ZIP jogável agora inclui `PROJETO.gameforge.json`: extraia esse arquivo e abra no Studio para continuar o desenvolvimento.
+- Não são incluídos no backup os campos de configuração de token, modelo e endereço do backend. O código e o GDD são exportados como foram escritos; revise informações que você tenha colocado manualmente nesses arquivos.
+- O salvamento automático avisa quando o navegador recusa armazenar o projeto ou quando um campo excede os limites. O último registro válido é preservado.
+- Tarefas identificam o conteúdo integral de cada seção. Alterar o fim de um capítulo longo exige nova implementação e validação. Quebras de linha Windows (CRLF) têm referências corretas.
+- Na primeira atualização de um roteiro v0.10, as tarefas voltam a pendente, porque a identificação antiga não comprovava que todo o capítulo permanecia igual. Exporte seu backup antes de atualizar registros importantes. Os arquivos do jogo são preservados.
+
+Limites: GDD de 1 MB; arquivo individual de 2 MB; backup de 20 MB; quatro versões de histórico. Backups não incluem capturas de QA; relatórios textuais são preservados e a inspeção deve ser refeita após reabrir.
+
+Validação v0.11: `npm test` executa os testes sem dependências externas. O roteiro `python tests/browser-project-continuity.py` requer Playwright e Chromium em um ambiente que permita iniciá-lo. Nesta entrega, os fluxos reais de navegador foram conferidos pela prévia controlada: criar, melhorar, QA, recarregar, baixar/abrir backup, cancelar/confirmar, melhorar novamente, desfazer, rejeitar backup inválido e GDD de 429 KB/300 tarefas com notas preservadas. A IA real e o backend Three.js não foram alterados ou testados nesta atualização.
+
+---
+
 # GameForge Studio v0.10.0 — plano de implementação por GDD
 
 **Novo:** na seção “10 / Roteiro do GDD”, importe até 1 MB de Markdown, transforme capítulos em tarefas rastreáveis, selecione uma, prepare a instrução, melhore o jogo, execute QA e valide manualmente. O ZIP inclui o plano e os estados em Markdown/JSON. [Leia as instruções detalhadas](ROTEIRO_GDD_V010.md).

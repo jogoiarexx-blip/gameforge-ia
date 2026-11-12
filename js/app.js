@@ -3,7 +3,8 @@
   'use strict';
   const $=id=>document.getElementById(id);
   const state={files:{},spec:null,selected:null,mode:'offline',generation:0};
-  const allowed=['index.html','style.css','game.js','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json'];
+  const allowed=GameForgeProject.allowedFiles;
+  let pendingProject=null,saveTimer=null,projectOperations=0,unrestoredProject=false;
   const devHistory=[];let lastPlan=null;
   let roadmapTasks=[],selectedTaskId=null,preparedTaskId=null,roadmapCount=60,roadmapSource=null;
   const example=$('gdd').value;
@@ -119,46 +120,66 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(!md){feedback('Cole ou importe um documento GDD antes de analisar.',true);return null;}
     if(new Blob([md]).size>1_000_000){feedback('O GDD ultrapassa 1 MB; divida anexos externos.',true);return null;}
     roadmapSync();
-    state.spec=GameForgeParser.parseGdd(md,$('instruction').value);
-    const spec=state.spec;
+    const spec=GameForgeParser.parseGdd(md,$('instruction').value);
+    state.spec=GameForgeProject.activeSpec(state.files,spec);
     renderReferences();
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');
     $('analysis').innerHTML=`<strong>${esc(spec.title)}</strong><div class="tags">${tags}</div><div class="muted">Fases: ${spec.stages.map(esc).join(' • ')}</div><p class="muted">Documento inteiro analisado: ${spec.sourceLength.toLocaleString('pt-BR')} caracteres e ${spec.sectionCount} títulos. O protótipo utiliza até ${spec.stages.length} fases reconhecidas. </p><p class="muted">Sem IA: será gerado um protótipo nas mecânicas disponíveis, não uma reprodução integral do GDD.</p>`;
     return spec;
   }
   function projectName(){return ($('project-name').value.trim()||'gameforge-jogo').replace(/[\\/:*?"<>|]+/g,'-').slice(0,70);}
+  function projectSnapshot(){
+    roadmapSync();
+    return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
+  }
+  function storageMessage(result){
+    $('project-storage-status').textContent=result.message;
+    $('project-storage-status').classList.toggle('storage-warning',!result.ok);
+    $('storage-tag').textContent=result.ok?'Salvo no navegador':'Baixe um backup';
+  }
   function saveState(){
-    if(typeof qaState!=='undefined'&&qaState.candidate)return;
+    clearTimeout(saveTimer);
+    if(qaState.candidate)return;
+    if(unrestoredProject)return;
     try{
-      const {files}=state; const snapshot=JSON.stringify({gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files,selected:state.selected,model:$('model').value,apiUrl:$('api-url').value,liveSources:$('repo-live-sources').checked,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId});
-      if(snapshot.length<2_500_000)localStorage.setItem('gameforge-studio-v03',snapshot);
-    }catch(e){console.warn('Armazenamento indisponível:',e);}
+      const snapshot={...projectSnapshot(),model:$('model').value,apiUrl:$('api-url').value,liveSources:$('repo-live-sources').checked};
+      storageMessage(GameForgeProject.save(localStorage,'gameforge-studio-v03',snapshot));
+    }catch{storageMessage({ok:false,message:'Não salvo no navegador. Baixe um backup para preservar o projeto.'});}
+  }
+  function scheduleSave(){unrestoredProject=false;clearTimeout(saveTimer);saveTimer=setTimeout(saveState,600);}
+  function loadProject(snap){
+    unrestoredProject=false;
+    clearTimeout(saveTimer);
+    $('gdd').value=snap.gdd;$('project-name').value=snap.name;$('instruction').value=snap.instruction;
+    pinnedReferences=snap.pinnedReferences.filter(x=>repoKnowledge.entries.some(r=>r.id===x));
+    devHistory.length=0;devHistory.push(...snap.history);
+    $('deep-plan').checked=snap.deepPlan;
+    state.files=snap.files;state.selected=null;preparedTaskId=null;lastPlan=null;state.generation++;
+    state.spec=GameForgeProject.activeSpec(state.files,GameForgeParser.parseGdd(snap.gdd));
+    roadmapTasks=GameForgeRoadmap.build(snap.gdd,snap.roadmapRecords);roadmapSource=snap.gdd;roadmapCount=60;
+    selectedTaskId=roadmapTasks.some(t=>t.id===snap.selectedTaskId)?snap.selectedTaskId:null;
+    $('roadmap-search').value='';$('roadmap-filter').value='all';
+    qaState.last=null;qaState.baseline=null;qaState.vision=null;qaState.candidate=null;qaState.baseCode=null;
+    for(const id of ['qa-before','qa-after','qa-shot'])$(id).removeAttribute('src');
+    $('qa-report').textContent='Nenhuma inspeção realizada.';$('qa-candidate').classList.add('hidden');
+    $('development-plan').textContent='Projeto restaurado. Planeje a próxima melhoria.';
+    $('file-editor').value='';$('file-editor').disabled=true;$('apply-edit').disabled=true;$('editor-label').textContent='Editor de código';
+    $('preview').removeAttribute('srcdoc');$('preview-empty').classList.remove('hide');$('live-indicator').classList.remove('active');
+    $('file-indicator').textContent='GDD completo restaurado · '+new Blob([snap.gdd]).size+' bytes';
+    roadmapSaveFiles();listFiles();renderHistory();roadmapRender();renderReferences();qaButtons();analyze();
+    if(state.files['game.js']){selectFile(state.files[snap.selected]?snap.selected:'game.js');runPreview();}
+    else status('Projeto restaurado — pronto para criar');
+    qaStatus('Projeto restaurado. Execute novo QA antes de validar tarefas.');
   }
   function restoreState(){
     try{
       const raw=localStorage.getItem('gameforge-studio-v03'); if(!raw)return;
-      const snap=JSON.parse(raw);
-      if(typeof snap.gdd==='string')$('gdd').value=snap.gdd;
-      if(typeof snap.name==='string')$('project-name').value=snap.name;
-      if(typeof snap.instruction==='string')$('instruction').value=snap.instruction;
+      const snap=JSON.parse(raw);const project=GameForgeProject.restoreStored(raw);
       if(typeof snap.model==='string')$('model').value=snap.model;
       if(typeof snap.apiUrl==='string')$('api-url').value=snap.apiUrl;
       if(typeof snap.liveSources==='boolean')$('repo-live-sources').checked=snap.liveSources;
-      if(Array.isArray(snap.pinnedReferences))pinnedReferences=snap.pinnedReferences.filter(x=>repoKnowledge.entries.some(r=>r.id===x)).slice(0,5);
-      if(Array.isArray(snap.history))devHistory.push(...snap.history.filter(x=>x?.files?.['game.js']&&x?.files?.['style.css']).slice(-4));
-      if(typeof snap.deepPlan==='boolean')$('deep-plan').checked=snap.deepPlan;
-      roadmapTasks=GameForgeRoadmap.build($('gdd').value,Array.isArray(snap.roadmapRecords)?snap.roadmapRecords:[]);roadmapSource=$('gdd').value;
-      if(roadmapTasks.some(t=>t.id===snap.selectedTaskId))selectedTaskId=snap.selectedTaskId;roadmapRender();
-      renderReferences();
-      if(snap.files&&typeof snap.files==='object'){
-        state.files=Object.fromEntries(Object.entries(snap.files).filter(([name,src])=>allowed.includes(name)&&typeof src==='string'));
-        if(state.files['game.js']){
-          state.spec=GameForgeParser.parseGdd($('gdd').value,$('instruction').value);
-          listFiles();selectFile(allowed.includes(snap.selected)?snap.selected:'game.js');runPreview();renderHistory();
-          feedback('Último projeto restaurado deste navegador.');
-        }
-      }
-    }catch(e){console.warn('Não foi possível restaurar o projeto:',e);}
+      loadProject(project);storageMessage({ok:true,message:'Último projeto restaurado deste navegador.'});
+    }catch{unrestoredProject=true;storageMessage({ok:false,message:'Não foi possível restaurar o projeto salvo. Abra um backup; o registro anterior foi preservado.'});}
   }
   function listFiles(){
     const keys=Object.keys(state.files).filter(k=>allowed.includes(k));
@@ -213,6 +234,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   function getExportFiles(){
     roadmapSaveFiles();
     const files={...state.files};
+    files['PROJETO.gameforge.json']=GameForgeProject.encode(projectSnapshot());
     if(qaState.last){
       files['QA_inicio.png']=screenshotBytes(qaState.last.before.image);
       files['QA_movimento.png']=screenshotBytes(qaState.last.after.image);
@@ -238,6 +260,46 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     fileBlob(new Blob([text],{type:'text/html;charset=utf-8'}),projectName().replace(/\s+/g,'-')+'.html');
     feedback('Jogo HTML autônomo exportado.');
   }
+  async function projectOperation(action){
+    if(projectOperations){feedback('Aguarde a operação atual antes de continuar.',true);return;}
+    projectOperations++;
+    try{return await action();}finally{projectOperations--;}
+  }
+  function projectAvailable(){
+    if(projectOperations||qaState.candidate){feedback('Conclua o teste ou a alteração em andamento antes de abrir ou baixar um backup.',true);return false;}
+    return true;
+  }
+  function downloadProject(){
+    if(!projectAvailable())return;
+    try{
+      const encoded=GameForgeProject.encode(projectSnapshot());
+      fileBlob(new Blob([encoded],{type:'application/json'}),projectName().replace(/\s+/g,'-')+'.gameforge.json');
+      feedback('Backup completo baixado. Use Abrir backup para continuar com código, tarefas e histórico.');
+    }catch(e){feedback('Backup não gerado: '+e.message,true);}
+  }
+  $('project-backup').addEventListener('click',downloadProject);
+  $('project-open').addEventListener('click',()=>{if(projectAvailable())$('project-file').click();});
+  $('project-file').addEventListener('change',async event=>{
+    const file=event.target.files?.[0];if(!file)return;
+    try{
+      if(!projectAvailable())return;
+      if(file.size>20000000)throw Error('Backup acima de 20 MB.');
+      const project=GameForgeProject.decode(await file.text());
+      if(!projectAvailable())return;
+      pendingProject=project;
+      $('project-restore-summary').textContent=`${project.name||'Sem nome'} · ${Object.keys(project.files).length} arquivos · ${new Blob([project.gdd]).size.toLocaleString('pt-BR')} bytes de GDD · ${project.history.length} versões para desfazer.`;
+      $('project-restore-dialog').showModal();
+    }catch(e){pendingProject=null;feedback('O projeto atual foi preservado. '+e.message,true);}
+    finally{event.target.value='';}
+  });
+  $('project-restore-cancel').addEventListener('click',()=>{$('project-restore-dialog').close();});
+  $('project-restore-dialog').addEventListener('close',()=>{pendingProject=null;});
+  $('project-restore-confirm').addEventListener('click',()=>{
+    if(!pendingProject||!projectAvailable())return;
+    const project=pendingProject;pendingProject=null;
+    loadProject(project);$('project-restore-dialog').close();saveState();
+    feedback('Projeto restaurado. Continue as melhorias ou desfaça uma versão do histórico.');
+  });
   async function generate(){
     if(qaState.candidate){feedback('Aceite ou descarte a correção candidata antes de gerar outro jogo.',true);return;}
     const spec=analyze();if(!spec)return;
@@ -282,7 +344,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         log('[Biblioteca] '+(data.references_used||[]).length+' referências selecionadas; '+(data.source_files_read||[]).length+' arquivo(s) atual(is) do GitHub consultado(s).');
         feedback('A IA devolveu o código. Teste o jogo na prévia antes de publicar.');
       }
-      devHistory.length=0;renderHistory();
+      unrestoredProject=false;devHistory.length=0;renderHistory();
       roadmapSaveFiles();
       state.generation++;state.spec=spec;
       qaState.last=null;qaState.baseline=null;qaState.vision=null;
@@ -393,7 +455,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     }catch(e){msg.textContent='3D indisponível: '+e.message;}finally{btn.disabled=false;}
   }
   $('plan-improvement').addEventListener('click',planImprovement);
-  $('improve').addEventListener('click',improveGame);
+  $('improve').addEventListener('click',()=>projectOperation(improveGame));
   $('undo-improvement').addEventListener('click',undoImprovement);
   $('create-3d').addEventListener('click',create3dFromGdd);
   $('deep-plan').addEventListener('change',saveState);
@@ -558,11 +620,11 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     listFiles();selectFile('game.js');runPreview();saveState();qaButtons();
     qaStatus('Correção descartada. Código original restaurado.');
   }
-  $('qa-run').addEventListener('click',()=>qaRun().catch(()=>{}));
+  $('qa-run').addEventListener('click',()=>projectOperation(()=>qaRun().catch(()=>{})));
   $('qa-baseline').addEventListener('click',qaBaseline);
   $('qa-compare').addEventListener('click',qaCompare);
-  $('qa-vision').addEventListener('click',qaVision);
-  $('qa-repair').addEventListener('click',qaRepair);
+  $('qa-vision').addEventListener('click',()=>projectOperation(qaVision));
+  $('qa-repair').addEventListener('click',()=>projectOperation(qaRepair));
   $('qa-accept').addEventListener('click',qaAccept);
   $('qa-reject').addEventListener('click',qaReject);
   $('model-file').addEventListener('change',async event=>{
@@ -599,25 +661,26 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('knowledge-refresh').addEventListener('click',renderReferences);
   $('knowledge-clear').addEventListener('click',()=>{pinnedReferences=[];renderReferences();saveState();});
   $('analyze').addEventListener('click',analyze);
-  $('example').addEventListener('click',()=>{$('gdd').value=example;$('instruction').value='';$('project-name').value='Sombras do Vale';analyze();saveState();});
+  $('example').addEventListener('click',()=>{unrestoredProject=false;$('gdd').value=example;$('instruction').value='';$('project-name').value='Sombras do Vale';analyze();saveState();});
   $('md-file').addEventListener('change',async e=>{
     const file=e.target.files&&e.target.files[0];if(!file)return;
     if(!/\.(md|markdown)$/i.test(file.name)){feedback('Envie um GDD .md ou .markdown.',true);return;}
     if(file.size>1_000_000){feedback('GDD acima de 1 MB. Separe anexos ou partes do documento.',true);return;}
-    const value=await file.text();$('gdd').value=value; // Não cortar o documento importado
+    const value=await file.text();unrestoredProject=false;$('gdd').value=value; // Não cortar o documento importado
     const parsed=analyze();if(parsed)$('project-name').value=parsed.title;
     $('file-indicator').textContent=file.name+' · '+(file.size/1024).toFixed(1)+' KB · '+(parsed?.sectionCount||0)+' capítulos';feedback('GDD integral carregado: '+file.name+' ('+file.size+' bytes).');saveState();e.target.value='';
   });
   document.querySelectorAll('input[name=mode]').forEach(radio=>radio.addEventListener('change',()=>{state.mode=radio.value;$('ai-settings').classList.toggle('hidden',state.mode!=='ai');$('generate').textContent=state.mode==='ai'?'✦ Criar novo jogo com IA':'▶ Criar novo jogo';qaButtons();}));
   for(const name of ['navinha','neon','dragao']){
     $('example-'+name).addEventListener('click',()=>{
+      unrestoredProject=false;
       $('gdd').value=shooterExamples[name];$('instruction').value='';
       $('project-name').value=(shooterExamples[name].split('\n')[0].replace(/^#\s*/,''));
       $('file-indicator').textContent='Exemplo '+name+' · editável';
       analyze();saveState();feedback('GDD de '+name+' carregado. Agora clique em Gerar jogo.');
     });
   }
-  $('generate').addEventListener('click',generate);
+  $('generate').addEventListener('click',()=>projectOperation(generate));
   $('rerun').addEventListener('click',runPreview);
   $('apply-edit').addEventListener('click',applyEdit);
   $('export').addEventListener('click',downloadZip);$('export-top').addEventListener('click',downloadZip);$('html-export').addEventListener('click',downloadHtml);
@@ -625,8 +688,9 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('fullscreen').addEventListener('click',()=>{const el=$('preview-box');if(document.fullscreenElement)document.exitFullscreen();else if(el.requestFullscreen)el.requestFullscreen();});
   window.addEventListener('message',ev=>{if(ev.source!==$('preview').contentWindow)return;if(ev.data&&ev.data.kind==='gameforge-error'){log('[Prévia] '+String(ev.data.message).slice(0,400));status('Erro na prévia',true);}});
   $('file-editor').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const t=e.target;const s=t.selectionStart;t.setRangeText('  ',s,t.selectionEnd,'end');}if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();applyEdit();}});
-  $('gdd').addEventListener('input',()=>{renderReferences();});
-  $('instruction').addEventListener('input',()=>{renderReferences();});
+  $('gdd').addEventListener('input',()=>{renderReferences();scheduleSave();});
+  $('instruction').addEventListener('input',()=>{renderReferences();scheduleSave();});
+  $('project-name').addEventListener('input',scheduleSave);
   $('repo-live-sources').addEventListener('change',saveState);
   $('gdd').addEventListener('change',saveState);$('instruction').addEventListener('change',saveState);$('project-name').addEventListener('change',saveState);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!qaState.candidate)saveState();});

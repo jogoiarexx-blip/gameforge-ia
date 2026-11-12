@@ -4,19 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#10192a">
-  <title>GameForge Studio v0.10.1 — GDD + Engenheiro de Jogos</title>
+  <title>GameForge Studio v0.11.0 — GDD + Engenheiro de Jogos</title>
   <meta name="description" content="Leia um GDD em Markdown e gere protótipos de jogos no navegador, com ou sem inteligência artificial.">
   <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.10 · CRIADOR DE JOGOS</small></span></a>
+    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.11 · CRIADOR DE JOGOS</small></span></a>
     <nav class="top-actions"><span id="storage-tag" class="chip">Projeto no navegador</span><a class="subtle-link" href="./examples/gdd-exemplo.md" download>Exemplo .md</a><button class="small outline" id="export-top">Exportar ZIP ↗</button></nav>
   </header>
   <main class="studio">
     <section class="panel left-panel" aria-label="Projeto e documento GDD">
       <div class="panel-head"><span class="eyebrow">01 / ESPECIFICAÇÃO</span><h1>Seu GDD vira jogo.</h1><p>Importe um documento Markdown ou cole sua ideia. Depois escolha como gerar o código.</p></div>
       <div class="panel-scroll">
+        <section class="project-backups" aria-label="Continuar projeto">
+          <strong>Continuar seu projeto</strong>
+          <p class="hint">Preserve código, GDD, tarefas e histórico para continuar em outro computador.</p>
+          <div class="project-backup-actions"><button type="button" id="project-backup" class="small outline">Baixar backup</button><button type="button" id="project-open" class="small outline">Abrir backup</button></div>
+          <input type="file" id="project-file" accept=".json,application/json" hidden>
+          <p id="project-storage-status" class="hint" role="status" aria-live="polite">O backup .gameforge.json permite reabrir o projeto completo.</p>
+        </section>
         <label for="project-name">Nome do projeto</label><input id="project-name" type="text" maxlength="90" value="Meu jogo" placeholder="Nome do jogo">
         <div class="label-row"><label for="gdd">Documento GDD (.md)</label><span id="file-indicator" class="muted tiny">Importação de GDD até 1 MB · documento completo</span></div>
         <div class="file-pick"><label for="md-file" class="file-btn">📁 Carregar arquivo .md</label><input type="file" id="md-file" accept=".md,.markdown,text/markdown,text/plain"><button id="example" class="small outline" type="button">Usar exemplo</button></div>
@@ -159,6 +166,13 @@ Derrote o chefe.
   <script src="./js/visual-qa.js"></script>
   <script src="./js/model-inspector.js"></script>
   <script src="./js/repository-knowledge.js"></script>
+  <dialog id="project-restore-dialog" aria-labelledby="project-restore-title">
+    <h2 id="project-restore-title">Abrir este projeto?</h2>
+    <p id="project-restore-summary"></p>
+    <p>O projeto aberto será substituído. Baixe seu backup antes de continuar. O código do arquivo será executado na prévia isolada após a confirmação; abra backups de uma fonte confiável.</p>
+    <div class="project-backup-actions"><button type="button" id="project-restore-cancel" class="outline">Cancelar</button><button type="button" id="project-restore-confirm" class="primary">Abrir e continuar</button></div>
+  </dialog>
+  <script src="./js/project-backup.js"></script>
   <script src="./js/app.js"></script>
   <script src="./js/engineering-workbench.js"></script>
 </body>

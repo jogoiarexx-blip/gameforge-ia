@@ -27,7 +27,7 @@ test('melhorias incrementais ampliam campanha nova até30 e ajustam mundo3D sem 
  const result=dev.modify(files,spec,dev.plan('adicione uma fase "Cristal Final" e deixe o mundo maior com tema deserto e gráficos leves',spec,files));
  assert.equal(result.spec.stages.length,13);assert.equal(result.spec.worldOptions.theme,'desert');assert.equal(result.spec.worldOptions.quality,'low');assert(result.spec.worldOptions.size>48);assert(result.files['game.js'].endsWith('// runtime preservado'));
 });
-require('../js/runtime-template');require('../js/shooter-runtime');require('../js/world-rules');require('../js/software-renderer');require('../js/three-runtime');require('../js/strategy-rules');require('../js/expanded-2d-runtime');require('../js/qa-bridge');require('../vendor/three-source');
+require('../js/runtime-template');require('../js/shooter-runtime');require('../js/world-rules');require('../js/software-renderer');require('../js/three-runtime');require('../js/strategy-rules');require('../js/expanded-2d-runtime');require('../js/advanced-td-rules');require('../js/advanced-td-runtime');require('../js/qa-bridge');require('../vendor/three-source');
 const generator=require('../js/generator');const vm=require('node:vm');
 test('novos estilos exportam código válido e 3D inclui Three local/licença sem CDN',()=>{
  for(const [dimension,genres] of Object.entries(parser.styles))for(const genre of genres){

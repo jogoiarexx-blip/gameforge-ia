@@ -9,7 +9,7 @@ const hasMissionRuntime=files=>String(files?.['game.js']||'').includes('R.missio
 function inspect(files){
  const match=String(files?.['game.js']||'').match(pattern);
  if(!match)return null;
- try{const spec=JSON.parse(match[1]);return Array.isArray(spec.stages)&&spec.stages.length>0&&spec.stages.length<=30?spec:null;}catch{return null;}
+ try{const spec=JSON.parse(match[1]);const limit=spec.genre==='lane-defense'?40:30;return Array.isArray(spec.stages)&&spec.stages.length>0&&spec.stages.length<=limit?spec:null;}catch{return null;}
 }
 function maxEnemies(spec){
  if(['tower-defense','lane-defense','block-td'].includes(spec.genre)||(spec.dimension==='3d'&&spec.genre==='platform'))return 0;

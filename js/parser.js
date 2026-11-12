@@ -42,7 +42,8 @@
     }
     const levelHeads = headings.filter(x => /\b(fase|missao|ato|capitulo|level|stage)\s*[0-9ivx]+\b/i.test(normalize(x)));
     const allLevels=unique(levelHeads);
-    const levels = allLevels.slice(0, 30);
+    const stageLimit=genre==='lane-defense'?40:30;
+    const levels = allLevels.slice(0, stageLimit);
     const features = {
       inventory: /inventario|item|colet[aá]v|mochila|loot/i.test(norm),
       enemies: /inimig|monstro|zumbi|chefe|boss|combate|ataque|tiro/i.test(norm),
@@ -82,8 +83,10 @@
     const shooterOptions = { theme: shooterTheme, autofire: /tiro automatico|auto.?fire|disparo automatico/.test(norm), waves: /onda|wave|formac|esquadrao|enxame|ataque em v|zigzag|escolta/.test(norm), boss: genre === 'shooter' || features.bosses, powerups: genre === 'shooter', parallax: true };
     return {
       title: title.slice(0, 90), genre, dimension, stages, shooterOptions,
-      defenseOptions:{mode:genre==='lane-defense'?'lane':genre==='block-td'?'blocks':'path',heightLevels:genre==='block-td'?3:0,upgradeChoices:genre==='block-td'},
-      campaign:{maxStages:30,detectedStages:allLevels.length,omittedStages:Math.max(0,allLevels.length-30)},
+      defenseOptions:{mode:genre==='lane-defense'?'lane':genre==='block-td'?'blocks':'path',heightLevels:genre==='block-td'?3:0,upgradeChoices:genre==='block-td',
+       resourceLabel:genre==='lane-defense'&&/\bbrilhos?\b/.test(norm)?'Brilhos':'Energia',
+       startingGlow:genre==='lane-defense'?150:280,collectibleDrops:genre==='lane-defense',cardSystem:genre==='lane-defense'},
+      campaign:{maxStages:stageLimit,detectedStages:allLevels.length,omittedStages:Math.max(0,allLevels.length-stageLimit)},
       worldOptions:{theme:['forest','desert','neon','ruins'].includes(options.theme)?options.theme:/neon|cyber|futur/.test(norm)?'neon':/deserto|desert|areia/.test(norm)?'desert':/ruina|horror|terror|templo/.test(norm)?'ruins':'forest',size:Number(options.size)===72?72:48,quality:['low','high'].includes(options.quality)?options.quality:'auto',seed:12345},
       summary: headings.slice(0, 14), enemyNames, features, world,
       sourceLength: source.length, sectionCount: headings.length, sectionsIndexed: headings.length, instructions: extra,
@@ -92,7 +95,7 @@
         `${stages.length} fase(s) no protótipo`, `${headings.length} capítulos lidos`, `${enemyNames.length} nome(s) de inimigos encontrados`,
         ...Object.keys(features).filter(k => features[k]).map(k => ({inventory:'Inventário',enemies:'Inimigos',bosses:'Chefes',quests:'Objetivos',checkpoints:'Checkpoints',upgrades:'Melhorias',mobile:'Controles mobile',timer:'Cronômetro',audio:'Áudio previsto'})[k])],
       limitations: [
-        ...(allLevels.length>30?[`O GDD contém ${allLevels.length} fases; este motor utiliza as primeiras 30. O documento original permanece completo.`]:[]),
+        ...(allLevels.length>stageLimit?[`O GDD contém ${allLevels.length} fases; este motor utiliza as primeiras ${stageLimit}. O documento original permanece completo.`]:[]),
         ...(dimension==='3d'?['O motor 3D usa cenários e personagens low poly procedurais com Three.js local; requer WebGL2. GLBs detalhados, animações importadas e campanha escrita livremente ainda exigem trabalho adicional.']:[]),
         ...(['lane-defense','block-td'].includes(genre)?['Dois motores originais de Tower Defense com regras predefinidas. Não copia personagens, nomes, arte, níveis nem unidades de jogos comerciais.']:[]),
         ...(genre === 'shooter' ? ['O shoot’em up usa desenhos e formações procedurais; não copia sprites nem reproduz campanhas específicas dos projetos usados como referência.', 'As fases possuem chefes, ondas e melhorias configuráveis, mas objetivos especiais descritos livremente no GDD exigem IA ou código manual.'] : []),

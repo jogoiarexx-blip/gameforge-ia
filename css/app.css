@@ -69,3 +69,10 @@
 .shooter-examples>span{font-size:11px;font-weight:800;color:#8ff7e3}
 .shooter-example-buttons{display:flex;gap:5px;flex-wrap:wrap}
 .shooter-example-buttons button{flex:1;min-width:90px;padding:7px 9px;font-size:10px}
+
+/* v0.9: desenvolvimento contínuo */
+.dev-cycle{margin:12px 0;padding:13px;border:1px solid #386b7e;border-radius:10px;background:#0e2331;display:grid;gap:8px}
+.dev-cycle p{margin:0}.dev-controls{display:flex;flex-wrap:wrap;gap:7px}.dev-controls button{flex:1 1 120px;font-size:11px;padding:9px}
+.dev-plan{max-height:195px;overflow:auto;white-space:pre-wrap;color:#d5e9eb;background:#081b2a;border:1px solid #33556a;border-radius:8px;padding:10px;font:11px/1.5 ui-monospace,monospace}
+#dev-history{max-height:75px;overflow:auto;white-space:pre-line}
+@media(max-width:700px){.dev-cycle{padding:9px}.dev-controls button{flex:1 1 100%}}

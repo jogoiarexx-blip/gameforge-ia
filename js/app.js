@@ -3,7 +3,8 @@
   'use strict';
   const $=id=>document.getElementById(id);
   const state={files:{},spec:null,selected:null,mode:'offline',generation:0};
-  const allowed=['index.html','style.css','game.js','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md'];
+  const allowed=['index.html','style.css','game.js','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md'];
+  const devHistory=[];let lastPlan=null;
   const example=$('gdd').value;
   const shooterExamples={"navinha":"# ARMADA DO ECLIPSE\n\n## Visão geral\nJogo de navinha espacial shoot em up vertical com chefes e armas evolutivas.\n\n## Mecânicas\n- Controlar nave com WASD/setas e atirar com espaço\n- Três níveis de arma, escudo, cura, créditos e power-ups\n- Ondas de inimigos com formações lineares, V e zigzag\n- Padrões de tiros inimigos e chefe de várias fases\n- Controles touch para celular, pausa e HUD\n\n## Fase 1 — Patrulha Estelar\nInimigos scouts em linha e formação V; chefe Sentinela Zero.\n\n## Fase 2 — Cinturão de Meteoros\nOndas zigzag e escolta com invasores resistentes.\n\n## Fase 3 — Núcleo Escarlate\nEnfrentar chefe final com três padrões de ataques.\n","neon":"# NEON SKY: O ÚLTIMO PILOTO\n\n## Visão geral\nShoot em up de nave cyberpunk com cidade neon, disparos luminosos e ondas de inimigos.\n\n## Mecânicas\n- Piloto da nave pode mover-se em quatro direções, atirar e usar escudo\n- Inimigos em linha, V, zigzag, cruzamento e enxame\n- Chefes com múltiplas etapas e dificuldade crescente\n- Melhorias de armas e power-ups\n- Qualidade gráfica adaptativa, partículas limitadas, áudio e controles touch\n\n## Fase 1 — Cidade Neon\nCombates sobre os prédios luminosos contra patrulhas.\n\n## Fase 2 — Estação Orbital\nOndas de escolta e franco-atiradores mecânicos.\n\n## Fase 3 — Núcleo Neon\nDerrote APEX OMEGA após o último enxame.\n","dragao":"# DRAGÕES DO CREPÚSCULO\n\n## Visão geral\nJogo de dragão voador no estilo Dragon Fury, shoot em up vertical, com magia e chefes.\n\n## Mecânicas\n- Dragão ataca com rajadas de fogo evolutivas\n- Ondas de águias, harpias e dragões inimigos\n- Inimigos com movimento zigzag, onda, escolta e tiros direcionados\n- Power-ups de energia, escudo e fogo\n- Chefes com etapas de batalha, pausa e controles touch\n\n## Fase 1 — Céu Sereno\nEnfrentar águias e caçadores do vale.\n\n## Fase 2 — Tempestade Iminente\nHarpias e dragões elementais cercam o herói.\n\n## Fase 3 — Fúria Ardente\nO Guardião Ancestral aparece com três fases de ataque.\n"};
   const repoKnowledge=globalThis.GameForgeRepoKnowledge;
@@ -30,21 +31,31 @@
   const status=(message,error=false)=>{$('status').textContent=message;$('status').classList.toggle('bad',error);};
   const feedback=(msg,error=false)=>{$('feedback').textContent=msg;$('feedback').style.color=error?'#ffb2b8':'#91a6ba';};
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function readingReport(md, spec){
+    const headings=md.split(/\r?\n/).filter(x=>/^#{1,6}\s+\S/.test(x));
+    return '# Leitura do GDD\n\n- Tamanho: '+new Blob([md]).size+' bytes / '+md.length+' caracteres' +
+      '\n- Cabeçalhos percorridos: '+headings.length+'\n- Arquivo GDD_original.md exportado integralmente.\n' +
+      '- Fases usadas pelo protótipo: '+spec.stages.length+' (limite do motor).\n' +
+      '- Ler todo o documento não significa implementar todas as mecânicas.\n\n## Capítulos\n\n' +
+      headings.slice(0,500).map((h,i)=>'- '+(i+1)+': '+h.trim()).join('\n') +
+      (headings.length>500?'\n- Outros '+(headings.length-500)+' cabeçalhos não exibidos no relatório.':'')+'\n';
+  }
   function analyze(){
     const md=$('gdd').value.trim();
     if(!md){feedback('Cole ou importe um documento GDD antes de analisar.',true);return null;}
+    if(new Blob([md]).size>1_000_000){feedback('O GDD ultrapassa 1 MB; divida anexos externos.',true);return null;}
     state.spec=GameForgeParser.parseGdd(md,$('instruction').value);
     const spec=state.spec;
     renderReferences();
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');
-    $('analysis').innerHTML=`<strong>${esc(spec.title)}</strong><div class="tags">${tags}</div><div class="muted">Fases: ${spec.stages.map(esc).join(' • ')}</div><p class="muted">Sem IA: será gerado um protótipo nas mecânicas disponíveis, não uma reprodução integral do GDD.</p>`;
+    $('analysis').innerHTML=`<strong>${esc(spec.title)}</strong><div class="tags">${tags}</div><div class="muted">Fases: ${spec.stages.map(esc).join(' • ')}</div><p class="muted">Documento inteiro analisado: ${spec.sourceLength.toLocaleString('pt-BR')} caracteres e ${spec.sectionCount} títulos. O protótipo utiliza até ${spec.stages.length} fases reconhecidas. </p><p class="muted">Sem IA: será gerado um protótipo nas mecânicas disponíveis, não uma reprodução integral do GDD.</p>`;
     return spec;
   }
   function projectName(){return ($('project-name').value.trim()||'gameforge-jogo').replace(/[\\/:*?"<>|]+/g,'-').slice(0,70);}
   function saveState(){
     if(typeof qaState!=='undefined'&&qaState.candidate)return;
     try{
-      const {files}=state; const snapshot=JSON.stringify({gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files,selected:state.selected,model:$('model').value,apiUrl:$('api-url').value,liveSources:$('repo-live-sources').checked,pinnedReferences});
+      const {files}=state; const snapshot=JSON.stringify({gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files,selected:state.selected,model:$('model').value,apiUrl:$('api-url').value,liveSources:$('repo-live-sources').checked,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked});
       if(snapshot.length<2_500_000)localStorage.setItem('gameforge-studio-v03',snapshot);
     }catch(e){console.warn('Armazenamento indisponível:',e);}
   }
@@ -59,12 +70,14 @@
       if(typeof snap.apiUrl==='string')$('api-url').value=snap.apiUrl;
       if(typeof snap.liveSources==='boolean')$('repo-live-sources').checked=snap.liveSources;
       if(Array.isArray(snap.pinnedReferences))pinnedReferences=snap.pinnedReferences.filter(x=>repoKnowledge.entries.some(r=>r.id===x)).slice(0,5);
+      if(Array.isArray(snap.history))devHistory.push(...snap.history.filter(x=>x?.files?.['game.js']&&x?.files?.['style.css']).slice(-4));
+      if(typeof snap.deepPlan==='boolean')$('deep-plan').checked=snap.deepPlan;
       renderReferences();
       if(snap.files&&typeof snap.files==='object'){
         state.files=Object.fromEntries(Object.entries(snap.files).filter(([name,src])=>allowed.includes(name)&&typeof src==='string'));
         if(state.files['game.js']){
           state.spec=GameForgeParser.parseGdd($('gdd').value,$('instruction').value);
-          listFiles();selectFile(allowed.includes(snap.selected)?snap.selected:'game.js');runPreview();
+          listFiles();selectFile(allowed.includes(snap.selected)?snap.selected:'game.js');runPreview();renderHistory();
           feedback('Último projeto restaurado deste navegador.');
         }
       }
@@ -80,6 +93,7 @@
       btn.addEventListener('click',()=>selectFile(k));$('file-list').appendChild(btn);
     }
     const ready=keys.length>0;
+    $('improve').disabled=!Boolean(state.files['game.js']);$('undo-improvement').disabled=devHistory.length===0;
     $('export').disabled=!ready;$('export-top').disabled=!ready;$('html-export').disabled=!ready;$('rerun').disabled=!ready;$('open-game').disabled=!ready;
   }
   function selectFile(name){
@@ -152,7 +166,10 @@
     status('Gerando...');$('log').textContent=`[Studio] Interpretando GDD de ${spec.sourceLength} caracteres...`;
     try{
       if(mode==='offline'){
+        lastPlan=GameForgeDevelopment.plan($('instruction').value,spec,{});
         state.files=GameForgeGenerator.generate(spec,$('gdd').value);
+        state.files['RELATORIO_LEITURA_GDD.md']=readingReport($('gdd').value,spec);
+        $('development-plan').textContent='Criação inicial: '+spec.genre+' · '+spec.stages.length+' fases. As instruções livres que ultrapassarem as regras precisam de IA.';
         state.files['RELATORIO_REFERENCIAS.md']=repoKnowledge.report(references())+'\nModo sem IA: estas recomendações não foram automaticamente aplicadas ao motor do jogo.\n';
         log(`[Sem IA] Tipo ${spec.genre}, ${spec.stages.length} fase(s), código gerado no navegador.`);
         log('[Sem IA] Mecânicas de modelos pré-programados. Não é interpretação integral de regras inéditas.');
@@ -162,24 +179,30 @@
         if(!server)throw new Error('Informe uma API HTTPS em “Servidor de IA”. O GitHub Pages não executa o backend.');
         if(!/^https?:\/\//.test(server))throw new Error('URL inválida do servidor (http:// ou https://).');
         if(location.protocol==='https:'&&server.startsWith('http://')&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/.test(server))throw new Error('Use HTTPS para conectar um site HTTPS à API.');
-        const payload={model:$('model').value.trim(),gdd:$('gdd').value,instruction:$('instruction').value,current_files:{'game.js':state.files['game.js']||'','style.css':state.files['style.css']||''},reference_ids:references().map(x=>x.id),read_sources:$('repo-live-sources').checked};
+        const payload={model:$('model').value.trim(),gdd:$('gdd').value,instruction:$('instruction').value,current_files:{},reference_ids:references().map(x=>x.id),read_sources:$('repo-live-sources').checked,deep_plan:$('deep-plan').checked,mode:'create'};
         log('[Com IA] Solicitando código ao servidor: '+server);
+        if(new Blob([$('gdd').value]).size>35000)log('[GDD extenso] O backend vai ler todas as partes com IA antes de planejar. Isso pode exigir várias chamadas e gerar custos da API.');
         const headers={'Content-Type':'application/json'};if($('api-token').value)headers['X-GameForge-Token']=$('api-token').value;
-        const ctrl=new AbortController();const timeout=setTimeout(()=>ctrl.abort(),180000);
+        const ctrl=new AbortController();const timeout=setTimeout(()=>ctrl.abort(),900000);
         let res;
-        try{res=await fetch(server.replace(/\/$/,'')+'/api/studio/generate',{method:'POST',headers,body:JSON.stringify(payload),signal:ctrl.signal});}
+        try{res=await fetch(server.replace(/\/$/,'')+'/api/studio/develop',{method:'POST',headers,body:JSON.stringify(payload),signal:ctrl.signal});}
         finally{clearTimeout(timeout);}
         const data=await res.json().catch(()=>({detail:`Erro HTTP ${res.status}`}));
         if(!res.ok)throw new Error(typeof data.detail==='string'?data.detail:JSON.stringify(data.detail||data).slice(0,300));
         if(!data.files||!data.files['game.js']||!data.files['style.css'])throw new Error('Resposta da IA incompleta: game.js e style.css são obrigatórios.');
         state.files={...GameForgeGenerator.generate(spec,$('gdd').value),...data.files};
+        state.files['RELATORIO_LEITURA_GDD.md']=readingReport($('gdd').value,spec)+'\n## Leitura por IA\n\n'+JSON.stringify(data.gdd_coverage||{},null,2)+'\n';
+        if(data.gdd_coverage)log('[GDD] '+data.gdd_coverage.chunks_processed+'/'+data.gdd_coverage.chunks_total+' partes processadas pela IA.');
         state.files['RELATORIO_REFERENCIAS.md']=repoKnowledge.report((data.references_used||[]).length?data.references_used:references())+'\nArquivos atuais lidos:\n'+((data.source_files_read||[]).map(x=>'- '+x).join('\n')||'- Nenhum (somente resumos curados)')+'\n\nReferências passadas como contexto ao modelo; aplicação concreta precisa de inspeção do código e testes.\n';
         state.files['RELATORIO_GERACAO.md']='# Relatório da IA\n\n'+(data.summary||'Código gerado com IA.')+'\n\n## Implementado\n'+(data.implemented||[]).map(x=>'- '+x).join('\n')+'\n\n## Pendências\n'+(data.pending||[]).map(x=>'- '+x).join('\n');
+        $('development-plan').textContent=JSON.stringify(data.plan||{},null,2);
+        state.files['PLANO_DESENVOLVIMENTO.md']=data.plan_report||'# Plano de desenvolvimento\n\nPlanejamento indisponível.';
         log('[Com IA] '+(data.summary||'Concluído.'));
         if(data.checks)log('[Verificação] '+data.checks);
         log('[Biblioteca] '+(data.references_used||[]).length+' referências selecionadas; '+(data.source_files_read||[]).length+' arquivo(s) atual(is) do GitHub consultado(s).');
         feedback('A IA devolveu o código. Teste o jogo na prévia antes de publicar.');
       }
+      devHistory.length=0;renderHistory();
       state.generation++;state.spec=spec;
       qaState.last=null;qaState.baseline=null;qaState.vision=null;
       $('qa-before').removeAttribute('src');$('qa-after').removeAttribute('src');$('qa-shot').removeAttribute('src');
@@ -190,6 +213,105 @@
       log('[Erro] '+message);feedback(message,true);status('Erro ao gerar',true);
     }finally{$('generate').disabled=false;}
   }
+  /* v0.9 — melhorias sucessivas, com plano, histórico e testes. */
+  function renderHistory(){
+    $('dev-history').textContent=devHistory.length ? `Histórico: ${devHistory.length} alteração(ões) reversíveis. Última: ${devHistory[devHistory.length-1].instruction}` : 'Histórico de melhorias vazio.';
+    $('undo-improvement').disabled=devHistory.length===0;
+  }
+  function pushHistory(instruction){
+    devHistory.push({instruction:String(instruction||'').slice(0,160),files:{...state.files},gdd:$('gdd').value,at:new Date().toISOString()});
+    if(devHistory.length>4)devHistory.shift();renderHistory();
+  }
+  function undoImprovement(){
+    if(qaState.candidate){feedback('Resolva a correção candidata antes de desfazer uma melhoria.',true);return;}
+    const previous=devHistory.pop();if(!previous)return;
+    state.files=previous.files;state.spec=GameForgeParser.parseGdd($('gdd').value);
+    // O GDD original permanece; a configuração ativa é extraída novamente abaixo, quando disponível.
+    const result=state.files['game.js']?.match(/const GAME_SPEC = (\{[^\n]*\});/);
+    if(result){try{state.spec=JSON.parse(result[1]);}catch{}}
+    qaState.last=null;qaState.baseline=null;
+    listFiles();selectFile('game.js');runPreview();renderHistory();saveState();qaButtons();
+    feedback('Melhoria desfeita. Arquivos anteriores restaurados.');
+  }
+  function displayPlan(p){
+    $('development-plan').textContent=p.tasks?.length ? p.tasks.map((t,i)=>`${i+1}. ${t.title} — ${t.rationale||t.why}${t.possible===false?' (exige IA)':''}\n   Testes: ${(t.checks||[]).join('; ')}`).join('\n') +
+      '\n\nPendências: '+(p.pending||[]).join('; ') : (p.pending||[]).join('\n')||'Nenhuma mudança reconhecida. Descreva o que deve mudar.';
+  }
+  function planImprovement(){
+    if(!state.files['game.js']){feedback('Primeiro crie um jogo a partir do GDD.',true);return null;}
+    const instruction=$('instruction').value.trim();
+    if(!instruction){feedback('Escreva o que deseja mudar na caixa de instrução.',true);return null;}
+    const p=GameForgeDevelopment.plan(instruction,state.spec,state.files);lastPlan=p;displayPlan(p);return p;
+  }
+  async function improveGame(){
+    if(qaState.candidate){feedback('Aceite ou descarte a correção candidata primeiro.',true);return;}
+    const planned=planImprovement();if(!planned)return;
+    const instruction=$('instruction').value.trim();
+    $('improve').disabled=true;status('Planejando melhoria...');
+    let output=null;
+    try{
+      if(state.mode==='offline'){
+        output=GameForgeDevelopment.modify(state.files,state.spec,planned);
+        if(!output.changed){feedback('O modo sem IA não reconheceu uma alteração implementável. Use IA para esse pedido.',true);log('[Motor] Nenhum arquivo sobrescrito. '+output.pending.join('; '));return;}
+      }else{
+        const ctrl=new AbortController();const timeout=setTimeout(()=>ctrl.abort(),900000);
+        const payload={model:$('model').value.trim(),gdd:$('gdd').value,instruction,
+          current_files:{'game.js':state.files['game.js'],'style.css':state.files['style.css']},
+          reference_ids:references().map(x=>x.id),read_sources:$('repo-live-sources').checked,
+          deep_plan:$('deep-plan').checked,mode:'improve'};
+        const headers={'Content-Type':'application/json'};if($('api-token').value)headers['X-GameForge-Token']=$('api-token').value;
+        let res;try{res=await fetch(serverAddress()+'/api/studio/develop',{method:'POST',headers,body:JSON.stringify(payload),signal:ctrl.signal});}finally{clearTimeout(timeout);}
+        const data=await res.json().catch(()=>({detail:`HTTP ${res.status}`}));
+        if(!res.ok)throw Error(typeof data.detail==='string'?data.detail:'Falha no desenvolvimento');
+        if(!data.files?.['game.js']||!data.files?.['style.css'])throw Error('A IA não devolveu arquivos completos.');
+        if(data.files['game.js']===state.files['game.js']&&data.files['style.css']===state.files['style.css'])throw Error('A IA não modificou os arquivos.');
+        displayPlan(data.plan||planned);lastPlan=data.plan||planned;
+        output={changed:true,files:{...state.files,...data.files,'PLANO_DESENVOLVIMENTO.md':data.plan_report||''},applied:data.implemented||[],pending:data.pending||[]};
+      }
+      const before=qaState.last;
+      pushHistory(instruction);
+      state.files=output.files;
+      if(output.spec)state.spec=output.spec;
+      state.files['RELATORIO_EVOLUCAO.md']=GameForgeDevelopment.report(planned,output.applied);
+      listFiles();selectFile('game.js');runPreview();saveState();
+      log('[Evolução] '+output.applied.join(', '));
+      feedback('Melhoria aplicada ao projeto existente. Executando teste de regressão...');
+      try{
+        const report=await qaRun();
+        if(before && report.issues.length>before.issues.length){
+          log('[Regressão] Alertas aumentaram: '+before.issues.length+' → '+report.issues.length+'. Arquivos restaurados.');
+          undoImprovement();feedback('Possível regressão detectada; código anterior restaurado.',true);return;
+        }
+        if(before)qaState.baseline=before;
+        feedback('Melhoria salva. QA executado: '+report.issues.length+' alertas. Revise jogabilidade e imagens.');
+      }catch(e){log('[Teste indisponível] '+e.message);feedback('Mudança aplicada, mas QA não concluiu. Use Desfazer se houver problemas.',true);}
+      renderHistory();saveState();
+    }catch(e){feedback('Falha na melhoria: '+(e.name==='AbortError'?'API excedeu tempo limite':e.message),true);log('[Evolução] '+e.message);}
+    finally{$('improve').disabled=!state.files['game.js'];status(state.files['game.js']?'Prévia disponível':'Pronto para criar');}
+  }
+  async function create3dFromGdd(){
+    const msg=$('create-3d-result');const btn=$('create-3d');
+    const spec=analyze();if(!spec)return;
+    btn.disabled=true;msg.textContent='Criando projeto 3D no backend...';
+    try{
+      const payload={name:projectName(),gdd:$('gdd').value,instruction:$('instruction').value.slice(0,10000)};
+      const headers={'Content-Type':'application/json'};if($('api-token').value)headers['X-GameForge-Token']=$('api-token').value;
+      const response=await fetch(serverAddress()+'/api/studio/3d/create',{method:'POST',headers,body:JSON.stringify(payload)});
+      const data=await response.json().catch(()=>({detail:'Resposta inválida'}));
+      if(!response.ok)throw Error(data.detail||'Falha ao criar o 3D');
+      msg.textContent='Projeto '+data.slug+' criado no backend. '+(data.build?.success?'Compilado. ':'Execute Compilar no painel de engenharia. ')+(data.limitations||[]).join(' ');
+      const link=document.createElement('a');link.textContent=data.build?.success?'Abrir jogo 3D':'Selecionar projeto no painel 06';
+      link.href=data.build?.success?serverAddress()+data.build.preview:'#eng-project';link.rel='noopener';if(data.build?.success)link.target='_blank';
+      msg.append(' ',link);
+      document.getElementById('eng-refresh')?.click();
+    }catch(e){msg.textContent='3D indisponível: '+e.message;}finally{btn.disabled=false;}
+  }
+  $('plan-improvement').addEventListener('click',planImprovement);
+  $('improve').addEventListener('click',improveGame);
+  $('undo-improvement').addEventListener('click',undoImprovement);
+  $('create-3d').addEventListener('click',create3dFromGdd);
+  $('deep-plan').addEventListener('change',saveState);
+
   /* Laboratório de QA visual v0.4: executa jogo no iframe e testa regressões. */
   const qaState={last:null,baseline:null,vision:null,candidate:null,baseCode:null};
   const qaStatus=message=>{$('qa-status').textContent=message;};
@@ -319,7 +441,7 @@
     ].join('\n\n').slice(0,9800);
     try{
       const result=await qaApi('/api/studio/generate',{
-        model:$('model').value.trim(),gdd:$('gdd').value.slice(0,60000),instruction,
+        model:$('model').value.trim(),gdd:$('gdd').value,instruction,
         current_files:{'game.js':state.files['game.js'],'style.css':state.files['style.css']},reference_ids:references().map(x=>x.id),read_sources:$('repo-live-sources').checked
       });
       if(!result.files?.['game.js']||!result.files?.['style.css'])throw Error('A IA não devolveu código completo.');
@@ -395,12 +517,12 @@
   $('md-file').addEventListener('change',async e=>{
     const file=e.target.files&&e.target.files[0];if(!file)return;
     if(!/\.(md|markdown)$/i.test(file.name)){feedback('Envie um GDD .md ou .markdown.',true);return;}
-    if(file.size>200000){feedback('GDD muito grande: máximo de 200 KB.',true);return;}
-    const value=await file.text();$('gdd').value=value.slice(0,100000);
+    if(file.size>1_000_000){feedback('GDD acima de 1 MB. Separe anexos ou partes do documento.',true);return;}
+    const value=await file.text();$('gdd').value=value; // Não cortar o documento importado
     const parsed=analyze();if(parsed)$('project-name').value=parsed.title;
-    $('file-indicator').textContent=file.name;feedback('GDD carregado: '+file.name);saveState();
+    $('file-indicator').textContent=file.name+' · '+(file.size/1024).toFixed(1)+' KB · '+(parsed?.sectionCount||0)+' capítulos';feedback('GDD integral carregado: '+file.name+' ('+file.size+' bytes).');saveState();e.target.value='';
   });
-  document.querySelectorAll('input[name=mode]').forEach(radio=>radio.addEventListener('change',()=>{state.mode=radio.value;$('ai-settings').classList.toggle('hidden',state.mode!=='ai');$('generate').textContent=state.mode==='ai'?'✦ Criar / melhorar com IA':'▶ Gerar jogo a partir do GDD';qaButtons();}));
+  document.querySelectorAll('input[name=mode]').forEach(radio=>radio.addEventListener('change',()=>{state.mode=radio.value;$('ai-settings').classList.toggle('hidden',state.mode!=='ai');$('generate').textContent=state.mode==='ai'?'✦ Criar novo jogo com IA':'▶ Criar novo jogo';qaButtons();}));
   for(const name of ['navinha','neon','dragao']){
     $('example-'+name).addEventListener('click',()=>{
       $('gdd').value=shooterExamples[name];$('instruction').value='';

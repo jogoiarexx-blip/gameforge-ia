@@ -1,3 +1,13 @@
+# GameForge Studio v0.9.1 — GDD grande
+
+**Correção:** importa Markdown de até 1 MB, inclusive GDD de 300 KB. O texto original não é cortado e vai integral no ZIP. O analisador percorre todo o documento; o modo sem IA aplica somente regras que já conhece. Com IA e backend atualizado, um GDD longo é processado por blocos antes da criação do jogo (cada bloco usa uma chamada ao modelo, com custos e duração adicionais). Não publique chaves de IA no GitHub Pages.
+
+# GameForge Studio v0.9 — GitHub Pages
+
+Publique todos os arquivos desta pasta na raiz do repositório. O navegador pode gerar jogos 2D e realizar modificações incrementais **pré-programadas**, com plano e botão **Desfazer**. Use os dois botões distintos **Criar novo jogo** e **Aplicar melhoria**. Para alterações livres por GPT/Claude/Gemini e criação de protótipo 3D Three.js, configure uma URL HTTPS para o **backend completo** em um computador/servidor isolado. O GitHub Pages sozinho não executa esses serviços.
+
+O modo sem IA não implementa novas mecânicas arbitrárias nem cria personagens 3D detalhados por texto.
+
 # GameForge Studio Web v0.8.0 — GDD de navinha
 
 **Novo:** gere navinha espacial, neon ou jogo de dragão a partir de um GDD Markdown. Três botões de exemplo carregam documentos editáveis. O gerador sem IA já produz nave desenhada, combate, ondas, chefes e progressão com power-ups e loja entre fases. Código 100% Canvas 2D independente de bibliotecas.

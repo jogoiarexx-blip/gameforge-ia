@@ -3,6 +3,7 @@
 function gameForgeBoot() {
   'use strict';
   const spec = GAME_SPEC;
+  const tuning={difficulty:1,enemyMultiplier:1,bossMultiplier:1,playerSpeedMultiplier:1,fireRateMultiplier:1,particlesMultiplier:1,...(spec.tuning||{})};
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const W = 960, H = 540;
@@ -35,14 +36,14 @@ function gameForgeBoot() {
         const y=i===0?480:clamp(405+Math.sin(i*2.13)*90,300,470);
         platforms.push({x,y,w:i===0?380:165,h:22});
       }
-      for(let i=1;i<14+stage*3;i++) enemies.push({x:320+i*220,y:344,r:18,hp:1,phase:rand(0,6),speed:35});
+      for(let i=1;i<Math.round((14+stage*3)*tuning.enemyMultiplier*tuning.difficulty);i++) enemies.push({x:320+i*220,y:344,r:18,hp:1,phase:rand(0,6),speed:35});
       for(let i=0;i<13;i++) drops.push({x:200+i*260,y:245+Math.sin(i*1.6)*65,r:11,kind:'coin'});
     } else if(spec.genre==='racing') {
       player={x:W/2,y:H-100,r:19,vx:0,vy:0,angle:0};
-      for(let i=0;i<18+stage*5;i++) obstacles.push({x:W/2+[-125,0,125][i%3],y:-i*175,r:23,speed:70+stage*10,kind:i%4===0?'cone':'car'});
+      for(let i=0;i<Math.round((18+stage*5)*tuning.enemyMultiplier*tuning.difficulty);i++) obstacles.push({x:W/2+[-125,0,125][i%3],y:-i*175,r:23,speed:70+stage*10,kind:i%4===0?'cone':'car'});
     } else {
       player={x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
-      for(let i=0;i<6+stage*3;i++) addEnemy(i===5+stage*3 && spec.features.bosses);
+      for(let i=0;i<Math.round((6+stage*3)*tuning.enemyMultiplier*tuning.difficulty);i++) addEnemy(i===5+stage*3 && spec.features.bosses);
       for(let i=0;i<5;i++) drops.push({x:rand(70,W-70),y:rand(85,H-65),r:10,kind:i===0?'heal':'coin'});
     }
     showMessage(stages[stage]||`Fase ${stage+1}`,3);
@@ -51,7 +52,7 @@ function gameForgeBoot() {
     const edge=Math.floor(rand(0,4));
     const x=edge<2? (edge===0?25:W-25):rand(25,W-25);
     const y=edge>=2? (edge===2?25:H-25):rand(25,H-25);
-    enemies.push({x,y,r:boss?31:15,hp:boss?8+stage*2:2+Math.floor(stage/2),boss,speed:boss?34:45+stage*5,phase:rand(0,6)});
+    enemies.push({x,y,r:boss?31:15,hp:Math.max(1,Math.round((boss?8+stage*2:2+Math.floor(stage/2))*tuning.difficulty*(boss?tuning.bossMultiplier:1))),boss,speed:(boss?34:45+stage*5)*tuning.difficulty,phase:rand(0,6)});
   }
   function start() {stage=0;hp=100;score=0;ammo=40;xp=0;upgrades=0;clock=0;resetStage();}
   function nextStage() {
@@ -64,13 +65,13 @@ function gameForgeBoot() {
   function stepArena(dt){
     const dx=(input('right')||isPressed('d')||isPressed('ArrowRight')?1:0)-(input('left')||isPressed('a')||isPressed('ArrowLeft')?1:0);
     const dy=(input('down')||isPressed('s')||isPressed('ArrowDown')?1:0)-(input('up')||isPressed('w')||isPressed('ArrowUp')?1:0);
-    const mag=Math.max(1,Math.hypot(dx,dy)),speed=210+upgrades*12;
+    const mag=Math.max(1,Math.hypot(dx,dy)),speed=(210+upgrades*12)*tuning.playerSpeedMultiplier;
     player.x=clamp(player.x+dx/mag*speed*dt,22,W-22); player.y=clamp(player.y+dy/mag*speed*dt,48,H-26);
     if(mouse.active)player.angle=Math.atan2(mouse.y-player.y,mouse.x-player.x);
     else if(dx||dy)player.angle=Math.atan2(dy,dx);
     const shooting=input('fire')||isPressed(' ')||isPressed('Enter')||mouse.down;
     if(shooting&&fireDelay<=0&&ammo>0){
-      ammo--;fireDelay=.18;
+      ammo--;fireDelay=.18/tuning.fireRateMultiplier;
       const a=mouse.active?Math.atan2(mouse.y-player.y,mouse.x-player.x):player.angle;
       bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*600,vy:Math.sin(a)*600,r:5});
     }
@@ -79,7 +80,7 @@ function gameForgeBoot() {
     for(const e of enemies){
       const a=Math.atan2(player.y-e.y,player.x-e.x);e.x+=Math.cos(a)*e.speed*dt;e.y+=Math.sin(a)*e.speed*dt;
       if(dist(e,player)<e.r+player.r)damage(e.boss?18:10);
-      for(const b of bullets)if(!b.dead && dist(b,e)<b.r+e.r){b.dead=true;e.hp--;if(e.hp<=0){e.dead=true;score+=e.boss?250:50;xp+=1; if(Math.random()<.24)drops.push({x:e.x,y:e.y,r:10,kind:Math.random()<.25?'heal':'ammo'});for(let i=0;i<9;i++)particles.push({x:e.x,y:e.y,vx:rand(-120,120),vy:rand(-120,120),ttl:.5});}break;}
+      for(const b of bullets)if(!b.dead && dist(b,e)<b.r+e.r){b.dead=true;e.hp--;if(e.hp<=0){e.dead=true;score+=e.boss?250:50;xp+=1; if(Math.random()<.24)drops.push({x:e.x,y:e.y,r:10,kind:Math.random()<.25?'heal':'ammo'});for(let i=0;i<Math.max(2,Math.round(9*tuning.particlesMultiplier))&&particles.length<150;i++)particles.push({x:e.x,y:e.y,vx:rand(-120,120),vy:rand(-120,120),ttl:.5});}break;}
     }
     bullets=bullets.filter(b=>!b.dead);enemies=enemies.filter(e=>!e.dead);
     if(enemies.length===0)nextStage();
@@ -89,7 +90,7 @@ function gameForgeBoot() {
   function stepPlatform(dt){
     const dx=(input('right')||isPressed('d')||isPressed('ArrowRight')?1:0)-(input('left')||isPressed('a')||isPressed('ArrowLeft')?1:0);
     const jump=input('up')||isPressed('w')||isPressed('ArrowUp')||isPressed(' ');
-    player.vx=dx*(205+upgrades*15);
+    player.vx=dx*(205+upgrades*15)*tuning.playerSpeedMultiplier;
     const bottom=player.y+player.r; const oldBottom=bottom;
     if(jump&&player.grounded){player.vy=-480;player.grounded=false;}
     player.vy+=1050*dt;player.x+=player.vx*dt;player.y+=player.vy*dt;
@@ -105,7 +106,7 @@ function gameForgeBoot() {
   function stepRacing(dt){
     const dx=(input('right')||isPressed('d')||isPressed('ArrowRight')?1:0)-(input('left')||isPressed('a')||isPressed('ArrowLeft')?1:0);
     const boost=(input('fire')||isPressed(' '))?1.45:1;
-    const speed=(260+stage*33+upgrades*24)*boost;
+    const speed=(260+stage*33+upgrades*24)*boost*tuning.playerSpeedMultiplier;
     player.x=clamp(player.x+dx*270*dt,294,665);
     traveled+=speed*dt;
     for(const o of obstacles){o.y+=(speed-o.speed)*dt; if(Math.hypot(player.x-o.x,player.y-o.y)<player.r+o.r){o.y=H+130;damage(o.kind==='cone'?8:23);}}

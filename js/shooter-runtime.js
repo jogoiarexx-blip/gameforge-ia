@@ -12,15 +12,16 @@ function gameForgeShooterBoot() {
   const norm=(x,y)=>{const d=Math.hypot(x,y)||1;return [x/d,y/d];};
   const sq=(x,y)=>x*x+y*y;
   const hit=(a,b)=>sq(a.x-b.x,a.y-b.y)<(a.r+b.r)*(a.r+b.r);
+  const tuning={difficulty:1,enemyMultiplier:1,bossMultiplier:1,playerSpeedMultiplier:1,fireRateMultiplier:1,particlesMultiplier:1,...(spec.tuning||{})};
   const theme=spec.shooterOptions?.theme||'space';
   const T=({neon:{bg:'#060619',mid:'#101d43',accent:'#53f9fa',danger:'#ff56bc',far:'#384691'},dragon:{bg:'#071f32',mid:'#12474e',accent:'#ffc46e',danger:'#f27842',far:'#6faba4'},space:{bg:'#050c25',mid:'#182451',accent:'#6ce9ff',danger:'#ff709c',far:'#4f64ab'}})[theme]||{};
   const levels=(spec.stages?.length?spec.stages:['Fase 1','Fase 2','Fase 3']).slice(0,10);
   const patterns=['line','v','zigzag','escort','cross','swarm'];
   const waves=levels.map((name,i)=>({name,pattern:patterns[i%patterns.length],pattern2:patterns[(i+2)%patterns.length],
-    amount:7+i*3,spawnEvery:clamp(.94-i*.075,.39,.94),bossHp:24+i*14,bossName: spec.enemyNames?.[i] || (theme==='dragon'?'Guardião das nuvens':theme==='neon'?'Sentinela cibernética':'Comandante sideral'),
-    scroll:110+i*22,enemySpeed:82+i*12,accent:[T.accent,'#b5a4ff','#ffd57b','#84f5aa','#ff7da3'][i%5]}));
+    amount:Math.max(3,Math.round((7+i*3)*tuning.enemyMultiplier*tuning.difficulty)),spawnEvery:clamp(.94-i*.075,.39,.94),bossHp:Math.round((24+i*14)*tuning.bossMultiplier*tuning.difficulty),bossName: spec.enemyNames?.[i] || (theme==='dragon'?'Guardião das nuvens':theme==='neon'?'Sentinela cibernética':'Comandante sideral'),
+    scroll:110+i*22,enemySpeed:(82+i*12)*tuning.difficulty,accent:[T.accent,'#b5a4ff','#ffd57b','#84f5aa','#ff7da3'][i%5]}));
   // Particulas, tiros e inimigos possuem limites: gameplay nao depende da qualidade grafica.
-  const LIMITS={enemies:32,enemyBullets:140,playerBullets:110,particles:180,stars:105};
+  const LIMITS={enemies:32,enemyBullets:140,playerBullets:110,particles:Math.max(30,Math.round(180*tuning.particlesMultiplier)),stars:105};
   let stageIndex=0,state='menu',paused=false,last=0,frames=0,time=0,stageTime=0,stageKills=0,score=0,credits=0;
   let waveSpawned=0,spawnClock=0,groupStep=0,boss=null,bossSeen=false,health=100,lives=3,weapon=1,shield=0,fireClock=0,invuln=0;
   let player={x:W/2,y:H-92,r:19,afterimages:[]},enemies=[],friendly=[],hostile=[],drops=[],particles=[];
@@ -80,13 +81,13 @@ function gameForgeShooterBoot() {
     if(health<=0){lives--;health=100;if(lives<=0){state='defeat';overlay('FIM DE JOGO',`Pontuação ${score} · fases concluídas: ${stageIndex}`,'Tentar novamente');}else note('NAVE DANIFICADA · '+lives+' vidas');}
   }
   function blast(x,y,color,count=13){
-    const n=Math.min(count,LIMITS.particles-particles.length);
+    const n=Math.min(Math.round(count*tuning.particlesMultiplier),LIMITS.particles-particles.length);
     for(let i=0;i<n;i++){const a=rand(0,TAU),v=rand(35,220),life=rand(.24,.67);
       particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life,max:life,r:rand(1.4,4.8),color});}
   }
   function fire(){
     if(fireClock>0||friendly.length>LIMITS.playerBullets-7)return;
-    fireClock=weapon>=3?.105:weapon===2?.155:.19;
+    fireClock=(weapon>=3?.105:weapon===2?.155:.19)/tuning.fireRateMultiplier;
     const pattern=weapon>=3?[-.27,0,.27]:weapon===2?[-.12,.12]:[0];
     for(const angle of pattern){friendly.push({x:player.x+Math.sin(angle)*14,y:player.y-21,vx:Math.sin(angle)*155,vy:-700,r:weapon===3?6:5,damage:1,dead:false});}
     sound(theme==='dragon'?350:770,.045,theme==='dragon'?'sawtooth':'square',.012);
@@ -175,7 +176,7 @@ function gameForgeShooterBoot() {
     time+=dt;stageTime+=dt;fireClock-=dt;invuln-=dt;flash=Math.max(0,flash-dt);shake=Math.max(0,shake-dt*19);
     const vx=(keys.has('ArrowRight')||keys.has('d')||touch.right?1:0)-(keys.has('ArrowLeft')||keys.has('a')||touch.left?1:0);
     const vy=(keys.has('ArrowDown')||keys.has('s')||touch.down?1:0)-(keys.has('ArrowUp')||keys.has('w')||touch.up?1:0);
-    const direction=norm(vx,vy),moving=!!(vx||vy),speed=345+speedLevel*42;
+    const direction=norm(vx,vy),moving=!!(vx||vy),speed=(345+speedLevel*42)*tuning.playerSpeedMultiplier;
     if(moving){player.x=clamp(player.x+direction[0]*speed*dt,36,W-36);player.y=clamp(player.y+direction[1]*speed*dt,185,H-32);}
     player.afterimages.push({x:player.x,y:player.y,life:.22});
     if(player.afterimages.length>10)player.afterimages.shift();

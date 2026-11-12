@@ -19,7 +19,7 @@
   }
   function unique(items) { return [...new Set(items.map(x => x.trim()).filter(Boolean))]; }
   function parseGdd(md, instruction = '') {
-    const source = String(md || '').slice(0, 100000);
+    const source = String(md || ''); // GDD integral: nenhum corte silencioso
     const extra = String(instruction || '').slice(0, 12000);
     const lines = source.split(/\r?\n/);
     const headings = lines.filter(x => /^#{1,6}\s+\S/.test(x)).map(x => x.replace(/^#{1,6}\s+/, '').trim());
@@ -64,10 +64,10 @@
     return {
       title: title.slice(0, 90), genre, stages, shooterOptions,
       summary: headings.slice(0, 14), enemyNames, features, world,
-      sourceLength: source.length, instructions: extra,
+      sourceLength: source.length, sectionCount: headings.length, sectionsIndexed: headings.length, instructions: extra,
       colors: colorPalettes[genre],
       detected: [`Gênero: ${genre === 'racing' ? 'Corrida' : genre === 'platform' ? 'Plataforma' : genre === 'shooter' ? 'Nave / shoot’em up vertical' : 'Aventura / ação'}`,
-        `${stages.length} fase(s)`, `${enemyNames.length} nome(s) de inimigos encontrados`,
+        `${stages.length} fase(s) no protótipo`, `${headings.length} capítulos lidos`, `${enemyNames.length} nome(s) de inimigos encontrados`,
         ...Object.keys(features).filter(k => features[k]).map(k => ({inventory:'Inventário',enemies:'Inimigos',bosses:'Chefes',quests:'Objetivos',checkpoints:'Checkpoints',upgrades:'Melhorias',mobile:'Controles mobile',timer:'Cronômetro',audio:'Áudio previsto'})[k])],
       limitations: [
         ...(genre === 'shooter' ? ['O shoot’em up usa desenhos e formações procedurais; não copia sprites nem reproduz campanhas específicas dos projetos usados como referência.', 'As fases possuem chefes, ondas e melhorias configuráveis, mas objetivos especiais descritos livremente no GDD exigem IA ou código manual.'] : []),

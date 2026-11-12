@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#10192a">
-  <title>GameForge Studio v0.8 — GDD + Engenheiro de Jogos</title>
+  <title>GameForge Studio v0.9.1 — GDD + Engenheiro de Jogos</title>
   <meta name="description" content="Leia um GDD em Markdown e gere protótipos de jogos no navegador, com ou sem inteligência artificial.">
   <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.8 · CRIADOR DE JOGOS</small></span></a>
+    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.9 · CRIADOR DE JOGOS</small></span></a>
     <nav class="top-actions"><span id="storage-tag" class="chip">Projeto no navegador</span><a class="subtle-link" href="./examples/gdd-exemplo.md" download>Exemplo .md</a><button class="small outline" id="export-top">Exportar ZIP ↗</button></nav>
   </header>
   <main class="studio">
@@ -18,7 +18,7 @@
       <div class="panel-head"><span class="eyebrow">01 / ESPECIFICAÇÃO</span><h1>Seu GDD vira jogo.</h1><p>Importe um documento Markdown ou cole sua ideia. Depois escolha como gerar o código.</p></div>
       <div class="panel-scroll">
         <label for="project-name">Nome do projeto</label><input id="project-name" type="text" maxlength="90" value="Meu jogo" placeholder="Nome do jogo">
-        <div class="label-row"><label for="gdd">Documento GDD (.md)</label><span id="file-indicator" class="muted tiny">Até 100 mil caracteres</span></div>
+        <div class="label-row"><label for="gdd">Documento GDD (.md)</label><span id="file-indicator" class="muted tiny">Importação de GDD até 1 MB · documento completo</span></div>
         <div class="file-pick"><label for="md-file" class="file-btn">📁 Carregar arquivo .md</label><input type="file" id="md-file" accept=".md,.markdown,text/markdown,text/plain"><button id="example" class="small outline" type="button">Usar exemplo</button></div>
         <div class="shooter-examples" aria-label="Exemplos de jogos de nave"><span>Novos exemplos de navinha</span><div class="shooter-example-buttons"><button class="outline small" id="example-navinha" type="button">Nave espacial</button><button class="outline small" id="example-neon" type="button">Neon</button><button class="outline small" id="example-dragao" type="button">Dragão</button></div></div>
         <textarea id="gdd" class="gdd-editor" spellcheck="false" aria-label="Conteúdo Markdown do GDD" placeholder="# Nome do Jogo&#10;&#10;## História&#10;..."># SOMBRAS DO VALE
@@ -74,7 +74,17 @@ Derrote o chefe.
         </div>
         <label for="instruction">Sua instrução adicional</label>
         <textarea id="instruction" rows="3" placeholder="Ex.: Crie um chefe na última fase, melhore a dificuldade e adicione inventário e ataques especiais."></textarea>
-        <div class="actions"><button id="generate" class="primary">▶ Gerar jogo a partir do GDD</button><button id="rerun" class="outline" disabled>↻ Executar prévia</button></div>
+        <div class="actions"><button id="generate" class="primary">▶ Criar novo jogo</button><button id="rerun" class="outline" disabled>↻ Executar prévia</button></div>
+        <section class="dev-cycle" aria-label="Motor de evolução contínua">
+          <div class="qa-workbench-title"><span class="eyebrow">09 / MOTOR DE EVOLUÇÃO</span><strong>Melhore o jogo sem recomeçar</strong></div>
+          <p class="hint">Escreva uma melhoria acima e clique em Planejar ou Aplicar melhoria. Com IA, são feitas etapas separadas de planejamento e geração. Sem IA, somente as alterações suportadas são implementadas.</p>
+          <label class="repo-source-opt"><input type="checkbox" id="deep-plan" checked> Planejamento aprofundado no modo com IA (pode consumir mais tokens)</label>
+          <div class="dev-controls"><button class="outline small" id="plan-improvement">▤ Planejar alteração</button><button class="primary small" id="improve" disabled>✦ Aplicar melhoria</button><button class="outline small" id="undo-improvement" disabled>↶ Desfazer</button></div>
+          <div id="development-plan" class="dev-plan" aria-live="polite">Nenhuma melhoria planejada.</div>
+          <div id="dev-history" class="hint">Histórico: projeto ainda não gerado.</div>
+          <div class="dev-controls"><button id="create-3d" type="button" class="outline small">◈ Criar protótipo 3D pelo GDD (backend)</button></div>
+          <div id="create-3d-result" class="hint">Cria um jogo 3D procedural com Three.js em um projeto separado; requer Node.js, backend e dependências para compilar. Não gera uma campanha 3D completa.</div>
+        </section>
         <p id="feedback" class="hint" role="status">Você pode começar sem instalar nada. O projeto e seu código ficam armazenados neste navegador.</p>
       </div>
       <div class="preview-head"><div><span class="eyebrow">03 / EXECUÇÃO</span><h3>Prévia jogável <span id="live-indicator" class="live-dot"></span></h3></div><div class="preview-tools"><button id="fullscreen" class="small outline">⛶ Tela cheia</button><button id="open-game" class="small outline" disabled>Abrir jogo</button></div></div>
@@ -94,7 +104,7 @@ Derrote o chefe.
         <div id="qa-candidate" class="qa-candidate hidden"><strong>Correção candidata — ainda não salva</strong><p id="qa-candidate-message" class="hint">Teste a prévia antes de aceitar.</p><div class="qa-controls"><button id="qa-accept" class="primary small">Aceitar correção</button><button id="qa-reject" class="outline small">Descartar e restaurar</button></div></div>
       </section>
       <section class="eng-workbench" aria-label="Engenheiro automático de jogos Three.js">
-        <div class="qa-workbench-title"><span class="eyebrow">06 / MOTOR PRÓPRIO DE CÓDIGO</span><strong>Engenheiro de Jogos · v0.8</strong></div>
+        <div class="qa-workbench-title"><span class="eyebrow">06 / MOTOR PRÓPRIO DE CÓDIGO</span><strong>Engenheiro de Jogos · v0.9</strong></div>
         <p class="hint">Para projetos Three.js completos com backend local: analisar funções, detectar erros, compilar, abrir em Chromium e revisar correções do OpenCode. Sem backend, esta seção permanece indisponível; o gerador 2D acima continua funcionando offline. A telemetria avançada exige que o jogo registre explicitamente seu ator e seu loop de renderização.</p>
         <div class="eng-row"><div><label for="eng-project">Projeto do backend</label><select id="eng-project" aria-label="Projeto Three.js"><option value="">Conecte o backend</option></select></div><button class="outline small" id="eng-refresh">Conectar / listar projetos</button></div>
         <div class="eng-row"><div><label for="eng-new-name">Novo projeto Three.js</label><input id="eng-new-name" maxlength="60" placeholder="Nome do novo jogo"></div><button class="outline small" id="eng-new">Criar no backend</button></div>
@@ -132,6 +142,7 @@ Derrote o chefe.
   <script src="./js/shooter-runtime.js"></script>
   <script src="./js/qa-bridge.js"></script>
   <script src="./js/generator.js"></script>
+  <script src="./js/development-engine.js"></script>
   <script src="./js/zip.js"></script>
   <script src="./js/visual-qa.js"></script>
   <script src="./js/model-inspector.js"></script>

@@ -5,16 +5,17 @@ function gameForgeAdvancedTDBoot(){
  const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d',{alpha:false});
  const W=960,H=540,TAU=Math.PI*2;
  canvas.width=W;canvas.height=H;
- const stages=(spec.stages&&spec.stages.length?spec.stages:['Fase 1']).slice(0,30);
+ const stages=(spec.stages&&spec.stages.length?spec.stages:['Fase 1']).slice(0,mode==='lane'?40:30);
  const tune=spec.tuning||{},cellX=mode==='lane'?88:62,cellY=mode==='lane'?72:49;
  const originX=mode==='lane'?80:106,originY=mode==='lane'?112:91;
  const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
  const configAt=n=>Array.isArray(spec.stageConfig)&&spec.stageConfig[n]&&typeof spec.stageConfig[n]==='object'?spec.stageConfig[n]:{};
- let stage=0,d=R.create(mode,0,tune),state='menu',paused=false,time=0,last=0,frames=0;
+ let stage=0,d=R.create(mode,0,tune),state='menu',paused=false,time=0,last=0,frames=0,accumulator=0;
  let cursor={x:mode==='lane'?0:1,y:mode==='lane'?2:0},choice='bolt',selected=null,buildMode=mode==='blocks'?'block':'unit',noteTime=0,telemetry={};
  const names=mode==='lane'?{bolt:'Vigia',income:'Gerador',wall:'Guardião',frost:'Frio'}:{bolt:'Sentinela',frost:'Criogel',cannon:'Canhão',miner:'Extrator'};
  const colors={bolt:'#f9d283',income:'#ffe39f',wall:'#9aaeb0',frost:'#86deed',cannon:'#ed9e76',miner:'#b6e4a4'};
  const options=Object.keys(R.config[mode]);
+ const resourceName=mode==='lane'?((spec.defenseOptions&&spec.defenseOptions.resourceLabel)||'Energia'):'Recursos';
  const layer=document.createElement('div');layer.style.cssText='display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:9px 4px;border:1px solid #356071;border-radius:10px;background:#0c2433;margin:8px auto 0;max-width:960px';
  const controls={};document.querySelector('.shell').appendChild(layer);
  function button(label,handler){
@@ -38,7 +39,9 @@ function gameForgeAdvancedTDBoot(){
  function choose(key){choice=key;buildMode='unit';note('Selecionado: '+names[key]);renderControls();}
  function renderControls(){
   for(const key of options){const el=controls[key],active=buildMode==='unit'&&choice===key;
-   el.style.background=active?'#438d7c':'#234554';el.style.borderColor=active?'#e4efc5':'#54717b';el.disabled=state!=='play'||paused;
+   const cd=mode==='lane'?(d.cardCooldowns[key]||0):0;
+   el.textContent=(options.indexOf(key)+1)+' '+names[key]+' '+R.config[mode][key].cost+(cd>0?' · '+Math.ceil(cd)+'s':'');
+   el.style.background=active?'#438d7c':'#234554';el.style.borderColor=active?'#e4efc5':'#54717b';el.disabled=state!=='play'||paused||cd>0;
   }
   if(blockButton){blockButton.style.background=buildMode==='block'?'#438d7c':'#234554';blockButton.disabled=state!=='play'||paused;}
   upButton.disabled=state!=='play'||paused||!selected||selected.level>=3;
@@ -48,8 +51,9 @@ function gameForgeAdvancedTDBoot(){
   for(const el of perks.children)el.style.display=d.perks.includes(el.dataset.perk)?'inline-block':'none';
  }
  function stageStart(){
-  d=R.create(mode,stage,tune,{waves:configAt(stage).waves,seed:Math.max(1,Number(spec.worldOptions&&spec.worldOptions.seed)||72317)});
-  cursor={x:mode==='lane'?0:1,y:mode==='lane'?2:0};selected=null;time=0;paused=false;state='play';
+  d=R.create(mode,stage,tune,{waves:configAt(stage).waves,seed:Math.max(1,Number(spec.worldOptions&&spec.worldOptions.seed)||72317),
+    startingGlow:spec.defenseOptions?.startingGlow,wavePlan:spec.defenseOptions?.wavePlan?.[stage]});
+  cursor={x:mode==='lane'?0:1,y:mode==='lane'?2:0};selected=null;time=0;accumulator=0;paused=false;state='play';
   $('pause').textContent='Pausar';hide();note(stages[stage]+' · Construa antes da primeira onda');
   renderControls();publish();
  }
@@ -156,6 +160,10 @@ function gameForgeAdvancedTDBoot(){
   rect(originX-11,originY-8,d.cols*cellX+20,d.rows*cellY+18,'#0a2630aa');
   for(let y=0;y<d.rows;y++)for(let x=0;x<d.cols;x++)tile(originX+x*cellX,originY+y*cellY,x,y);
   if(mode==='lane'){
+   for(const glow of d.drops){
+    const xx=originX+glow.x*cellX,yy=originY+glow.y*cellY;
+    ctx.globalAlpha=Math.min(1,glow.life/2);diamond(xx,yy,18,'#ffe29b');circle(xx,yy,6,'#fff8ce');ctx.globalAlpha=1;
+   }
    for(let y=0;y<d.rows;y++){
     const yy=originY+(y+.5)*cellY;
     rect(originX-25,yy-26,23,52,d.mowers[y]?'#b4daba':'#4a6058');
@@ -179,7 +187,7 @@ function gameForgeAdvancedTDBoot(){
   rect(10,8,W-20,65,'#102a3bdd');
   text(stages[stage],24,31,18,'#f3e8c1');
   text('ONDA '+d.wave+'/'+d.waves+'  ·  '+(mode==='lane'?'JARDIM':'FORTALEZA DE BLOCOS')+'  ·  '+d.kills+' vencidos',W-22,30,13,'#cde3d5','right');
-  text('RECURSOS '+Math.floor(d.money)+'  ·  BASE '+Math.ceil(d.base)+'%  ·  '+(d.awaitingChoice?'ESCOLHA UMA MELHORIA':d.active?'ATAQUE EM ANDAMENTO':'PRONTO PARA NOVA ONDA'),24,55,12,'#aee6ca');
+  text(resourceName.toUpperCase()+' '+Math.floor(d.money)+'  ·  BASE '+Math.ceil(d.base)+'%  ·  '+(d.awaitingChoice?'ESCOLHA UMA MELHORIA':d.active?'ATAQUE EM ANDAMENTO':mode==='lane'?'PRÓXIMA ONDA EM '+Math.ceil(Math.max(0,d.nextWaveAt-d.time))+'s':'PRONTO PARA NOVA ONDA'),24,55,12,'#aee6ca');
   bar(W-220,49,198,d.base/100,d.base>45?'#86deac':'#f3b27c');
   if(selected&&state==='play')text('Selecionada: '+names[selected.type]+' N'+selected.level+' · '+Math.ceil(selected.hp)+' HP · U evoluir · X vender',28,H-18,12,'#d8ebcf');
   else text(mode==='lane'?'Geradores criam energia · Guardiões bloqueiam inimigos':'Construa blocos [B] e depois torres [1–4] · altura aumenta alcance',28,H-18,12,'#d8ebcf');
@@ -192,16 +200,20 @@ function gameForgeAdvancedTDBoot(){
  function publish(){
   const pos={x:cursor.x*cellX+originX+cellX/2,y:cursor.y*cellY+originY+cellY/2};
   telemetry={genre:spec.genre,mode,state:paused&&state==='play'?'paused':state,paused,stage:stage+1,stageCount:stages.length,
-   frames,time,base:d.base,health:d.base,score:d.score,enemies:d.enemies.length,resources:Math.floor(d.money),
-   wave:d.wave,waves:d.waves,towers:d.towers.length,blocks:d.tiles.filter(x=>x>0).length,
+   frames,time,base:d.base,health:d.base,score:d.score,enemies:d.enemies.length,resources:Math.floor(d.money),resourceDrops:d.drops.length,
+   wave:d.wave,waves:d.waves,towers:d.towers.length,blocks:d.tiles.filter(x=>x>0).length,cardCooldowns:{...d.cardCooldowns},
    awaitingChoice:d.awaitingChoice,active:d.active,player:{...pos,screenX:pos.x,screenY:pos.y},
    objective:mode==='lane'?'five-lanes':'winding-path'};
   window.__gameforgeTelemetry=()=>telemetry;Object.assign(window.__gameforgeTelemetry,telemetry);
  }
  function frame(now){
   const dt=last?clamp((now-last)/1000,0,.05):1/60;last=now;frames++;
-  if(state==='play'&&!paused){time+=dt;R.step(d,dt);roundResult();}
+  if(state==='play'&&!paused){
+   time+=dt;accumulator=Math.min(accumulator+dt,1/6);
+   let steps=0;while(accumulator>=1/30&&steps<5&&state==='play'){R.step(d,1/30);accumulator-=1/30;steps++;if(d.over)roundResult();}
+  }
   if(noteTime>0){noteTime-=dt;if(noteTime<=0)$('message').style.opacity='0';}
+  if(frames%15===0)renderControls();
   draw();hud();publish();requestAnimationFrame(frame);
  }
  $('start').addEventListener('click',()=>{
@@ -233,7 +245,12 @@ function gameForgeAdvancedTDBoot(){
  canvas.addEventListener('pointerdown',e=>{
   if(state!=='play'||paused)return;
   const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/Math.max(1,r.width),y=(e.clientY-r.top)*H/Math.max(1,r.height);
-  place((x-originX)/cellX,(y-originY)/cellY);canvas.focus();
+  const gx=(x-originX)/cellX,gy=(y-originY)/cellY;
+  if(mode==='lane'){
+   const hit=R.collectDrop(d,gx,gy);
+   if(hit.ok){note('+'+hit.value+' '+resourceName);publish();canvas.focus();return;}
+  }
+  place(gx,gy);canvas.focus();
  });
  document.querySelectorAll('[data-control]').forEach(el=>{
   el.addEventListener('pointerdown',e=>{e.preventDefault();if(state!=='play'||paused)return;

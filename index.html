@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#10192a">
-  <title>GameForge Studio v0.12.0 — Jogos 2D e 3D</title>
+  <title>GameForge Studio v0.13.0 — Editor de campanhas 2D e 3D</title>
   <meta name="description" content="Leia um GDD em Markdown e gere protótipos de jogos no navegador, com ou sem inteligência artificial.">
   <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.12 · MOTORES 2D + 3D</small></span></a>
+    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.13 · CAMPANHAS EDITÁVEIS</small></span></a>
     <nav class="top-actions"><span id="storage-tag" class="chip">Projeto no navegador</span><a class="subtle-link" href="./examples/gdd-exemplo.md" download>Exemplo .md</a><button class="small outline" id="export-top">Exportar ZIP ↗</button></nav>
   </header>
   <main class="studio">
@@ -101,6 +101,22 @@ Derrote o chefe.
           <div class="roadmap-controls"><button id="roadmap-prepare" type="button" class="primary small" disabled>Usar tarefa como instrução</button><button id="roadmap-done" type="button" class="outline small" disabled>✓ Validar após QA</button><button id="roadmap-reopen" type="button" class="outline small" disabled>↶ Reabrir</button><button id="roadmap-block" type="button" class="outline small" disabled>Bloquear</button></div>
           <p class="hint">Depois de aplicar melhorias, execute o QA, jogue e verifique os critérios. Somente você confirma a tarefa como validada. O plano também vai no ZIP.</p>
         </section>
+        <section class="stage-editor" aria-label="Editor de campanha por fase">
+          <div class="qa-workbench-title"><span class="eyebrow">11 / CAMPANHA</span><strong>Edite cada fase sem recriar o jogo</strong></div>
+          <p class="hint">Escolha uma fase do jogo gerado. Salvar altera apenas a configuração da fase no código e pode ser desfeito. O texto da missão é exibido no HUD; regras novas ainda exigem programação.</p>
+          <label for="stage-select">Fase a editar</label><select id="stage-select" disabled><option value="">Primeiro gere um jogo</option></select>
+          <label for="stage-title">Nome da fase</label><input id="stage-title" type="text" maxlength="80" disabled>
+          <div class="stage-grid">
+            <div><label for="stage-enemies">Inimigos (0 = automático)</label><input id="stage-enemies" type="number" min="0" max="80" step="1" value="0" disabled></div>
+            <div><label for="stage-boss">Chefe na fase</label><select id="stage-boss" disabled><option value="auto">Padrão do motor</option><option value="yes">Sim</option><option value="no">Não</option></select></div>
+            <div><label for="stage-waves">Ondas da defesa (0 = auto)</label><input id="stage-waves" type="number" min="0" max="12" step="1" value="0" disabled></div>
+            <div><label for="stage-laps">Voltas da corrida 3D (0 = auto)</label><input id="stage-laps" type="number" min="0" max="8" step="1" value="0" disabled></div>
+            <div><label for="stage-theme">Ambiente 3D nesta fase</label><select id="stage-theme" disabled><option value="auto">Padrão do projeto</option><option value="forest">Floresta</option><option value="desert">Deserto</option><option value="neon">Cidade neon</option><option value="ruins">Ruínas</option></select></div>
+          </div>
+          <label for="stage-objective">Texto do objetivo no HUD</label><input id="stage-objective" type="text" maxlength="140" placeholder="Ex.: Proteja o portal dos invasores" disabled>
+          <div class="stage-actions"><button id="stage-save" class="primary small" type="button" disabled>Salvar fase no jogo</button><button id="stage-reset" class="outline small" type="button" disabled>Restaurar ajustes automáticos</button></div>
+          <p class="hint" id="stage-hint" role="status">Gere um jogo com o motor local para personalizar suas fases.</p>
+        </section>
         <section class="dev-cycle" aria-label="Motor de evolução contínua">
           <div class="qa-workbench-title"><span class="eyebrow">09 / MOTOR DE EVOLUÇÃO</span><strong>Melhore o jogo sem recomeçar</strong></div>
           <p class="hint">Escreva uma melhoria acima e clique em Planejar ou Aplicar melhoria. Com IA, são feitas etapas separadas de planejamento e geração. Sem IA, somente as alterações suportadas são implementadas.</p>
@@ -187,6 +203,7 @@ Derrote o chefe.
     <div class="project-backup-actions"><button type="button" id="project-restore-cancel" class="outline">Cancelar</button><button type="button" id="project-restore-confirm" class="primary">Abrir e continuar</button></div>
   </dialog>
   <script src="./js/project-backup.js"></script>
+  <script src="./js/campaign-editor.js"></script>
   <script src="./js/app.js"></script>
   <script src="./js/engineering-workbench.js"></script>
 </body>

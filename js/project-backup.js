@@ -1,7 +1,7 @@
 /* Backups portáteis do Studio. Validação de dados sem executar código. */
 (function(root){
 'use strict';
-const allowedFiles=['index.html','style.css','game.js','engine-3d.js','THREE-LICENSE.txt','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json'];
+const allowedFiles=['index.html','style.css','game.js','engine-3d.js','THREE-LICENSE.txt','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json','CAMPANHA_EDITOR.md'];
 const states=['pendente','em andamento','aguardando revisão','validada','bloqueada'];
 const bytes=s=>new TextEncoder().encode(s).length;
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -44,7 +44,7 @@ function normalize(snap){
  return result;
 }
 function encode(snap){
- const encoded=JSON.stringify({format:'gameforge-project',version:1,studioVersion:'0.12.0',savedAt:new Date().toISOString(),project:normalize(snap)});
+ const encoded=JSON.stringify({format:'gameforge-project',version:1,studioVersion:'0.13.0',savedAt:new Date().toISOString(),project:normalize(snap)});
  if(bytes(encoded)>20000000)throw Error('Backup acima de 20 MB. Reduza o histórico antes de exportar.');
  return encoded;
 }

@@ -1,3 +1,17 @@
+# GameForge Studio v0.13 — Editor de campanhas por fase
+
+A versão 0.13 adiciona o painel **11 / Campanha**. Depois de criar um jogo, escolha qualquer uma das até 30 fases e altere título, quantidade de inimigos (onde o motor permite), chefe, ondas de defesa de torres, voltas de corridas 3D, ambiente 3D e o texto da missão no HUD.
+
+As opções compatíveis são aplicadas ao próprio `GAME_SPEC.stageConfig` dentro do código exportável `game.js`. O ZIP inclui `CAMPANHA_EDITOR.md` com o resumo. Salvar uma fase cria um ponto de **Desfazer** (histórico de quatro versões) e acompanha o backup `.gameforge.json`. Recarregue a prévia após salvar, jogue e execute QA: texto da missão **não** programa objetivos inéditos.
+
+Os limites de inimigos dependem do motor e o painel desativa opções que não funcionam naquele gênero. A campanha não é reescrita nem o GDD original perdido.
+
+## Verificação técnica
+
+Teste local de sintaxe dos módulos e das alterações de configuração. O HTML GitHub Pages permanece estático e sem dependência externa para motores procedurais. Os testes automatizados de Node cobrem persistência de fase, limites, exportação de código preservado e rejeição de projetos sem `GAME_SPEC`.
+
+---
+
 # GameForge Studio v0.12 — Jogos maiores em 2D e 3D
 
 Escolha um exemplo no painel **Como será seu jogo?**, use **Sem IA** e clique em **Criar novo jogo**.

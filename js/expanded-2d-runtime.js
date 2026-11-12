@@ -7,6 +7,7 @@ function gameForgeExpanded2DBoot() {
   const tuning={difficulty:1,enemyMultiplier:1,bossMultiplier:1,playerSpeedMultiplier:1,fireRateMultiplier:1,particlesMultiplier:1,...spec.tuning};
   for(const k of Object.keys(tuning))tuning[k]=Math.max(.3,Math.min(3,Number(tuning[k])||1));
   const stages=(spec.stages?.length?spec.stages:['Bosque das ruínas','A cidadela perdida','Portal ancestral']).slice(0,30);
+  const configAt=i=>Array.isArray(spec.stageConfig)&&spec.stageConfig[i]&&typeof spec.stageConfig[i]==='object'?spec.stageConfig[i]:{};
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
   let seed=579;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
   let telemetry={};window.__gameforgeTelemetry=()=>telemetry;
@@ -33,7 +34,7 @@ function gameForgeExpanded2DBoot() {
   }
   function startStage(){
     state='play';paused=false;clearInput();stageTime=0;attackClock=0;attackFlash=0;particles=[];bullets=[];collected=0;bossDead=false;
-    if(td){d=R.createDefense(stage,tuning);selected=null;cursor={x:2,y:1};}
+    if(td){d=R.createDefense(stage,tuning);if(configAt(stage).waves>0)d.waves=clamp(configAt(stage).waves,1,12);selected=null;cursor={x:2,y:1};}
     else{
       if(checkpoint)R.restore(player,checkpoint);player.x=210;player.y=800;facing={x:1,y:0};camera={x:0,y:clamp(player.y-H/2,0,world.height-H)};
       buildMap();spawnRPG();
@@ -104,7 +105,7 @@ function gameForgeExpanded2DBoot() {
     for(let i=0;i<90;i++){const x=random()*world.width,y=random()*world.height;if(Math.abs(y-800)<60)continue;c.fillStyle=i%3?'#76a267':'#e7c783';c.fillRect(x,y,2,3);}
   }
   function spawnRPG(){
-    enemies=[];const amount=Math.min(36,Math.round((10+stage*2)*tuning.enemyMultiplier));
+    enemies=[];const amount=configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,36):Math.min(36,Math.round((10+stage*2)*tuning.enemyMultiplier));
     const presets=[{x:520,y:825},{x:680,y:640},{x:925,y:805},{x:1140,y:1090},{x:1570,y:810},{x:1770,y:600}];
     for(let i=0;i<amount;i++){
       const p=presets[i%presets.length],kind=i%4===2?'archer':i%4===3?'brute':'slime';
@@ -112,7 +113,8 @@ function gameForgeExpanded2DBoot() {
       enemies.push({x:p.x+Math.floor(i/6)*47,y:p.y+Math.sin(i*2)*90,r:kind==='brute'?23:17,hp,maxHp:hp,kind,shot:1.2+i*.17,t:i,dead:false});
     }
     const hp=(235+stage*40)*tuning.bossMultiplier*tuning.difficulty;
-    enemies.push({x:2090,y:800,r:37,hp,maxHp:hp,kind:'boss',shot:2,t:0,dead:false});
+    if(configAt(stage).boss!=='no')enemies.push({x:2090,y:800,r:37,hp,maxHp:hp,kind:'boss',shot:2,t:0,dead:false});
+    else bossDead=true;
   }
   function burst(x,y,color,n){const limit=Math.round(160*tuning.particlesMultiplier);n=Math.min(n,limit-particles.length);for(let i=0;i<n;i++){const a=random()*TAU,s=30+random()*130;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.3+random()*.35,color,r:2+random()*3});}}
   function attack(){
@@ -283,8 +285,8 @@ function gameForgeExpanded2DBoot() {
     rect(51,H-24,858,21,'#0c2631eb');text(hint,62,H-9,12,'#e5e6c9');
   }
   function hud(){
-    if(td&&d){$('health').textContent=d.base;$('score').textContent=d.kills;$('ammo').textContent=d.coins;$('mission').textContent='Proteja a base · '+d.wave+'/'+d.waves+' ondas';aux.disabled=state!=='play'||paused||d.active;}
-    else if(player){$('health').textContent=Math.ceil(player.hp);$('score').textContent=player.coins;$('ammo').textContent=player.potions;$('mission').textContent='3 relíquias + guardião → portal';}
+    if(td&&d){$('health').textContent=d.base;$('score').textContent=d.kills;$('ammo').textContent=d.coins;$('mission').textContent=(configAt(stage).objective?configAt(stage).objective+' · ':'')+'Proteja a base · '+d.wave+'/'+d.waves+' ondas';aux.disabled=state!=='play'||paused||d.active;}
+    else if(player){$('health').textContent=Math.ceil(player.hp);$('score').textContent=player.coins;$('ammo').textContent=player.potions;$('mission').textContent=(configAt(stage).objective?configAt(stage).objective+' · ':'')+(configAt(stage).boss==='no'?'3 relíquias → portal':'3 relíquias + guardião → portal');}
     $('level').textContent=(stage+1)+'/'+stages.length;$('timer').textContent=Math.floor(stageTime)+'s';
   }
   function publish(){

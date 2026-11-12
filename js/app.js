@@ -140,6 +140,57 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     return spec;
   }
   function projectName(){return ($('project-name').value.trim()||'gameforge-jogo').replace(/[\\/:*?"<>|]+/g,'-').slice(0,70);}
+
+  /* v0.13 — edição determinística por fase, versionada no game.js e no backup. */
+  let stageEditorIndex=0;
+  const stageFields=['stage-title','stage-enemies','stage-boss','stage-waves','stage-laps','stage-theme','stage-objective'];
+  function stageEditorRead(){
+    const spec=GameForgeCampaign.inspect(state.files);
+    if(!spec)return;
+    const index=stageEditorIndex;const o=GameForgeCampaign.option(spec,index);
+    $('stage-title').value=spec.stages[index]||'';
+    $('stage-enemies').value=o.enemies;$('stage-boss').value=o.boss;
+    $('stage-waves').value=o.waves;$('stage-laps').value=o.laps;
+    $('stage-theme').value=o.theme;$('stage-objective').value=o.objective;
+    const available=GameForgeCampaign.maxEnemies(spec),genre=spec.genre,three=spec.dimension==='3d';
+    $('stage-enemies').max=String(available);$('stage-enemies').disabled=!available;
+    $('stage-boss').disabled=!['arena','fps','shooter','rpg'].includes(genre);
+    $('stage-waves').disabled=genre!=='tower-defense';
+    $('stage-laps').disabled=!(three&&genre==='racing');
+    $('stage-theme').disabled=!three;
+    $('stage-hint').textContent='Fase '+(index+1)+'/'+spec.stages.length+' · '+(available?'Até '+available+' inimigos; 0 usa a quantidade automática.':'Quantidade de inimigos não editável neste motor.')+' As alterações passam a valer após reiniciar a prévia.';
+  }
+  function stageEditorRender(){
+    const spec=GameForgeCampaign.inspect(state.files);
+    const control=$('stage-select'),ready=!!spec;
+    control.disabled=!ready;$('stage-title').disabled=!ready;$('stage-objective').disabled=!ready;
+    $('stage-save').disabled=!ready;$('stage-reset').disabled=!ready;
+    if(!ready){control.replaceChildren(new Option('Primeiro gere um jogo',''));for(const id of stageFields)$(id).disabled=true;$('stage-hint').textContent='Disponível para jogos com GAME_SPEC gerado pelo motor local.';return;}
+    stageEditorIndex=Math.max(0,Math.min(stageEditorIndex,spec.stages.length-1));
+    control.replaceChildren(...spec.stages.map((s,i)=>new Option((i+1)+' · '+s,i)));
+    control.value=String(stageEditorIndex);stageEditorRead();
+  }
+  function stageEditorSave(reset=false){
+    if(qaState.candidate){feedback('Aceite ou descarte a correção candidata antes de alterar uma fase.',true);return;}
+    try{
+      const old=GameForgeCampaign.inspect(state.files);if(!old)throw Error('Este jogo não possui configuração de campanha editável.');
+      const input=reset?{name:old.stages[stageEditorIndex],enemies:0,boss:'auto',waves:0,laps:0,theme:'auto',objective:''}:
+        {name:$('stage-title').value,enemies:$('stage-enemies').value,boss:$('stage-boss').value,
+         waves:$('stage-waves').value,laps:$('stage-laps').value,theme:$('stage-theme').value,objective:$('stage-objective').value};
+      const updated=GameForgeCampaign.edit(state.files,stageEditorIndex,input);
+      if(!updated.changed){feedback('Esta fase já possui essas configurações.');return;}
+      pushHistory('Editar fase '+(stageEditorIndex+1)+' — '+old.stages[stageEditorIndex]);
+      state.files=updated.files;state.spec=updated.spec;qaState.last=null;qaState.baseline=null;qaState.vision=null;
+      $('qa-report').textContent='Configuração de fase modificada. Execute novo QA e teste a missão.';
+      roadmapTasks=roadmapTasks.map(t=>t.status==='validada'?t:{...t,status:t.status==='aguardando revisão'?'em andamento':t.status});
+      roadmapSaveFiles();listFiles();selectFile('game.js');runPreview();qaButtons();saveState();
+      feedback('Fase '+(stageEditorIndex+1)+' salva no game.js. Use Desfazer para voltar; jogue e execute QA para validar.');
+      log('[Campanha] '+updated.spec.stages[stageEditorIndex]+' — parâmetros atualizados.');
+    }catch(e){feedback('Não foi possível editar a fase: '+e.message,true);}
+  }
+  $('stage-select').addEventListener('change',()=>{stageEditorIndex=Number($('stage-select').value)||0;stageEditorRead();});
+  $('stage-save').addEventListener('click',()=>stageEditorSave(false));
+  $('stage-reset').addEventListener('click',()=>stageEditorSave(true));
   function projectSnapshot(){
     roadmapSync();
     return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,creationOptions:creationOptions(),roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
@@ -204,6 +255,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       btn.addEventListener('click',()=>selectFile(k));$('file-list').appendChild(btn);
     }
     const ready=keys.length>0;
+    stageEditorRender();
     if(roadmapTasks.length)roadmapRender();
     $('improve').disabled=!Boolean(state.files['game.js']);$('undo-improvement').disabled=devHistory.length===0;
     $('export').disabled=!ready;$('export-top').disabled=!ready;$('html-export').disabled=!ready;$('rerun').disabled=!ready;$('open-game').disabled=!ready;
@@ -728,6 +780,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('gdd').addEventListener('change',saveState);$('instruction').addEventListener('change',saveState);$('project-name').addEventListener('change',saveState);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!qaState.candidate)saveState();});
   renderStyles();
+  stageEditorRender();
   restoreState();
   renderReferences();analyze();
 })();

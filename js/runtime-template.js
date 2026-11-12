@@ -11,6 +11,7 @@ function gameForgeBoot() {
   canvas.width = W; canvas.height = H;
   const color = spec.colors || {bg:'#132235',accent:'#77e4be',ground:'#223247',enemy:'#ff7979'};
   const stages = spec.stages && spec.stages.length ? spec.stages : ['Fase 1'];
+  const configAt=i=>Array.isArray(spec.stageConfig)&&spec.stageConfig[i]&&typeof spec.stageConfig[i]==='object'?spec.stageConfig[i]:{};
   const keys = new Set();
   const touch = {up:false,down:false,left:false,right:false,fire:false};
   const clamp = (n, a, b) => Math.max(a, Math.min(b,n));
@@ -36,15 +37,15 @@ function gameForgeBoot() {
         const y=i===0?480:clamp(405+Math.sin(i*2.13)*90,300,470);
         platforms.push({x,y,w:i===0?380:165,h:22});
       }
-      for(let i=1;i<Math.round((14+stage*3)*tuning.enemyMultiplier*tuning.difficulty);i++) enemies.push({x:320+i*220,y:344,r:18,hp:1,phase:rand(0,6),speed:35});
+      for(let i=1;i<(configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,45)+1:Math.round((14+stage*3)*tuning.enemyMultiplier*tuning.difficulty));i++) enemies.push({x:320+i*220,y:344,r:18,hp:1,phase:rand(0,6),speed:35});
       for(let i=0;i<13;i++) drops.push({x:200+i*260,y:245+Math.sin(i*1.6)*65,r:11,kind:'coin'});
     } else if(spec.genre==='racing') {
       player={x:W/2,y:H-100,r:19,vx:0,vy:0,angle:0};
-      for(let i=0;i<Math.round((18+stage*5)*tuning.enemyMultiplier*tuning.difficulty);i++) obstacles.push({x:W/2+[-125,0,125][i%3],y:-i*175,r:23,speed:70+stage*10,kind:i%4===0?'cone':'car'});
+      for(let i=0;i<(configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,60):Math.round((18+stage*5)*tuning.enemyMultiplier*tuning.difficulty));i++) obstacles.push({x:W/2+[-125,0,125][i%3],y:-i*175,r:23,speed:70+stage*10,kind:i%4===0?'cone':'car'});
     } else {
       player={x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
-      const encounterSize=Math.min(48,Math.round((6+stage*3)*tuning.enemyMultiplier*tuning.difficulty));
-      for(let i=0;i<encounterSize;i++)addEnemy(i===encounterSize-1&&spec.features.bosses);
+      const encounterSize=configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,48):Math.min(48,Math.round((6+stage*3)*tuning.enemyMultiplier*tuning.difficulty));
+      for(let i=0;i<encounterSize;i++)addEnemy(i===encounterSize-1&&(configAt(stage).boss==='yes'||(configAt(stage).boss!=='no'&&spec.features.bosses)));
       for(let i=0;i<5;i++) drops.push({x:rand(70,W-70),y:rand(85,H-65),r:10,kind:i===0?'heal':'coin'});
     }
     showMessage(stages[stage]||`Fase ${stage+1}`,3);
@@ -133,7 +134,7 @@ function gameForgeBoot() {
     $('score').textContent=score;
     $('ammo').textContent=spec.genre==='arena'?ammo:'—';
     $('level').textContent=`${stage+1}/${stages.length}`;
-    $('mission').textContent=(stages[stage]||'Fase')+(spec.genre==='racing'?` · ${Math.floor(traveled/10)}m`:spec.genre==='arena'?` · ${enemies.length} inimigos`:'');
+    $('mission').textContent=(configAt(stage).objective?configAt(stage).objective+' · ':'')+(stages[stage]||'Fase')+(spec.genre==='racing'?` · ${Math.floor(traveled/10)}m`:spec.genre==='arena'?` · ${enemies.length} inimigos`:'');
     if(spec.features.timer){$('timer').textContent=`${Math.floor(stageClock)}s`;}
   }
   function background(){

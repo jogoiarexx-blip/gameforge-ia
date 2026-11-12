@@ -8,13 +8,15 @@ function gameForgeThreeBoot(){
  const opts={theme:'forest',size:48,quality:'auto',seed:12345,...spec.worldOptions};
  const size=R.clamp(Number(opts.size)||48,32,88),genre=['arena','fps','racing','platform'].includes(spec.genre)?spec.genre:'arena';
  const stages=(spec.stages&&spec.stages.length?spec.stages:['Primeira jornada']).slice(0,30);
+ const stageConfig=Array.isArray(spec.stageConfig)?spec.stageConfig:[];
+ const configAt=i=>{const c=stageConfig[i];return c&&typeof c==='object'&&!Array.isArray(c)?c:{};};
  const themes={
   forest:{sky:0xabc8cb,fog:0xa1bdba,ground:0x476756,road:0x8a8064,grass:0x75935b,wood:0x674b35,stone:0x72827c,accent:0x64f2c3,enemy:0xd26c62},
   desert:{sky:0xe1c0a0,fog:0xd5b58d,ground:0xb78e5a,road:0x836647,grass:0xc6a462,wood:0x846144,stone:0xba8262,accent:0x5be6d3,enemy:0xbd5260},
   neon:{sky:0x111d3b,fog:0x16253d,ground:0x23304a,road:0x405271,grass:0x33446a,wood:0x484c76,stone:0x4f6388,accent:0x55f4de,enemy:0xff688d},
   ruins:{sky:0xadc2d0,fog:0x9eafb7,ground:0x65796f,road:0xa39980,grass:0x7d8d6b,wood:0x5d6655,stone:0x8a938d,accent:0x8aebdf,enemy:0xcc7467}
  };
- const palette=themes[opts.theme]||themes.forest;
+ let palette=themes[opts.theme]||themes.forest;
  let renderer,software=false;
  try{renderer=new T.WebGLRenderer({canvas,antialias:opts.quality!=='low',alpha:false,preserveDrawingBuffer:true,powerPreference:'high-performance'});}
  catch(error){
@@ -87,6 +89,9 @@ function gameForgeThreeBoot(){
  }
  function setGoal(x,y,z){const g=new T.Group();g.position.set(x,y,z);world.add(g);box(3,.25,3,mats.stone,g,0,.1,0);box(.35,3.8,.35,mats.trim,g,-1.25,1.9,0);box(.35,3.8,.35,mats.trim,g,1.25,1.9,0);box(2.85,.35,.35,mats.trim,g,0,3.75,0);const portal=box(2,3.1,.12,mats.portal,g,0,1.9,0);goal={x,y,z,mesh:g,portal};}
  function buildStage(){
+  const stageRules=configAt(stage),requestedTheme=stageRules.theme;
+  opts.theme=['forest','desert','neon','ruins'].includes(requestedTheme)?requestedTheme:(spec.worldOptions?.theme||'forest');
+  palette=themes[opts.theme]||themes.forest;renderer.setClearColor(palette.sky);
   disposeStage();materials=[];geometries=[];solids=[];enemies=[];coins=[];bullets=[];platforms=[];traffic=[];gates=[];goal=null;
   scene=new T.Scene();scene.background=new T.Color(palette.sky);scene.fog=new T.Fog(palette.fog,genre==='fps'?16:35,genre==='platform'?105:size*1.7);
   world=new T.Group();scene.add(world);camera=new T.PerspectiveCamera(genre==='fps'?78:52,16/9,.1,260);scene.add(camera);
@@ -101,22 +106,22 @@ function gameForgeThreeBoot(){
    player={x:0,y:0,z:0,yaw:Math.PI/2,vy:0,speed:0,grounded:true};required=Math.ceil(coins.length*.7);const end=platforms[platforms.length-1];setGoal(end.x,end.y,end.z);
    box(platforms.length*5.2+30,.6,46,mats.ground,world,platforms.length*2.6,-5,0);scenery(true);
   }else if(genre==='racing'){
-   raceRx=size*.34;raceRz=size*.28;race={next:0,lap:0,complete:false};lapTarget=2+(stage>8?1:0);required=lapTarget;
+   raceRx=size*.34;raceRz=size*.28;race={next:0,lap:0,complete:false};lapTarget=Number.isInteger(stageRules.laps)&&stageRules.laps>0?R.clamp(stageRules.laps,1,8):2+(stage>8?1:0);required=lapTarget;
    box(size*1.8,.4,size*1.8,mats.ground,world,0,-.25,0);
    const {positions,indices}=R.trackRibbon(raceRx,raceRz,7.4,80);
    const road=geometry(new T.BufferGeometry());road.setAttribute('position',new T.Float32BufferAttribute(positions,3));road.setIndex(indices);road.computeVertexNormals();const roadmesh=new T.Mesh(road,mats.road);roadmesh.receiveShadow=true;roadmesh.renderOrder=-900;world.add(roadmesh);
    for(let i=0;i<48;i++){const a=i/48*Math.PI*2,x=Math.cos(a)*raceRx,z=Math.sin(a)*raceRz;const stripe=box(.12,.035,.8,i%6===0?mats.crystal:mats.gold,world,x,.06,z);stripe.rotation.y=-a;for(const side of [-1,1]){const rail=box(.3,.35,1.5,mats.trim,world,Math.cos(a)*(raceRx+side*3.9),.18,Math.sin(a)*(raceRz+side*3.9));rail.rotation.y=-a;}}
    for(let i=0;i<8;i++){const a=-Math.PI/2+(i+1)/8*Math.PI*2;gates.push(makeGate(Math.cos(a)*raceRx,Math.sin(a)*raceRz,i,-a));}
    player={x:0,y:0,z:-raceRz,yaw:Math.PI/2,vy:0,speed:0,grounded:true};hero=car(0x5ce4c5);
-   for(let i=0;i<Math.min(12,4+Math.ceil(stage*.3*tuning.enemyMultiplier));i++){const a=-Math.PI/2+.6+i*.66,o=car([0xd67568,0xdfb655,0x6a9bc6][i%3]);traffic.push({a,speed:.16+(i%3)*.025,x:Math.cos(a)*raceRx,z:Math.sin(a)*raceRz,mesh:o,lane:i%2?1.6:-1.6});}
+   for(let i=0;i<Math.min(12,stageRules.enemies>0?stageRules.enemies:4+Math.ceil(stage*.3*tuning.enemyMultiplier));i++){const a=-Math.PI/2+.6+i*.66,o=car([0xd67568,0xdfb655,0x6a9bc6][i%3]);traffic.push({a,speed:.16+(i%3)*.025,x:Math.cos(a)*raceRx,z:Math.sin(a)*raceRz,mesh:o,lane:i%2?1.6:-1.6});}
    scenery();
   }else{
    player={x:0,y:0,z:size*.28,yaw:Math.PI,vy:0,speed:0,grounded:true};required=3;
    box(size,.6,size,mats.ground,world,0,-.35,0);box(5,.035,size*.8,mats.road,world,0,.01,0);box(size*.8,.04,4,mats.road,world,0,.015,0);
    for(let i=0;i<4;i++){const side=i<2?-1:1;box(2,1.8,2,mats.stone,world,side*(8+(i%2)*5),.9,(i%2?1:-1)*7);solids.push({x:side*(8+(i%2)*5),z:(i%2?1:-1)*7,w:2,d:2});}
-   const count=Math.min(22,Math.max(3,Math.round((4+stage*.6)*tuning.enemyMultiplier*tuning.difficulty)));
+   const count=stageRules.enemies>0?R.clamp(stageRules.enemies,1,24):Math.min(22,Math.max(3,Math.round((4+stage*.6)*tuning.enemyMultiplier*tuning.difficulty)));
    for(let i=0;i<count;i++){
-    const a=(i/count)*Math.PI*2,x=Math.sin(a)*size*.26,z=Math.cos(a)*size*.24-4,boss=!!(spec.features&&spec.features.bosses)&&i===count-1;
+    const a=(i/count)*Math.PI*2,x=Math.sin(a)*size*.26,z=Math.cos(a)*size*.24-4,boss=i===count-1&&(stageRules.boss==='yes'||(stageRules.boss!=='no'&&!!(spec.features&&spec.features.bosses)));
     const actor=humanoid(boss?0x91637f:palette.enemy,boss);actor.position.set(x,0,z);
     enemies.push({x,z,y:0,hp:Math.ceil((boss?8*tuning.bossMultiplier:2+Math.floor(stage/7))*Math.sqrt(tuning.difficulty)),boss,speed:(boss?1.4:1.75+Math.min(stage,15)*.065)*Math.sqrt(tuning.difficulty),phase:random()*6,mesh:actor});
    }
@@ -211,7 +216,7 @@ function gameForgeThreeBoot(){
  function updateHUD(){
   $('health').textContent=Math.ceil(health);$('score').textContent=score;$('ammo').textContent=genre==='racing'?Math.round(Math.abs(player.speed)*12)+' km/h':genre==='platform'?collected+'/'+required:ammo;
   $('level').textContent=(stage+1)+'/'+stages.length;$('timer').textContent=Math.floor(clock)+'s';
-  $('mission').textContent=genre==='racing'?'Volta '+Math.min(lapTarget,race.lap+1)+'/'+lapTarget+' · Portal '+(race.next+1)+'/8':genre==='platform'?'Cristais '+collected+'/'+required+' · Alcance o portal':enemies.length+' guardiões · Cristais '+collected+'/'+required;
+  $('mission').textContent=(configAt(stage).objective?String(configAt(stage).objective).slice(0,140)+' · ':'')+(genre==='racing'?'Volta '+Math.min(lapTarget,race.lap+1)+'/'+lapTarget+' · Portal '+(race.next+1)+'/8':genre==='platform'?'Cristais '+collected+'/'+required+' · Alcance o portal':enemies.length+' guardiões · Cristais '+collected+'/'+required);
  }
  function resize(){const rect=canvas.getBoundingClientRect(),w=Math.max(320,Math.round(rect.width||960)),h=Math.round(w*9/16);renderer.setPixelRatio(ratio);renderer.setSize(w,h,false);if(camera){camera.aspect=w/h;camera.updateProjectionMatrix();}}
  function frame(now){

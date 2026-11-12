@@ -16,9 +16,10 @@ function gameForgeShooterBoot() {
   const theme=spec.shooterOptions?.theme||'space';
   const T=({neon:{bg:'#060619',mid:'#101d43',accent:'#53f9fa',danger:'#ff56bc',far:'#384691'},dragon:{bg:'#071f32',mid:'#12474e',accent:'#ffc46e',danger:'#f27842',far:'#6faba4'},space:{bg:'#050c25',mid:'#182451',accent:'#6ce9ff',danger:'#ff709c',far:'#4f64ab'}})[theme]||{};
   const levels=(spec.stages?.length?spec.stages:['Fase 1','Fase 2','Fase 3']).slice(0,30);
+  const configAt=i=>Array.isArray(spec.stageConfig)&&spec.stageConfig[i]&&typeof spec.stageConfig[i]==='object'?spec.stageConfig[i]:{};
   const patterns=['line','v','zigzag','escort','cross','swarm'];
   const waves=levels.map((name,i)=>({name,pattern:patterns[i%patterns.length],pattern2:patterns[(i+2)%patterns.length],
-    amount:Math.max(3,Math.round((7+i*3)*tuning.enemyMultiplier*tuning.difficulty)),spawnEvery:clamp(.94-i*.075,.39,.94),bossHp:Math.round((24+i*14)*tuning.bossMultiplier*tuning.difficulty),bossName: spec.enemyNames?.[i] || (theme==='dragon'?'Guardião das nuvens':theme==='neon'?'Sentinela cibernética':'Comandante sideral'),
+    amount:configAt(i).enemies>0?clamp(configAt(i).enemies,1,80):Math.max(3,Math.round((7+i*3)*tuning.enemyMultiplier*tuning.difficulty)),spawnEvery:clamp(.94-i*.075,.39,.94),bossHp:Math.round((24+i*14)*tuning.bossMultiplier*tuning.difficulty),bossName: spec.enemyNames?.[i] || (theme==='dragon'?'Guardião das nuvens':theme==='neon'?'Sentinela cibernética':'Comandante sideral'),
     scroll:110+i*22,enemySpeed:(82+i*12)*tuning.difficulty,accent:[T.accent,'#b5a4ff','#ffd57b','#84f5aa','#ff7da3'][i%5]}));
   // Particulas, tiros e inimigos possuem limites: gameplay nao depende da qualidade grafica.
   const LIMITS={enemies:32,enemyBullets:140,playerBullets:110,particles:Math.max(30,Math.round(180*tuning.particlesMultiplier)),stars:105};
@@ -116,7 +117,7 @@ function gameForgeShooterBoot() {
         waveSpawned+=count;spawnClock=phase.spawnEvery*(count>1?1.9:1);
       }
     }else if(!enemies.length && !boss){
-      bossSeen=true;boss={x:W/2,y:-110,r:65,hp:phase.bossHp,max:phase.bossHp,t:0,shot:1.1,phase:1,dead:false,entering:true};
+      bossSeen=true;if(configAt(stageIndex).boss==='no'){progress();return;}boss={x:W/2,y:-110,r:65,hp:phase.bossHp,max:phase.bossHp,t:0,shot:1.1,phase:1,dead:false,entering:true};
       note('ALERTA: '+phase.bossName.toUpperCase());sound(185,.36,'sawtooth',.055);
     }
   }
@@ -211,7 +212,7 @@ function gameForgeShooterBoot() {
     if(boss?.dead){boss=null;progress();}
     $('health').textContent=health+'%';$('score').textContent=score;$('ammo').textContent='NÍV '+weapon;
     $('level').textContent=(stageIndex+1)+'/'+levels.length;$('timer').textContent=Math.floor(stageTime)+'s';
-    $('mission').textContent=levels[stageIndex]+' · '+(boss?'CHEFE':`Ondas ${Math.min(waveSpawned,waves[stageIndex].amount)}/${waves[stageIndex].amount}`);
+    $('mission').textContent=(configAt(stageIndex).objective?configAt(stageIndex).objective+' · ':'')+levels[stageIndex]+' · '+(boss?'CHEFE':`Ondas ${Math.min(waveSpawned,waves[stageIndex].amount)}/${waves[stageIndex].amount}`);
   }
   function background(){
     ctx.fillStyle=T.bg;ctx.fillRect(0,0,W,H);

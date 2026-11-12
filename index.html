@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#10192a">
-  <title>GameForge Studio v0.9.1 — GDD + Engenheiro de Jogos</title>
+  <title>GameForge Studio v0.10.1 — GDD + Engenheiro de Jogos</title>
   <meta name="description" content="Leia um GDD em Markdown e gere protótipos de jogos no navegador, com ou sem inteligência artificial.">
   <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.9 · CRIADOR DE JOGOS</small></span></a>
+    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.10 · CRIADOR DE JOGOS</small></span></a>
     <nav class="top-actions"><span id="storage-tag" class="chip">Projeto no navegador</span><a class="subtle-link" href="./examples/gdd-exemplo.md" download>Exemplo .md</a><button class="small outline" id="export-top">Exportar ZIP ↗</button></nav>
   </header>
   <main class="studio">
@@ -75,6 +75,17 @@ Derrote o chefe.
         <label for="instruction">Sua instrução adicional</label>
         <textarea id="instruction" rows="3" placeholder="Ex.: Crie um chefe na última fase, melhore a dificuldade e adicione inventário e ataques especiais."></textarea>
         <div class="actions"><button id="generate" class="primary">▶ Criar novo jogo</button><button id="rerun" class="outline" disabled>↻ Executar prévia</button></div>
+        <section class="roadmap-panel" aria-label="Plano implementável do GDD">
+          <div class="qa-workbench-title"><span class="eyebrow">10 / ROTEIRO DO GDD</span><strong>Crie o jogo por etapas</strong></div>
+          <p class="hint">Organiza todo o Markdown em tarefas rastreáveis, inclusive GDDs de 300 KB. <strong>As tarefas começam pendentes.</strong> Gerar código não comprova que o requisito está pronto.</p>
+          <div class="roadmap-tools"><button id="roadmap-rebuild" class="outline small" type="button">▤ Atualizar tarefas do GDD</button><input id="roadmap-search" type="search" placeholder="Buscar fases, menus, inimigos..." aria-label="Buscar tarefas do GDD"><select id="roadmap-filter" aria-label="Filtrar status"><option value="all">Todas as situações</option><option value="pendente">Pendentes</option><option value="em andamento">Em andamento</option><option value="aguardando revisão">Aguardando revisão</option><option value="validada">Validadas</option><option value="bloqueada">Bloqueadas</option></select></div>
+          <div id="roadmap-stats" class="roadmap-stats" aria-live="polite">Analise o documento para gerar as tarefas.</div>
+          <div id="roadmap-list" class="roadmap-list" role="list"></div>
+          <button type="button" id="roadmap-more" class="outline small hidden">Mostrar mais tarefas</button>
+          <div class="roadmap-selected" id="roadmap-selected">Selecione uma tarefa para ver os requisitos e preparar um comando específico.</div>
+          <div class="roadmap-controls"><button id="roadmap-prepare" type="button" class="primary small" disabled>Usar tarefa como instrução</button><button id="roadmap-done" type="button" class="outline small" disabled>✓ Validar após QA</button><button id="roadmap-reopen" type="button" class="outline small" disabled>↶ Reabrir</button><button id="roadmap-block" type="button" class="outline small" disabled>Bloquear</button></div>
+          <p class="hint">Depois de aplicar melhorias, execute o QA, jogue e verifique os critérios. Somente você confirma a tarefa como validada. O plano também vai no ZIP.</p>
+        </section>
         <section class="dev-cycle" aria-label="Motor de evolução contínua">
           <div class="qa-workbench-title"><span class="eyebrow">09 / MOTOR DE EVOLUÇÃO</span><strong>Melhore o jogo sem recomeçar</strong></div>
           <p class="hint">Escreva uma melhoria acima e clique em Planejar ou Aplicar melhoria. Com IA, são feitas etapas separadas de planejamento e geração. Sem IA, somente as alterações suportadas são implementadas.</p>
@@ -143,6 +154,7 @@ Derrote o chefe.
   <script src="./js/qa-bridge.js"></script>
   <script src="./js/generator.js"></script>
   <script src="./js/development-engine.js"></script>
+  <script src="./js/gdd-roadmap.js"></script>
   <script src="./js/zip.js"></script>
   <script src="./js/visual-qa.js"></script>
   <script src="./js/model-inspector.js"></script>

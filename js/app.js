@@ -3,8 +3,9 @@
   'use strict';
   const $=id=>document.getElementById(id);
   const state={files:{},spec:null,selected:null,mode:'offline',generation:0};
-  const allowed=['index.html','style.css','game.js','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md'];
+  const allowed=['index.html','style.css','game.js','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json'];
   const devHistory=[];let lastPlan=null;
+  let roadmapTasks=[],selectedTaskId=null,preparedTaskId=null,roadmapCount=60,roadmapSource=null;
   const example=$('gdd').value;
   const shooterExamples={"navinha":"# ARMADA DO ECLIPSE\n\n## Visão geral\nJogo de navinha espacial shoot em up vertical com chefes e armas evolutivas.\n\n## Mecânicas\n- Controlar nave com WASD/setas e atirar com espaço\n- Três níveis de arma, escudo, cura, créditos e power-ups\n- Ondas de inimigos com formações lineares, V e zigzag\n- Padrões de tiros inimigos e chefe de várias fases\n- Controles touch para celular, pausa e HUD\n\n## Fase 1 — Patrulha Estelar\nInimigos scouts em linha e formação V; chefe Sentinela Zero.\n\n## Fase 2 — Cinturão de Meteoros\nOndas zigzag e escolta com invasores resistentes.\n\n## Fase 3 — Núcleo Escarlate\nEnfrentar chefe final com três padrões de ataques.\n","neon":"# NEON SKY: O ÚLTIMO PILOTO\n\n## Visão geral\nShoot em up de nave cyberpunk com cidade neon, disparos luminosos e ondas de inimigos.\n\n## Mecânicas\n- Piloto da nave pode mover-se em quatro direções, atirar e usar escudo\n- Inimigos em linha, V, zigzag, cruzamento e enxame\n- Chefes com múltiplas etapas e dificuldade crescente\n- Melhorias de armas e power-ups\n- Qualidade gráfica adaptativa, partículas limitadas, áudio e controles touch\n\n## Fase 1 — Cidade Neon\nCombates sobre os prédios luminosos contra patrulhas.\n\n## Fase 2 — Estação Orbital\nOndas de escolta e franco-atiradores mecânicos.\n\n## Fase 3 — Núcleo Neon\nDerrote APEX OMEGA após o último enxame.\n","dragao":"# DRAGÕES DO CREPÚSCULO\n\n## Visão geral\nJogo de dragão voador no estilo Dragon Fury, shoot em up vertical, com magia e chefes.\n\n## Mecânicas\n- Dragão ataca com rajadas de fogo evolutivas\n- Ondas de águias, harpias e dragões inimigos\n- Inimigos com movimento zigzag, onda, escolta e tiros direcionados\n- Power-ups de energia, escudo e fogo\n- Chefes com etapas de batalha, pausa e controles touch\n\n## Fase 1 — Céu Sereno\nEnfrentar águias e caçadores do vale.\n\n## Fase 2 — Tempestade Iminente\nHarpias e dragões elementais cercam o herói.\n\n## Fase 3 — Fúria Ardente\nO Guardião Ancestral aparece com três fases de ataque.\n"};
   const repoKnowledge=globalThis.GameForgeRepoKnowledge;
@@ -31,6 +32,79 @@
   const status=(message,error=false)=>{$('status').textContent=message;$('status').classList.toggle('bad',error);};
   const feedback=(msg,error=false)=>{$('feedback').textContent=msg;$('feedback').style.color=error?'#ffb2b8':'#91a6ba';};
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  // O roteiro é derivado do GDD integral, não de resumos da IA.
+  function roadmapSaveFiles(){
+    if(!state.files['game.js'])return;
+    state.files['PLANO_TAREFAS_GDD.md']=GameForgeRoadmap.report(roadmapTasks,$('gdd').value);
+    state.files['TAREFAS_GDD.json']=JSON.stringify({version:1,project:projectName(),tasks:roadmapTasks.map(({id,title,path,line,kind,status,checks,notes,revision})=>({id,title,path,line,kind,status,checks,notes,revision}))},null,2);
+  }
+  function roadmapSync(force=false){
+    const md=$('gdd').value;
+    if(!force&&md===roadmapSource)return;
+    roadmapTasks=GameForgeRoadmap.build(md,roadmapTasks).map(t=>t.status==='aguardando revisão'?{...t,status:'em andamento',notes:'GDD alterado; executar novo QA antes de validar.'}:t);
+    if(roadmapSource!==null&&md!==roadmapSource){qaState.last=null;qaState.baseline=null;}
+    roadmapSource=md;
+    if(!roadmapTasks.some(t=>t.id===selectedTaskId))selectedTaskId=null;
+    if(!roadmapTasks.some(t=>t.id===preparedTaskId))preparedTaskId=null;
+    roadmapCount=60;
+    roadmapRender();roadmapSaveFiles();
+  }
+  function selectedRoadmap(){return roadmapTasks.find(t=>t.id===selectedTaskId)||null;}
+  function roadmapRender(){
+    const s=GameForgeRoadmap.summary(roadmapTasks);
+    $('roadmap-stats').textContent=`${s.total} tarefas · ${s.pending} pendentes · ${s.doing} em andamento · ${s.review} em revisão · ${s.validated} validadas · ${s.blocked} bloqueadas`;
+    const query=$('roadmap-search').value.trim().toLowerCase();const filter=$('roadmap-filter').value;
+    const items=roadmapTasks.filter(t=>(filter==='all'||filter===t.status)&&(!query||(t.title+' '+t.kind+' '+t.path).toLowerCase().includes(query)));
+    const list=$('roadmap-list');list.replaceChildren();
+    for(const t of items.slice(0,roadmapCount)){
+      const button=document.createElement('button');button.className='roadmap-task'+(t.id===selectedTaskId?' selected':'');button.type='button';button.dataset.taskId=t.id;button.setAttribute('role','listitem');
+      const l=document.createElement('span');const title=document.createElement('span');title.className='roadmap-task-title';title.textContent=t.title;
+      const small=document.createElement('span');small.className='roadmap-task-info';small.textContent=t.kind+' · linha '+t.line;
+      l.append(title,document.createElement('br'),small);
+      const badge=document.createElement('span');badge.className='roadmap-task-state';badge.textContent=t.status;
+      button.append(l,badge);button.addEventListener('click',()=>{selectedTaskId=t.id;roadmapRender();saveState();});list.appendChild(button);
+    }
+    $('roadmap-more').classList.toggle('hidden',items.length<=roadmapCount);
+    const task=selectedRoadmap();
+    $('roadmap-selected').textContent=task?`${task.title}
+${task.kind} · linha ${task.line} · ${task.status}
+
+Critérios para verificar:
+${task.checks.map(c=>'• '+c).join('\n')}
+
+${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNotas: '+task.notes:''}`:'Selecione uma tarefa para preparar seu comando e acompanhar os testes.';
+    $('roadmap-prepare').disabled=!task;
+    $('roadmap-done').disabled=!task||task.status!=='aguardando revisão'||!qaState.last||!!qaState.candidate;
+    $('roadmap-reopen').disabled=!task||task.status==='pendente';
+    $('roadmap-block').disabled=!task||task.status==='bloqueada';
+  }
+  function roadmapMark(status,notes){
+    const task=selectedRoadmap();if(!task)return;
+    roadmapTasks=GameForgeRoadmap.changeStatus(roadmapTasks,task.id,status,notes);
+    roadmapSaveFiles();roadmapRender();if(state.files['game.js'])listFiles();saveState();
+  }
+  function roadmapPrepare(){
+    roadmapSync();const task=selectedRoadmap();if(!task)return;
+    preparedTaskId=task.id;
+    $('instruction').value=GameForgeRoadmap.context(task,$('gdd').value).slice(0,9200);
+    renderReferences();$('instruction').focus();
+    feedback('Pedido preparado a partir da linha '+task.line+'. Clique em Planejar alteração ou Aplicar melhoria.');saveState();
+  }
+  function roadmapValidate(){
+    if(selectedRoadmap()?.status!=='aguardando revisão'){feedback('A tarefa precisa ter uma alteração aplicada e testada antes da validação.',true);return;}
+    if(!qaState.last){feedback('Execute o QA antes de validar uma tarefa.',true);return;}
+    if(qaState.candidate){feedback('Primeiro aceite ou descarte a correção candidata.',true);return;}
+    roadmapMark('validada',`Revisão manual confirmada após QA em ${new Date().toISOString().slice(0,10)}; alertas automáticos: ${qaState.last.issues.length}. A inspeção funcional é responsabilidade de quem validou.`);
+    feedback('Tarefa marcada como validada por você. O restante do GDD permanece pendente.');
+  }
+  $('roadmap-rebuild').addEventListener('click',()=>{roadmapSync(true);feedback('Roteiro sincronizado com os capítulos do documento completo.');saveState();});
+  $('roadmap-search').addEventListener('input',()=>{roadmapCount=60;roadmapRender();});
+  $('roadmap-filter').addEventListener('change',()=>{roadmapCount=60;roadmapRender();});
+  $('roadmap-more').addEventListener('click',()=>{roadmapCount+=60;roadmapRender();});
+  $('roadmap-prepare').addEventListener('click',roadmapPrepare);
+  $('roadmap-done').addEventListener('click',roadmapValidate);
+  $('roadmap-reopen').addEventListener('click',()=>roadmapMark('pendente','Reaberta para nova implementação e testes.'));
+  $('roadmap-block').addEventListener('click',()=>roadmapMark('bloqueada','Bloqueada manualmente; informar dependência no GDD.'));
   function readingReport(md, spec){
     const headings=md.split(/\r?\n/).filter(x=>/^#{1,6}\s+\S/.test(x));
     return '# Leitura do GDD\n\n- Tamanho: '+new Blob([md]).size+' bytes / '+md.length+' caracteres' +
@@ -44,6 +118,7 @@
     const md=$('gdd').value.trim();
     if(!md){feedback('Cole ou importe um documento GDD antes de analisar.',true);return null;}
     if(new Blob([md]).size>1_000_000){feedback('O GDD ultrapassa 1 MB; divida anexos externos.',true);return null;}
+    roadmapSync();
     state.spec=GameForgeParser.parseGdd(md,$('instruction').value);
     const spec=state.spec;
     renderReferences();
@@ -55,7 +130,7 @@
   function saveState(){
     if(typeof qaState!=='undefined'&&qaState.candidate)return;
     try{
-      const {files}=state; const snapshot=JSON.stringify({gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files,selected:state.selected,model:$('model').value,apiUrl:$('api-url').value,liveSources:$('repo-live-sources').checked,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked});
+      const {files}=state; const snapshot=JSON.stringify({gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files,selected:state.selected,model:$('model').value,apiUrl:$('api-url').value,liveSources:$('repo-live-sources').checked,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId});
       if(snapshot.length<2_500_000)localStorage.setItem('gameforge-studio-v03',snapshot);
     }catch(e){console.warn('Armazenamento indisponível:',e);}
   }
@@ -72,6 +147,8 @@
       if(Array.isArray(snap.pinnedReferences))pinnedReferences=snap.pinnedReferences.filter(x=>repoKnowledge.entries.some(r=>r.id===x)).slice(0,5);
       if(Array.isArray(snap.history))devHistory.push(...snap.history.filter(x=>x?.files?.['game.js']&&x?.files?.['style.css']).slice(-4));
       if(typeof snap.deepPlan==='boolean')$('deep-plan').checked=snap.deepPlan;
+      roadmapTasks=GameForgeRoadmap.build($('gdd').value,Array.isArray(snap.roadmapRecords)?snap.roadmapRecords:[]);roadmapSource=$('gdd').value;
+      if(roadmapTasks.some(t=>t.id===snap.selectedTaskId))selectedTaskId=snap.selectedTaskId;roadmapRender();
       renderReferences();
       if(snap.files&&typeof snap.files==='object'){
         state.files=Object.fromEntries(Object.entries(snap.files).filter(([name,src])=>allowed.includes(name)&&typeof src==='string'));
@@ -93,6 +170,7 @@
       btn.addEventListener('click',()=>selectFile(k));$('file-list').appendChild(btn);
     }
     const ready=keys.length>0;
+    if(roadmapTasks.length)roadmapRender();
     $('improve').disabled=!Boolean(state.files['game.js']);$('undo-improvement').disabled=devHistory.length===0;
     $('export').disabled=!ready;$('export-top').disabled=!ready;$('html-export').disabled=!ready;$('rerun').disabled=!ready;$('open-game').disabled=!ready;
   }
@@ -107,6 +185,7 @@
     const src=$('file-editor').value;
     if(src.length>2000000){feedback('Arquivo muito grande para edição no navegador.',true);return;}
     state.files[state.selected]=src;
+    if(['game.js','style.css','index.html'].includes(state.selected)){qaState.last=null;qaState.baseline=null;}
     listFiles();selectFile(state.selected);if(!qaState.candidate)saveState();
     if(['game.js','style.css','index.html'].includes(state.selected))runPreview();
     feedback('Alteração aplicada ao arquivo '+state.selected+'.');
@@ -132,6 +211,7 @@
     return Uint8Array.from(raw,ch=>ch.charCodeAt(0));
   }
   function getExportFiles(){
+    roadmapSaveFiles();
     const files={...state.files};
     if(qaState.last){
       files['QA_inicio.png']=screenshotBytes(qaState.last.before.image);
@@ -203,11 +283,12 @@
         feedback('A IA devolveu o código. Teste o jogo na prévia antes de publicar.');
       }
       devHistory.length=0;renderHistory();
+      roadmapSaveFiles();
       state.generation++;state.spec=spec;
       qaState.last=null;qaState.baseline=null;qaState.vision=null;
       $('qa-before').removeAttribute('src');$('qa-after').removeAttribute('src');$('qa-shot').removeAttribute('src');
       $('qa-report').textContent='Nenhuma inspeção realizada.'; qaButtons();
-      listFiles();selectFile('game.js');runPreview();saveState();
+      listFiles();selectFile('game.js');runPreview();roadmapRender();saveState();
     }catch(e){
       const message=e.name==='AbortError'?'A solicitação excedeu o tempo limite.':e.message;
       log('[Erro] '+message);feedback(message,true);status('Erro ao gerar',true);
@@ -219,13 +300,15 @@
     $('undo-improvement').disabled=devHistory.length===0;
   }
   function pushHistory(instruction){
-    devHistory.push({instruction:String(instruction||'').slice(0,160),files:{...state.files},gdd:$('gdd').value,at:new Date().toISOString()});
+    devHistory.push({instruction:String(instruction||'').slice(0,160),files:{...state.files},taskRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),gdd:$('gdd').value,at:new Date().toISOString()});
     if(devHistory.length>4)devHistory.shift();renderHistory();
   }
   function undoImprovement(){
     if(qaState.candidate){feedback('Resolva a correção candidata antes de desfazer uma melhoria.',true);return;}
     const previous=devHistory.pop();if(!previous)return;
-    state.files=previous.files;state.spec=GameForgeParser.parseGdd($('gdd').value);
+    state.files=previous.files;
+    if(previous.taskRecords)roadmapTasks=GameForgeRoadmap.build($('gdd').value,previous.taskRecords);
+    roadmapRender();state.spec=GameForgeParser.parseGdd($('gdd').value);
     // O GDD original permanece; a configuração ativa é extraída novamente abaixo, quando disponível.
     const result=state.files['game.js']?.match(/const GAME_SPEC = (\{[^\n]*\});/);
     if(result){try{state.spec=JSON.parse(result[1]);}catch{}}
@@ -247,6 +330,7 @@
     if(qaState.candidate){feedback('Aceite ou descarte a correção candidata primeiro.',true);return;}
     const planned=planImprovement();if(!planned)return;
     const instruction=$('instruction').value.trim();
+    const activeTask=preparedTaskId&&instruction.startsWith('TAREFA DO GDD:')?selectedRoadmap():null;
     $('improve').disabled=true;status('Planejando melhoria...');
     let output=null;
     try{
@@ -271,6 +355,7 @@
       const before=qaState.last;
       pushHistory(instruction);
       state.files=output.files;
+      if(activeTask&&activeTask.id===preparedTaskId){roadmapTasks=GameForgeRoadmap.changeStatus(roadmapTasks,activeTask.id,'em andamento','Código modificado; aguardando execução do QA e revisão manual.');roadmapSaveFiles();roadmapRender();}
       if(output.spec)state.spec=output.spec;
       state.files['RELATORIO_EVOLUCAO.md']=GameForgeDevelopment.report(planned,output.applied);
       listFiles();selectFile('game.js');runPreview();saveState();
@@ -283,9 +368,10 @@
           undoImprovement();feedback('Possível regressão detectada; código anterior restaurado.',true);return;
         }
         if(before)qaState.baseline=before;
+        if(activeTask&&activeTask.id===preparedTaskId){roadmapTasks=GameForgeRoadmap.changeStatus(roadmapTasks,activeTask.id,'aguardando revisão',`QA executado: ${report.issues.length} alerta(s). Revisão funcional manual pendente.`);roadmapSaveFiles();roadmapRender();}
         feedback('Melhoria salva. QA executado: '+report.issues.length+' alertas. Revise jogabilidade e imagens.');
       }catch(e){log('[Teste indisponível] '+e.message);feedback('Mudança aplicada, mas QA não concluiu. Use Desfazer se houver problemas.',true);}
-      renderHistory();saveState();
+      renderHistory();roadmapRender();saveState();
     }catch(e){feedback('Falha na melhoria: '+(e.name==='AbortError'?'API excedeu tempo limite':e.message),true);log('[Evolução] '+e.message);}
     finally{$('improve').disabled=!state.files['game.js'];status(state.files['game.js']?'Prévia disponível':'Pronto para criar');}
   }
@@ -348,7 +434,7 @@
     try{
       await waitPreview();
       const report=await GameForgeVisualQA.run($('preview'),state.spec?.genre||'unknown',qaStatus);
-      qaState.last=report;qaState.vision=null;
+      qaState.last=report;qaState.vision=null;roadmapRender();
       $('qa-before').src=report.before.image;
       $('qa-after').src=report.after.image;
       if(report.shot?.image)$('qa-shot').src=report.shot.image;else $('qa-shot').removeAttribute('src');

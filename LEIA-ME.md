@@ -1,3 +1,7 @@
+# GameForge Studio v0.10.0 — plano de implementação por GDD
+
+**Novo:** na seção “10 / Roteiro do GDD”, importe até 1 MB de Markdown, transforme capítulos em tarefas rastreáveis, selecione uma, prepare a instrução, melhore o jogo, execute QA e valide manualmente. O ZIP inclui o plano e os estados em Markdown/JSON. [Leia as instruções detalhadas](ROTEIRO_GDD_V010.md).
+
 # GameForge Studio v0.9.1 — GDD grande
 
 **Correção:** importa Markdown de até 1 MB, inclusive GDD de 300 KB. O texto original não é cortado e vai integral no ZIP. O analisador percorre todo o documento; o modo sem IA aplica somente regras que já conhece. Com IA e backend atualizado, um GDD longo é processado por blocos antes da criação do jogo (cada bloco usa uma chamada ao modelo, com custos e duração adicionais). Não publique chaves de IA no GitHub Pages.

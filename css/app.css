@@ -76,3 +76,15 @@
 .dev-plan{max-height:195px;overflow:auto;white-space:pre-wrap;color:#d5e9eb;background:#081b2a;border:1px solid #33556a;border-radius:8px;padding:10px;font:11px/1.5 ui-monospace,monospace}
 #dev-history{max-height:75px;overflow:auto;white-space:pre-line}
 @media(max-width:700px){.dev-cycle{padding:9px}.dev-controls button{flex:1 1 100%}}
+
+/* v0.10: roteiro por capítulos de GDD, sem falsos indicadores de conclusão */
+.roadmap-panel{margin:12px 0;padding:14px;border:1px solid #37586b;border-radius:10px;background:#101f2e;display:grid;gap:10px}
+.roadmap-panel .hint{margin:0}.roadmap-tools,.roadmap-controls{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.roadmap-tools input{flex:2 1 165px;min-width:0}.roadmap-tools select{flex:1 1 145px;min-width:0}
+.roadmap-controls button{flex:1 1 125px}.roadmap-stats{color:#acccdf;font:12px/1.5 ui-monospace,monospace}
+.roadmap-list{display:grid;gap:5px;max-height:240px;overflow-y:auto;padding:3px;background:#091827;border-radius:8px}
+.roadmap-task{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center;padding:8px 10px;border:1px solid #33445d;border-radius:7px;background:#112537;color:inherit;text-align:left;cursor:pointer;width:100%}
+.roadmap-task.selected{border-color:#5ac5d3;background:#153848}.roadmap-task-title{font-size:12px;overflow-wrap:anywhere}.roadmap-task-info{font-size:10px;color:#a4b9ca}
+.roadmap-selected{padding:11px;background:#0b1d2c;border:1px solid #315265;border-radius:7px;white-space:pre-wrap;max-height:270px;overflow:auto;font-size:12px;line-height:1.55}
+.roadmap-task-state{border-radius:99px;background:#284253;color:#ddeef6;font-size:10px;padding:2px 6px;white-space:nowrap}
+@media(max-width:650px){.roadmap-panel{padding:9px}.roadmap-tools>*{flex-basis:100%!important}.roadmap-controls>*{flex:1 1 100%!important}}

@@ -3,6 +3,9 @@
 'use strict';
 const pattern=/\bconst GAME_SPEC = (\{[^\n]*\});/;
 const themes=['auto','forest','desert','neon','ruins'];
+const missions=['default','eliminate','collect','survive'];
+const combatMission=spec=>spec?.dimension==='3d'&&['arena','fps'].includes(spec.genre);
+const hasMissionRuntime=files=>String(files?.['game.js']||'').includes('R.missionReady(');
 function inspect(files){
  const match=String(files?.['game.js']||'').match(pattern);
  if(!match)return null;
@@ -22,7 +25,9 @@ function option(spec,index){
   objective:typeof o.objective==='string'?o.objective.slice(0,140):'',
   waves:Number.isInteger(o.waves)&&o.waves>=1?Math.min(12,o.waves):0,
   laps:Number.isInteger(o.laps)&&o.laps>=1?Math.min(8,o.laps):0,
-  theme:themes.includes(o.theme)?o.theme:'auto'};
+  theme:themes.includes(o.theme)?o.theme:'auto',
+  mission:missions.includes(o.mission)?o.mission:'default',
+  seconds:Number.isInteger(o.seconds)?Math.max(5,Math.min(180,o.seconds)):45};
 }
 function integer(value,max){const n=Number(value);return Number.isInteger(n)&&n>0?Math.min(n,max):0;}
 function edit(files,index,input){
@@ -35,13 +40,18 @@ function edit(files,index,input){
   boss:['yes','no'].includes(raw.boss)?raw.boss:'auto',
   objective:String(raw.objective||'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,140),
   waves:integer(raw.waves,12),laps:integer(raw.laps,8),
-  theme:themes.includes(raw.theme)?raw.theme:'auto'
+  theme:themes.includes(raw.theme)?raw.theme:'auto',
+  mission:missions.includes(raw.mission)?raw.mission:'default',
+  seconds:integer(raw.seconds,180)||45
  };
+ o.seconds=Math.max(5,o.seconds);
  if(maxEnemies(spec)===0)o.enemies=0;
  if(!['arena','fps','shooter','rpg'].includes(spec.genre))o.boss='auto';
  if(spec.genre!=='tower-defense')o.waves=0;
  if(spec.genre!=='racing'||spec.dimension!=='3d')o.laps=0;
  if(spec.dimension!=='3d')o.theme='auto';
+ if(!combatMission(spec)){o.mission='default';o.seconds=45;}
+ if(o.mission!=='default'&&!hasMissionRuntime(files))throw Error('Este jogo usa motor 3D antigo: a missão precisa do runtime v0.14. Crie um projeto novo para usar objetivos programados.');
  const proposed=String(input.name??spec.stages[index]).replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,80);
  if(!proposed)throw Error('O nome da fase não pode ser vazio.');
  spec.stages[index]=proposed;
@@ -53,10 +63,10 @@ function edit(files,index,input){
  return {changed:true,spec,files:{...files,'game.js':updated,'CAMPANHA_EDITOR.md':report(spec)}};
 }
 function report(spec){
- const lines=['# Configuração de campanha por fase','','As configurações executáveis estão em GAME_SPEC.stageConfig no game.js. 0 e "auto" usam o comportamento original do motor. O objetivo escrito é texto no HUD, não uma missão programada.','','| Fase | Inimigos | Chefe | Ondas | Voltas | Tema 3D | Objetivo (HUD) |','|---|---:|---|---:|---:|---|---|'];
- spec.stages.forEach((title,i)=>{const o=option(spec,i);const safe=x=>String(x).replace(/\|/g,'/').replace(/[\r\n]/g,' ');lines.push('| '+(i+1)+' — '+safe(title)+' | '+(o.enemies||'auto')+' | '+o.boss+' | '+(o.waves||'auto')+' | '+(o.laps||'auto')+' | '+o.theme+' | '+safe(o.objective||'Padrão do motor')+' |');});
+ const lines=['# Configuração de campanha por fase','','As configurações executáveis estão em GAME_SPEC.stageConfig no game.js. Os modos eliminar, coletar e sobreviver implementam condições reais nas aventuras 3D/FPS geradas com motor v0.14. O texto livre do objetivo é somente exibido no HUD.','','| Fase | Inimigos | Chefe | Ondas | Voltas | Tema 3D | Missão | Duração (s) | Texto do HUD |','|---|---:|---|---:|---:|---|---|---:|---|'];
+ spec.stages.forEach((title,i)=>{const o=option(spec,i);const safe=x=>String(x).replace(/\|/g,'/').replace(/[\r\n]/g,' ');lines.push('| '+(i+1)+' — '+safe(title)+' | '+(o.enemies||'auto')+' | '+o.boss+' | '+(o.waves||'auto')+' | '+(o.laps||'auto')+' | '+o.theme+' | '+o.mission+' | '+(o.mission==='survive'?o.seconds:'—')+' | '+safe(o.objective||'Padrão do motor')+' |');});
  return lines.join('\n')+'\n';
 }
-root.GameForgeCampaign={inspect,option,edit,maxEnemies,report};
+root.GameForgeCampaign={inspect,option,edit,maxEnemies,report,combatMission,hasMissionRuntime};
 if(typeof module!=='undefined')module.exports=root.GameForgeCampaign;
 })(typeof globalThis!=='undefined'?globalThis:this);

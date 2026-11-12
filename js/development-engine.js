@@ -15,7 +15,8 @@ const actions={
   theme:{title:'Atualizar tema visual',checks:['Contraste do HUD legível','Cenário renderiza sem falhas']},
   world:{title:'Ampliar o mundo 3D',checks:['Colisões e objetivos continuam acessíveis','FPS e câmera verificados']},
   quality:{title:'Ajustar qualidade 3D',checks:['Sombras e resolução adequadas ao dispositivo','Jogabilidade preservada']},
-  stage:{title:'Adicionar uma fase',checks:['Fase aparece na progressão','Game over e vitória preservados']}
+  stage:{title:'Adicionar uma fase',checks:['Fase aparece na progressão','Game over e vitória preservados']},
+  mission:{title:'Programar objetivo da fase',checks:['Portal bloqueado antes do objetivo','Objetivo libera saída quando cumprido','A vitória exige chegar ao portal']}
 };
 function analyze(instruction, spec){
   const t=norm(instruction);
@@ -45,7 +46,14 @@ function analyze(instruction, spec){
     if(/(grafico|qualidade).*(leve|baix|low)/.test(t))add('quality','low','Reduzir resolução e sombras');
     else if(/(grafico|qualidade).*(alt|melhor|high)/.test(t))add('quality','high','Aumentar qualidade dentro dos limites do motor');
   }
-  if(/(adicion\w*|criar|incluir|nova|mais uma|proxima)\s+(\w+\s+){0,2}(fase|missao)|\b(fase|missao)\s+nova/.test(t)){
+  const phase=/(?:\b(?:na|no|para|da|do)\s+)?\bfase\s*(\d{1,2})\b/.exec(t);
+  const missionMode=/\bsobreviv|\bresist\w*\s+por\b/.test(t)?'survive':/\b(eliminar?|elimine|derrotar?|derrote|matar?)\b.*\b(inimig\w*|todos\b|guardi\w*)/.test(t)?'eliminate':/\b(coletar?|coletem?|recolher|recolha|pegar?)\b.*\b(crista\w*|reliquia\w*)/.test(t)?'collect':null;
+  if(missionMode){
+    const duration=/(\d{1,3})\s*(?:segundos?|s\b)/.exec(t);
+    const value={index:phase?Number(phase[1])-1:-1,mode:missionMode,seconds:clamp(duration?Number(duration[1]):45,5,180)};
+    add('mission',value,'Configuração executável para a fase '+(value.index>=0?value.index+1:'não especificada'));
+  }
+  if(/(adicion\w*|criar|incluir|nova|mais uma|proxima)\s+(\w+\s+){0,2}(fase|missao)|\b(fase|missao)\s+nova/.test(t) && !missionMode){
     m=String(instruction).match(/(?:fase|miss[aã]o)\s+(?:nova\s*)?(?:chamad[ao]\s+)?["“']([^"”']{3,55})["”']/i);
     const named=(m&&m[1]) || `Fase ${Math.min(spec?.campaign?.maxStages||10,(spec?.stages?.length||3)+1)} — Novo desafio`;
     add('stage',named,'Acrescentar uma fase preservando as anteriores');
@@ -56,10 +64,10 @@ function plan(instruction,spec,files){
   const text=String(instruction||'').trim();
   const changes=analyze(text,spec);
   const supported=Boolean(files?.['game.js']&&specPattern.test(files['game.js']));
-  const supportedActions=spec?.dimension==='3d'?(spec.genre==='platform'?['speed','world','quality','theme','stage']:spec.genre==='racing'?['speed','enemies','world','quality','theme','stage']:['difficulty','enemies','boss','speed','fire','world','quality','theme','stage']):spec?.genre==='tower-defense'?['difficulty','enemies','boss','fire','stage']:spec?.genre==='platform'?['speed','enemies','stage']:spec?.genre==='racing'?['speed','enemies','difficulty','stage']:Object.keys(actions);
-  const tasks=changes.map((a,i)=>({number:i+1,title:a.title,rationale:a.why,checks:a.checks,possible:supported&&supportedActions.includes(a.id)&&(a.id!=='theme'||spec?.genre==='shooter'||(spec?.dimension==='3d'&&['forest','desert','neon','ruins'].includes(a.value)))}));
+  const supportedActions=spec?.dimension==='3d'?(spec.genre==='platform'?['speed','world','quality','theme','stage']:spec.genre==='racing'?['speed','enemies','world','quality','theme','stage']:['difficulty','enemies','boss','speed','fire','world','quality','theme','stage','mission']):spec?.genre==='tower-defense'?['difficulty','enemies','boss','fire','stage']:spec?.genre==='platform'?['speed','enemies','stage']:spec?.genre==='racing'?['speed','enemies','difficulty','stage']:Object.keys(actions);
+  const tasks=changes.map((a,i)=>({number:i+1,title:a.title,rationale:a.why,checks:a.checks,possible:supported&&supportedActions.includes(a.id)&&(a.id!=='theme'||spec?.genre==='shooter'||(spec?.dimension==='3d'&&['forest','desert','neon','ruins'].includes(a.value)))&&(a.id!=='mission'||(spec?.dimension==='3d'&&['arena','fps'].includes(spec.genre)&&a.value.index>=0&&a.value.index<spec.stages.length&&files['game.js'].includes('R.missionReady(')))}));
   const unknown=text.length>0&&changes.length===0;
-  const unsupported=tasks.filter(t=>!t.possible).map(t=>t.title);
+  const unsupported=tasks.filter(t=>!t.possible).map(t=>t.title+(t.title==='Programar objetivo da fase'?' — informe "fase N" de um jogo ação/FPS 3D gerado no motor v0.14':' — regra não implementada neste motor'));
   return {title:'Plano incremental de desenvolvimento',instruction:text,reason:'Preservar arquivos atuais e editar apenas as configurações controladas do motor',
     tasks, pending:[...(unknown?['Pedido livre não coberto por regras: exige IA ou programação manual']:[]),...unsupported],
     tests:['Verificar sintaxe JS','Iniciar prévia','Executar QA de movimentação e controles','Comparar com versão anterior'],
@@ -87,6 +95,11 @@ function modify(files,spec,planResult){
     else if(action.id==='theme'&&next.shooterOptions)next.shooterOptions.theme=action.value;
     if(action.id==='world')next.worldOptions={...next.worldOptions,size:clamp(Math.round((next.worldOptions?.size||48)*action.value),32,88)};
     if(action.id==='quality')next.worldOptions={...next.worldOptions,quality:action.value};
+    if(action.id==='mission'){
+      if(!Array.isArray(next.stageConfig))next.stageConfig=[];
+      const index=action.value.index;
+      next.stageConfig[index]={...(next.stageConfig[index]||{}),mission:action.value.mode,seconds:action.value.seconds};
+    }
     const stageLimit=next.campaign?.maxStages||10;
     if(action.id==='stage'&&next.stages.length<stageLimit)next.stages.push(action.value);
     if(action.id==='stage'&&next.stages.length>=stageLimit&&JSON.stringify(next)===before)pending.push('Limite de '+stageLimit+' fases para este motor');
@@ -96,6 +109,7 @@ function modify(files,spec,planResult){
   if(JSON.stringify(old)===JSON.stringify(next))return {changed:false,files:{...files},applied:[],pending};
   const updated=files['game.js'].replace(specPattern,`const GAME_SPEC = ${JSON.stringify(next).replace(/<\//g,'<\\/')};`);
   const out={...files,'game.js':updated};
+  if(applied.includes(actions.mission.title)&&root.GameForgeCampaign?.report)out['CAMPANHA_EDITOR.md']=root.GameForgeCampaign.report(next);
   out['RELATORIO_EVOLUCAO.md']=report({...planResult,pending:[...planResult.pending,...pending]},applied);
   return {changed:true,files:out,applied,pending,spec:next};
 }

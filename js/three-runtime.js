@@ -10,6 +10,7 @@ function gameForgeThreeBoot(){
  const stages=(spec.stages&&spec.stages.length?spec.stages:['Primeira jornada']).slice(0,30);
  const stageConfig=Array.isArray(spec.stageConfig)?spec.stageConfig:[];
  const configAt=i=>{const c=stageConfig[i];return c&&typeof c==='object'&&!Array.isArray(c)?c:{};};
+ const missionAt=i=>['eliminate','collect','survive'].includes(configAt(i).mission)?configAt(i).mission:'default';
  const themes={
   forest:{sky:0xabc8cb,fog:0xa1bdba,ground:0x476756,road:0x8a8064,grass:0x75935b,wood:0x674b35,stone:0x72827c,accent:0x64f2c3,enemy:0xd26c62},
   desert:{sky:0xe1c0a0,fog:0xd5b58d,ground:0xb78e5a,road:0x836647,grass:0xc6a462,wood:0x846144,stone:0xba8262,accent:0x5be6d3,enemy:0xbd5260},
@@ -33,6 +34,15 @@ function gameForgeThreeBoot(){
  const keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
  let pointerDown=false,dragX=null,jumpHeld=false,lastDraw=-1000;
  const vec=new T.Vector3(),look=new T.Vector3(),camTarget=new T.Vector3();
+ const combatGoal=()=>({enemies:enemies.length,collected,required,elapsed:stageClock,seconds:configAt(stage).seconds});
+ const combatReady=()=>R.missionReady(missionAt(stage),combatGoal());
+ function combatObjective(){
+  const mode=missionAt(stage);
+  if(mode==='survive')return 'Sobreviva '+Math.max(0,Math.ceil(R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock))+'s · Alcance o portal';
+  if(mode==='collect')return 'Colete os cristais '+collected+'/'+required+' · Portal';
+  if(mode==='eliminate')return 'Elimine os '+enemies.length+' inimigos restantes · Portal';
+  return enemies.length+' guardiões · Cristais '+collected+'/'+required;
+ }
  const down=(...names)=>names.some(k=>keys.has(k)||touch[k]);
  const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
  const notice=(s,time=3)=>{$('message').textContent=s;$('message').style.opacity='1';noticeTime=time;};
@@ -136,7 +146,7 @@ function gameForgeThreeBoot(){
   if(genre!=='racing')hero=humanoid(0x508da2);
   hero.visible=genre!=='fps';hero.position.set(player.x,player.y,player.z);
   if(genre==='fps')camera.position.set(player.x,1.65,player.z);else if(genre==='platform')camera.position.set(player.x+3,player.y+10,player.z+17);else camera.position.set(player.x,15,player.z+13);
-  updateCamera(1);updateHUD();resize();notice(stages[stage]+' · '+(genre==='racing'?'Siga os portais verdes em ordem':genre==='platform'?'Colete os cristais e encontre o portal':'Elimine os guardiões e reúna os 3 cristais'),5);
+  updateCamera(1);updateHUD();resize();notice(stages[stage]+' · '+(genre==='racing'?'Siga os portais verdes em ordem':genre==='platform'?'Colete os cristais e encontre o portal':combatObjective()),5);
  }
  function start(){stage=0;health=100;score=0;ammo=80;clock=0;state='play';paused=false;keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);pointerDown=false;buildStage();$('overlay').classList.add('hidden');$('pause').textContent='Pausar';canvas.focus();}
  function overlay(title,text,button){$('overlay-title').textContent=title;$('overlay-sub').textContent=text;$('start').textContent=button;$('overlay').classList.remove('hidden');}
@@ -179,7 +189,7 @@ function gameForgeThreeBoot(){
    b.life-=dt;if(b.life<=0)b.dead=true;b.mesh.position.set(b.x,b.y,b.z);
   }
   enemies=enemies.filter(e=>e.hp>0);bullets=bullets.filter(b=>{if(b.dead){world.remove(b.mesh);return false;}return true;});
-  collect();const ready=R.goalReady(genre,{enemies:enemies.length,collected,required});goal.portal.material=ready?mats.crystal:mats.portal;if(ready&&distance(player,goal)<2)finishStage();
+  collect();const ready=combatReady();goal.portal.material=ready?mats.crystal:mats.portal;if(ready&&distance(player,goal)<2)finishStage();
  }
  function collect(){for(const c of coins)if(!c.taken&&distance(c,player)<1.2&&Math.abs(player.y+.9-c.y)<1.6){c.taken=true;c.mesh.visible=false;collected++;score+=80;health=Math.min(100,health+8);notice('Cristal '+collected+' / '+required,1.5);}}
  function updatePlatform(dt){
@@ -216,7 +226,7 @@ function gameForgeThreeBoot(){
  function updateHUD(){
   $('health').textContent=Math.ceil(health);$('score').textContent=score;$('ammo').textContent=genre==='racing'?Math.round(Math.abs(player.speed)*12)+' km/h':genre==='platform'?collected+'/'+required:ammo;
   $('level').textContent=(stage+1)+'/'+stages.length;$('timer').textContent=Math.floor(clock)+'s';
-  $('mission').textContent=(configAt(stage).objective?String(configAt(stage).objective).slice(0,140)+' · ':'')+(genre==='racing'?'Volta '+Math.min(lapTarget,race.lap+1)+'/'+lapTarget+' · Portal '+(race.next+1)+'/8':genre==='platform'?'Cristais '+collected+'/'+required+' · Alcance o portal':enemies.length+' guardiões · Cristais '+collected+'/'+required);
+  $('mission').textContent=(configAt(stage).objective?String(configAt(stage).objective).slice(0,140)+' · ':'')+(genre==='racing'?'Volta '+Math.min(lapTarget,race.lap+1)+'/'+lapTarget+' · Portal '+(race.next+1)+'/8':genre==='platform'?'Cristais '+collected+'/'+required+' · Alcance o portal':combatObjective());
  }
  function resize(){const rect=canvas.getBoundingClientRect(),w=Math.max(320,Math.round(rect.width||960)),h=Math.round(w*9/16);renderer.setPixelRatio(ratio);renderer.setSize(w,h,false);if(camera){camera.aspect=w/h;camera.updateProjectionMatrix();}}
  function frame(now){
@@ -236,7 +246,7 @@ function gameForgeThreeBoot(){
  }
  window.__gameforgeTelemetry=()=>{
   vec.set(player.x,player.y+1,player.z);if(camera)vec.project(camera);
-  return {dimension:'3d',genre,state,paused,frames,stage:stage+1,stages:stages.length,clock,health,score,enemies:enemies.length,collected,required,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
+  return {dimension:'3d',genre,state,paused,frames,stage:stage+1,stages:stages.length,clock,health,score,enemies:enemies.length,collected,required,missionMode:genre==='arena'||genre==='fps'?missionAt(stage):'default',missionReady:genre==='arena'||genre==='fps'?combatReady():null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
  };
  $('control-help').textContent=genre==='fps'?'WASD / setas: mover · Q/E ou arrastar: mirar · Espaço/clique: atirar':genre==='racing'?'W / ↑ acelerar · S / ↓ frear · A/D virar · Espaço turbo':genre==='platform'?'A/D ou ←/→: mover · W/↑/Espaço: saltar · Q/S: profundidade':'WASD / setas: mover · Espaço/clique: ataque · P: pausa';
  $('overlay-sub').textContent=genre==='fps'?'Explore em primeira pessoa, elimine os guardiões, colete 3 cristais e atravesse o portal. Mire com Q/E ou arrastando no cenário.':genre==='racing'?'Complete as voltas atravessando os portais em ordem. Evite o tráfego e as barreiras.':genre==='platform'?'Salte entre as ilhas, colete cristais e alcance o portal. Cada plataforma alcançada salva seu retorno.':'Explore o mundo, enfrente os guardiões e reúna os cristais para abrir o portal.';

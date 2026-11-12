@@ -27,7 +27,14 @@ function gameForgeWorldRules(){
   return {positions,indices};
  }
  function goalReady(genre,s){return genre==='racing'?!!s.complete:genre==='platform'?s.collected>=s.required:s.enemies===0&&s.collected>=s.required;}
- return {clamp,rng,moveCircle,platformRoute,raceProgress,trackRibbon,goalReady};
+ // Missões extras usam somente informações verificáveis do estado, sem timers de sistema.
+ function missionReady(mode,s){
+  if(mode==='eliminate')return s.enemies===0;
+  if(mode==='collect')return s.collected>=s.required;
+  if(mode==='survive')return Number.isFinite(s.elapsed)&&s.elapsed>=clamp(Number(s.seconds)||45,5,180);
+  return goalReady('arena',s);
+ }
+ return {clamp,rng,moveCircle,platformRoute,raceProgress,trackRibbon,goalReady,missionReady};
 }
 if(typeof module!=='undefined')module.exports=gameForgeWorldRules;
 if(typeof globalThis!=='undefined')globalThis.gameForgeWorldRules=gameForgeWorldRules;

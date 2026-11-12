@@ -143,7 +143,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
 
   /* v0.13 — edição determinística por fase, versionada no game.js e no backup. */
   let stageEditorIndex=0;
-  const stageFields=['stage-title','stage-enemies','stage-boss','stage-waves','stage-laps','stage-theme','stage-objective'];
+  const stageFields=['stage-title','stage-enemies','stage-boss','stage-waves','stage-laps','stage-theme','stage-mission','stage-seconds','stage-objective'];
   function stageEditorRead(){
     const spec=GameForgeCampaign.inspect(state.files);
     if(!spec)return;
@@ -151,14 +151,17 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     $('stage-title').value=spec.stages[index]||'';
     $('stage-enemies').value=o.enemies;$('stage-boss').value=o.boss;
     $('stage-waves').value=o.waves;$('stage-laps').value=o.laps;
-    $('stage-theme').value=o.theme;$('stage-objective').value=o.objective;
+    $('stage-theme').value=o.theme;$('stage-mission').value=o.mission;$('stage-seconds').value=o.seconds;$('stage-objective').value=o.objective;
     const available=GameForgeCampaign.maxEnemies(spec),genre=spec.genre,three=spec.dimension==='3d';
     $('stage-enemies').max=String(available);$('stage-enemies').disabled=!available;
     $('stage-boss').disabled=!['arena','fps','shooter','rpg'].includes(genre);
     $('stage-waves').disabled=genre!=='tower-defense';
     $('stage-laps').disabled=!(three&&genre==='racing');
     $('stage-theme').disabled=!three;
-    $('stage-hint').textContent='Fase '+(index+1)+'/'+spec.stages.length+' · '+(available?'Até '+available+' inimigos; 0 usa a quantidade automática.':'Quantidade de inimigos não editável neste motor.')+' As alterações passam a valer após reiniciar a prévia.';
+    const missionAvailable=GameForgeCampaign.combatMission(spec)&&GameForgeCampaign.hasMissionRuntime(state.files);
+    $('stage-mission').disabled=!missionAvailable;
+    $('stage-seconds').disabled=!missionAvailable||o.mission!=='survive';
+    $('stage-hint').textContent='Fase '+(index+1)+'/'+spec.stages.length+' · '+(available?'Até '+available+' inimigos; 0 usa a quantidade automática.':'Quantidade de inimigos não editável neste motor.')+' Modos programados disponíveis: '+(missionAvailable?'eliminar, coletar e sobreviver.':'somente em jogos 3D de ação/FPS criados com runtime v0.14.')+' As alterações passam a valer após reiniciar a prévia.';
   }
   function stageEditorRender(){
     const spec=GameForgeCampaign.inspect(state.files);
@@ -174,9 +177,9 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(qaState.candidate){feedback('Aceite ou descarte a correção candidata antes de alterar uma fase.',true);return;}
     try{
       const old=GameForgeCampaign.inspect(state.files);if(!old)throw Error('Este jogo não possui configuração de campanha editável.');
-      const input=reset?{name:old.stages[stageEditorIndex],enemies:0,boss:'auto',waves:0,laps:0,theme:'auto',objective:''}:
+      const input=reset?{name:old.stages[stageEditorIndex],enemies:0,boss:'auto',waves:0,laps:0,theme:'auto',mission:'default',seconds:45,objective:''}:
         {name:$('stage-title').value,enemies:$('stage-enemies').value,boss:$('stage-boss').value,
-         waves:$('stage-waves').value,laps:$('stage-laps').value,theme:$('stage-theme').value,objective:$('stage-objective').value};
+         waves:$('stage-waves').value,laps:$('stage-laps').value,theme:$('stage-theme').value,mission:$('stage-mission').value,seconds:$('stage-seconds').value,objective:$('stage-objective').value};
       const updated=GameForgeCampaign.edit(state.files,stageEditorIndex,input);
       if(!updated.changed){feedback('Esta fase já possui essas configurações.');return;}
       pushHistory('Editar fase '+(stageEditorIndex+1)+' — '+old.stages[stageEditorIndex]);
@@ -189,6 +192,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     }catch(e){feedback('Não foi possível editar a fase: '+e.message,true);}
   }
   $('stage-select').addEventListener('change',()=>{stageEditorIndex=Number($('stage-select').value)||0;stageEditorRead();});
+  $('stage-mission').addEventListener('change',()=>{$('stage-seconds').disabled=$('stage-mission').disabled||$('stage-mission').value!=='survive';});
   $('stage-save').addEventListener('click',()=>stageEditorSave(false));
   $('stage-reset').addEventListener('click',()=>stageEditorSave(true));
   function projectSnapshot(){
@@ -485,7 +489,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       state.files=output.files;
       if(activeTask&&activeTask.id===preparedTaskId){roadmapTasks=GameForgeRoadmap.changeStatus(roadmapTasks,activeTask.id,'em andamento','Código modificado; aguardando execução do QA e revisão manual.');roadmapSaveFiles();roadmapRender();}
       if(output.spec)state.spec=output.spec;
-      state.files['RELATORIO_EVOLUCAO.md']=GameForgeDevelopment.report(planned,output.applied);
+      state.files['RELATORIO_EVOLUCAO.md']=GameForgeDevelopment.report({...planned,pending:[...new Set([...(planned.pending||[]),...(output.pending||[])])]},output.applied);
       listFiles();selectFile('game.js');runPreview();saveState();
       log('[Evolução] '+output.applied.join(', '));
       feedback('Melhoria aplicada ao projeto existente. Executando teste de regressão...');

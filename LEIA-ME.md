@@ -1,3 +1,28 @@
+# GameForge Studio v0.14 — Missões com regras reais
+
+## Novo nesta versão
+
+Para **aventura 3D e FPS 3D criados com o motor v0.14**, o painel **11 / Campanha** passa a oferecer:
+- **Padrão:** derrotar todos os inimigos **e** recolher 3 cristais;
+- **Eliminar:** derrotar todos os inimigos; cristais opcionais;
+- **Coletar:** recolher 3 cristais; inimigos opcionais;
+- **Sobreviver:** permanecer vivo durante 5 a 180 segundos; inimigos e cristais opcionais.
+
+Em todos os modos, o jogador ainda precisa chegar ao **portal** depois que a condição for cumprida. Os estados são calculados no loop de jogo, usando `gameForgeWorldRules.missionReady()`. A telemetria informa `missionMode`, `missionReady` e `surviveRemaining`.
+
+O **motor incremental sem IA** reconhece alguns comandos naturais, por exemplo:
+- `Na fase 2, sobreviver por 45 segundos.`
+- `Na fase 1, eliminar todos os inimigos.`
+- `Na fase 3, coletar os cristais.`
+
+Use **Planejar alteração** e **Aplicar melhoria**. Cada alteração é salva no `game.js`, pode ser desfeita e acompanha o backup. O relatório `CAMPANHA_EDITOR.md` registra os modos executáveis. A aplicação continua limitada a esses comandos reconhecidos e não cria roteiros/mecânicas inéditas em linguagem livre.
+
+**Compatibilidade:** projetos 3D gerados antes da v0.14 não contêm a lógica `missionReady` serializada. O editor impede configurar missões que não teriam efeito nesses arquivos. Continue usando as configurações antigas ou gere um novo protótipo 3D com o motor atualizado. A atualização do Studio não modifica automaticamente jogos já exportados.
+
+**Validação:** testes adicionados para as condições de vitória, planejamento de comandos, limites, geração de jogos exportados e preservação de configurações por fase. O QA no navegador continua necessário para confirmar comportamento visual e jogabilidade.
+
+---
+
 # GameForge Studio v0.13 — Editor de campanhas por fase
 
 A versão 0.13 adiciona o painel **11 / Campanha**. Depois de criar um jogo, escolha qualquer uma das até 30 fases e altere título, quantidade de inimigos (onde o motor permite), chefe, ondas de defesa de torres, voltas de corridas 3D, ambiente 3D e o texto da missão no HUD.

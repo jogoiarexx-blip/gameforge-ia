@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10192a">
+  <title>GameForge Studio v0.6 — GDD + Engenheiro de Jogos</title>
+  <meta name="description" content="Leia um GDD em Markdown e gere protótipos de jogos no navegador, com ou sem inteligência artificial.">
+  <link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.6 · ENGENHEIRO DE JOGOS</small></span></a>
+    <nav class="top-actions"><span id="storage-tag" class="chip">Projeto no navegador</span><a class="subtle-link" href="./examples/gdd-exemplo.md" download>Exemplo .md</a><button class="small outline" id="export-top">Exportar ZIP ↗</button></nav>
+  </header>
+  <main class="studio">
+    <section class="panel left-panel" aria-label="Projeto e documento GDD">
+      <div class="panel-head"><span class="eyebrow">01 / ESPECIFICAÇÃO</span><h1>Seu GDD vira jogo.</h1><p>Importe um documento Markdown ou cole sua ideia. Depois escolha como gerar o código.</p></div>
+      <div class="panel-scroll">
+        <label for="project-name">Nome do projeto</label><input id="project-name" type="text" maxlength="90" value="Meu jogo" placeholder="Nome do jogo">
+        <div class="label-row"><label for="gdd">Documento GDD (.md)</label><span id="file-indicator" class="muted tiny">Até 100 mil caracteres</span></div>
+        <div class="file-pick"><label for="md-file" class="file-btn">📁 Carregar arquivo .md</label><input type="file" id="md-file" accept=".md,.markdown,text/markdown,text/plain"><button id="example" class="small outline" type="button">Usar exemplo</button></div>
+        <textarea id="gdd" class="gdd-editor" spellcheck="false" aria-label="Conteúdo Markdown do GDD" placeholder="# Nome do Jogo&#10;&#10;## História&#10;..."># SOMBRAS DO VALE
+
+## Gênero
+Survival horror com exploração, combate e missões.
+
+## História
+Um investigador precisa atravessar uma cidade tomada por criaturas.
+
+## Inimigos
+- Infectado: persegue o jogador
+- Caçador: inimigo mais rápido
+- Chefe: inimigo resistente
+
+## Mecânicas
+- Movimento WASD
+- Combate e munição
+- Coletar itens de cura
+- Evolução e upgrades
+- Pausa e suporte a celular
+
+## Fase 1 — Entrada na cidade
+Encontre o caminho e derrote as criaturas.
+
+## Fase 2 — Hospital abandonado
+Enfrente inimigos perigosos.
+
+## Fase 3 — Confronto final
+Derrote o chefe.
+</textarea>
+        <div class="mini-head"><span>Interpretação do documento</span><button id="analyze" class="small outline" type="button">Analisar GDD</button></div>
+        <div id="analysis" class="analysis muted">Clique em analisar para identificar gênero, fases e funcionalidades.</div>
+        <section class="repo-learning" aria-label="Biblioteca de conhecimento dos jogos">
+          <div class="mini-head"><span>05 / Biblioteca dos seus jogos</span><button type="button" id="knowledge-refresh" class="small outline">Buscar padrões</button></div>
+          <p class="hint">Referências de código verificadas em seus repositórios do GitHub. Funciona offline. A IA usa os padrões recomendados para orientar a geração e a correção; o modo sem IA apenas sugere.</p>
+          <div class="repo-learning-count" id="knowledge-count">21 padrões indexados</div>
+          <div id="knowledge-results" class="repo-learning-results" aria-live="polite"></div>
+          <button type="button" id="knowledge-clear" class="small outline">Limpar referências fixadas</button>
+        </section>
+      </div>
+    </section>
+    <section class="panel center-panel" aria-label="Configuração e jogo">
+      <div class="toolbar"><div class="toolbar-left"><span class="eyebrow">02 / CRIAR</span><h2>Gerador de jogos</h2></div><span id="status" class="status">Pronto para criar</span></div>
+      <div class="setup">
+        <div class="mode-row"><label class="mode"><input type="radio" name="mode" value="offline" checked><span><strong>⚙️ Sem IA</strong><small>Rápido · gratuito · funciona offline</small></span></label><label class="mode"><input type="radio" name="mode" value="ai"><span><strong>✦ Com IA</strong><small>GPT, Claude ou Gemini · via API</small></span></label></div>
+        <div id="ai-settings" class="ai-settings hidden">
+          <div class="split"><div><label for="model">Modelo de IA</label><input id="model" value="openai/gpt-6" placeholder="openai/modelo ou anthropic/modelo"></div><div><label for="api-url">Servidor de IA</label><input id="api-url" placeholder="http://127.0.0.1:8765"></div></div>
+          <label for="api-token">Token de acesso do servidor (opcional no modo local)</label><input id="api-token" type="password" autocomplete="off" placeholder="Não é a chave da OpenAI / Claude / Gemini">
+          <label class="repo-source-opt"><input type="checkbox" id="repo-live-sources" checked> Consultar trechos atuais dos arquivos públicos do GitHub</label>
+          <p class="hint">Quando ativado, o backend lê até 2 arquivos selecionados (limite de tamanho) e envia trechos ao provedor de IA para orientar o código. Não executa arquivos do GitHub. Sem internet, usa apenas os resumos locais.</p>
+          <p class="hint">As chaves dos provedores ficam no servidor, nunca no HTML. No GitHub Pages, a IA exige uma API HTTPS externa configurada.</p>
+        </div>
+        <label for="instruction">Sua instrução adicional</label>
+        <textarea id="instruction" rows="3" placeholder="Ex.: Crie um chefe na última fase, melhore a dificuldade e adicione inventário e ataques especiais."></textarea>
+        <div class="actions"><button id="generate" class="primary">▶ Gerar jogo a partir do GDD</button><button id="rerun" class="outline" disabled>↻ Executar prévia</button></div>
+        <p id="feedback" class="hint" role="status">Você pode começar sem instalar nada. O projeto e seu código ficam armazenados neste navegador.</p>
+      </div>
+      <div class="preview-head"><div><span class="eyebrow">03 / EXECUÇÃO</span><h3>Prévia jogável <span id="live-indicator" class="live-dot"></span></h3></div><div class="preview-tools"><button id="fullscreen" class="small outline">⛶ Tela cheia</button><button id="open-game" class="small outline" disabled>Abrir jogo</button></div></div>
+      <div class="preview-box" id="preview-box"><iframe id="preview" title="Prévia isolada do jogo" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe><div class="preview-empty" id="preview-empty"><div class="empty-symbol">▣</div><h3>Seu jogo aparece aqui</h3><p>Importe um GDD e clique em <b>Gerar jogo</b>.</p></div></div>
+      <section class="qa-workbench" aria-label="Laboratório de testes visuais">
+        <div class="qa-workbench-title"><span class="eyebrow">04 / INSPEÇÃO & CORREÇÃO</span><strong>QA visual e regressão</strong></div>
+        <div class="qa-controls">
+          <button id="qa-run" class="outline small" disabled>◉ Testar comportamento</button>
+          <button id="qa-baseline" class="outline small" disabled>Guardar referência</button>
+          <button id="qa-compare" class="outline small" disabled>Comparar antes/depois</button>
+          <button id="qa-vision" class="outline small" disabled>✦ Revisão visual com IA</button>
+          <button id="qa-repair" class="outline small" disabled>✦ Propor correção</button>
+        </div>
+        <div id="qa-status" class="hint" role="status">Execute o jogo e depois inicie a inspeção automática.</div>
+        <div id="qa-report" class="qa-report muted">Nenhuma inspeção realizada.</div>
+        <div class="qa-frames"><figure><img id="qa-before" alt="Cena inicial da inspeção"><figcaption>Antes · começo do teste</figcaption></figure><figure><img id="qa-after" alt="Cena após movimentação"><figcaption>Depois · após controle</figcaption></figure></div>
+        <div id="qa-candidate" class="qa-candidate hidden"><strong>Correção candidata — ainda não salva</strong><p id="qa-candidate-message" class="hint">Teste a prévia antes de aceitar.</p><div class="qa-controls"><button id="qa-accept" class="primary small">Aceitar correção</button><button id="qa-reject" class="outline small">Descartar e restaurar</button></div></div>
+      </section>
+      <section class="eng-workbench" aria-label="Engenheiro automático de jogos Three.js">
+        <div class="qa-workbench-title"><span class="eyebrow">06 / MOTOR PRÓPRIO DE CÓDIGO</span><strong>Engenheiro de Jogos · v0.7</strong></div>
+        <p class="hint">Para projetos Three.js completos com backend local: analisar funções, detectar erros, compilar, abrir em Chromium e revisar correções do OpenCode. Sem backend, esta seção permanece indisponível; o gerador 2D acima continua funcionando offline. A telemetria avançada exige que o jogo registre explicitamente seu ator e seu loop de renderização.</p>
+        <div class="eng-row"><div><label for="eng-project">Projeto do backend</label><select id="eng-project" aria-label="Projeto Three.js"><option value="">Conecte o backend</option></select></div><button class="outline small" id="eng-refresh">Conectar / listar projetos</button></div>
+        <div class="eng-row"><div><label for="eng-new-name">Novo projeto Three.js</label><input id="eng-new-name" maxlength="60" placeholder="Nome do novo jogo"></div><button class="outline small" id="eng-new">Criar no backend</button></div>
+        <div class="eng-row"><div><label for="eng-import-file">Importar fontes de jogo existente (.zip)</label><input id="eng-import-file" type="file" accept=".zip,application/zip"></div><button class="outline small" id="eng-import">Importar ZIP</button></div>
+        <div class="eng-controls"><button class="small outline" id="eng-scan">◈ Analisar código</button><button class="small outline" id="eng-build">▧ Compilar</button><button class="small outline" id="eng-test">◉ Executar e testar</button></div>
+        <div class="eng-anim-panel" aria-label="Diagnóstico temporal de personagens 3D">
+          <strong>07 / Laboratório de animação e movimentação 3D</strong>
+          <p class="hint">Captura deslocamento, orientação visual, altura e câmera; com integração adicional também verifica ossos dos pés e tempo dos clipes. Testes W/S/A/D não substituem análise visual humana.</p>
+          <div class="eng-controls"><button class="small outline" id="eng-telemetry-install">Preparar telemetria no projeto</button><button class="small outline" id="eng-telemetry-test">Testar animações no Chromium</button></div>
+          <details id="eng-telemetry-instructions" hidden><summary>Como conectar personagens e animações no código</summary><pre id="eng-telemetry-snippet" class="eng-report"></pre></details>
+          <div id="eng-telemetry-results" class="hint" role="status">Nenhum teste temporal executado.</div>
+        </div>
+        <label for="eng-task">Instrução de correção para OpenCode</label><textarea id="eng-task" rows="3" placeholder="Ex.: Personagem anda de ré. Corrija o eixo frontal, preservando o movimento relativo à câmera e acrescente testes."></textarea>
+        <label class="repo-source-opt"><input id="eng-use-gdd" type="checkbox" checked> Anexar um resumo do GDD desta tela à instrução</label>
+        <div class="eng-controls"><button class="primary small" id="eng-propose">✦ Criar correção candidata</button><button class="outline small" id="eng-accept" disabled>✓ Aprovar alteração</button><button class="outline small" id="eng-discard" disabled>✕ Descartar</button></div>
+        <div class="hint" id="eng-status" role="status">Conecte o backend para verificar OpenCode, Tree-sitter e Playwright.</div>
+        <pre id="eng-report" class="eng-report">Nenhum diagnóstico executado.</pre>
+        <details id="eng-diff-section" class="eng-diff-section" hidden><summary>Comparar código original × correção candidata</summary><pre id="eng-diff" class="eng-report"></pre></details>
+        <div id="eng-shots" class="eng-shots"></div>
+        <p class="hint">Segurança: a IA não altera arquivos reais até você aprovar. O OpenCode tem comandos de shell e acesso externo bloqueados por política, mas isso <strong>não substitui um sandbox de sistema operacional</strong>. Execute apenas na sua máquina ou em servidor isolado, não como serviço público aberto.</p>
+      </section>
+      <div id="log" class="log">[Studio] Aguardando um GDD.</div>
+    </section>
+    <section class="panel right-panel" aria-label="Arquivos de código">
+      <div class="panel-head slim"><span class="eyebrow">04 / PROJETO</span><h2>Arquivos gerados</h2><p>O código pertence a você: inspecione, edite e exporte.</p></div>
+      <div class="right-content"><div id="file-list" class="files"><div class="muted tiny">Nenhum arquivo gerado.</div></div><div class="code-head"><label for="file-editor" id="editor-label">Editor de código</label><button id="apply-edit" class="small outline" disabled>Salvar alteração</button></div><textarea spellcheck="false" id="file-editor" class="code" aria-label="Editor de código" placeholder="Selecione um arquivo gerado..." disabled></textarea><div class="asset-inspector"><strong>Inspeção de personagem GLB/GLTF</strong><label class="small file-btn" for="model-file">Importar modelo (inspeção estrutural)</label><input type="file" id="model-file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json"><div id="model-report" class="hint">Verifica malhas, rig, ossos e clipes localmente. Pose e qualidade visual exigem laboratório 3D.</div>
+<div class="character-create"><strong>Gerar personagem 3D procedural</strong><label for="character-name">Nome</label><input id="character-name" type="text" maxlength="50" value="Personagem 01">
+<div class="split"><div><label for="character-style">Tipo</label><select id="character-style"><option value="soldado">Soldado</option><option value="exploradora">Exploradora</option><option value="zumbi">Zumbi</option><option value="policial">Policial</option></select></div><div><label for="character-height">Altura (m)</label><input id="character-height" type="number" min="0.4" max="3.5" step="0.05" value="1.75"></div></div>
+<button type="button" class="outline small" id="character-generate">Criar GLB com Blender</button>
+<div id="character-result" class="hint" role="status">Requer backend configurado e Blender instalado. Não gera personagem livre detalhado por texto nesta versão.</div></div></div><div class="right-bottom"><button id="export" class="primary" disabled>↓ Baixar projeto .ZIP</button><button id="html-export" class="outline" disabled>↓ Baixar jogo HTML</button><p class="hint">O ZIP inclui código-fonte, GDD original e relatório de geração. A prévia não executa APIs de terceiros.</p></div></div>
+    </section>
+  </main>
+  <script src="./js/parser.js"></script>
+  <script src="./js/runtime-template.js"></script>
+  <script src="./js/qa-bridge.js"></script>
+  <script src="./js/generator.js"></script>
+  <script src="./js/zip.js"></script>
+  <script src="./js/visual-qa.js"></script>
+  <script src="./js/model-inspector.js"></script>
+  <script src="./js/repository-knowledge.js"></script>
+  <script src="./js/app.js"></script>
+  <script src="./js/engineering-workbench.js"></script>
+</body>
+</html>

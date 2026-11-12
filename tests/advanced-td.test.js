@@ -59,11 +59,11 @@ test('enemies advance in five lanes, can damage structures and cannot ignore res
  R.place(d,0,0,'wall');R.begin(d);
  for(let n=0;n<150;n++)R.step(d,.05);
  assert.ok(d.spawned>0);assert.ok(d.enemies.length>0);
- const e=d.enemies[0];e.lane=0;e.y=.5;e.x=.45;e.speed=3;
+ const e=d.enemies[0];e.lane=1;e.y=1.5;e.x=.02;e.speed=3;
  R.step(d,.05);
- assert.equal(d.mowers[0],false,'first leak triggers emergency');
+ assert.equal(d.mowers[1],false,'first leak triggers emergency');
  assert.equal(d.base,100,'mower prevents initial base loss');
- d.enemies=[{...e,dead:false,x:.05,slow:0,lane:0}];
+ d.enemies=[{...e,dead:false,x:.02,slow:0,lane:1,y:1.5}];
  d.active=true;d.spawned=d.amount;
  R.step(d,.05);
  assert.ok(d.base<100,'second leak damages base');

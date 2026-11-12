@@ -8,6 +8,18 @@
   const devHistory=[];let lastPlan=null;
   let roadmapTasks=[],selectedTaskId=null,preparedTaskId=null,roadmapCount=60,roadmapSource=null;
   const example=$('gdd').value;
+  function creationOptions(){return {dimension:$('game-dimension').value,genre:$('game-style').value,theme:$('game-theme').value,size:Number($('game-world-size').value),quality:$('game-quality').value};}
+  function renderStyles(){
+    const prior=$('game-style').value,dimension=$('game-dimension').value;
+    const genres=GameForgeParser.styles[dimension]||Object.keys(GameForgeParser.labels);
+    $('game-style').replaceChildren(new Option('Detectar pelo GDD','auto'),...genres.map(g=>new Option(GameForgeParser.labels[g],g)));
+    $('game-style').value=genres.includes(prior)?prior:'auto';
+  }
+  function restoreCreationOptions(options){
+    const o=options||{};$('game-dimension').value=['2d','3d'].includes(o.dimension)?o.dimension:'auto';renderStyles();
+    if([...$('game-style').options].some(x=>x.value===o.genre))$('game-style').value=o.genre;
+    $('game-theme').value=['forest','desert','neon','ruins'].includes(o.theme)?o.theme:'auto';$('game-world-size').value=o.size===72?'72':'48';$('game-quality').value=['low','high'].includes(o.quality)?o.quality:'auto';
+  }
   const shooterExamples={"navinha":"# ARMADA DO ECLIPSE\n\n## Visão geral\nJogo de navinha espacial shoot em up vertical com chefes e armas evolutivas.\n\n## Mecânicas\n- Controlar nave com WASD/setas e atirar com espaço\n- Três níveis de arma, escudo, cura, créditos e power-ups\n- Ondas de inimigos com formações lineares, V e zigzag\n- Padrões de tiros inimigos e chefe de várias fases\n- Controles touch para celular, pausa e HUD\n\n## Fase 1 — Patrulha Estelar\nInimigos scouts em linha e formação V; chefe Sentinela Zero.\n\n## Fase 2 — Cinturão de Meteoros\nOndas zigzag e escolta com invasores resistentes.\n\n## Fase 3 — Núcleo Escarlate\nEnfrentar chefe final com três padrões de ataques.\n","neon":"# NEON SKY: O ÚLTIMO PILOTO\n\n## Visão geral\nShoot em up de nave cyberpunk com cidade neon, disparos luminosos e ondas de inimigos.\n\n## Mecânicas\n- Piloto da nave pode mover-se em quatro direções, atirar e usar escudo\n- Inimigos em linha, V, zigzag, cruzamento e enxame\n- Chefes com múltiplas etapas e dificuldade crescente\n- Melhorias de armas e power-ups\n- Qualidade gráfica adaptativa, partículas limitadas, áudio e controles touch\n\n## Fase 1 — Cidade Neon\nCombates sobre os prédios luminosos contra patrulhas.\n\n## Fase 2 — Estação Orbital\nOndas de escolta e franco-atiradores mecânicos.\n\n## Fase 3 — Núcleo Neon\nDerrote APEX OMEGA após o último enxame.\n","dragao":"# DRAGÕES DO CREPÚSCULO\n\n## Visão geral\nJogo de dragão voador no estilo Dragon Fury, shoot em up vertical, com magia e chefes.\n\n## Mecânicas\n- Dragão ataca com rajadas de fogo evolutivas\n- Ondas de águias, harpias e dragões inimigos\n- Inimigos com movimento zigzag, onda, escolta e tiros direcionados\n- Power-ups de energia, escudo e fogo\n- Chefes com etapas de batalha, pausa e controles touch\n\n## Fase 1 — Céu Sereno\nEnfrentar águias e caçadores do vale.\n\n## Fase 2 — Tempestade Iminente\nHarpias e dragões elementais cercam o herói.\n\n## Fase 3 — Fúria Ardente\nO Guardião Ancestral aparece com três fases de ataque.\n"};
   const repoKnowledge=globalThis.GameForgeRepoKnowledge;
   let pinnedReferences=[];
@@ -120,7 +132,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(!md){feedback('Cole ou importe um documento GDD antes de analisar.',true);return null;}
     if(new Blob([md]).size>1_000_000){feedback('O GDD ultrapassa 1 MB; divida anexos externos.',true);return null;}
     roadmapSync();
-    const spec=GameForgeParser.parseGdd(md,$('instruction').value);
+    let spec;try{spec=GameForgeParser.parseGdd(md,$('instruction').value,creationOptions());}catch(e){feedback(e.message,true);return null;}
     state.spec=GameForgeProject.activeSpec(state.files,spec);
     renderReferences();
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');
@@ -130,7 +142,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   function projectName(){return ($('project-name').value.trim()||'gameforge-jogo').replace(/[\\/:*?"<>|]+/g,'-').slice(0,70);}
   function projectSnapshot(){
     roadmapSync();
-    return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
+    return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,creationOptions:creationOptions(),roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
   }
   function storageMessage(result){
     $('project-storage-status').textContent=result.message;
@@ -156,6 +168,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     $('deep-plan').checked=snap.deepPlan;
     state.files=snap.files;state.selected=null;preparedTaskId=null;lastPlan=null;state.generation++;
     state.spec=GameForgeProject.activeSpec(state.files,GameForgeParser.parseGdd(snap.gdd));
+    restoreCreationOptions(snap.creationOptions||{dimension:state.spec.dimension,genre:state.spec.genre,...state.spec.worldOptions});
     roadmapTasks=GameForgeRoadmap.build(snap.gdd,snap.roadmapRecords);roadmapSource=snap.gdd;roadmapCount=60;
     selectedTaskId=roadmapTasks.some(t=>t.id===snap.selectedTaskId)?snap.selectedTaskId:null;
     $('roadmap-search').value='';$('roadmap-filter').value='all';
@@ -215,7 +228,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(!state.files['game.js']||!state.files['style.css'])return;
     const spec=state.spec||GameForgeParser.parseGdd($('gdd').value);
     $('preview-empty').classList.add('hide');
-    const doc=GameForgeGenerator.shell(spec.title,state.files['style.css'],state.files['game.js'],true);
+    const doc=GameForgeGenerator.shell(spec.title,state.files['style.css'],state.files['game.js'],true,state.files);
     $('preview').srcdoc=doc;
     $('qa-run').disabled=false;
     $('live-indicator').classList.add('active');status('Prévia carregada');
@@ -241,7 +254,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       if(qaState.last.shot?.image)files['QA_disparo.png']=screenshotBytes(qaState.last.shot.image);
     }
     if(qaState.baseline)files['QA_referencia.png']=screenshotBytes(qaState.baseline.after.image);
-    if(state.spec)files['index.html']=GameForgeGenerator.shell(state.spec.title,files['style.css'],files['game.js'],false);
+    if(state.spec)files['index.html']=GameForgeGenerator.shell(state.spec.title,files['style.css'],files['game.js'],false,files);
     return files;
   }
   function downloadZip(){
@@ -256,7 +269,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(!state.files['game.js'])return;
     if(qaState.candidate){feedback('Aceite ou descarte a correção antes de exportar.',true);return;}
     const spec=state.spec||GameForgeParser.parseGdd($('gdd').value);
-    const text=GameForgeGenerator.shell(spec.title,state.files['style.css'],state.files['game.js'],true);
+    const text=GameForgeGenerator.shell(spec.title,state.files['style.css'],state.files['game.js'],true,state.files);
     fileBlob(new Blob([text],{type:'text/html;charset=utf-8'}),projectName().replace(/\s+/g,'-')+'.html');
     feedback('Jogo HTML autônomo exportado.');
   }
@@ -317,11 +330,12 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         log('[Sem IA] Mecânicas de modelos pré-programados. Não é interpretação integral de regras inéditas.');
         feedback('Jogo gerado sem IA. Ele já pode ser jogado, editado e exportado.');
       }else{
+        if(spec.dimension==='3d')throw Error('Para criar um jogo 3D com o motor local, selecione Sem IA. O backend atual gera os modelos 2D; o painel 3D do backend continua separado.');
         const server=$('api-url').value.trim() || (!/github\.io$/i.test(location.hostname) && /^https?:$/.test(location.protocol)?location.origin:'');
         if(!server)throw new Error('Informe uma API HTTPS em “Servidor de IA”. O GitHub Pages não executa o backend.');
         if(!/^https?:\/\//.test(server))throw new Error('URL inválida do servidor (http:// ou https://).');
         if(location.protocol==='https:'&&server.startsWith('http://')&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/.test(server))throw new Error('Use HTTPS para conectar um site HTTPS à API.');
-        const payload={model:$('model').value.trim(),gdd:$('gdd').value,instruction:$('instruction').value,current_files:{},reference_ids:references().map(x=>x.id),read_sources:$('repo-live-sources').checked,deep_plan:$('deep-plan').checked,mode:'create'};
+        const payload={model:$('model').value.trim(),gdd:$('gdd').value,instruction:GameForgeParser.creationInstruction(spec,$('instruction').value),current_files:{},reference_ids:references().map(x=>x.id),read_sources:$('repo-live-sources').checked,deep_plan:$('deep-plan').checked,mode:'create'};
         log('[Com IA] Solicitando código ao servidor: '+server);
         if(new Blob([$('gdd').value]).size>35000)log('[GDD extenso] O backend vai ler todas as partes com IA antes de planejar. Isso pode exigir várias chamadas e gerar custos da API.');
         const headers={'Content-Type':'application/json'};if($('api-token').value)headers['X-GameForge-Token']=$('api-token').value;
@@ -494,6 +508,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(!state.files['game.js'])return;
     $('qa-run').disabled=true;qaStatus('Executando roteiro de testes...');
     try{
+      $('preview-box').scrollIntoView({block:'center',inline:'nearest'});
       await waitPreview();
       const report=await GameForgeVisualQA.run($('preview'),state.spec?.genre||'unknown',qaStatus);
       qaState.last=report;qaState.vision=null;roadmapRender();
@@ -674,17 +689,35 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   for(const name of ['navinha','neon','dragao']){
     $('example-'+name).addEventListener('click',()=>{
       unrestoredProject=false;
+      restoreCreationOptions({dimension:'2d',genre:'shooter'});
       $('gdd').value=shooterExamples[name];$('instruction').value='';
       $('project-name').value=(shooterExamples[name].split('\n')[0].replace(/^#\s*/,''));
       $('file-indicator').textContent='Exemplo '+name+' · editável';
       analyze();saveState();feedback('GDD de '+name+' carregado. Agora clique em Gerar jogo.');
     });
   }
+  const expandedExamples={
+    rpg:{dimension:'2d',genre:'rpg',title:'GUARDIÕES DO VALE',theme:'forest',idea:'RPG de ação com mapa amplo, experiência, níveis, poções, inventário e combate. Recolher os selos, enfrentar os guardiões e entrar no portal.'},
+    defense:{dimension:'2d',genre:'tower-defense',title:'FORTALEZA DAS MARÉS',theme:'forest',idea:'Defesa de torres com construção por grade, melhoria de torres, ondas inimigas, créditos e defesa da base.'},
+    adventure3d:{dimension:'3d',genre:'arena',title:'O VALE DOS GUARDIÕES',theme:'forest',idea:'Aventura 3D em terceira pessoa. Explorar floresta com personagens low poly animados, encontrar cristais, combater criaturas e liberar o portal.'},
+    fps3d:{dimension:'3d',genre:'fps',title:'POSTO NÉON',theme:'neon',idea:'FPS 3D. Explorar o posto, usar WASD para andar e Q/E para mirar, eliminar sentinelas, coletar energia e abrir a saída.'},
+    racing3d:{dimension:'3d',genre:'racing',title:'CIRCUITO DO POENTE',theme:'desert',idea:'Corrida 3D. Dirigir entre checkpoints em ordem, evitar tráfego e completar as voltas do circuito.'},
+    platform3d:{dimension:'3d',genre:'platform',title:'ILHAS DO AMANHECER',theme:'ruins',idea:'Plataforma 3D. Saltar entre ilhas, recolher cristais, evitar quedas e alcançar o portal final.'}
+  };
+  for(const [key,preset] of Object.entries(expandedExamples)){
+    $('example-'+key).addEventListener('click',()=>{
+      unrestoredProject=false;restoreCreationOptions(preset);
+      $('project-name').value=preset.title;$('instruction').value='';
+      $('gdd').value='# '+preset.title+'\n\n## Visão geral\n'+preset.idea+'\n\n## Controles e interface\nMenu, pausa, controles touch e HUD.\n\n'+['Primeiros passos','Rota dos guardiões','O último desafio'].map((title,i)=>'## Fase '+(i+1)+' — '+title+'\n'+preset.idea+'\n').join('\n');
+      $('file-indicator').textContent='Exemplo '+GameForgeParser.labels[preset.genre]+' '+preset.dimension.toUpperCase();analyze();saveState();feedback('Exemplo carregado. Clique em Criar novo jogo para jogar.');
+    });
+  }
+  for(const id of ['game-dimension','game-style','game-theme','game-world-size','game-quality'])$(id).addEventListener('change',()=>{if(id==='game-dimension')renderStyles();analyze();saveState();});
   $('generate').addEventListener('click',()=>projectOperation(generate));
   $('rerun').addEventListener('click',runPreview);
   $('apply-edit').addEventListener('click',applyEdit);
   $('export').addEventListener('click',downloadZip);$('export-top').addEventListener('click',downloadZip);$('html-export').addEventListener('click',downloadHtml);
-  $('open-game').addEventListener('click',()=>{const spec=state.spec||GameForgeParser.parseGdd($('gdd').value);const html=GameForgeGenerator.shell(spec.title,state.files['style.css'],state.files['game.js'],true);const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000);});
+  $('open-game').addEventListener('click',()=>{const spec=state.spec||GameForgeParser.parseGdd($('gdd').value);const html=GameForgeGenerator.shell(spec.title,state.files['style.css'],state.files['game.js'],true,state.files);const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000);});
   $('fullscreen').addEventListener('click',()=>{const el=$('preview-box');if(document.fullscreenElement)document.exitFullscreen();else if(el.requestFullscreen)el.requestFullscreen();});
   window.addEventListener('message',ev=>{if(ev.source!==$('preview').contentWindow)return;if(ev.data&&ev.data.kind==='gameforge-error'){log('[Prévia] '+String(ev.data.message).slice(0,400));status('Erro na prévia',true);}});
   $('file-editor').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const t=e.target;const s=t.selectionStart;t.setRangeText('  ',s,t.selectionEnd,'end');}if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();applyEdit();}});
@@ -694,6 +727,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('repo-live-sources').addEventListener('change',saveState);
   $('gdd').addEventListener('change',saveState);$('instruction').addEventListener('change',saveState);$('project-name').addEventListener('change',saveState);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!qaState.candidate)saveState();});
+  renderStyles();
   restoreState();
   renderReferences();analyze();
 })();

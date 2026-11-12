@@ -1,7 +1,7 @@
 /* Backups portáteis do Studio. Validação de dados sem executar código. */
 (function(root){
 'use strict';
-const allowedFiles=['index.html','style.css','game.js','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json'];
+const allowedFiles=['index.html','style.css','game.js','engine-3d.js','THREE-LICENSE.txt','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json'];
 const states=['pendente','em andamento','aguardando revisão','validada','bloqueada'];
 const bytes=s=>new TextEncoder().encode(s).length;
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -36,6 +36,7 @@ function normalize(snap){
   roadmapRecords:records(snap.roadmapRecords),selectedTaskId:text(snap.selectedTaskId??'',160,'Tarefa selecionada'),
   pinnedReferences:Array.isArray(snap.pinnedReferences)?snap.pinnedReferences.filter(x=>typeof x==='string'&&x.length<160).slice(0,5):[],
   deepPlan:snap.deepPlan!==false,
+  creationOptions:object(snap.creationOptions)?{dimension:['2d','3d'].includes(snap.creationOptions.dimension)?snap.creationOptions.dimension:'auto',genre:['arena','shooter','racing','platform','rpg','fps','tower-defense'].includes(snap.creationOptions.genre)?snap.creationOptions.genre:'auto',theme:['forest','desert','neon','ruins'].includes(snap.creationOptions.theme)?snap.creationOptions.theme:'auto',size:snap.creationOptions.size===72?72:48,quality:['low','high'].includes(snap.creationOptions.quality)?snap.creationOptions.quality:'auto'}:undefined,
   history:history.map(h=>{
    if(!object(h))throw Error('Versão anterior inválida.');
    return {instruction:text(h.instruction,1000,'Descrição'),at:text(h.at,100,'Data'),gdd:text(h.gdd,1000000,'GDD anterior'),files:files(h.files),taskRecords:records(h.taskRecords)};
@@ -43,7 +44,7 @@ function normalize(snap){
  return result;
 }
 function encode(snap){
- const encoded=JSON.stringify({format:'gameforge-project',version:1,studioVersion:'0.11.0',savedAt:new Date().toISOString(),project:normalize(snap)});
+ const encoded=JSON.stringify({format:'gameforge-project',version:1,studioVersion:'0.12.0',savedAt:new Date().toISOString(),project:normalize(snap)});
  if(bytes(encoded)>20000000)throw Error('Backup acima de 20 MB. Reduza o histórico antes de exportar.');
  return encoded;
 }
@@ -55,14 +56,32 @@ function decode(raw){
 }
 function save(storage,key,snapshot){
  let raw;
- try{raw=JSON.stringify(snapshot);restoreStored(raw);}
+ try{
+  // Evita duplicar bibliotecas e arquivos inalterados em quatro versões.
+  const pool=[],indices=new Map();
+  const intern=source=>{if(!indices.has(source)){indices.set(source,pool.length);pool.push(source);}return indices.get(source);};
+  const pack=value=>object(value)?Object.fromEntries(Object.entries(value).map(([name,source])=>[name,intern(source)])):value;
+  const packed={...snapshot,fileEncoding:'pool-v1',files:pack(snapshot.files),history:Array.isArray(snapshot.history)?snapshot.history.map(h=>({...h,files:pack(h.files)})):snapshot.history,filePool:pool};
+  raw=JSON.stringify(packed);restoreStored(raw);
+ }
  catch(e){return {ok:false,message:'Não salvo no navegador: '+e.message+' Revise o conteúdo para salvar ou baixar o backup.'};}
  try{storage.setItem(key,raw);return {ok:true,message:'Salvo neste navegador'};}
  catch{return {ok:false,message:'Não salvo no navegador. Baixe um backup para preservar o projeto.'};}
 }
 function restoreStored(raw){
- const snap=JSON.parse(raw);
+ let snap=JSON.parse(raw);
  if(!object(snap))throw Error('Projeto salvo inválido.');
+ if(snap.fileEncoding==='pool-v1'){
+  if(!Array.isArray(snap.filePool)||snap.filePool.length>100||snap.filePool.some(x=>typeof x!=='string'))throw Error('Arquivos compartilhados inválidos.');
+  const unpack=value=>{
+   if(!object(value))return value;
+   return Object.fromEntries(Object.entries(value).map(([name,index])=>{
+    if(!Number.isInteger(index)||index<0||index>=snap.filePool.length)throw Error('Referência de arquivo inválida.');
+    return [name,snap.filePool[index]];
+   }));
+  };
+  snap={...snap,files:unpack(snap.files),history:Array.isArray(snap.history)?snap.history.map(h=>({...h,files:unpack(h.files)})):snap.history};
+ }
  const filter=value=>object(value)?Object.fromEntries(Object.entries(value).filter(([name])=>allowedFiles.includes(name))):value;
  return normalize({...snap,files:filter(snap.files),history:Array.isArray(snap.history)?snap.history.map(h=>object(h)?{...h,files:filter(h.files)}:h):snap.history});
 }

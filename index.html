@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#10192a">
-  <title>GameForge Studio v0.11.0 — GDD + Engenheiro de Jogos</title>
+  <title>GameForge Studio v0.12.0 — Jogos 2D e 3D</title>
   <meta name="description" content="Leia um GDD em Markdown e gere protótipos de jogos no navegador, com ou sem inteligência artificial.">
   <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.11 · CRIADOR DE JOGOS</small></span></a>
+    <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>v0.12 · MOTORES 2D + 3D</small></span></a>
     <nav class="top-actions"><span id="storage-tag" class="chip">Projeto no navegador</span><a class="subtle-link" href="./examples/gdd-exemplo.md" download>Exemplo .md</a><button class="small outline" id="export-top">Exportar ZIP ↗</button></nav>
   </header>
   <main class="studio">
@@ -25,6 +25,14 @@
           <p id="project-storage-status" class="hint" role="status" aria-live="polite">O backup .gameforge.json permite reabrir o projeto completo.</p>
         </section>
         <label for="project-name">Nome do projeto</label><input id="project-name" type="text" maxlength="90" value="Meu jogo" placeholder="Nome do jogo">
+        <section class="engine-settings" aria-label="Estilo e gráficos do jogo">
+          <div class="mini-head"><span>Como será seu jogo?</span><span class="tag">Até 30 fases</span></div>
+          <div class="split"><div><label for="game-dimension">Dimensão</label><select id="game-dimension"><option value="auto">Detectar pelo GDD</option value="2d">2D · Canvas</option><option value="3d">3D · Three.js</option></select></div><div><label for="game-style">Estilo de jogo</label><select id="game-style"><option value="auto">Detectar pelo GDD</option></select></div></div>
+          <label for="game-theme">Ambiente 3D</label><select id="game-theme"><option value="auto">Detectar pelo GDD</option><option value="forest">Floresta e vilarejo</option><option value="desert">Deserto dourado</option><option value="neon">Cidade neon</option><option value="ruins">Ruínas e mistério</option></select>
+          <div class="split"><div><label for="game-world-size">Área 3D</label><select id="game-world-size"><option value="48">Padrão</option><option value="72">Ampla</option></select></div><div><label for="game-quality">Gráficos 3D</label><select id="game-quality"><option value="auto">Adaptativos</option><option value="low">Leves</option><option value="high">Altos</option></select></div></div>
+          <p class="hint">O estilo escolhido vale para a próxima criação. Os novos motores geram cenários e personagens procedurais; regras livres e assets detalhados continuam exigindo desenvolvimento.</p>
+          <div class="engine-examples"><button class="small outline" type="button" id="example-rpg">RPG 2D</button><button class="small outline" type="button" id="example-defense">Defesa de torres</button><button class="small outline" type="button" id="example-adventure3d">Aventura 3D</button><button class="small outline" type="button" id="example-fps3d">FPS 3D</button><button class="small outline" type="button" id="example-racing3d">Corrida 3D</button><button class="small outline" type="button" id="example-platform3d">Plataforma 3D</button></div>
+        </section>
         <div class="label-row"><label for="gdd">Documento GDD (.md)</label><span id="file-indicator" class="muted tiny">Importação de GDD até 1 MB · documento completo</span></div>
         <div class="file-pick"><label for="md-file" class="file-btn">📁 Carregar arquivo .md</label><input type="file" id="md-file" accept=".md,.markdown,text/markdown,text/plain"><button id="example" class="small outline" type="button">Usar exemplo</button></div>
         <div class="shooter-examples" aria-label="Exemplos de jogos de nave"><span>Novos exemplos de navinha</span><div class="shooter-example-buttons"><button class="outline small" id="example-navinha" type="button">Nave espacial</button><button class="outline small" id="example-neon" type="button">Neon</button><button class="outline small" id="example-dragao" type="button">Dragão</button></div></div>
@@ -100,8 +108,8 @@ Derrote o chefe.
           <div class="dev-controls"><button class="outline small" id="plan-improvement">▤ Planejar alteração</button><button class="primary small" id="improve" disabled>✦ Aplicar melhoria</button><button class="outline small" id="undo-improvement" disabled>↶ Desfazer</button></div>
           <div id="development-plan" class="dev-plan" aria-live="polite">Nenhuma melhoria planejada.</div>
           <div id="dev-history" class="hint">Histórico: projeto ainda não gerado.</div>
-          <div class="dev-controls"><button id="create-3d" type="button" class="outline small">◈ Criar protótipo 3D pelo GDD (backend)</button></div>
-          <div id="create-3d-result" class="hint">Cria um jogo 3D procedural com Three.js em um projeto separado; requer Node.js, backend e dependências para compilar. Não gera uma campanha 3D completa.</div>
+          <div class="dev-controls"><button id="create-3d" type="button" class="outline small">◈ Criar projeto Three.js/Vite no backend</button></div>
+          <div id="create-3d-result" class="hint">Opção para projetos separados no servidor, com Node.js e compilação. Para jogar em 3D aqui, escolha um exemplo 3D e clique em Criar novo jogo no modo Sem IA.</div>
         </section>
         <p id="feedback" class="hint" role="status">Você pode começar sem instalar nada. O projeto e seu código ficam armazenados neste navegador.</p>
       </div>
@@ -123,7 +131,7 @@ Derrote o chefe.
       </section>
       <section class="eng-workbench" aria-label="Engenheiro automático de jogos Three.js">
         <div class="qa-workbench-title"><span class="eyebrow">06 / MOTOR PRÓPRIO DE CÓDIGO</span><strong>Engenheiro de Jogos · v0.9</strong></div>
-        <p class="hint">Para projetos Three.js completos com backend local: analisar funções, detectar erros, compilar, abrir em Chromium e revisar correções do OpenCode. Sem backend, esta seção permanece indisponível; o gerador 2D acima continua funcionando offline. A telemetria avançada exige que o jogo registre explicitamente seu ator e seu loop de renderização.</p>
+        <p class="hint">Para projetos Three.js completos com backend local: analisar funções, detectar erros, compilar, abrir em Chromium e revisar correções do OpenCode. Sem backend, esta seção permanece indisponível; os motores 2D e 3D do Studio funcionam no navegador. A telemetria avançada exige que o jogo registre explicitamente seu ator e seu loop de renderização.</p>
         <div class="eng-row"><div><label for="eng-project">Projeto do backend</label><select id="eng-project" aria-label="Projeto Three.js"><option value="">Conecte o backend</option></select></div><button class="outline small" id="eng-refresh">Conectar / listar projetos</button></div>
         <div class="eng-row"><div><label for="eng-new-name">Novo projeto Three.js</label><input id="eng-new-name" maxlength="60" placeholder="Nome do novo jogo"></div><button class="outline small" id="eng-new">Criar no backend</button></div>
         <div class="eng-row"><div><label for="eng-import-file">Importar fontes de jogo existente (.zip)</label><input id="eng-import-file" type="file" accept=".zip,application/zip"></div><button class="outline small" id="eng-import">Importar ZIP</button></div>
@@ -158,6 +166,12 @@ Derrote o chefe.
   <script src="./js/parser.js"></script>
   <script src="./js/runtime-template.js"></script>
   <script src="./js/shooter-runtime.js"></script>
+  <script src="./vendor/three-source.js"></script>
+  <script src="./js/software-renderer.js"></script>
+  <script src="./js/world-rules.js"></script>
+  <script src="./js/three-runtime.js"></script>
+  <script src="./js/strategy-rules.js"></script>
+  <script src="./js/expanded-2d-runtime.js"></script>
   <script src="./js/qa-bridge.js"></script>
   <script src="./js/generator.js"></script>
   <script src="./js/development-engine.js"></script>

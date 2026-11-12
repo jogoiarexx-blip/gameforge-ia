@@ -15,7 +15,7 @@ function gameForgeShooterBoot() {
   const tuning={difficulty:1,enemyMultiplier:1,bossMultiplier:1,playerSpeedMultiplier:1,fireRateMultiplier:1,particlesMultiplier:1,...(spec.tuning||{})};
   const theme=spec.shooterOptions?.theme||'space';
   const T=({neon:{bg:'#060619',mid:'#101d43',accent:'#53f9fa',danger:'#ff56bc',far:'#384691'},dragon:{bg:'#071f32',mid:'#12474e',accent:'#ffc46e',danger:'#f27842',far:'#6faba4'},space:{bg:'#050c25',mid:'#182451',accent:'#6ce9ff',danger:'#ff709c',far:'#4f64ab'}})[theme]||{};
-  const levels=(spec.stages?.length?spec.stages:['Fase 1','Fase 2','Fase 3']).slice(0,10);
+  const levels=(spec.stages?.length?spec.stages:['Fase 1','Fase 2','Fase 3']).slice(0,30);
   const patterns=['line','v','zigzag','escort','cross','swarm'];
   const waves=levels.map((name,i)=>({name,pattern:patterns[i%patterns.length],pattern2:patterns[(i+2)%patterns.length],
     amount:Math.max(3,Math.round((7+i*3)*tuning.enemyMultiplier*tuning.difficulty)),spawnEvery:clamp(.94-i*.075,.39,.94),bossHp:Math.round((24+i*14)*tuning.bossMultiplier*tuning.difficulty),bossName: spec.enemyNames?.[i] || (theme==='dragon'?'Guardião das nuvens':theme==='neon'?'Sentinela cibernética':'Comandante sideral'),

@@ -47,3 +47,16 @@ test('entrada que não pode ser reaberta nunca substitui o último salvamento v�
   assert.equal(result.ok,false);assert.equal(saved,'ultimo valido');
  }
 });
+test('backup de jogo 3D conserva motor local e opções de criação',()=>{
+ const snap={...original(),creationOptions:{dimension:'3d',genre:'fps',theme:'neon',size:72,quality:'low'}};
+ snap.files['engine-3d.js']='/* motor local offline */';snap.files['THREE-LICENSE.txt']='MIT';
+ const restored=backup.decode(backup.encode(snap));
+ assert.equal(restored.files['engine-3d.js'],'/* motor local offline */');assert.deepEqual(restored.creationOptions,snap.creationOptions);
+});
+test('histórico 3D não grava cinco cópias da mesma dependência no navegador',()=>{
+ const snap=original();snap.gdd='# Jogo';const engine='ENGINE'.repeat(120000);snap.files['engine-3d.js']=engine;
+ snap.history=Array.from({length:4},(_,i)=>({instruction:'versão '+i,files:{'game.js':'// versão '+i,'style.css':'body{}','engine-3d.js':engine},gdd:'# Jogo'}));
+ let raw;const storage={setItem(k,v){if(v.length>1800000)throw Error('quota');raw=v;}};
+ assert.equal(backup.save(storage,'project',snap).ok,true);
+ const restored=backup.restoreStored(raw);assert.equal(restored.history[3].files['engine-3d.js'],engine);assert.equal(restored.files['engine-3d.js'],engine);
+});

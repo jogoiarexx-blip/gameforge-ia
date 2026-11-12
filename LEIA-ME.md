@@ -1,3 +1,34 @@
+# GameForge Studio v0.12 — Jogos maiores em 2D e 3D
+
+Escolha um exemplo no painel **Como será seu jogo?**, use **Sem IA** e clique em **Criar novo jogo**.
+
+| Dimensão | Estilos disponíveis |
+|---|---|
+| 2D | Aventura/ação, nave, corrida, plataforma, RPG de ação, defesa de torres |
+| 3D | Aventura em terceira pessoa, FPS, corrida, plataforma |
+
+- Campanhas de até **30 fases** reconhecidas nos títulos do GDD; fases além do limite são informadas, com GDD original preservado.
+- **RPG 2D:** mapa de 2400 × 1600, câmera, combate, arquétipos de inimigos, guardião, relíquias, XP, poções, inventário e melhorias.
+- **Defesa de torres:** construção em grade, torres de raio/gelo, melhorias, ondas, recursos e proteção da base.
+- **3D local:** personagens articulados e cenários low poly, temas floresta/deserto/neon/ruínas, luz, neblina, sombras no WebGL, colisões e objetivos. Carrega apenas a fase atual e libera os recursos ao trocar.
+- **Compatibilidade:** WebGL2 oferece a melhor qualidade. Sem WebGL, o jogo mantém geometria/câmera/regras 3D e projeta triângulos por CPU, com iluminação simplificada, sem sombras e limite de 4.500 triângulos. O modo é identificado no rodapé. FPS real depende do dispositivo; o limite de desenho desse modo é 30 imagens/s.
+- **Evolução:** novos jogos suportam adicionar fases até30, e ajustes compatíveis com o gênero. No 3D, ampliar mundo, mudar tema e qualidade. Pedidos sem efeito naquele motor permanecem pendentes.
+- **Arquivos:** o ZIP 3D inclui engine-3d.js e a licença MIT completa; o HTML único inclui tudo. Não há CDN ou backend obrigatório para esses modelos. Backup preserva dependências e opções. O navegador compartilha arquivos iguais entre snapshots, evitando gravar cinco cópias do Three no histórico.
+
+## Controles dos novos motores
+
+RPG: WASD/setas, espaço/clique para atacar, I inventário, H poção, Esc pausa. Defesa: clique no terreno ou setas+espaço para construir/melhorar; botão para alternar raio/gelo; N inicia onda; U melhora torre. Aventura 3D: WASD/setas, espaço/clique para atacar. FPS: WASD/setas, Q/E ou arrastar para mirar, espaço/clique para atirar. Corrida 3D: W/↑ acelera, S/↓ freia, A/D vira, espaço dá turbo. Plataforma 3D: A/D ou ←/→ move, W/↑/espaço salta, Q/S controla profundidade. P/Esc pausa nos motores 3D. Controles touch acompanham os jogos.
+
+## Limites e validação
+
+O modo sem IA usa regras e assets **procedurais**. Estes modelos permitem jogar e evoluir protótipos; não implementam automaticamente cada requisito de um GDD extenso, personagens GLB detalhados, narrativa integral, física avançada ou multiplayer. Geração livre com IA continua no backend. A geração inicial com IA é 2D; os novos modelos 3D são criados pelo modo Sem IA. Projetos Three/Vite no backend continuam disponíveis separadamente.
+
+`npm test` usa Node e os arquivos já incluídos; não exige iniciar navegador ou instalar Three. Para regenerar a cópia local do Three: `npm install` e `npm run vendor` (dependências de desenvolvimento fixadas).
+
+Os testes cobrem parser/gêneros, campanhas, geração/exportação, melhoria/rollback, backup com dependências, regras de combate/torres, física/objetivos 3D, execução dos runtimes serializados, renderização por CPU e descarte de sombras. Navegador de QA desta entrega não ofereceu WebGL: avaliação visual feita no modo CPU. Roteiros automáticos no navegador apresentaram throttling de animação; não comprovam FPS em hardware real nem uma campanha completa de 30 fases.
+
+---
+
 # GameForge Studio v0.11 — Continuar projetos com backup
 
 - **Baixar backup** salva um arquivo `.gameforge.json` com código, GDD completo, tarefas, notas, referências fixadas e até quatro versões para desfazer.

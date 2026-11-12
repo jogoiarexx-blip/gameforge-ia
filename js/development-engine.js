@@ -13,6 +13,8 @@ const actions={
   fire:{title:'Ajustar cadência de tiro',checks:['Tecla Espaço e touch disparam','Limite de projéteis mantido']},
   particles:{title:'Reduzir custo de partículas',checks:['Explosões mantêm feedback visual','FPS não cai abaixo da referência']},
   theme:{title:'Atualizar tema visual',checks:['Contraste do HUD legível','Cenário renderiza sem falhas']},
+  world:{title:'Ampliar o mundo 3D',checks:['Colisões e objetivos continuam acessíveis','FPS e câmera verificados']},
+  quality:{title:'Ajustar qualidade 3D',checks:['Sombras e resolução adequadas ao dispositivo','Jogabilidade preservada']},
   stage:{title:'Adicionar uma fase',checks:['Fase aparece na progressão','Game over e vitória preservados']}
 };
 function analyze(instruction, spec){
@@ -35,9 +37,17 @@ function analyze(instruction, spec){
   if(/(visual|grafico|cenario|cor|tema).*(neon|cyber)|(neon|cyber).*(visual|grafico|tema)/.test(t))add('theme','neon','Tema visual neon no gerador de naves');
   else if(/(visual|grafico|cenario|tema).*(espac|galax|sideral)|(espac|galax|sideral).*(visual|grafico|tema)/.test(t))add('theme','space','Tema espacial');
   else if(/(visual|grafico|cenario|tema).*(dragao|fantasia|medieval)|(dragao|fantasia).*(visual|grafico|tema)/.test(t))add('theme','dragon','Tema de fantasia');
+  if(spec?.dimension==='3d'){
+    if(/(tema|cenario|ambiente).*(floresta|forest)/.test(t))add('theme','forest','Vegetação e iluminação de floresta');
+    if(/(tema|cenario|ambiente).*(deserto|desert)/.test(t))add('theme','desert','Paleta e cenário de deserto');
+    if(/(tema|cenario|ambiente).*(ruina|templo)/.test(t))add('theme','ruins','Ruínas e iluminação atmosférica');
+    if(/(mundo|mapa|area).*(maior|ampl|grande)|ampli.*(mundo|mapa|area)/.test(t))add('world',1.25,'Aumentar área sem criar objetos ilimitados');
+    if(/(grafico|qualidade).*(leve|baix|low)/.test(t))add('quality','low','Reduzir resolução e sombras');
+    else if(/(grafico|qualidade).*(alt|melhor|high)/.test(t))add('quality','high','Aumentar qualidade dentro dos limites do motor');
+  }
   if(/(adicion\w*|criar|incluir|nova|mais uma|proxima)\s+(\w+\s+){0,2}(fase|missao)|\b(fase|missao)\s+nova/.test(t)){
     m=String(instruction).match(/(?:fase|miss[aã]o)\s+(?:nova\s*)?(?:chamad[ao]\s+)?["“']([^"”']{3,55})["”']/i);
-    const named=(m&&m[1]) || `Fase ${Math.min(10,(spec?.stages?.length||3)+1)} — Novo desafio`;
+    const named=(m&&m[1]) || `Fase ${Math.min(spec?.campaign?.maxStages||10,(spec?.stages?.length||3)+1)} — Novo desafio`;
     add('stage',named,'Acrescentar uma fase preservando as anteriores');
   }
   return out;
@@ -46,7 +56,8 @@ function plan(instruction,spec,files){
   const text=String(instruction||'').trim();
   const changes=analyze(text,spec);
   const supported=Boolean(files?.['game.js']&&specPattern.test(files['game.js']));
-  const tasks=changes.map((a,i)=>({number:i+1,title:a.title,rationale:a.why,checks:a.checks,possible:supported&&(a.id!=='theme'||spec?.genre==='shooter')}));
+  const supportedActions=spec?.dimension==='3d'?(spec.genre==='platform'?['speed','world','quality','theme','stage']:spec.genre==='racing'?['speed','enemies','world','quality','theme','stage']:['difficulty','enemies','boss','speed','fire','world','quality','theme','stage']):spec?.genre==='tower-defense'?['difficulty','enemies','boss','fire','stage']:spec?.genre==='platform'?['speed','enemies','stage']:spec?.genre==='racing'?['speed','enemies','difficulty','stage']:Object.keys(actions);
+  const tasks=changes.map((a,i)=>({number:i+1,title:a.title,rationale:a.why,checks:a.checks,possible:supported&&supportedActions.includes(a.id)&&(a.id!=='theme'||spec?.genre==='shooter'||(spec?.dimension==='3d'&&['forest','desert','neon','ruins'].includes(a.value)))}));
   const unknown=text.length>0&&changes.length===0;
   const unsupported=tasks.filter(t=>!t.possible).map(t=>t.title);
   return {title:'Plano incremental de desenvolvimento',instruction:text,reason:'Preservar arquivos atuais e editar apenas as configurações controladas do motor',
@@ -72,9 +83,13 @@ function modify(files,spec,planResult){
     if(action.id==='speed')tuning.playerSpeedMultiplier=clamp(tuning.playerSpeedMultiplier*action.value,.6,2);
     if(action.id==='fire')tuning.fireRateMultiplier=clamp(tuning.fireRateMultiplier*action.value,.7,2.5);
     if(action.id==='particles')tuning.particlesMultiplier=clamp(tuning.particlesMultiplier*action.value,.2,1);
-    if(action.id==='theme'&&next.shooterOptions)next.shooterOptions.theme=action.value;
-    if(action.id==='stage'&&next.stages.length<10)next.stages.push(action.value);
-    if(action.id==='stage'&&next.stages.length>=10&&JSON.stringify(next)===before)pending.push('Limite de 10 fases para este motor');
+    if(action.id==='theme'&&next.dimension==='3d')next.worldOptions={...next.worldOptions,theme:action.value};
+    else if(action.id==='theme'&&next.shooterOptions)next.shooterOptions.theme=action.value;
+    if(action.id==='world')next.worldOptions={...next.worldOptions,size:clamp(Math.round((next.worldOptions?.size||48)*action.value),32,88)};
+    if(action.id==='quality')next.worldOptions={...next.worldOptions,quality:action.value};
+    const stageLimit=next.campaign?.maxStages||10;
+    if(action.id==='stage'&&next.stages.length<stageLimit)next.stages.push(action.value);
+    if(action.id==='stage'&&next.stages.length>=stageLimit&&JSON.stringify(next)===before)pending.push('Limite de '+stageLimit+' fases para este motor');
     if(JSON.stringify(next)!==before||['difficulty','enemies','boss','speed','fire','particles'].includes(action.id))applied.push(action.title);
   }
   next.tuning=tuning;

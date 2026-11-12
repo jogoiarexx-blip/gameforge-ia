@@ -20,13 +20,13 @@ function gameForgeBoot() {
   let state = 'menu', paused = false, clock = 0, stageClock = 0, lastTime = 0, renderedFrames=0;
   let player = {x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
   let enemies=[], bullets=[], drops=[], particles=[], platforms=[], obstacles=[];
-  let cameraX=0, traveled=0, invulnerable=0, fireDelay=0;
+  let cameraX=0, traveled=0, invulnerable=0, fireDelay=0, reloadDelay=0;
   let mouse={x:W/2,y:H/2,active:false};
   const showMessage = (txt, seconds=3) => { $('message').textContent=txt; $('message').style.opacity='1'; messageTime=seconds; };
   let messageTime = 0;
   function input(name) { return keys.has(name) || !!touch[name]; }
   function resetStage() {
-    state='play'; paused=false; stageClock=0; invulnerable=0; fireDelay=0;
+    state='play'; paused=false; stageClock=0; invulnerable=0; fireDelay=0;reloadDelay=0;
     enemies=[];bullets=[];drops=[];particles=[];platforms=[];obstacles=[];
     cameraX=0;traveled=0;
     if (spec.genre === 'platform') {
@@ -43,7 +43,8 @@ function gameForgeBoot() {
       for(let i=0;i<Math.round((18+stage*5)*tuning.enemyMultiplier*tuning.difficulty);i++) obstacles.push({x:W/2+[-125,0,125][i%3],y:-i*175,r:23,speed:70+stage*10,kind:i%4===0?'cone':'car'});
     } else {
       player={x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
-      for(let i=0;i<Math.round((6+stage*3)*tuning.enemyMultiplier*tuning.difficulty);i++) addEnemy(i===5+stage*3 && spec.features.bosses);
+      const encounterSize=Math.min(48,Math.round((6+stage*3)*tuning.enemyMultiplier*tuning.difficulty));
+      for(let i=0;i<encounterSize;i++)addEnemy(i===encounterSize-1&&spec.features.bosses);
       for(let i=0;i<5;i++) drops.push({x:rand(70,W-70),y:rand(85,H-65),r:10,kind:i===0?'heal':'coin'});
     }
     showMessage(stages[stage]||`Fase ${stage+1}`,3);
@@ -63,6 +64,10 @@ function gameForgeBoot() {
   function damage(v){if(invulnerable>0)return;hp=Math.max(0,hp-v);invulnerable=0.7;if(hp<=0)gameOver();}
   const isPressed = k => keys.has(k);
   function stepArena(dt){
+    if(ammo<=0){
+      if(reloadDelay<=0){reloadDelay=1.2;showMessage('Recarregando munição…',1.2);}
+      else{reloadDelay-=dt;if(reloadDelay<=0)ammo=40;}
+    }
     const dx=(input('right')||isPressed('d')||isPressed('ArrowRight')?1:0)-(input('left')||isPressed('a')||isPressed('ArrowLeft')?1:0);
     const dy=(input('down')||isPressed('s')||isPressed('ArrowDown')?1:0)-(input('up')||isPressed('w')||isPressed('ArrowUp')?1:0);
     const mag=Math.max(1,Math.hypot(dx,dy)),speed=(210+upgrades*12)*tuning.playerSpeedMultiplier;

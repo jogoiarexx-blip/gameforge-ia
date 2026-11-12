@@ -98,3 +98,13 @@
 #project-restore-dialog::backdrop{background:#040a16ce}
 #project-restore-dialog h2{font-size:19px;margin:0 0 12px}
 #project-restore-dialog p{font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+
+/* Motores 2D/3D e presets. */
+.engine-settings{background:linear-gradient(145deg,#142c39,#131f31);border:1px solid #3c685f;padding:12px;border-radius:11px;margin-bottom:18px}
+.engine-settings .mini-head{margin:0 0 10px;gap:8px}.engine-settings select{width:100%;padding:9px 7px;background:#0d1b2a;color:#e2f5ef;border:1px solid #3a5669;border-radius:7px;font-size:11px;min-width:0}
+.engine-settings label{margin:10px 0 6px;font-size:11px}.engine-settings .split{grid-template-columns:1fr 1fr}
+.engine-examples{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}.engine-examples button{padding:8px 5px;font-size:10px}
+/* Mantém HUD, cenário e controles visíveis dentro da prévia. */
+.preview-box{aspect-ratio:auto;min-height:560px;flex:0 0 auto}.preview-box iframe{height:560px;min-height:560px}
+@media(max-width:700px){.preview-box{min-height:510px}.preview-box iframe{height:510px;min-height:510px}}
+.preview-box:fullscreen{width:100vw;height:100vh}.preview-box:fullscreen iframe{height:100%;min-height:100%}

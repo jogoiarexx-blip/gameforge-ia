@@ -1,0 +1,82 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const parser=require('../js/parser');
+const R=require('../js/advanced-td-rules');
+const campaign=require('../js/campaign-editor');
+const FIXED=1/30;
+function step(d,seconds){for(let i=0;i<Math.ceil(seconds/FIXED);i++)R.step(d,FIXED);}
+test('GDD de 40 fases gera e mantém todos os títulos para o motor de linhas',()=>{
+ const headings=Array.from({length:40},(_,i)=>'## Fase '+(Math.floor(i/8)+1)+'-'+(i%8+1)+' — Prova '+(i+1)+'\n').join('');
+ const spec=parser.parseGdd('# Brinquedos vs. Pesadelos\nDefesa por linhas, Brilhos\n'+headings);
+ assert.equal(spec.genre,'lane-defense');
+ assert.equal(spec.stages.length,40);
+ assert.equal(spec.campaign.maxStages,40);
+ assert.equal(spec.campaign.omittedStages,0);
+ assert.equal(spec.defenseOptions.resourceLabel,'Brilhos');
+ assert.equal(spec.defenseOptions.startingGlow,150);
+ const files={'game.js':'const GAME_SPEC = '+JSON.stringify(spec)+';\n// Runes','style.css':''};
+ assert.equal(campaign.inspect(files).stages.length,40);
+});
+test('cartas aplicam custo e cooldown antes de permitir reutilização',()=>{
+ const d=R.create('lane');
+ assert.equal(d.money,150);
+ assert.equal(R.place(d,0,1,'bolt').ok,true);
+ assert.equal(d.money,50);
+ assert.equal(R.place(d,1,1,'bolt').ok,false);
+ step(d,5);
+ assert.equal(R.place(d,1,1,'bolt').ok,false);
+ step(d,1.2);
+ assert.equal(d.cardCooldowns.bolt,0);
+ d.money=200;
+ assert.equal(R.place(d,1,1,'bolt').ok,true);
+});
+test('Brilhos aparecem, podem ser coletados, expiram e não são concedidos automaticamente',()=>{
+ const d=R.create('lane',0,{}, {seed:38});
+ const start=d.money;
+ step(d,6.1);
+ assert.equal(d.money,start);
+ assert.equal(d.drops.length,1);
+ const star=d.drops[0];
+ assert.equal(star.value,25);assert.ok(star.life<=8);
+ assert.equal(R.collectDrop(d,star.x,star.y).ok,true);
+ assert.equal(d.money,start+25);
+ assert.equal(d.drops.length,0);
+ step(d,12);
+ assert.ok(d.drops.length>=1);
+ const left=d.drops.length;step(d,8.1);
+ assert.ok(d.drops.length<=left+1);
+ assert.equal(R.collectDrop(R.create('blocks'),1,1).ok,false);
+});
+test('ondas com plano definido têm faixas reproduzíveis e chefes só no oitavo estágio do capítulo',()=>{
+ const a=R.create('lane',7,{},{seed:44,waves:3});
+ const b=R.create('lane',7,{},{seed:44,waves:3});
+ assert.deepEqual(a.lanePlan,b.lanePlan);
+ assert.equal(a.lanePlan[2].at(-1).kind,'boss');
+ assert.equal(R.create('lane',6,{},{waves:3}).lanePlan[2].at(-1).kind==='boss',false);
+ const specified=[[{kind:'runner',lane:4}],[{kind:'grunt',lane:0}]];
+ const c=R.create('lane',1,{},{waves:2,wavePlan:specified});
+ assert.deepEqual(c.lanePlan,specified);
+ assert.equal(R.begin(c),true);step(c,.6);
+ assert.equal(c.enemies[0].lane,4);
+ assert.equal(c.enemies[0].kind,'runner');
+});
+test('onda começa automaticamente após preparação, mas não antes; pausar é controlado pelo runtime',()=>{
+ const d=R.create('lane',0,{},{waves:2});
+ step(d,9.8);assert.equal(d.wave,0);assert.equal(d.active,false);
+ step(d,.5);assert.equal(d.wave,1);assert.equal(d.active,true);
+ d.spawned=d.amount;d.enemies=[];R.step(d,FIXED);
+ assert.equal(d.active,false);assert.equal(d.victory,false);
+ const next=d.nextWaveAt;
+ assert.ok(next>d.time);
+ step(d,11);assert.equal(d.wave,1);
+ step(d,1.4);assert.equal(d.wave,2);
+});
+test('o trenzinho salva a linha uma vez e um segundo vazamento encerra a partida',()=>{
+ const d=R.create('lane',0);
+ R.begin(d);
+ const e={kind:'grunt',boss:false,hp:30,maxHp:30,speed:.4,slow:0,damage:10,lane:3,x:.09,y:3.5,progress:0,dead:false};
+ d.enemies=[{...e}];R.step(d,.05);
+ assert.equal(d.mowers[3],false);assert.equal(d.base,100);
+ d.enemies=[{...e}];d.spawned=0;R.step(d,.05);
+ assert.equal(d.base,0);assert.equal(d.over,true);assert.equal(d.victory,false);
+});

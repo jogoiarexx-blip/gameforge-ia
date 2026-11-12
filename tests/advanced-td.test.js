@@ -24,7 +24,7 @@ test('lane defence has meaningful economy, occupancy, upgrade and sell rules',()
  assert.equal(d.rows,5);assert.equal(d.cols,9);
  assert.equal(R.place(d,0,2,'income').ok,true);
  assert.equal(R.place(d,0,2,'bolt').ok,false);
- const start=d.money;for(let i=0;i<150;i++)R.step(d,.05);
+ const start=d.money;for(let i=0;i<470;i++)R.step(d,.05); // generator now yields 25 every 22 seconds
  assert.ok(d.money>start+15,'income generators actually produce resources');
  assert.equal(R.place(d,1,2,'bolt').ok,true);
  const tower=d.towers[1];d.money=1000;

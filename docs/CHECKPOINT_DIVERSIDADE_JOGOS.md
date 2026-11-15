@@ -135,3 +135,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Adicionados testes de backup, restauração local e limite de tamanho em `tests/rpg-layout-backup.test.js`.
 - [ ] Execução do CI e validação de navegador pendentes.
 - [ ] Importação de múltiplas fases e sincronização bidirecional com editor visual ainda pendentes.
+
+## RPG 2D — layouts de múltiplas fases
+- [x] Editor visual suporta criar, selecionar e excluir até 30 fases e exporta `{stages:[{puzzle,chests},...]}`.
+- [x] Importação no Studio aceita formato antigo de fase única e formato de múltiplas fases, validando cada fase.
+- [x] Configurações importadas são aplicadas a `stageConfig[n]` na especificação do jogo.
+- [ ] Verificar testes e funcionamento no navegador, especialmente seleção de fases e exportação.
+- [ ] Adicionar importação de JSON de volta ao editor, persistência integrada e múltiplos puzzles por fase.

@@ -29,7 +29,7 @@ function gameForgeBoot() {
   function resetStage() {
     state='play'; paused=false; stageClock=0; invulnerable=0; fireDelay=0;reloadDelay=0;
     enemies=[];bullets=[];drops=[];particles=[];platforms=[];obstacles=[];
-    cameraX=0;traveled=0;
+    cameraX=0;traveled=0;platformCoyote=0;platformJumpBuffer=0;platformJumpHeld=false;
     if (spec.genre === 'platform') {
       player={x:70,y:350,vx:0,vy:0,r:17,angle:0};
       for(let i=0;i<25;i++){
@@ -93,18 +93,41 @@ function gameForgeBoot() {
     collectDrops();
   }
   function collectDrops(){for(const d of drops){if(dist(player,d)<player.r+d.r+7){d.dead=true;if(d.kind==='heal')hp=clamp(hp+30,0,100);else if(d.kind==='ammo')ammo+=15;else {score+=20;xp+=1;} }}drops=drops.filter(d=>!d.dead);}
+  let platformCoyote=0,platformJumpBuffer=0,platformJumpHeld=false;
   function stepPlatform(dt){
     const dx=(input('right')||isPressed('d')||isPressed('ArrowRight')?1:0)-(input('left')||isPressed('a')||isPressed('ArrowLeft')?1:0);
     const jump=input('up')||isPressed('w')||isPressed('ArrowUp')||isPressed(' ');
-    player.vx=dx*(205+upgrades*15)*tuning.playerSpeedMultiplier;
-    const bottom=player.y+player.r; const oldBottom=bottom;
-    if(jump&&player.grounded){player.vy=-480;player.grounded=false;}
-    player.vy+=1050*dt;player.x+=player.vx*dt;player.y+=player.vy*dt;
+    if(jump&&!platformJumpHeld)platformJumpBuffer=.13;
+    platformJumpHeld=jump;
+    platformJumpBuffer=Math.max(0,platformJumpBuffer-dt);
+    platformCoyote=player.grounded?.11:Math.max(0,platformCoyote-dt);
+    const target=dx*(205+upgrades*15)*tuning.playerSpeedMultiplier;
+    const acceleration=player.grounded?1850:1100;
+    player.vx+=clamp(target-player.vx,-acceleration*dt,acceleration*dt);
+    if(platformJumpBuffer>0&&platformCoyote>0){player.vy=-480;player.grounded=false;platformCoyote=0;platformJumpBuffer=0;}
+    if(!jump&&player.vy< -180)player.vy=Math.min(-180,player.vy+1250*dt);
+    const oldBottom=player.y+player.r;
+    player.vy=Math.min(850,player.vy+1050*dt);
+    player.x=clamp(player.x+player.vx*dt,player.r,4500-player.r);
+    player.y+=player.vy*dt;
     player.grounded=false;
-    for(const p of platforms){if(player.x+player.r>p.x&&player.x-player.r<p.x+p.w&&oldBottom<=p.y+12&&player.y+player.r>=p.y&&player.vy>=0){player.y=p.y-player.r;player.vy=0;player.grounded=true;}}
-    if(player.y>H+110)damage(100);
-    cameraX=clamp(player.x-220,0,4200);
-    for(const e of enemies){e.phase+=dt;e.y=355+Math.sin(e.phase)*35;if(dist(player,e)<player.r+e.r+4){damage(12);e.dead=true;}}
+    for(const p of platforms){
+      if(player.x+player.r>p.x&&player.x-player.r<p.x+p.w&&oldBottom<=p.y+10&&player.y+player.r>=p.y&&player.vy>=0){
+        player.y=p.y-player.r;player.vy=0;player.grounded=true;
+      }
+    }
+    if(player.grounded&&platformJumpBuffer>0){player.vy=-480;player.grounded=false;platformJumpBuffer=0;}
+    if(player.y>H+110){hp=0;gameOver();return;}
+    cameraX=clamp(player.x-220,0,3540);
+    for(const e of enemies){
+      e.phase+=dt;
+      const support=platforms.find(p=>e.x>=p.x&&e.x<=p.x+p.w);
+      e.y=(support?support.y-e.r:355)+Math.sin(e.phase)*4;
+      if(dist(player,e)<player.r+e.r+4){
+        if(player.vy>70&&player.y+player.r<e.y+e.r*.55){e.dead=true;player.vy=-320;score+=100;xp+=2;}
+        else damage(12);
+      }
+    }
     enemies=enemies.filter(e=>!e.dead);
     collectDrops();
     if(player.x>3900)nextStage();

@@ -149,3 +149,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Download do JSON de todas as fases pelo editor.
 - [ ] Validar interface no navegador e execução de testes automatizados.
 - [ ] Sincronização automática entre Studio e editor e múltiplos enigmas independentes por fase ainda pendentes.
+
+## RPG 2D — transferência direta editor → Studio
+- [x] Editor envia layouts via localStorage da mesma origem, com ação explícita do usuário.
+- [x] Studio importa e valida o layout enviado por botão, sem copiar/colar JSON.
+- [x] Layout recebido integra o salvamento existente e é usado na geração RPG 2D.
+- [ ] Testes no navegador pendentes; transferência requer mesma origem e armazenamento local habilitado.
+- [ ] Sincronização bidirecional e múltiplos enigmas por fase ainda pendentes.

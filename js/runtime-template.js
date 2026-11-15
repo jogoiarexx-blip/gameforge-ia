@@ -23,6 +23,7 @@ function gameForgeBoot() {
   let enemies=[], bullets=[], drops=[], particles=[], platforms=[], obstacles=[];
   let cameraX=0, traveled=0, invulnerable=0, fireDelay=0, reloadDelay=0;
   let platformCheckpoint={x:70,y:350},platformCheckpointIndex=-1,platformDeaths=0,platformTraps=[],platformSparks=[];
+  let racingSpeed=0,racingSteer=0,racingHits=0,racingSpawnDistance=0;
   let mouse={x:W/2,y:H/2,active:false};
   const showMessage = (txt, seconds=3) => { $('message').textContent=txt; $('message').style.opacity='1'; messageTime=seconds; };
   let messageTime = 0;
@@ -30,7 +31,7 @@ function gameForgeBoot() {
   function resetStage() {
     state='play'; paused=false; stageClock=0; invulnerable=0; fireDelay=0;reloadDelay=0;
     enemies=[];bullets=[];drops=[];particles=[];platforms=[];obstacles=[];
-    cameraX=0;traveled=0;platformCoyote=0;platformJumpBuffer=0;platformJumpHeld=false;platformCheckpointIndex=-1;platformCheckpoint={x:70,y:350};platformDeaths=0;platformTraps=[];platformSparks=[];
+    cameraX=0;traveled=0;racingSpeed=0;racingSteer=0;racingHits=0;racingSpawnDistance=0;platformCoyote=0;platformJumpBuffer=0;platformJumpHeld=false;platformCheckpointIndex=-1;platformCheckpoint={x:70,y:350};platformDeaths=0;platformTraps=[];platformSparks=[];
     if (spec.genre === 'platform') {
       player={x:70,y:350,vx:0,vy:0,r:17,angle:0};
       for(let i=0;i<25;i++){
@@ -47,7 +48,7 @@ function gameForgeBoot() {
       for(let i=4;i<platforms.length;i+=5){const p=platforms[i];if(!p.checkpoint)platformTraps.push({x:p.x+p.w*.5-22,y:p.y-13,w:44,h:13});}
     } else if(spec.genre==='racing') {
       player={x:W/2,y:H-100,r:19,vx:0,vy:0,angle:0};
-      for(let i=0;i<(configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,60):Math.round((18+stage*5)*tuning.enemyMultiplier*tuning.difficulty));i++) obstacles.push({x:W/2+[-125,0,125][i%3],y:-i*175,r:23,speed:70+stage*10,kind:i%4===0?'cone':'car'});
+      for(let i=0;i<6;i++) obstacles.push({x:W/2+[-125,0,125][i%3],y:-250-i*220,r:23,speed:80+stage*8,kind:i%4===0?'cone':'car'});
     } else {
       player={x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
       const encounterSize=configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,48):Math.min(48,Math.round((6+stage*3)*tuning.enemyMultiplier*tuning.difficulty));
@@ -154,13 +155,34 @@ function gameForgeBoot() {
   }
   function stepRacing(dt){
     const dx=(input('right')||isPressed('d')||isPressed('ArrowRight')?1:0)-(input('left')||isPressed('a')||isPressed('ArrowLeft')?1:0);
-    const boost=(input('fire')||isPressed(' '))?1.45:1;
-    const speed=(260+stage*33+upgrades*24)*boost*tuning.playerSpeedMultiplier;
-    player.x=clamp(player.x+dx*270*dt,294,665);
-    traveled+=speed*dt;
-    for(const o of obstacles){o.y+=(speed-o.speed)*dt; if(Math.hypot(player.x-o.x,player.y-o.y)<player.r+o.r){o.y=H+130;damage(o.kind==='cone'?8:23);}}
+    const throttle=input('up')||isPressed('w')||isPressed('ArrowUp');
+    const brake=input('down')||isPressed('s')||isPressed('ArrowDown');
+    const boost=input('fire')||isPressed(' ');
+    const maxSpeed=(370+stage*22+upgrades*20)*tuning.playerSpeedMultiplier;
+    const target=brake?75:throttle?maxSpeed:boost?maxSpeed*1.15:maxSpeed*.72;
+    racingSpeed=clamp(racingSpeed+(target>racingSpeed?245:-330)*dt,0,boost?maxSpeed*1.15:maxSpeed);
+    racingSteer+=clamp(dx-racingSteer,-dt*5,dt*5);
+    player.x=clamp(player.x+racingSteer*(170+racingSpeed*.3)*dt,294,665);
+    if((player.x<=294&&dx<0)||(player.x>=665&&dx>0))racingSpeed=Math.max(90,racingSpeed-90*dt);
+    traveled+=racingSpeed*dt;
+    racingSpawnDistance+=racingSpeed*dt;
+    for(const o of obstacles){
+      o.y+=(racingSpeed-o.speed)*dt;
+      if(!o.hit&&Math.hypot(player.x-o.x,player.y-o.y)<player.r+o.r){
+        o.hit=true;o.y=H+130;racingHits++;racingSpeed*=o.kind==='cone'?.78:.48;
+        damage(o.kind==='cone'?8:23);
+        showMessage(o.kind==='cone'?'Cone atingido!':'Colisão! Reduza a velocidade.',1.2);
+      }
+    }
     obstacles=obstacles.filter(o=>o.y<H+90);
-    if(obstacles.length<11){obstacles.push({x:W/2+[-125,0,125][Math.floor(rand(0,3))],y:-200,r:23,speed:65+stage*8,kind:Math.random()<.25?'cone':'car'});}
+    const interval=Math.max(150,300-stage*12);
+    while(racingSpawnDistance>=interval){
+      racingSpawnDistance-=interval;
+      const lane=Math.floor(rand(0,3));
+      if(!obstacles.some(o=>o.y<110&&Math.abs(o.x-(W/2+[-125,0,125][lane]))<30)){
+        obstacles.push({x:W/2+[-125,0,125][lane],y:-120,r:23,speed:65+stage*8,kind:Math.random()<.22?'cone':'car',hit:false});
+      }
+    }
     if(traveled>6000+stage*1500)nextStage();
   }
   function update(dt){
@@ -243,7 +265,7 @@ function gameForgeBoot() {
     drawPlayer(player.x,player.y);ctx.restore();
     if(state==='play'&&paused){ctx.fillStyle='#0b1024be';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 44px sans-serif';ctx.textAlign='center';ctx.fillText('PAUSADO',W/2,H/2);ctx.textAlign='left';}
   }
-  window.__gameforgeTelemetry = () => ({state,paused,frames:renderedFrames,clock,stage,genre:spec.genre,player:{x:player.x,y:player.y,screenX:player.x-(spec.genre==='platform'?cameraX:0),screenY:player.y,radius:player.r},enemies:enemies.length,checkpoint:spec.genre==='platform'?platformCheckpointIndex:null,falls:spec.genre==='platform'?platformDeaths:null,traps:spec.genre==='platform'?platformTraps.length:null});
+  window.__gameforgeTelemetry = () => ({state,paused,frames:renderedFrames,clock,stage,genre:spec.genre,player:{x:player.x,y:player.y,screenX:player.x-(spec.genre==='platform'?cameraX:0),screenY:player.y,radius:player.r},enemies:enemies.length,racing:spec.genre==='racing'?{speed:Math.round(racingSpeed),distance:Math.round(traveled),hits:racingHits}:null,checkpoint:spec.genre==='platform'?platformCheckpointIndex:null,falls:spec.genre==='platform'?platformDeaths:null,traps:spec.genre==='platform'?platformTraps.length:null});
   function frame(ms){
     const dt=Math.min(.033, Math.max(0,(ms-lastTime)/1000));lastTime=ms;
     update(dt);render();renderedFrames++;requestAnimationFrame(frame);
@@ -270,7 +292,7 @@ function gameForgeBoot() {
   $('title').textContent=spec.title||'Meu jogo';
   $('overlay-title').textContent=spec.title||'Meu jogo';
   $('overlay-sub').textContent='Jogo gerado a partir de um GDD. Use WASD / setas e espaço.';
-  if(spec.genre==='racing')$('control-help').textContent='Setas / A-D: direção · Espaço: turbo · Esc: pausa';
+  if(spec.genre==='racing')$('control-help').textContent='Setas / A-D: direção · ↑ acelerar · ↓ frear · Espaço: turbo · Esc: pausa';
   else if(spec.genre==='platform')$('control-help').textContent='Setas / A-D: andar · Espaço: pular · Esc: pausa';
   else $('control-help').textContent='WASD: mover · mouse: mirar · clique / espaço: atirar · Esc: pausa';
   if(!spec.features.timer)$('timer-pill').style.display='none';

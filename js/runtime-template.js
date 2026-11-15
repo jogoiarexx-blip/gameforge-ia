@@ -53,7 +53,7 @@ function gameForgeBoot() {
       for(let i=4;i<platforms.length;i+=5){const p=platforms[i];if(!p.checkpoint)platformTraps.push({x:p.x+p.w*.5-22,y:p.y-13,w:44,h:13});}
     } else if(spec.genre==='racing') {
       player={x:W/2,y:H-100,r:19,vx:0,vy:0,angle:0};
-      for(let i=0;i<6;i++) obstacles.push({x:W/2+[-125,0,125][i%3],lane:i%3,phase:i,y:-250-i*220,r:23,speed:80+stage*8,kind:i%4===0?'cone':'car',paint:i%3,laneCooldown:1.5+i*.4});
+      for(let i=0;i<6;i++) obstacles.push({x:W/2+[-125,0,125][i%3],lane:i%3,phase:i,y:-250-i*220,r:23,speed:80+stage*8,kind:i%4===0?'cone':'car',paint:i%3,laneCooldown:1.5+i*.4,lanePosition:i%3});
     } else {
       player={x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
       const encounterSize=configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,48):Math.min(48,Math.round((6+stage*3)*tuning.enemyMultiplier*tuning.difficulty));
@@ -160,6 +160,15 @@ function gameForgeBoot() {
     collectDrops();
     if(player.x>3900)nextStage();
   }
+  // Interpolacao independente de FPS: a faixa logica e a posicao visual sao separadas.
+  function racingAdvanceLane(position,target,dt){
+    const delta=target-position;
+    return Math.abs(delta)<=dt*1.35?target:position+Math.sign(delta)*dt*1.35;
+  }
+  function racingLaneClear(car,target){
+    return !obstacles.some(other=>other!==car&&!other.hit&&Math.abs(other.y-car.y)<155&&
+      Math.abs((other.lanePosition??other.lane)-target)<.8);
+  }
   function stepRacing(dt){
     const dx=(input('right')||isPressed('d')||isPressed('ArrowRight')?1:0)-(input('left')||isPressed('a')||isPressed('ArrowLeft')?1:0);
     const throttle=input('up')||isPressed('w')||isPressed('ArrowUp');
@@ -180,13 +189,13 @@ function gameForgeBoot() {
         o.laneCooldown=(o.laneCooldown||0)-dt;
         if(o.laneCooldown<=0){
           const nextLane=clamp(o.lane+(Math.sin(o.phase+clock)>0?1:-1),0,2);
-          const occupied=obstacles.some(other=>other!==o&&other.kind==='car'&&other.lane===nextLane&&Math.abs(other.y-o.y)<115);
-          if(nextLane!==o.lane&&!occupied)o.lane=nextLane;
+          if(nextLane!==o.lane&&Math.abs((o.lanePosition??o.lane)-o.lane)<.01&&racingLaneClear(o,nextLane))o.lane=nextLane;
           o.laneCooldown=2.5+Math.abs(Math.sin(o.phase))*2;
         }
+        o.lanePosition=racingAdvanceLane(o.lanePosition??o.lane,o.lane,dt);
         o.laneOffset=clamp((o.laneOffset||0)+Math.sin(clock*.8+o.phase)*dt*12,-18,18);
       }
-      o.x=W/2+[-125,0,125][o.lane||0]+racingCurve(traveled,o.y)+(o.laneOffset||0);
+      o.x=W/2+((o.lanePosition??o.lane)-1)*125+racingCurve(traveled,o.y)+(o.laneOffset||0);
       if(!o.hit&&Math.hypot(player.x-o.x,player.y-o.y)<player.r+o.r){
         o.hit=true;o.y=H+130;racingHits++;racingSpeed*=o.kind==='cone'?.78:.48;
         damage(o.kind==='cone'?8:23);
@@ -198,8 +207,8 @@ function gameForgeBoot() {
     while(racingSpawnDistance>=interval){
       racingSpawnDistance-=interval;
       const lane=Math.floor(rand(0,3));
-      if(!obstacles.some(o=>o.y<110&&Math.abs(o.x-(W/2+[-125,0,125][lane]))<30)){
-        obstacles.push({x:W/2+[-125,0,125][lane],lane,phase:rand(0,6),y:-120,r:23,speed:65+stage*8,kind:Math.random()<.22?'cone':'car',paint:Math.floor(rand(0,4)),laneCooldown:2+rand(0,2),hit:false});
+      if(!obstacles.some(o=>!o.hit&&o.y<110&&Math.abs((o.lanePosition??o.lane)-lane)<.8)){
+        obstacles.push({x:W/2+[-125,0,125][lane],lane,phase:rand(0,6),y:-120,r:23,speed:65+stage*8,kind:Math.random()<.22?'cone':'car',paint:Math.floor(rand(0,4)),laneCooldown:2+rand(0,2),lanePosition:lane,hit:false});
       }
     }
     if(traveled>6000+stage*1500)nextStage();

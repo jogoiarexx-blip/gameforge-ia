@@ -232,3 +232,12 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Céu com gradiente e sol para o gênero plataforma.
 - [ ] Verificar compatibilidade e desempenho no navegador/celular, incluindo custo dos gradientes por quadro.
 - [ ] Próximo: separar perfis de qualidade, sprites e animações reutilizáveis, iluminação leve e visual específico por gênero.
+
+## Motor gráfico — qualidade adaptativa
+- [x] Perfis gráficos low, medium e high com seleção automática inicial high.
+- [x] Ajuste automático a cada 180 amostras de tempo de quadro, com redução de detalhes em quadros lentos.
+- [x] Densidade de vegetação e camadas da pista e cenário 2D variam conforme o perfil.
+- [x] Telemetria inclui graphicsQuality e graphicsFrameMs.
+- [ ] Expor escolha de perfil na interface de criação e garantir propagação de spec.graphicsQuality no gerador.
+- [ ] Validar visualmente os três níveis, inclusive no celular; executar testes de desempenho.
+- [ ] Próximo: animações e sprites reutilizáveis e controles de qualidade na interface.

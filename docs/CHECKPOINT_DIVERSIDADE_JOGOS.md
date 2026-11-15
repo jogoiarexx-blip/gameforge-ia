@@ -62,3 +62,16 @@ Evoluir o GameForge para criar muitos jogos distintos, inclusive dentro do mesmo
 - [ ] Executar testes Node no CI e verificar status.
 - [ ] Implementar mecânicas executáveis interoperáveis, começando por puzzles + inventário + economia no RPG 2D.
 - [ ] Integrar editor visual e escolhas explícitas de mecânicas na interface.
+
+## Estratégia por motor — 2026-11-14
+- [x] Planejador `js/idea-mixer.js` criado com cinco ideias combináveis e classificação de mecânicas disponíveis/pendentes.
+- [x] Testes unitários do planejador adicionados.
+- [x] Corrigido escape de limites de palavra nas expressões regulares do catálogo.
+- [ ] Integrar seletor de misturas à interface e à exportação; o planejador atual é API de código, não funcionalidade jogável.
+- [ ] Rodar testes e QA do GitHub Actions após os commits.
+- [ ] **Motor 1: RPG 2D** — implementar puzzle de chave/porta, inventário interoperável e comércio, com testes.
+- [ ] Motor 2: plataforma 2D — exploração e objetivos não lineares.
+- [ ] Motor 3: shooter 2D — progressão e missões distintas.
+- [ ] Motor 4: aventura/FPS 3D — exploração, missões e interação com objetos.
+- [ ] Motores de corrida e tower defense — variações próprias após estabilização.
+Critério: cada motor só avança após testes, exportação, backup e revisão visual; mecânica pendente não pode ser marcada como implementada.

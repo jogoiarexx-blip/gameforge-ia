@@ -263,3 +263,13 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Runtime aplica paletas visuais e níveis de qualidade do spec.
 - [ ] Testar geração completa, exportação e compatibilidade com os demais gêneros.
 - [ ] Próximo: criar cenários e silhuetas realmente diferentes por estilo; validar testes automatizados.
+
+## Engenharia — etapa 2: tráfego, corredor de colisão e regressão
+- Subsistema: motor de corrida 2D, mudanças de faixa.
+- Arquivos alterados: `js/runtime-template.js`; `tests/racing-lane-logic.test.js`; este checkpoint.
+- Problema: checagem apenas da faixa final não protegia a origem e o corredor atravessado.
+- Solução: verificação de intervalos de faixas durante a transição, com cones e veículos em movimento; ajuste de tolerância para não bloquear faixa não adjacente.
+- Verificações executadas: 7 casos de lógica avaliados diretamente sobre helpers extraídos do runtime, todos passaram após correção. Primeira tentativa falhou no caso de faixa não adjacente e foi corrigida.
+- Testes adicionados: 5 casos Node `node:test` em `tests/racing-lane-logic.test.js`.
+- Não executados nesta sessão: suíte `npm test`, testes de navegador/celular, medição de FPS e regressão E2E dos demais motores. Os testes Node foram publicados, mas sua execução ainda não foi confirmada.
+- Pendências: validar integração no navegador e GitHub Actions, melhorar geração de tráfego e isolar subsistemas em módulos sem quebrar exportação offline.

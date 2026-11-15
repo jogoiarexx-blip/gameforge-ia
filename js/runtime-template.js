@@ -38,9 +38,9 @@ function gameForgeBoot() {
         const y=i===0?480:clamp(405+Math.sin(i*1.15+stage*.7)*42,350,465);
         platforms.push({x,y,w:i===0?380:170,h:22,checkpoint:i>0&&i%6===0});
       }
-      const count=configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,45):Math.round((14+stage*3)*tuning.enemyMultiplier*tuning.difficulty);
+      const count=Math.min(22,configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,45):Math.round((10+stage*2)*tuning.enemyMultiplier*tuning.difficulty));
       for(let i=0;i<count;i++){
-        const p=platforms[2+i%22];
+        const p=platforms[2+i];
         enemies.push({x:p.x+p.w*.5,y:p.y-18,r:18,hp:1,phase:rand(0,6),speed:30+(i%3)*12,kind:i%4===0?'armored':'walker',patrolLeft:p.x+20,patrolRight:p.x+p.w-20,dir:i%2?1:-1});
       }
       for(let i=1;i<platforms.length;i+=2){const p=platforms[i];drops.push({x:p.x+p.w*.5,y:p.y-45,r:11,kind:'coin'});}
@@ -113,6 +113,7 @@ function gameForgeBoot() {
     if(platformJumpBuffer>0&&platformCoyote>0){player.vy=-480;player.grounded=false;platformCoyote=0;platformJumpBuffer=0;}
     if(!jump&&player.vy< -180)player.vy=Math.min(-180,player.vy+1250*dt);
     const oldBottom=player.y+player.r;
+    const wasFalling=player.vy>70;
     player.vy=Math.min(850,player.vy+1050*dt);
     player.x=clamp(player.x+player.vx*dt,player.r,4500-player.r);
     player.y+=player.vy*dt;
@@ -143,7 +144,7 @@ function gameForgeBoot() {
       const support=platforms.find(p=>e.x>=p.x&&e.x<=p.x+p.w);
       e.y=(support?support.y-e.r:355)+Math.sin(e.phase)*2;
       if(dist(player,e)<player.r+e.r+4){
-        if(player.vy>70&&player.y+player.r<e.y+e.r*.55){if(e.kind==='armored'){e.kind='walker';e.speed*=1.2;showMessage('Armadura quebrada!',1);}else{e.dead=true;score+=100;xp+=2;}for(let j=0;j<7;j++)platformSparks.push({x:e.x,y:e.y,vx:(j-3)*45,vy:-110-(j%3)*30,life:.4});player.vy=-320;}
+        if(wasFalling&&oldBottom<=e.y-e.r*.15&&player.y+player.r>=e.y-e.r*.65){if(e.kind==='armored'){e.kind='walker';e.speed*=1.2;showMessage('Armadura quebrada!',1);}else{e.dead=true;score+=100;xp+=2;}for(let j=0;j<7;j++)platformSparks.push({x:e.x,y:e.y,vx:(j-3)*45,vy:-110-(j%3)*30,life:.4});player.vy=-320;}
         else damage(12);
       }
     }

@@ -25,7 +25,7 @@ function gameForgeBoot() {
   let player = {x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
   let enemies=[], bullets=[], drops=[], particles=[], platforms=[], obstacles=[];
   let cameraX=0, traveled=0, invulnerable=0, fireDelay=0, reloadDelay=0;
-  let platformCheckpoint={x:70,y:350},platformCheckpointIndex=-1,platformDeaths=0,platformTraps=[],platformSparks=[];
+  let platformCheckpoint={x:70,y:350},platformCheckpointIndex=-1,platformDeaths=0,platformTraps=[],platformSparks=[],platformDefeated=[];
   let racingSpeed=0,racingSteer=0,racingHits=0,racingSpawnDistance=0;
   const racingCurve=(distance,y)=>Math.sin((distance+(H-y)*1.5)/1150)*52+Math.sin((distance+(H-y)*1.5)/2350)*32;
   let mouse={x:W/2,y:H/2,active:false};
@@ -35,7 +35,7 @@ function gameForgeBoot() {
   function resetStage() {
     state='play'; paused=false; stageClock=0; invulnerable=0; fireDelay=0;reloadDelay=0;
     enemies=[];bullets=[];drops=[];particles=[];platforms=[];obstacles=[];
-    cameraX=0;traveled=0;racingSpeed=0;racingSteer=0;racingHits=0;racingSpawnDistance=0;platformCoyote=0;platformJumpBuffer=0;platformJumpHeld=false;platformCheckpointIndex=-1;platformCheckpoint={x:70,y:350};platformDeaths=0;platformTraps=[];platformSparks=[];
+    cameraX=0;traveled=0;racingSpeed=0;racingSteer=0;racingHits=0;racingSpawnDistance=0;platformCoyote=0;platformJumpBuffer=0;platformJumpHeld=false;platformCheckpointIndex=-1;platformCheckpoint={x:70,y:350};platformDeaths=0;platformTraps=[];platformSparks=[];platformDefeated=[];
     if (spec.genre === 'platform') {
       player={x:70,y:350,vx:0,vy:0,r:17,angle:0};
       for(let i=0;i<25;i++){
@@ -46,7 +46,7 @@ function gameForgeBoot() {
       const count=Math.min(22,configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,45):Math.round((10+stage*2)*tuning.enemyMultiplier*tuning.difficulty));
       for(let i=0;i<count;i++){
         const p=platforms[2+i];
-        enemies.push({x:p.x+p.w*.5,y:p.y-18,r:18,hp:1,phase:rand(0,6),speed:30+(i%3)*12,kind:i%4===0?'armored':'walker',patrolLeft:p.x+20,patrolRight:p.x+p.w-20,dir:i%2?1:-1});
+        enemies.push({x:p.x+p.w*.5,y:p.y-18,r:18,hp:1,phase:rand(0,6),speed:30+(i%3)*12,kind:i%4===0?'armored':i%3===0?'scout':'walker',hitFlash:0,patrolLeft:p.x+20,patrolRight:p.x+p.w-20,dir:i%2?1:-1});
       }
       for(let i=1;i<platforms.length;i+=2){const p=platforms[i];drops.push({x:p.x+p.w*.5,y:p.y-45,r:11,kind:'coin'});}
       for(let i=4;i<platforms.length;i+=5){const p=platforms[i];if(!p.checkpoint)platformTraps.push({x:p.x+p.w*.5-22,y:p.y-13,w:44,h:13});}
@@ -141,15 +141,17 @@ function gameForgeBoot() {
     for(const fx of platformSparks){fx.x+=fx.vx*dt;fx.y+=fx.vy*dt;fx.vy+=600*dt;fx.life-=dt;}
     platformSparks=platformSparks.filter(fx=>fx.life>0);
     for(const t of platformTraps){if(player.x+player.r>t.x&&player.x-player.r<t.x+t.w&&player.y+player.r>t.y&&player.y-player.r<t.y+t.h)damage(15);}
+    for(const d of platformDefeated)d.ttl-=dt;
+    platformDefeated=platformDefeated.filter(d=>d.ttl>0);
     for(const e of enemies){
-      e.phase+=dt;
+      e.phase+=dt;e.hitFlash=Math.max(0,(e.hitFlash||0)-dt);
       e.x+=e.dir*e.speed*dt;
       if(e.x<=e.patrolLeft){e.x=e.patrolLeft;e.dir=1;}
       if(e.x>=e.patrolRight){e.x=e.patrolRight;e.dir=-1;}
       const support=platforms.find(p=>e.x>=p.x&&e.x<=p.x+p.w);
       e.y=(support?support.y-e.r:355)+Math.sin(e.phase)*2;
       if(dist(player,e)<player.r+e.r+4){
-        if(wasFalling&&oldBottom<=e.y-e.r*.15&&player.y+player.r>=e.y-e.r*.65){if(e.kind==='armored'){e.kind='walker';e.speed*=1.2;showMessage('Armadura quebrada!',1);}else{e.dead=true;score+=100;xp+=2;}for(let j=0;j<7;j++)platformSparks.push({x:e.x,y:e.y,vx:(j-3)*45,vy:-110-(j%3)*30,life:.4});player.vy=-320;}
+        if(wasFalling&&oldBottom<=e.y-e.r*.15&&player.y+player.r>=e.y-e.r*.65){if(e.kind==='armored'){e.kind='walker';e.hitFlash=.25;e.speed*=1.2;showMessage('Armadura quebrada!',1);}else{e.dead=true;platformDefeated.push({x:e.x,y:e.y,ttl:.45,kind:e.kind,dir:e.dir});score+=100;xp+=2;}for(let j=0;j<7;j++)platformSparks.push({x:e.x,y:e.y,vx:(j-3)*45,vy:-110-(j%3)*30,life:.4});player.vy=-320;}
         else damage(12);
       }
     }
@@ -254,15 +256,17 @@ function gameForgeBoot() {
       ctx.strokeStyle='#ffffff1b';ctx.strokeRect(22,50,W-44,H-72);
     }
   }
-  function drawAnimatedActor(x,y,kind,phase=0,dir=1){
+  function drawAnimatedActor(x,y,kind,phase=0,dir=1,flash=0,defeat=0){
     const armored=kind==='armored';
+    const scout=kind==='scout';
     const step=Math.sin(phase*8)*(graphicsDetail()===0?2:5);
-    ctx.save();ctx.translate(x,y);ctx.scale(dir,1);
+    ctx.save();ctx.translate(x,y);ctx.scale(dir,1);if(defeat){ctx.globalAlpha=Math.max(0,defeat/.45);ctx.scale(1+(.45-defeat),Math.max(.15,defeat/.45));}if(flash>0)ctx.globalAlpha=.55;
     ctx.fillStyle='#0d2036';ctx.fillRect(-11,8,8,10+step);ctx.fillRect(3,8,8,10-step);
-    ctx.fillStyle=armored?'#708e9f':'#d15e72';
+    ctx.fillStyle=armored?'#708e9f':scout?'#e4a35e':'#d15e72';
     ctx.beginPath();ctx.roundRect(-14,-12,28,26,6);ctx.fill();
-    ctx.fillStyle=armored?'#c1d6dd':'#f4bb9e';ctx.beginPath();ctx.arc(0,-14,11,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=armored?'#c1d6dd':scout?'#f4d5aa':'#f4bb9e';ctx.beginPath();ctx.arc(0,-14,11,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#192736';ctx.fillRect(3,-18,5,4);
+    if(scout){ctx.fillStyle='#855d43';ctx.fillRect(-12,-23,24,5);}
     if(armored){ctx.fillStyle='#506d80';ctx.fillRect(-14,-22,28,7);ctx.fillRect(-17,-8,5,16);ctx.fillRect(12,-8,5,16);}
     else{ctx.fillStyle='#f4bb9e';ctx.fillRect(-17,-8,5,14-step);ctx.fillRect(12,-8,5,14+step);}
     ctx.restore();
@@ -301,7 +305,8 @@ function gameForgeBoot() {
     if(spec.genre==='platform'){for(const fx of platformSparks){ctx.globalAlpha=Math.min(1,fx.life*2.5);ctx.fillStyle='#ffe3a1';ctx.fillRect(fx.x-3,fx.y-3,6,6);}ctx.globalAlpha=1;}
     for(const d of drops){ctx.fillStyle=d.kind==='heal'?'#ef6e93':d.kind==='ammo'?'#85caff':'#f9c762';ctx.beginPath();ctx.arc(d.x,d.y,d.r+Math.sin(clock*6)*2,0,Math.PI*2);ctx.fill();}
     for(const o of obstacles){if(spec.genre==='racing'){if(o.kind==='cone'){ctx.fillStyle='#f2aa4b';ctx.beginPath();ctx.moveTo(o.x,o.y-18);ctx.lineTo(o.x-14,o.y+18);ctx.lineTo(o.x+14,o.y+18);ctx.fill();ctx.fillStyle='#fff1c6';ctx.fillRect(o.x-8,o.y+4,16,5);}else{drawRacingCar(o.x,o.y,['#e97069','#6b9ce3','#f0c26d','#b18ce5'][o.paint||0]);}}else{ctx.fillStyle=o.kind==='cone'?'#f2aa4b':color.enemy;ctx.fillRect(o.x-20,o.y-32,40,64);ctx.fillStyle='#21293c';ctx.fillRect(o.x-14,o.y-15,28,20);}}
-    for(const e of enemies){if(spec.genre==='platform'){drawAnimatedActor(e.x,e.y,e.kind,e.phase,e.dir||1);}else{ctx.fillStyle=e.boss?'#ae6edb':color.enemy;ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#281625';ctx.fillRect(e.x-7,e.y-5,5,5);ctx.fillRect(e.x+4,e.y-5,5,5);}}
+    for(const e of enemies){if(spec.genre==='platform'){drawAnimatedActor(e.x,e.y,e.kind,e.phase,e.dir||1,e.hitFlash||0);}else{ctx.fillStyle=e.boss?'#ae6edb':color.enemy;ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#281625';ctx.fillRect(e.x-7,e.y-5,5,5);ctx.fillRect(e.x+4,e.y-5,5,5);}}
+    if(spec.genre==='platform')for(const d of platformDefeated)drawAnimatedActor(d.x,d.y,d.kind,0,d.dir||1,0,d.ttl);
     for(const b of bullets){ctx.fillStyle='#f8d580';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();}
     for(const p of particles){ctx.fillStyle=color.enemy;ctx.fillRect(p.x,p.y,4,4);}
     drawPlayer(player.x,player.y);ctx.restore();

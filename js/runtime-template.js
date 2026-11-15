@@ -215,17 +215,33 @@ function gameForgeBoot() {
     $('mission').textContent=(configAt(stage).objective?configAt(stage).objective+' · ':'')+(stages[stage]||'Fase')+(spec.genre==='racing'?` · ${Math.floor(traveled/10)}m`:spec.genre==='arena'?` · ${enemies.length} inimigos`:'');
     if(spec.features.timer){$('timer').textContent=`${Math.floor(stageClock)}s`;}
   }
+  function drawRacingCar(x,y,paint,hero=false){
+    ctx.save();ctx.translate(x,y);
+    ctx.fillStyle='#09121c66';ctx.beginPath();ctx.ellipse(4,9,27,44,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#101820';for(const side of [-1,1]){ctx.fillRect(side*17-5,-28,9,20);ctx.fillRect(side*17-5,13,9,20);}
+    const body=ctx.createLinearGradient(-19,0,19,0);body.addColorStop(0,'#192c39');body.addColorStop(.25,paint);body.addColorStop(.76,paint);body.addColorStop(1,'#172b37');
+    ctx.fillStyle=body;ctx.beginPath();ctx.moveTo(-15,-35);ctx.lineTo(15,-35);ctx.lineTo(19,-23);ctx.lineTo(19,27);ctx.lineTo(12,37);ctx.lineTo(-12,37);ctx.lineTo(-19,27);ctx.lineTo(-19,-23);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#a4d8e8';ctx.beginPath();ctx.moveTo(-12,-16);ctx.lineTo(12,-16);ctx.lineTo(14,-5);ctx.lineTo(-14,-5);ctx.fill();
+    ctx.fillStyle='#52788d';ctx.fillRect(-13,11,26,10);
+    ctx.fillStyle='#fff0c4';ctx.fillRect(-13,-34,8,5);ctx.fillRect(5,-34,8,5);
+    ctx.fillStyle='#e55d60';ctx.fillRect(-13,30,8,5);ctx.fillRect(5,30,8,5);
+    if(hero){ctx.strokeStyle='#ffffff88';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-30);ctx.lineTo(0,30);ctx.stroke();}
+    ctx.restore();
+  }
   function background(){
     ctx.fillStyle=color.bg;ctx.fillRect(0,0,W,H);
     if(spec.genre==='racing'){
-      ctx.fillStyle='#193c36';ctx.fillRect(0,0,W,H);
+      const terrain=ctx.createLinearGradient(0,0,0,H);terrain.addColorStop(0,'#234e45');terrain.addColorStop(1,'#142d30');ctx.fillStyle=terrain;ctx.fillRect(0,0,W,H);
+      for(let i=0;i<24;i++){const y=((i*103+traveled*.5)%(H+150))-75;const x=i%2?140:810;ctx.fillStyle=i%3?'#285d4a':'#347052';ctx.beginPath();ctx.arc(x+Math.sin(i*8)*65,y,20+(i%4)*7,0,Math.PI*2);ctx.fill();}
       for(let y=0;y<H;y+=12){
         const center=W/2+racingCurve(traveled,y);
-        ctx.fillStyle='#343a47';ctx.fillRect(center-222,y,444,13);
+        const asphalt=ctx.createLinearGradient(center-222,0,center+222,0);asphalt.addColorStop(0,'#252d37');asphalt.addColorStop(.5,'#444b55');asphalt.addColorStop(1,'#252d37');ctx.fillStyle=asphalt;ctx.fillRect(center-222,y,444,13);
         ctx.fillStyle='#d4a84e';ctx.fillRect(center-210,y,5,13);ctx.fillRect(center+205,y,5,13);
         if(Math.floor((y+traveled*.75)/65)%2===0){ctx.fillStyle='#c1c4d1';ctx.fillRect(center-75,y,5,13);ctx.fillRect(center+72,y,5,13);}
       }
     }else if(spec.genre==='platform'){
+      const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#10283f');sky.addColorStop(1,'#527b88');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#ffe6ac';ctx.beginPath();ctx.arc(770,100,36,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#24455d';ctx.fillRect(0,390,W,150);
       for(let i=0;i<16;i++){const x=((i*183-cameraX*.25)%1300+1300)%1300-160;ctx.fillStyle=i%3?'#173448':'#28516a';ctx.beginPath();ctx.moveTo(x,420);ctx.lineTo(x+100,155+Math.sin(i)*55);ctx.lineTo(x+230,420);ctx.fill();}
     }else{
@@ -239,10 +255,7 @@ function gameForgeBoot() {
     ctx.save();ctx.translate(x,y);
     if(invulnerable>0&&Math.floor(clock*18)%2===0)ctx.globalAlpha=.4;
     if(spec.genre==='racing'){
-      ctx.fillStyle='#111822';ctx.fillRect(-17,-38,34,74);
-      ctx.fillStyle=color.accent;ctx.fillRect(-15,-27,30,54);
-      ctx.fillStyle='#74c2d4';ctx.fillRect(-11,-17,22,13);ctx.fillRect(-11,12,22,9);
-      ctx.fillStyle='#080e1b';ctx.fillRect(-21,-27,6,15);ctx.fillRect(15,-27,6,15);ctx.fillRect(-21,13,6,15);ctx.fillRect(15,13,6,15);
+      drawRacingCar(0,0,color.accent,true);
     }else if(spec.genre==='platform'){
       const facing=player.vx<-.5?-1:1;
       ctx.scale(facing,1);
@@ -270,7 +283,7 @@ function gameForgeBoot() {
     if(spec.genre==='platform'){for(const t of platformTraps){ctx.fillStyle='#dc6670';for(let x=t.x;x<t.x+t.w;x+=11){ctx.beginPath();ctx.moveTo(x,t.y+t.h);ctx.lineTo(x+5.5,t.y);ctx.lineTo(x+11,t.y+t.h);ctx.fill();}}}
     if(spec.genre==='platform'){for(const fx of platformSparks){ctx.globalAlpha=Math.min(1,fx.life*2.5);ctx.fillStyle='#ffe3a1';ctx.fillRect(fx.x-3,fx.y-3,6,6);}ctx.globalAlpha=1;}
     for(const d of drops){ctx.fillStyle=d.kind==='heal'?'#ef6e93':d.kind==='ammo'?'#85caff':'#f9c762';ctx.beginPath();ctx.arc(d.x,d.y,d.r+Math.sin(clock*6)*2,0,Math.PI*2);ctx.fill();}
-    for(const o of obstacles){if(spec.genre==='racing'){if(o.kind==='cone'){ctx.fillStyle='#f2aa4b';ctx.beginPath();ctx.moveTo(o.x,o.y-18);ctx.lineTo(o.x-14,o.y+18);ctx.lineTo(o.x+14,o.y+18);ctx.fill();ctx.fillStyle='#fff1c6';ctx.fillRect(o.x-8,o.y+4,16,5);}else{ctx.fillStyle='#101923';ctx.fillRect(o.x-21,o.y-31,42,62);ctx.fillStyle=['#e97069','#6b9ce3','#f0c26d','#b18ce5'][o.paint||0];ctx.fillRect(o.x-16,o.y-29,32,58);ctx.fillStyle='#9bd1e0';ctx.fillRect(o.x-12,o.y-14,24,15);ctx.fillStyle='#ffdf8a';ctx.fillRect(o.x-14,o.y-30,8,4);ctx.fillRect(o.x+6,o.y-30,8,4);}}else{ctx.fillStyle=o.kind==='cone'?'#f2aa4b':color.enemy;ctx.fillRect(o.x-20,o.y-32,40,64);ctx.fillStyle='#21293c';ctx.fillRect(o.x-14,o.y-15,28,20);}}
+    for(const o of obstacles){if(spec.genre==='racing'){if(o.kind==='cone'){ctx.fillStyle='#f2aa4b';ctx.beginPath();ctx.moveTo(o.x,o.y-18);ctx.lineTo(o.x-14,o.y+18);ctx.lineTo(o.x+14,o.y+18);ctx.fill();ctx.fillStyle='#fff1c6';ctx.fillRect(o.x-8,o.y+4,16,5);}else{drawRacingCar(o.x,o.y,['#e97069','#6b9ce3','#f0c26d','#b18ce5'][o.paint||0]);}}else{ctx.fillStyle=o.kind==='cone'?'#f2aa4b':color.enemy;ctx.fillRect(o.x-20,o.y-32,40,64);ctx.fillStyle='#21293c';ctx.fillRect(o.x-14,o.y-15,28,20);}}
     for(const e of enemies){ctx.fillStyle=e.kind==='armored'?'#829ba7':e.boss?'#ae6edb':color.enemy;ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#281625';ctx.fillRect(e.x-7,e.y-5,5,5);ctx.fillRect(e.x+4,e.y-5,5,5);}
     for(const b of bullets){ctx.fillStyle='#f8d580';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();}
     for(const p of particles){ctx.fillStyle=color.enemy;ctx.fillRect(p.x,p.y,4,4);}

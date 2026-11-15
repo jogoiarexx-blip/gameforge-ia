@@ -19,6 +19,7 @@ function gameForgeExpanded2DBoot() {
   const portal={x:2220,y:800,r:46};
   const puzzleEnabled=!td&&!!spec.mechanics?.requested?.includes('puzzles');
   let puzzle={key:false,lever:false,solved:false,rewarded:false};
+  let treasureChests=[];
   let keySpot={x:300,y:850},leverSpot={x:1730,y:800},gateSpot={x:1940,y:800};
   let gateObstacle=null;
   function setupPuzzle(){
@@ -37,6 +38,20 @@ function gameForgeExpanded2DBoot() {
     // A área do portão deve permanecer longe da origem e do portal.
     if(dist(gateSpot,{x:210,y:800})<160||dist(gateSpot,portal)<140)gateSpot={...preset[2]};
     gateObstacle={x:gateSpot.x-18,y:gateSpot.y-60,w:36,h:120,kind:'gate'};
+  }
+  function setupChests(){
+    // Baús opcionais: até 8 por fase, com recompensas limitadas.
+    const config=configAt(stage).chests;
+    const defaults=[{x:475,y:800,coins:25},{x:1190,y:800,coins:35},{x:1850,y:800,coins:45}];
+    const raw=Array.isArray(config)?config.slice(0,8):defaults;
+    treasureChests=raw.map((c,i)=>{
+      const fallback=defaults[i%defaults.length];
+      const x=Number(c?.x),y=Number(c?.y),coins=Number(c?.coins);
+      return {x:Number.isFinite(x)&&x>=100&&x<=2250?x:fallback.x,
+        y:Number.isFinite(y)&&y>=100&&y<=1450?y:fallback.y,
+        coins:Number.isFinite(coins)?Math.max(0,Math.min(250,Math.floor(coins))):fallback.coins,
+        opened:false};
+    });
   }
   const extra=document.createElement('div');extra.style.cssText='display:none;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px';
   document.querySelector('.dialog').appendChild(extra);
@@ -58,7 +73,7 @@ function gameForgeExpanded2DBoot() {
     if(td){d=R.createDefense(stage,tuning);if(configAt(stage).waves>0)d.waves=clamp(configAt(stage).waves,1,12);selected=null;cursor={x:2,y:1};}
     else{
       if(checkpoint)R.restore(player,checkpoint);player.x=210;player.y=800;facing={x:1,y:0};camera={x:0,y:clamp(player.y-H/2,0,world.height-H)};
-      puzzle={key:false,lever:false,solved:false,rewarded:false};buildMap();if(puzzleEnabled){setupPuzzle();obstacles.push(gateObstacle);}spawnRPG();
+      puzzle={key:false,lever:false,solved:false,rewarded:false};buildMap();setupChests();if(puzzleEnabled){setupPuzzle();obstacles.push(gateObstacle);}spawnRPG();
       crystals=[{x:640,y:500},{x:1150,y:1030},{x:1740,y:630}].map(p=>({...p,r:18,taken:false}));
     }
     hide();note(stages[stage]);publish();
@@ -181,6 +196,12 @@ function gameForgeExpanded2DBoot() {
     }
     bullets=bullets.filter(b=>b.life>0);enemies=enemies.filter(e=>!e.dead);
     for(const c of crystals)if(!c.taken&&dist(player,c)<38){c.taken=true;collected++;player.coins+=35;R.gainXP(player,15);burst(c.x,c.y,'#89f7ed',25);note('Relíquia '+collected+'/3 · '+(bossDead?'Procure o portal':'Derrote o guardião do portal'));}
+    for(const chest of treasureChests){
+      if(!chest.opened&&dist(player,chest)<42){
+        chest.opened=true;player.coins+=chest.coins;R.gainXP(player,10);
+        note('Baú encontrado · +'+chest.coins+' ouro e 10 XP');
+      }
+    }
     if(puzzleEnabled){
       if(!puzzle.key&&dist(player,keySpot)<48){puzzle.key=true;note('Chave antiga encontrada · procure o portão');}
       if(!puzzle.lever&&dist(player,leverSpot)<48){puzzle.lever=true;note('Alavanca ativada · procure o portão');}
@@ -245,6 +266,12 @@ function gameForgeExpanded2DBoot() {
     for(const o of obstacles){if(o.x<camera.x-180||o.x>camera.x+W+180||o.y<camera.y-150||o.y>camera.y+H+150)continue;
       if(o.kind==='house')drawHouse(o);
       else if(o.kind==='rock'){ellipse(o.x+o.w*.6,o.y+o.h*.8,o.w*.7,o.h*.4,'#122a2480');ellipse(o.x+o.w*.5,o.y+o.h*.45,o.w*.5,o.h*.5,'#687773');ellipse(o.x+o.w*.4,o.y+o.h*.3,o.w*.3,o.h*.2,'#89958a');}
+    }
+    for(const chest of treasureChests){
+      if(chest.opened)continue;
+      rect(chest.x-17,chest.y-12,34,24,'#6b442a');
+      rect(chest.x-17,chest.y-12,34,7,'#b28a4e');
+      rect(chest.x-3,chest.y-7,6,11,'#f3d47d');
     }
     if(puzzleEnabled){
       if(!puzzle.key){circle(keySpot.x,keySpot.y,15,'#e8c76d');rect(keySpot.x-2,keySpot.y-22,5,29,'#f8e7a2');}
@@ -323,7 +350,7 @@ function gameForgeExpanded2DBoot() {
   }
   function publish(){
     const p=td?{x:cursor.x*54+27,y:cursor.y*54+27,screenX:48+cursor.x*54+27,screenY:80+cursor.y*54+27}:player?{x:player.x,y:player.y,screenX:player.x-camera.x,screenY:player.y-camera.y}: {x:210,y:800,screenX:210,screenY:270};
-    telemetry={genre:spec.genre,runtime:'expanded-2d',state:paused&&state==='play'?'paused':state,paused,frames,stage:stage+1,stageCount:stages.length,time,stageTime,player:p,camera:{...camera},health:td?d?.base||0:player?.hp||0,enemies:td?d?.enemies.length||0:enemies.length,bullets:bullets.length,particles:particles.length,score:td?d?.kills||0:player?.coins||0,resources:td?d?.coins||0:player?.coins||0,towers:d?.towers.length||0,wave:d?.wave||0,collectibles:collected,bossDefeated:bossDead,puzzleKey:puzzle.key,puzzleLever:puzzle.lever,puzzleSolved:puzzle.solved,puzzleRewarded:puzzle.rewarded,level:player?.level||1,objective:td?'protect-base':'relics-boss-portal'};
+    telemetry={genre:spec.genre,runtime:'expanded-2d',state:paused&&state==='play'?'paused':state,paused,frames,stage:stage+1,stageCount:stages.length,time,stageTime,player:p,camera:{...camera},health:td?d?.base||0:player?.hp||0,enemies:td?d?.enemies.length||0:enemies.length,bullets:bullets.length,particles:particles.length,score:td?d?.kills||0:player?.coins||0,resources:td?d?.coins||0:player?.coins||0,towers:d?.towers.length||0,wave:d?.wave||0,collectibles:collected,bossDefeated:bossDead,puzzleKey:puzzle.key,puzzleLever:puzzle.lever,puzzleSolved:puzzle.solved,puzzleRewarded:puzzle.rewarded,chestsOpened:treasureChests.filter(c=>c.opened).length,chestsTotal:treasureChests.length,level:player?.level||1,objective:td?'protect-base':'relics-boss-portal'};
     Object.assign(window.__gameforgeTelemetry,telemetry);
   }
   function frame(now){const dt=last?Math.min(.05,Math.max(0,(now-last)/1000)):1/60;last=now;frames++;update(dt);ctx.clearRect(0,0,W,H);if(td)drawDefense();else drawRPG();hud();publish();requestAnimationFrame(frame);}

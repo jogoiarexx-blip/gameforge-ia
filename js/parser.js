@@ -25,6 +25,24 @@
   function unique(items) { return [...new Set(items.map(x => x.trim()).filter(Boolean))]; }
   const labels={arena:'Aventura / ação',shooter:'Nave / shoot’em up vertical',racing:'Corrida',platform:'Plataforma',rpg:'RPG de ação',fps:'FPS / primeira pessoa','tower-defense':'Defesa de torres (caminhos)','lane-defense':'Defesa por linhas / Jardim','block-td':'Defesa de torres em blocos'};
   const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','racing','platform']};
+  // Catálogo declarativo: pedido no GDD não equivale a mecânica implementada.
+  const mechanicCatalog = Object.freeze({
+    combat: { label:'Combate', pattern:/\\b(combate|atacar|ataque|luta|espada|tiro|inimig|boss|chefe)\\b/, supported:['arena','shooter','rpg','fps'] },
+    exploration: { label:'Exploração', pattern:/\\b(exploracao|explorar|mundo aberto|descobrir|mapa exploravel)\\b/, supported:['arena','rpg'] },
+    puzzles: { label:'Puzzles', pattern:/\\b(puzzle|quebra.cabeca|enigma|desafio logico)\\b/, supported:[] },
+    economy: { label:'Economia', pattern:/\\b(economia|dinheiro|moedas|comercio|comprar|vender|loja)\\b/, supported:['rpg','tower-defense','lane-defense','block-td'] },
+    inventory: { label:'Inventário', pattern:/\\b(inventario|mochila|equipamentos|itens guardados)\\b/, supported:['rpg'] },
+    crafting: { label:'Fabricação', pattern:/\\b(crafting|fabricacao|fabricar|construir itens)\\b/, supported:[] },
+    stealth: { label:'Furtividade', pattern:/\\b(stealth|furtividade|esconder|sorrateiro)\\b/, supported:[] },
+    progression: { label:'Progressão', pattern:/\\b(evolucao|evoluir|xp|nivel|melhorias|upgrades)\\b/, supported:['rpg','shooter','tower-defense','lane-defense','block-td'] }
+  });
+  function planMechanics(text, genre) {
+    const normalized=normalize(text);
+    const requested=Object.entries(mechanicCatalog).filter(([,def])=>def.pattern.test(normalized)).map(([id])=>id);
+    const available=requested.filter(id=>mechanicCatalog[id].supported.includes(genre));
+    const pending=requested.filter(id=>!mechanicCatalog[id].supported.includes(genre));
+    return {requested,available,pending,labels:Object.fromEntries(requested.map(id=>[id,mechanicCatalog[id].label]))};
+  }
   function parseGdd(md, instruction = '', options = {}) {
     const source = String(md || ''); // GDD integral: nenhum corte silencioso
     const extra = String(instruction || '').slice(0, 12000);
@@ -55,6 +73,7 @@
       timer: /tempo|cronometro|timer|contra o relogio/i.test(norm),
       audio: /som|audio|musica|trilha|sfx/i.test(norm),
     };
+    const mechanics=planMechanics(combined,genre);
     const stages = levels.length ? levels : ['Fase 1 — Início', 'Fase 2 — Desafio', 'Fase 3 — Confronto'];
     let enemyNames = [];
     let inEnemies = false;
@@ -82,7 +101,7 @@
     const shooterTheme = /dragon|dragao|drag[oõ]es|fogo|asas|harpia|reino|magia|medieval/.test(norm) ? 'dragon' : /neon|cyber|cidade futurista|sintetico|synthwave/.test(norm) ? 'neon' : 'space';
     const shooterOptions = { theme: shooterTheme, autofire: /tiro automatico|auto.?fire|disparo automatico/.test(norm), waves: /onda|wave|formac|esquadrao|enxame|ataque em v|zigzag|escolta/.test(norm), boss: genre === 'shooter' || features.bosses, powerups: genre === 'shooter', parallax: true };
     return {
-      title: title.slice(0, 90), genre, dimension, stages, shooterOptions,
+      title: title.slice(0, 90), genre, dimension, stages, shooterOptions, mechanics,
       defenseOptions:{mode:genre==='lane-defense'?'lane':genre==='block-td'?'blocks':'path',heightLevels:genre==='block-td'?3:0,upgradeChoices:genre==='block-td',
        resourceLabel:genre==='lane-defense'&&/\bbrilhos?\b/.test(norm)?'Brilhos':'Energia',
        startingGlow:genre==='lane-defense'?150:280,collectibleDrops:genre==='lane-defense',cardSystem:genre==='lane-defense'},
@@ -95,6 +114,7 @@
         `${stages.length} fase(s) no protótipo`, `${headings.length} capítulos lidos`, `${enemyNames.length} nome(s) de inimigos encontrados`,
         ...Object.keys(features).filter(k => features[k]).map(k => ({inventory:'Inventário',enemies:'Inimigos',bosses:'Chefes',quests:'Objetivos',checkpoints:'Checkpoints',upgrades:'Melhorias',mobile:'Controles mobile',timer:'Cronômetro',audio:'Áudio previsto'})[k])],
       limitations: [
+        ...(mechanics.pending.length?['Mecânicas solicitadas sem implementação garantida neste motor: '+mechanics.pending.map(id=>mechanics.labels[id]).join(', ')+'. Necessitam desenvolvimento adicional.']:[]),
         ...(allLevels.length>stageLimit?[`O GDD contém ${allLevels.length} fases; este motor utiliza as primeiras ${stageLimit}. O documento original permanece completo.`]:[]),
         ...(dimension==='3d'?['O motor 3D usa cenários e personagens low poly procedurais com Three.js local; requer WebGL2. GLBs detalhados, animações importadas e campanha escrita livremente ainda exigem trabalho adicional.']:[]),
         ...(['lane-defense','block-td'].includes(genre)?['Dois motores originais de Tower Defense com regras predefinidas. Não copia personagens, nomes, arte, níveis nem unidades de jogos comerciais.']:[]),
@@ -110,6 +130,6 @@
     if(value.length>10000)throw Error('Configuração e instrução de IA ultrapassam 10.000 caracteres. Reduza a instrução adicional.');
     return value;
   }
-  root.GameForgeParser = { parseGdd, detectGenre, labels, styles, creationInstruction };
+  root.GameForgeParser = { parseGdd, detectGenre, labels, styles, creationInstruction, mechanicCatalog, planMechanics };
   if (typeof module !== 'undefined') module.exports = root.GameForgeParser;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

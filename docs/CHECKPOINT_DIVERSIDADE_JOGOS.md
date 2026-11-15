@@ -241,3 +241,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [ ] Expor escolha de perfil na interface de criação e garantir propagação de spec.graphicsQuality no gerador.
 - [ ] Validar visualmente os três níveis, inclusive no celular; executar testes de desempenho.
 - [ ] Próximo: animações e sprites reutilizáveis e controles de qualidade na interface.
+
+## Motor gráfico — personagens vetoriais animados
+- [x] Função reutilizável drawAnimatedActor para inimigos de plataforma, com cabeça, corpo, braços, pernas e armadura.
+- [x] Ciclo de caminhada por fase, direção de patrulha e simplificação no perfil gráfico baixo.
+- [x] Ajuste visual de pernas do jogador durante saltos.
+- [ ] Verificar suporte de CanvasRenderingContext2D.roundRect nos navegadores-alvo e testar o desenho no celular.
+- [ ] Próximo: animações de ataque, dano e derrota; biblioteca de estilos de personagens e controles gráficos no Studio.

@@ -7,6 +7,9 @@ function gameForgeBoot() {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const W = 960, H = 540;
+  const graphicsSetting=['low','medium','high'].includes(spec.graphicsQuality)?spec.graphicsQuality:'auto';
+  let graphicsQuality=graphicsSetting==='auto'?'high':graphicsSetting,graphicsFrameAverage=.016,graphicsSampleCount=0;
+  const graphicsDetail=()=>graphicsQuality==='low'?0:graphicsQuality==='medium'?1:2;
   const $ = id => document.getElementById(id);
   canvas.width = W; canvas.height = H;
   const color = spec.colors || {bg:'#132235',accent:'#77e4be',ground:'#223247',enemy:'#ff7979'};
@@ -232,18 +235,18 @@ function gameForgeBoot() {
     ctx.fillStyle=color.bg;ctx.fillRect(0,0,W,H);
     if(spec.genre==='racing'){
       const terrain=ctx.createLinearGradient(0,0,0,H);terrain.addColorStop(0,'#234e45');terrain.addColorStop(1,'#142d30');ctx.fillStyle=terrain;ctx.fillRect(0,0,W,H);
-      for(let i=0;i<24;i++){const y=((i*103+traveled*.5)%(H+150))-75;const x=i%2?140:810;ctx.fillStyle=i%3?'#285d4a':'#347052';ctx.beginPath();ctx.arc(x+Math.sin(i*8)*65,y,20+(i%4)*7,0,Math.PI*2);ctx.fill();}
-      for(let y=0;y<H;y+=12){
+      for(let i=0;i<(graphicsDetail()===0?8:graphicsDetail()===1?15:24);i++){const y=((i*103+traveled*.5)%(H+150))-75;const x=i%2?140:810;ctx.fillStyle=i%3?'#285d4a':'#347052';ctx.beginPath();ctx.arc(x+Math.sin(i*8)*65,y,20+(i%4)*7,0,Math.PI*2);ctx.fill();}
+      for(let y=0;y<H;y+=graphicsDetail()===0?24:graphicsDetail()===1?16:12){
         const center=W/2+racingCurve(traveled,y);
-        const asphalt=ctx.createLinearGradient(center-222,0,center+222,0);asphalt.addColorStop(0,'#252d37');asphalt.addColorStop(.5,'#444b55');asphalt.addColorStop(1,'#252d37');ctx.fillStyle=asphalt;ctx.fillRect(center-222,y,444,13);
-        ctx.fillStyle='#d4a84e';ctx.fillRect(center-210,y,5,13);ctx.fillRect(center+205,y,5,13);
-        if(Math.floor((y+traveled*.75)/65)%2===0){ctx.fillStyle='#c1c4d1';ctx.fillRect(center-75,y,5,13);ctx.fillRect(center+72,y,5,13);}
+        const asphalt=ctx.createLinearGradient(center-222,0,center+222,0);asphalt.addColorStop(0,'#252d37');asphalt.addColorStop(.5,'#444b55');asphalt.addColorStop(1,'#252d37');ctx.fillStyle=asphalt;ctx.fillRect(center-222,y,444,graphicsDetail()===0?25:graphicsDetail()===1?17:13);
+        ctx.fillStyle='#d4a84e';ctx.fillRect(center-210,y,5,graphicsDetail()===0?25:graphicsDetail()===1?17:13);ctx.fillRect(center+205,y,5,graphicsDetail()===0?25:graphicsDetail()===1?17:13);
+        if(Math.floor((y+traveled*.75)/65)%2===0){ctx.fillStyle='#c1c4d1';ctx.fillRect(center-75,y,5,graphicsDetail()===0?25:graphicsDetail()===1?17:13);ctx.fillRect(center+72,y,5,graphicsDetail()===0?25:graphicsDetail()===1?17:13);}
       }
     }else if(spec.genre==='platform'){
       const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#10283f');sky.addColorStop(1,'#527b88');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
       ctx.fillStyle='#ffe6ac';ctx.beginPath();ctx.arc(770,100,36,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#24455d';ctx.fillRect(0,390,W,150);
-      for(let i=0;i<16;i++){const x=((i*183-cameraX*.25)%1300+1300)%1300-160;ctx.fillStyle=i%3?'#173448':'#28516a';ctx.beginPath();ctx.moveTo(x,420);ctx.lineTo(x+100,155+Math.sin(i)*55);ctx.lineTo(x+230,420);ctx.fill();}
+      for(let i=0;i<(graphicsDetail()===0?7:graphicsDetail()===1?11:16);i++){const x=((i*183-cameraX*.25)%1300+1300)%1300-160;ctx.fillStyle=i%3?'#173448':'#28516a';ctx.beginPath();ctx.moveTo(x,420);ctx.lineTo(x+100,155+Math.sin(i)*55);ctx.lineTo(x+230,420);ctx.fill();}
     }else{
       ctx.strokeStyle='#ffffff0e';ctx.lineWidth=1;
       for(let x=0;x<W;x+=46){ctx.beginPath();ctx.moveTo(x,40);ctx.lineTo(x,H);ctx.stroke();}
@@ -291,9 +294,10 @@ function gameForgeBoot() {
     if(spec.genre==='racing'){ctx.fillStyle='#07121bd9';ctx.fillRect(18,68,170,70);ctx.fillStyle='#f4f7fa';ctx.font='bold 22px sans-serif';ctx.fillText(Math.round(racingSpeed*.36)+' km/h',30,99);ctx.font='14px sans-serif';ctx.fillText('Percurso '+Math.floor(traveled/100)+' m',30,123);}
     if(state==='play'&&paused){ctx.fillStyle='#0b1024be';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 44px sans-serif';ctx.textAlign='center';ctx.fillText('PAUSADO',W/2,H/2);ctx.textAlign='left';}
   }
-  window.__gameforgeTelemetry = () => ({state,paused,frames:renderedFrames,clock,stage,genre:spec.genre,player:{x:player.x,y:player.y,screenX:player.x-(spec.genre==='platform'?cameraX:0),screenY:player.y,radius:player.r},enemies:enemies.length,racing:spec.genre==='racing'?{speed:Math.round(racingSpeed),distance:Math.round(traveled),hits:racingHits}:null,checkpoint:spec.genre==='platform'?platformCheckpointIndex:null,falls:spec.genre==='platform'?platformDeaths:null,traps:spec.genre==='platform'?platformTraps.length:null});
+  window.__gameforgeTelemetry = () => ({state,paused,frames:renderedFrames,clock,stage,genre:spec.genre,player:{x:player.x,y:player.y,screenX:player.x-(spec.genre==='platform'?cameraX:0),screenY:player.y,radius:player.r},enemies:enemies.length,graphicsQuality,graphicsFrameMs:Math.round(graphicsFrameAverage*1000),racing:spec.genre==='racing'?{speed:Math.round(racingSpeed),distance:Math.round(traveled),hits:racingHits}:null,checkpoint:spec.genre==='platform'?platformCheckpointIndex:null,falls:spec.genre==='platform'?platformDeaths:null,traps:spec.genre==='platform'?platformTraps.length:null});
   function frame(ms){
-    const dt=Math.min(.033, Math.max(0,(ms-lastTime)/1000));lastTime=ms;
+    const rawDt=Math.max(0,(ms-lastTime)/1000);const dt=Math.min(.033,rawDt);lastTime=ms;
+    if(graphicsSetting==='auto'&&rawDt>0&&rawDt<.25){graphicsFrameAverage=graphicsFrameAverage*.97+rawDt*.03;if(++graphicsSampleCount%180===0){if(graphicsFrameAverage>.029)graphicsQuality='low';else if(graphicsFrameAverage>.021)graphicsQuality='medium';else if(graphicsFrameAverage<.018)graphicsQuality='high';}}
     update(dt);render();renderedFrames++;requestAnimationFrame(frame);
   }
   const prevent = new Set([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);

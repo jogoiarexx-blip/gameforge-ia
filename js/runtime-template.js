@@ -24,6 +24,7 @@ function gameForgeBoot() {
   let cameraX=0, traveled=0, invulnerable=0, fireDelay=0, reloadDelay=0;
   let platformCheckpoint={x:70,y:350},platformCheckpointIndex=-1,platformDeaths=0,platformTraps=[],platformSparks=[];
   let racingSpeed=0,racingSteer=0,racingHits=0,racingSpawnDistance=0;
+  const racingCurve=(distance,y)=>Math.sin((distance+(H-y)*1.5)/1150)*52+Math.sin((distance+(H-y)*1.5)/2350)*32;
   let mouse={x:W/2,y:H/2,active:false};
   const showMessage = (txt, seconds=3) => { $('message').textContent=txt; $('message').style.opacity='1'; messageTime=seconds; };
   let messageTime = 0;
@@ -48,7 +49,7 @@ function gameForgeBoot() {
       for(let i=4;i<platforms.length;i+=5){const p=platforms[i];if(!p.checkpoint)platformTraps.push({x:p.x+p.w*.5-22,y:p.y-13,w:44,h:13});}
     } else if(spec.genre==='racing') {
       player={x:W/2,y:H-100,r:19,vx:0,vy:0,angle:0};
-      for(let i=0;i<6;i++) obstacles.push({x:W/2+[-125,0,125][i%3],y:-250-i*220,r:23,speed:80+stage*8,kind:i%4===0?'cone':'car'});
+      for(let i=0;i<6;i++) obstacles.push({x:W/2+[-125,0,125][i%3],lane:i%3,phase:i,y:-250-i*220,r:23,speed:80+stage*8,kind:i%4===0?'cone':'car'});
     } else {
       player={x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
       const encounterSize=configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,48):Math.min(48,Math.round((6+stage*3)*tuning.enemyMultiplier*tuning.difficulty));
@@ -162,12 +163,15 @@ function gameForgeBoot() {
     const target=brake?75:throttle?maxSpeed:boost?maxSpeed*1.15:maxSpeed*.72;
     racingSpeed=clamp(racingSpeed+(target>racingSpeed?245:-330)*dt,0,boost?maxSpeed*1.15:maxSpeed);
     racingSteer+=clamp(dx-racingSteer,-dt*5,dt*5);
-    player.x=clamp(player.x+racingSteer*(170+racingSpeed*.3)*dt,294,665);
-    if((player.x<=294&&dx<0)||(player.x>=665&&dx>0))racingSpeed=Math.max(90,racingSpeed-90*dt);
+    const roadCenter=W/2+racingCurve(traveled,player.y);
+    player.x=clamp(player.x+racingSteer*(170+racingSpeed*.3)*dt,roadCenter-186,roadCenter+186);
+    if((player.x<=roadCenter-186&&dx<0)||(player.x>=roadCenter+186&&dx>0))racingSpeed=Math.max(90,racingSpeed-90*dt);
     traveled+=racingSpeed*dt;
     racingSpawnDistance+=racingSpeed*dt;
     for(const o of obstacles){
       o.y+=(racingSpeed-o.speed)*dt;
+      if(o.kind==='car'){o.laneOffset=clamp((o.laneOffset||0)+Math.sin(clock*.8+o.phase)*dt*12,-18,18);}
+      o.x=W/2+[-125,0,125][o.lane||0]+racingCurve(traveled,o.y)+(o.laneOffset||0);
       if(!o.hit&&Math.hypot(player.x-o.x,player.y-o.y)<player.r+o.r){
         o.hit=true;o.y=H+130;racingHits++;racingSpeed*=o.kind==='cone'?.78:.48;
         damage(o.kind==='cone'?8:23);
@@ -180,7 +184,7 @@ function gameForgeBoot() {
       racingSpawnDistance-=interval;
       const lane=Math.floor(rand(0,3));
       if(!obstacles.some(o=>o.y<110&&Math.abs(o.x-(W/2+[-125,0,125][lane]))<30)){
-        obstacles.push({x:W/2+[-125,0,125][lane],y:-120,r:23,speed:65+stage*8,kind:Math.random()<.22?'cone':'car',hit:false});
+        obstacles.push({x:W/2+[-125,0,125][lane],lane,phase:rand(0,6),y:-120,r:23,speed:65+stage*8,kind:Math.random()<.22?'cone':'car',hit:false});
       }
     }
     if(traveled>6000+stage*1500)nextStage();
@@ -205,14 +209,13 @@ function gameForgeBoot() {
   function background(){
     ctx.fillStyle=color.bg;ctx.fillRect(0,0,W,H);
     if(spec.genre==='racing'){
-      ctx.fillStyle='#1a3240';ctx.fillRect(0,0,W,H);
-      ctx.fillStyle='#343a47';ctx.fillRect(258,0,444,H);
-      ctx.fillStyle='#d4a84e';ctx.fillRect(270,0,6,H);ctx.fillRect(687,0,6,H);
-      for(let i=0;i<13;i++){let y=(i*66+traveled*1.15)%780-100;ctx.fillStyle='#b4bdc7';ctx.fillRect(406,y,5,35);ctx.fillRect(554,y,5,35);}
-      for(let i=0;i<12;i++){ctx.fillStyle=i%2?'#304b5d':'#1e394c';ctx.fillRect(i*85,-5,42,H+20);}
-      ctx.fillStyle='#343a47';ctx.fillRect(258,0,444,H);
-      ctx.fillStyle='#d4a84e';ctx.fillRect(270,0,6,H);ctx.fillRect(687,0,6,H);
-      for(let i=0;i<13;i++){let y=(i*66+traveled*1.15)%780-100;ctx.fillStyle='#c1c4d1';ctx.fillRect(405,y,5,35);ctx.fillRect(555,y,5,35);}
+      ctx.fillStyle='#193c36';ctx.fillRect(0,0,W,H);
+      for(let y=0;y<H;y+=12){
+        const center=W/2+racingCurve(traveled,y);
+        ctx.fillStyle='#343a47';ctx.fillRect(center-222,y,444,13);
+        ctx.fillStyle='#d4a84e';ctx.fillRect(center-210,y,5,13);ctx.fillRect(center+205,y,5,13);
+        if(Math.floor((y+traveled*.75)/65)%2===0){ctx.fillStyle='#c1c4d1';ctx.fillRect(center-75,y,5,13);ctx.fillRect(center+72,y,5,13);}
+      }
     }else if(spec.genre==='platform'){
       ctx.fillStyle='#24455d';ctx.fillRect(0,390,W,150);
       for(let i=0;i<16;i++){const x=((i*183-cameraX*.25)%1300+1300)%1300-160;ctx.fillStyle=i%3?'#173448':'#28516a';ctx.beginPath();ctx.moveTo(x,420);ctx.lineTo(x+100,155+Math.sin(i)*55);ctx.lineTo(x+230,420);ctx.fill();}
@@ -263,6 +266,7 @@ function gameForgeBoot() {
     for(const b of bullets){ctx.fillStyle='#f8d580';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();}
     for(const p of particles){ctx.fillStyle=color.enemy;ctx.fillRect(p.x,p.y,4,4);}
     drawPlayer(player.x,player.y);ctx.restore();
+    if(spec.genre==='racing'){ctx.fillStyle='#07121bd9';ctx.fillRect(18,68,170,70);ctx.fillStyle='#f4f7fa';ctx.font='bold 22px sans-serif';ctx.fillText(Math.round(racingSpeed*.36)+' km/h',30,99);ctx.font='14px sans-serif';ctx.fillText('Percurso '+Math.floor(traveled/100)+' m',30,123);}
     if(state==='play'&&paused){ctx.fillStyle='#0b1024be';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 44px sans-serif';ctx.textAlign='center';ctx.fillText('PAUSADO',W/2,H/2);ctx.textAlign='left';}
   }
   window.__gameforgeTelemetry = () => ({state,paused,frames:renderedFrames,clock,stage,genre:spec.genre,player:{x:player.x,y:player.y,screenX:player.x-(spec.genre==='platform'?cameraX:0),screenY:player.y,radius:player.r},enemies:enemies.length,racing:spec.genre==='racing'?{speed:Math.round(racingSpeed),distance:Math.round(traveled),hits:racingHits}:null,checkpoint:spec.genre==='platform'?platformCheckpointIndex:null,falls:spec.genre==='platform'?platformDeaths:null,traps:spec.genre==='platform'?platformTraps.length:null});

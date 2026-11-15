@@ -49,7 +49,7 @@ function gameForgeBoot() {
       for(let i=4;i<platforms.length;i+=5){const p=platforms[i];if(!p.checkpoint)platformTraps.push({x:p.x+p.w*.5-22,y:p.y-13,w:44,h:13});}
     } else if(spec.genre==='racing') {
       player={x:W/2,y:H-100,r:19,vx:0,vy:0,angle:0};
-      for(let i=0;i<6;i++) obstacles.push({x:W/2+[-125,0,125][i%3],lane:i%3,phase:i,y:-250-i*220,r:23,speed:80+stage*8,kind:i%4===0?'cone':'car'});
+      for(let i=0;i<6;i++) obstacles.push({x:W/2+[-125,0,125][i%3],lane:i%3,phase:i,y:-250-i*220,r:23,speed:80+stage*8,kind:i%4===0?'cone':'car',paint:i%3,laneCooldown:1.5+i*.4});
     } else {
       player={x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
       const encounterSize=configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,48):Math.min(48,Math.round((6+stage*3)*tuning.enemyMultiplier*tuning.difficulty));
@@ -170,7 +170,16 @@ function gameForgeBoot() {
     racingSpawnDistance+=racingSpeed*dt;
     for(const o of obstacles){
       o.y+=(racingSpeed-o.speed)*dt;
-      if(o.kind==='car'){o.laneOffset=clamp((o.laneOffset||0)+Math.sin(clock*.8+o.phase)*dt*12,-18,18);}
+      if(o.kind==='car'){
+        o.laneCooldown=(o.laneCooldown||0)-dt;
+        if(o.laneCooldown<=0){
+          const nextLane=clamp(o.lane+(Math.sin(o.phase+clock)>0?1:-1),0,2);
+          const occupied=obstacles.some(other=>other!==o&&other.kind==='car'&&other.lane===nextLane&&Math.abs(other.y-o.y)<115);
+          if(nextLane!==o.lane&&!occupied)o.lane=nextLane;
+          o.laneCooldown=2.5+Math.abs(Math.sin(o.phase))*2;
+        }
+        o.laneOffset=clamp((o.laneOffset||0)+Math.sin(clock*.8+o.phase)*dt*12,-18,18);
+      }
       o.x=W/2+[-125,0,125][o.lane||0]+racingCurve(traveled,o.y)+(o.laneOffset||0);
       if(!o.hit&&Math.hypot(player.x-o.x,player.y-o.y)<player.r+o.r){
         o.hit=true;o.y=H+130;racingHits++;racingSpeed*=o.kind==='cone'?.78:.48;
@@ -184,7 +193,7 @@ function gameForgeBoot() {
       racingSpawnDistance-=interval;
       const lane=Math.floor(rand(0,3));
       if(!obstacles.some(o=>o.y<110&&Math.abs(o.x-(W/2+[-125,0,125][lane]))<30)){
-        obstacles.push({x:W/2+[-125,0,125][lane],lane,phase:rand(0,6),y:-120,r:23,speed:65+stage*8,kind:Math.random()<.22?'cone':'car',hit:false});
+        obstacles.push({x:W/2+[-125,0,125][lane],lane,phase:rand(0,6),y:-120,r:23,speed:65+stage*8,kind:Math.random()<.22?'cone':'car',paint:Math.floor(rand(0,4)),laneCooldown:2+rand(0,2),hit:false});
       }
     }
     if(traveled>6000+stage*1500)nextStage();
@@ -261,7 +270,7 @@ function gameForgeBoot() {
     if(spec.genre==='platform'){for(const t of platformTraps){ctx.fillStyle='#dc6670';for(let x=t.x;x<t.x+t.w;x+=11){ctx.beginPath();ctx.moveTo(x,t.y+t.h);ctx.lineTo(x+5.5,t.y);ctx.lineTo(x+11,t.y+t.h);ctx.fill();}}}
     if(spec.genre==='platform'){for(const fx of platformSparks){ctx.globalAlpha=Math.min(1,fx.life*2.5);ctx.fillStyle='#ffe3a1';ctx.fillRect(fx.x-3,fx.y-3,6,6);}ctx.globalAlpha=1;}
     for(const d of drops){ctx.fillStyle=d.kind==='heal'?'#ef6e93':d.kind==='ammo'?'#85caff':'#f9c762';ctx.beginPath();ctx.arc(d.x,d.y,d.r+Math.sin(clock*6)*2,0,Math.PI*2);ctx.fill();}
-    for(const o of obstacles){ctx.fillStyle=o.kind==='cone'?'#f2aa4b':color.enemy;ctx.fillRect(o.x-20,o.y-32,40,64);ctx.fillStyle='#21293c';ctx.fillRect(o.x-14,o.y-15,28,20);}
+    for(const o of obstacles){if(spec.genre==='racing'){if(o.kind==='cone'){ctx.fillStyle='#f2aa4b';ctx.beginPath();ctx.moveTo(o.x,o.y-18);ctx.lineTo(o.x-14,o.y+18);ctx.lineTo(o.x+14,o.y+18);ctx.fill();ctx.fillStyle='#fff1c6';ctx.fillRect(o.x-8,o.y+4,16,5);}else{ctx.fillStyle='#101923';ctx.fillRect(o.x-21,o.y-31,42,62);ctx.fillStyle=['#e97069','#6b9ce3','#f0c26d','#b18ce5'][o.paint||0];ctx.fillRect(o.x-16,o.y-29,32,58);ctx.fillStyle='#9bd1e0';ctx.fillRect(o.x-12,o.y-14,24,15);ctx.fillStyle='#ffdf8a';ctx.fillRect(o.x-14,o.y-30,8,4);ctx.fillRect(o.x+6,o.y-30,8,4);}}else{ctx.fillStyle=o.kind==='cone'?'#f2aa4b':color.enemy;ctx.fillRect(o.x-20,o.y-32,40,64);ctx.fillStyle='#21293c';ctx.fillRect(o.x-14,o.y-15,28,20);}}
     for(const e of enemies){ctx.fillStyle=e.kind==='armored'?'#829ba7':e.boss?'#ae6edb':color.enemy;ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#281625';ctx.fillRect(e.x-7,e.y-5,5,5);ctx.fillRect(e.x+4,e.y-5,5,5);}
     for(const b of bullets){ctx.fillStyle='#f8d580';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();}
     for(const p of particles){ctx.fillStyle=color.enemy;ctx.fillRect(p.x,p.y,4,4);}

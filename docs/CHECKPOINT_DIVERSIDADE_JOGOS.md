@@ -297,3 +297,12 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - Resultado: commit dc0a4440786885680c03f5ab6d47ea6e6b4bbcb5 publicado; CI dos novos cenários estava na fila na última consulta, sem resultado confirmado.
 - Riscos: o tráfego aleatório pode provocar colisões e derrota antes do objetivo; teste de progressão pode revelar falta de controle determinístico da simulação.
 - Pendências: analisar CI e estabilizar simulações com semente aleatória e controle de estado; validar física/colisão e executar testes em navegador e dispositivo móvel.
+
+## Auditoria transversal dos repositórios de jogos — 15/11/2026
+- Solicitação: aproveitar técnicas reutilizáveis dos jogos da conta no GameForge, com prioridade para código aberto e licenças.
+- Inventário: 99 repositórios visíveis na primeira listagem; 11 árvores de raiz consultadas; quatro arquivos-fonte inspecionados diretamente.
+- Arquivos alterados: `js/repository-knowledge.js`; `docs/AUDITORIA_REUSO_JOGOS_2026-11-15.md`; `tests/repository-audit-catalog.test.js`; este checkpoint.
+- Catálogo: quatro técnicas com origem verificável — loop fixo (Operacao-eden), checkpoint (navinha-arcade), cache de sprites (Neon-Sky-Force) e colisões (Dragon-Fury).
+- Testes criados: IDs únicos, proveniência e recuperação de referências por busca. Execução CI ainda precisa ser confirmada.
+- Limite: referências catalogadas, não são implementação portada nem prova de compatibilidade; licenças e direitos de assets ainda exigem auditoria individual.
+- Próximo: verificar CI; portar uma técnica por vez com testes de regressão e benchmark, começando por loop fixo.

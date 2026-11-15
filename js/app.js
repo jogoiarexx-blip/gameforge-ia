@@ -138,15 +138,20 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       if(spec.genre!=='rpg'||spec.dimension!=='2d'){feedback('O JSON do editor de fases é exclusivo do RPG 2D. Escolha esse motor ou limpe o campo.',true);return null;}
       try{
         const layout=JSON.parse(layoutText);
-        if(!layout||typeof layout!=='object'||Array.isArray(layout))throw Error('Objeto JSON esperado.');
         const validPoint=p=>p&&typeof p==='object'&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=100&&p.x<=2250&&p.y>=100&&p.y<=1450;
-        const puzzle=layout.puzzle;
-        if(!puzzle||!['key','lever','gate'].every(k=>validPoint(puzzle[k])))throw Error('A configuração exige chave, alavanca e portão com coordenadas válidas.');
-        if(!Array.isArray(layout.chests)||layout.chests.length>8||layout.chests.some(c=>!validPoint(c)||!Number.isInteger(c.coins)||c.coins<0||c.coins>250))throw Error('Baús inválidos: máximo 8, ouro entre 0 e 250.');
+        const layouts=Array.isArray(layout?.stages)?layout.stages:[layout];
+        if(!layouts.length||layouts.length>spec.stages.length)throw Error('Quantidade de fases inválida.');
+        const normalized=layouts.map((entry,i)=>{
+          if(!entry||typeof entry!=='object'||Array.isArray(entry))throw Error('Fase '+(i+1)+' inválida.');
+          const puzzle=entry.puzzle;
+          if(!puzzle||!['key','lever','gate'].every(k=>validPoint(puzzle[k])))throw Error('Fase '+(i+1)+': chave, alavanca e portão exigem coordenadas válidas.');
+          if(!Array.isArray(entry.chests)||entry.chests.length>8||entry.chests.some(c=>!validPoint(c)||!Number.isInteger(c.coins)||c.coins<0||c.coins>250))throw Error('Fase '+(i+1)+': baús inválidos.');
+          return {puzzle:{key:{x:puzzle.key.x,y:puzzle.key.y},lever:{x:puzzle.lever.x,y:puzzle.lever.y},gate:{x:puzzle.gate.x,y:puzzle.gate.y}},chests:entry.chests.map(c=>({x:c.x,y:c.y,coins:c.coins}))};
+        });
         spec.stageConfig=Array.isArray(spec.stageConfig)?spec.stageConfig:[];
-        spec.stageConfig[0]={...(spec.stageConfig[0]||{}),puzzle,chests:layout.chests};
+        normalized.forEach((entry,i)=>{spec.stageConfig[i]={...(spec.stageConfig[i]||{}),...entry};});
         spec.mechanics=spec.mechanics||{requested:[],available:[],pending:[]};
-        for(const k of ['requested','available'])if(!spec.mechanics[k].includes('puzzles'))spec.mechanics[k].push('puzzles');
+        for(const k of ['requested','available']){if(!Array.isArray(spec.mechanics[k]))spec.mechanics[k]=[];if(!spec.mechanics[k].includes('puzzles'))spec.mechanics[k].push('puzzles');}
       }catch(e){feedback('JSON do editor inválido: '+e.message,true);return null;}
     }
     state.spec=GameForgeProject.activeSpec(state.files,spec);

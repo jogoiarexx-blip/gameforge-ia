@@ -194,3 +194,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Partículas de impacto são removidas após curta duração.
 - [ ] Testes automatizados de física e colisão e validação real no navegador ainda pendentes.
 - [ ] Próximo: testes de regressão, correções da física e balanceamento por fase.
+
+## Plataforma 2D — regressão de combate e balanceamento
+- [x] Pisão usa velocidade de queda e posição anterior à resolução do pouso.
+- [x] Inimigos limitados a 22 e distribuídos por plataformas distintas.
+- [x] Criado tests/platform-runtime.test.js com verificações estáticas das regras de pisão, checkpoints, inimigos e partículas.
+- [ ] Executar testes em Node e validação interativa no navegador; não afirmar aprovação sem execução.
+- [ ] Próximo: cenários de física com testes dinâmicos e transição ao motor de corrida.

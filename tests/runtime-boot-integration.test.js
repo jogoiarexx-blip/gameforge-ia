@@ -60,7 +60,7 @@ test('aceleracao responde a controle no motor de corrida',()=>{
 });
 
 test('corrida completa uma fase e exibe vitoria sem perder o estado',()=>{
-  const game=boot('racing');game.start();game.keydown('ArrowUp');
+  const game=boot('racing');game.start();game.keydown('ArrowUp');game.keydown('ArrowLeft');
   for(let i=1;i<=1500&&game.telemetry().state==='play';i++)game.tick(i*16);
   assert.equal(game.telemetry().state,'victory');
   assert.ok(game.telemetry().racing.distance>0);

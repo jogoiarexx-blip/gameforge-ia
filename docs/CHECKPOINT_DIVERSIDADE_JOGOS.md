@@ -121,3 +121,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Interface principal inclui link direto ao editor visual RPG 2D, aberto em nova aba.
 - [ ] Aplicar JSON do editor ao spec do jogo pela interface (ainda é cópia manual).
 - [ ] Confirmar CI e teste visual em mobile e desktop.
+
+## Importação do layout RPG 2D
+- [x] Campo JSON adicionado ao Studio; aceita configuração exportada pelo editor para fase 1.
+- [x] Análise valida coordenadas de chave/alavanca/portão, máximo oito baús e moedas 0–250; injeta `stageConfig[0]` e ativa puzzles no RPG 2D.
+- [ ] Persistir campo em backup/restauração do projeto; integração atual não garante preservação no backup.
+- [ ] Testar exportação, importação e execução no navegador; ainda não verificados.
+- [ ] Estender importação a múltiplas fases.

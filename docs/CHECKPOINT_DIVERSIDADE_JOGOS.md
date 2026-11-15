@@ -82,3 +82,11 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [ ] Validar no navegador que o portão seja fisicamente bloqueante e que o fluxo seja acessível.
 - [ ] Criar testes automatizados de integração do puzzle e verificar CI.
 - [ ] Tornar locais de chave e portão configuráveis por fase; integrar editor e misturador à interface.
+
+## Entrega seguinte — 2026-11-14
+- [x] Portão do RPG 2D agora usa obstáculo de colisão, retirado ao resolver o desafio.
+- [x] Chave + alavanca obrigatórias para abrir portão quando puzzles solicitados no GDD.
+- [x] Indicadores do inventário e telemetria incluem chave, alavanca e resolução.
+- [x] Parser reconhece `puzzles` no plural.
+- [ ] Validar navegação completa em navegador e executar regressões; nenhuma execução de workflow encontrada para commit consultado.
+- [ ] Fazer gate parametrizado por fase, múltiplos puzzles, integração da mistura ao formulário e testes E2E.

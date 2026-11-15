@@ -22,6 +22,7 @@ function gameForgeBoot() {
   let player = {x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
   let enemies=[], bullets=[], drops=[], particles=[], platforms=[], obstacles=[];
   let cameraX=0, traveled=0, invulnerable=0, fireDelay=0, reloadDelay=0;
+  let platformCheckpoint={x:70,y:350},platformCheckpointIndex=-1,platformDeaths=0;
   let mouse={x:W/2,y:H/2,active:false};
   const showMessage = (txt, seconds=3) => { $('message').textContent=txt; $('message').style.opacity='1'; messageTime=seconds; };
   let messageTime = 0;
@@ -29,16 +30,20 @@ function gameForgeBoot() {
   function resetStage() {
     state='play'; paused=false; stageClock=0; invulnerable=0; fireDelay=0;reloadDelay=0;
     enemies=[];bullets=[];drops=[];particles=[];platforms=[];obstacles=[];
-    cameraX=0;traveled=0;platformCoyote=0;platformJumpBuffer=0;platformJumpHeld=false;
+    cameraX=0;traveled=0;platformCoyote=0;platformJumpBuffer=0;platformJumpHeld=false;platformCheckpointIndex=-1;platformCheckpoint={x:70,y:350};platformDeaths=0;
     if (spec.genre === 'platform') {
       player={x:70,y:350,vx:0,vy:0,r:17,angle:0};
       for(let i=0;i<25;i++){
         const x=i*180+15;
-        const y=i===0?480:clamp(405+Math.sin(i*2.13)*90,300,470);
-        platforms.push({x,y,w:i===0?380:165,h:22});
+        const y=i===0?480:clamp(405+Math.sin(i*1.15+stage*.7)*42,350,465);
+        platforms.push({x,y,w:i===0?380:170,h:22,checkpoint:i>0&&i%6===0});
       }
-      for(let i=1;i<(configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,45)+1:Math.round((14+stage*3)*tuning.enemyMultiplier*tuning.difficulty));i++) enemies.push({x:320+i*220,y:344,r:18,hp:1,phase:rand(0,6),speed:35});
-      for(let i=0;i<13;i++) drops.push({x:200+i*260,y:245+Math.sin(i*1.6)*65,r:11,kind:'coin'});
+      const count=configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,45):Math.round((14+stage*3)*tuning.enemyMultiplier*tuning.difficulty);
+      for(let i=0;i<count;i++){
+        const p=platforms[Math.min(24,2+i%22)];
+        enemies.push({x:p.x+p.w*.5,y:p.y-18,r:18,hp:1,phase:rand(0,6),speed:35});
+      }
+      for(let i=1;i<platforms.length;i+=2){const p=platforms[i];drops.push({x:p.x+p.w*.5,y:p.y-45,r:11,kind:'coin'});}
     } else if(spec.genre==='racing') {
       player={x:W/2,y:H-100,r:19,vx:0,vy:0,angle:0};
       for(let i=0;i<(configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,60):Math.round((18+stage*5)*tuning.enemyMultiplier*tuning.difficulty));i++) obstacles.push({x:W/2+[-125,0,125][i%3],y:-i*175,r:23,speed:70+stage*10,kind:i%4===0?'cone':'car'});
@@ -117,7 +122,14 @@ function gameForgeBoot() {
       }
     }
     if(player.grounded&&platformJumpBuffer>0){player.vy=-480;player.grounded=false;platformJumpBuffer=0;}
-    if(player.y>H+110){hp=0;gameOver();return;}
+    if(player.y>H+110){platformDeaths++;hp=Math.max(0,hp-25);if(hp<=0){gameOver();return;}player.x=platformCheckpoint.x;player.y=platformCheckpoint.y;player.vx=0;player.vy=0;invulnerable=1.2;showMessage('Retorno ao checkpoint · -25 vida',2);}
+    for(let i=0;i<platforms.length;i++){
+      const p=platforms[i];
+      if(p.checkpoint&&i>platformCheckpointIndex&&player.grounded&&player.x>=p.x&&player.x<=p.x+p.w){
+        platformCheckpointIndex=i;platformCheckpoint={x:p.x+p.w*.5,y:p.y-player.r-5};
+        hp=clamp(hp+10,0,100);showMessage('Checkpoint ativado · +10 vida',2);
+      }
+    }
     cameraX=clamp(player.x-220,0,3540);
     for(const e of enemies){
       e.phase+=dt;
@@ -202,7 +214,7 @@ function gameForgeBoot() {
     background();
     ctx.save();if(spec.genre==='platform')ctx.translate(-cameraX,0);
     if(spec.genre==='platform'){
-      for(const p of platforms){ctx.fillStyle=color.ground;ctx.fillRect(p.x,p.y,p.w,p.h);ctx.fillStyle=color.accent;ctx.fillRect(p.x,p.y,p.w,5);}
+      for(const p of platforms){ctx.fillStyle=color.ground;ctx.fillRect(p.x,p.y,p.w,p.h);ctx.fillStyle=color.accent;ctx.fillRect(p.x,p.y,p.w,5);if(p.checkpoint){ctx.fillStyle=platformCheckpointIndex>=platforms.indexOf(p)?'#8cf0ad':'#f7d779';ctx.fillRect(p.x+p.w*.5-3,p.y-48,6,48);ctx.beginPath();ctx.moveTo(p.x+p.w*.5+3,p.y-48);ctx.lineTo(p.x+p.w*.5+30,p.y-38);ctx.lineTo(p.x+p.w*.5+3,p.y-28);ctx.fill();}}
     }
     for(const d of drops){ctx.fillStyle=d.kind==='heal'?'#ef6e93':d.kind==='ammo'?'#85caff':'#f9c762';ctx.beginPath();ctx.arc(d.x,d.y,d.r+Math.sin(clock*6)*2,0,Math.PI*2);ctx.fill();}
     for(const o of obstacles){ctx.fillStyle=o.kind==='cone'?'#f2aa4b':color.enemy;ctx.fillRect(o.x-20,o.y-32,40,64);ctx.fillStyle='#21293c';ctx.fillRect(o.x-14,o.y-15,28,20);}
@@ -212,7 +224,7 @@ function gameForgeBoot() {
     drawPlayer(player.x,player.y);ctx.restore();
     if(state==='play'&&paused){ctx.fillStyle='#0b1024be';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 44px sans-serif';ctx.textAlign='center';ctx.fillText('PAUSADO',W/2,H/2);ctx.textAlign='left';}
   }
-  window.__gameforgeTelemetry = () => ({state,paused,frames:renderedFrames,clock,stage,genre:spec.genre,player:{x:player.x,y:player.y,screenX:player.x-(spec.genre==='platform'?cameraX:0),screenY:player.y,radius:player.r},enemies:enemies.length});
+  window.__gameforgeTelemetry = () => ({state,paused,frames:renderedFrames,clock,stage,genre:spec.genre,player:{x:player.x,y:player.y,screenX:player.x-(spec.genre==='platform'?cameraX:0),screenY:player.y,radius:player.r},enemies:enemies.length,checkpoint:spec.genre==='platform'?platformCheckpointIndex:null,falls:spec.genre==='platform'?platformDeaths:null});
   function frame(ms){
     const dt=Math.min(.033, Math.max(0,(ms-lastTime)/1000));lastTime=ms;
     update(dt);render();renderedFrames++;requestAnimationFrame(frame);

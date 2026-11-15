@@ -90,3 +90,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Parser reconhece `puzzles` no plural.
 - [ ] Validar navegação completa em navegador e executar regressões; nenhuma execução de workflow encontrada para commit consultado.
 - [ ] Fazer gate parametrizado por fase, múltiplos puzzles, integração da mistura ao formulário e testes E2E.
+
+## RPG 2D — puzzles por fase (continuação)
+- [x] Três arranjos de chave e alavanca alternados entre fases; portão preservado no corredor final.
+- [x] Suporte opcional a `stageConfig[n].puzzle.key/lever/gate` com coordenadas x/y e validação básica.
+- [x] Guia `docs/RPG_PUZZLES_POR_FASE.md` publicado.
+- [ ] Executar testes Node e validar manualmente jogabilidade/colisões no navegador.
+- [ ] Construir editor visual e múltiplos enigmas por fase; coordenadas personalizadas ainda não possuem verificação automática de caminho.

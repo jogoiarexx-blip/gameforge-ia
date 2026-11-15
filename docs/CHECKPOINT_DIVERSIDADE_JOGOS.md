@@ -306,3 +306,6 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - Testes criados: IDs únicos, proveniência e recuperação de referências por busca. Execução CI ainda precisa ser confirmada.
 - Limite: referências catalogadas, não são implementação portada nem prova de compatibilidade; licenças e direitos de assets ainda exigem auditoria individual.
 - Próximo: verificar CI; portar uma técnica por vez com testes de regressão e benchmark, começando por loop fixo.
+
+- Observação de CI após auditoria: run 43777702383 falhou em teste pré-existente de vitória da corrida, que terminou em derrota devido ao tráfego durante a simulação; a falha não apontou sintaxe do catálogo. Ajuste do teste em `tests/runtime-boot-integration.test.js` publicado no commit 0abe7cca7ebb24021b6d8944c16fc11442d5da0e. Resultado do novo CI ainda pendente.
+- Risco pendente: teste de corrida ainda não possui controle determinístico de obstáculos/RNG; evitar considerar a mitigação por direção constante uma correção definitiva.

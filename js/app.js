@@ -133,6 +133,22 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(new Blob([md]).size>1_000_000){feedback('O GDD ultrapassa 1 MB; divida anexos externos.',true);return null;}
     roadmapSync();
     let spec;try{spec=GameForgeParser.parseGdd(md,$('instruction').value,creationOptions());}catch(e){feedback(e.message,true);return null;}
+    const layoutText=$('rpg-layout-json')?.value.trim();
+    if(layoutText){
+      if(spec.genre!=='rpg'||spec.dimension!=='2d'){feedback('O JSON do editor de fases é exclusivo do RPG 2D. Escolha esse motor ou limpe o campo.',true);return null;}
+      try{
+        const layout=JSON.parse(layoutText);
+        if(!layout||typeof layout!=='object'||Array.isArray(layout))throw Error('Objeto JSON esperado.');
+        const validPoint=p=>p&&typeof p==='object'&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=100&&p.x<=2250&&p.y>=100&&p.y<=1450;
+        const puzzle=layout.puzzle;
+        if(!puzzle||!['key','lever','gate'].every(k=>validPoint(puzzle[k])))throw Error('A configuração exige chave, alavanca e portão com coordenadas válidas.');
+        if(!Array.isArray(layout.chests)||layout.chests.length>8||layout.chests.some(c=>!validPoint(c)||!Number.isInteger(c.coins)||c.coins<0||c.coins>250))throw Error('Baús inválidos: máximo 8, ouro entre 0 e 250.');
+        spec.stageConfig=Array.isArray(spec.stageConfig)?spec.stageConfig:[];
+        spec.stageConfig[0]={...(spec.stageConfig[0]||{}),puzzle,chests:layout.chests};
+        spec.mechanics=spec.mechanics||{requested:[],available:[],pending:[]};
+        for(const k of ['requested','available'])if(!spec.mechanics[k].includes('puzzles'))spec.mechanics[k].push('puzzles');
+      }catch(e){feedback('JSON do editor inválido: '+e.message,true);return null;}
+    }
     state.spec=GameForgeProject.activeSpec(state.files,spec);
     renderReferences();
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');

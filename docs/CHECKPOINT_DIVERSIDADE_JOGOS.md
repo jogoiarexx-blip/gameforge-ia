@@ -255,3 +255,11 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Animação breve de derrota com redução de altura e transparência, removida após 0,45 segundo.
 - [ ] Testar no navegador e celular, incluindo colisões e compatibilidade Canvas.
 - [ ] Próximo: integrar estilos visuais selecionáveis ao gerador e validar animações em testes dinâmicos.
+
+## Studio — estilos e qualidade gráfica 2D
+- [x] Controles visuais para qualidade automática/leve/equilibrada/alta e estilos padrão/natureza/neon/deserto/ruínas.
+- [x] Persistência dos controles via creationOptions e restauração do projeto.
+- [x] Parser transmite graphicsQuality e visualStyle ao spec.
+- [x] Runtime aplica paletas visuais e níveis de qualidade do spec.
+- [ ] Testar geração completa, exportação e compatibilidade com os demais gêneros.
+- [ ] Próximo: criar cenários e silhuetas realmente diferentes por estilo; validar testes automatizados.

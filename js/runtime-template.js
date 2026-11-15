@@ -254,6 +254,19 @@ function gameForgeBoot() {
       ctx.strokeStyle='#ffffff1b';ctx.strokeRect(22,50,W-44,H-72);
     }
   }
+  function drawAnimatedActor(x,y,kind,phase=0,dir=1){
+    const armored=kind==='armored';
+    const step=Math.sin(phase*8)*(graphicsDetail()===0?2:5);
+    ctx.save();ctx.translate(x,y);ctx.scale(dir,1);
+    ctx.fillStyle='#0d2036';ctx.fillRect(-11,8,8,10+step);ctx.fillRect(3,8,8,10-step);
+    ctx.fillStyle=armored?'#708e9f':'#d15e72';
+    ctx.beginPath();ctx.roundRect(-14,-12,28,26,6);ctx.fill();
+    ctx.fillStyle=armored?'#c1d6dd':'#f4bb9e';ctx.beginPath();ctx.arc(0,-14,11,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#192736';ctx.fillRect(3,-18,5,4);
+    if(armored){ctx.fillStyle='#506d80';ctx.fillRect(-14,-22,28,7);ctx.fillRect(-17,-8,5,16);ctx.fillRect(12,-8,5,16);}
+    else{ctx.fillStyle='#f4bb9e';ctx.fillRect(-17,-8,5,14-step);ctx.fillRect(12,-8,5,14+step);}
+    ctx.restore();
+  }
   function drawPlayer(x,y){
     ctx.save();ctx.translate(x,y);
     if(invulnerable>0&&Math.floor(clock*18)%2===0)ctx.globalAlpha=.4;
@@ -263,7 +276,8 @@ function gameForgeBoot() {
       const facing=player.vx<-.5?-1:1;
       ctx.scale(facing,1);
       const stride=player.grounded?Math.sin(clock*13)*Math.min(1,Math.abs(player.vx)/150):0;
-      ctx.fillStyle='#183a45';ctx.fillRect(-12,7,9,15+stride*4);ctx.fillRect(3,7,9,15-stride*4);
+      const jumpLift=player.grounded?0:Math.sin(clock*9)*2;
+      ctx.fillStyle='#183a45';ctx.fillRect(-12,7+jumpLift,9,15+stride*4);ctx.fillRect(3,7+jumpLift,9,15-stride*4);
       ctx.fillStyle=color.accent;ctx.fillRect(-13,-13,26,27);
       ctx.fillStyle='#f5c7a0';ctx.beginPath();ctx.arc(0,-17,12,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#172733';ctx.fillRect(4,-20,5,4);
@@ -287,7 +301,7 @@ function gameForgeBoot() {
     if(spec.genre==='platform'){for(const fx of platformSparks){ctx.globalAlpha=Math.min(1,fx.life*2.5);ctx.fillStyle='#ffe3a1';ctx.fillRect(fx.x-3,fx.y-3,6,6);}ctx.globalAlpha=1;}
     for(const d of drops){ctx.fillStyle=d.kind==='heal'?'#ef6e93':d.kind==='ammo'?'#85caff':'#f9c762';ctx.beginPath();ctx.arc(d.x,d.y,d.r+Math.sin(clock*6)*2,0,Math.PI*2);ctx.fill();}
     for(const o of obstacles){if(spec.genre==='racing'){if(o.kind==='cone'){ctx.fillStyle='#f2aa4b';ctx.beginPath();ctx.moveTo(o.x,o.y-18);ctx.lineTo(o.x-14,o.y+18);ctx.lineTo(o.x+14,o.y+18);ctx.fill();ctx.fillStyle='#fff1c6';ctx.fillRect(o.x-8,o.y+4,16,5);}else{drawRacingCar(o.x,o.y,['#e97069','#6b9ce3','#f0c26d','#b18ce5'][o.paint||0]);}}else{ctx.fillStyle=o.kind==='cone'?'#f2aa4b':color.enemy;ctx.fillRect(o.x-20,o.y-32,40,64);ctx.fillStyle='#21293c';ctx.fillRect(o.x-14,o.y-15,28,20);}}
-    for(const e of enemies){ctx.fillStyle=e.kind==='armored'?'#829ba7':e.boss?'#ae6edb':color.enemy;ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#281625';ctx.fillRect(e.x-7,e.y-5,5,5);ctx.fillRect(e.x+4,e.y-5,5,5);}
+    for(const e of enemies){if(spec.genre==='platform'){drawAnimatedActor(e.x,e.y,e.kind,e.phase,e.dir||1);}else{ctx.fillStyle=e.boss?'#ae6edb':color.enemy;ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#281625';ctx.fillRect(e.x-7,e.y-5,5,5);ctx.fillRect(e.x+4,e.y-5,5,5);}}
     for(const b of bullets){ctx.fillStyle='#f8d580';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();}
     for(const p of particles){ctx.fillStyle=color.enemy;ctx.fillRect(p.x,p.y,4,4);}
     drawPlayer(player.x,player.y);ctx.restore();

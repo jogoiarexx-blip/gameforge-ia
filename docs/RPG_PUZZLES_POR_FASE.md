@@ -23,3 +23,10 @@ Limitações: há apenas um conjunto de chave/alavanca/portão por fase; não ex
 
 ## Recompensa de conclusão
 Ao abrir o portão, o jogador recebe ouro (45 por padrão, ou `rewardCoins` entre 0 e 250) e 20 XP. A recompensa é aplicada uma única vez por fase, e o estado é exposto como `puzzleRewarded` na telemetria. O sistema usa as moedas existentes do RPG e não cria uma segunda economia.
+
+## Baús de tesouro por fase
+O RPG 2D agora coloca três baús por padrão, coletados por proximidade, independentemente de haver puzzle. Configure até oito por fase em `stageConfig[n].chests`:
+```json
+{"chests":[{"x":475,"y":800,"coins":25},{"x":1190,"y":800,"coins":50}]}
+```
+Cada baú dá 10 XP e a quantidade configurada de ouro (0–250). Baús são reiniciados ao reiniciar a fase; não são persistidos entre tentativas. Telemetria: `chestsOpened` e `chestsTotal`. Ainda não há editor visual ou garantia de navegabilidade para coordenadas personalizadas.

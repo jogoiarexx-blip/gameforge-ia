@@ -106,6 +106,8 @@
        resourceLabel:genre==='lane-defense'&&/\bbrilhos?\b/.test(norm)?'Brilhos':'Energia',
        startingGlow:genre==='lane-defense'?150:280,collectibleDrops:genre==='lane-defense',cardSystem:genre==='lane-defense'},
       campaign:{maxStages:stageLimit,detectedStages:allLevels.length,omittedStages:Math.max(0,allLevels.length-stageLimit)},
+      graphicsQuality:['low','medium','high'].includes(options.graphicsQuality)?options.graphicsQuality:'auto',
+      visualStyle:['forest','neon','desert','ruins'].includes(options.visualStyle)?options.visualStyle:'auto',
       worldOptions:{theme:['forest','desert','neon','ruins'].includes(options.theme)?options.theme:/neon|cyber|futur/.test(norm)?'neon':/deserto|desert|areia/.test(norm)?'desert':/ruina|horror|terror|templo/.test(norm)?'ruins':'forest',size:Number(options.size)===72?72:48,quality:['low','high'].includes(options.quality)?options.quality:'auto',seed:12345},
       summary: headings.slice(0, 14), enemyNames, features, world,
       sourceLength: source.length, sectionCount: headings.length, sectionsIndexed: headings.length, instructions: extra,

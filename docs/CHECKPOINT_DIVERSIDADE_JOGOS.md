@@ -225,3 +225,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [ ] Suavizar interpolação das mudanças de faixa (atualmente o centro da faixa muda imediatamente).
 - [ ] Validar colisões e espaçamento com testes dinâmicos e navegador.
 - [ ] Próximo: interpolação lateral, melhorias de física e testes de regressão.
+
+## Motor gráfico — primeira atualização de qualidade visual
+- [x] Renderização reutilizável de carros com carroceria em gradiente, vidros, rodas e iluminação.
+- [x] Pista com tonalidades de asfalto e cenário com vegetação procedural.
+- [x] Céu com gradiente e sol para o gênero plataforma.
+- [ ] Verificar compatibilidade e desempenho no navegador/celular, incluindo custo dos gradientes por quadro.
+- [ ] Próximo: separar perfis de qualidade, sprites e animações reutilizáveis, iluminação leve e visual específico por gênero.

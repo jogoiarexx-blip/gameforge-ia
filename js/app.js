@@ -8,7 +8,7 @@
   const devHistory=[];let lastPlan=null;
   let roadmapTasks=[],selectedTaskId=null,preparedTaskId=null,roadmapCount=60,roadmapSource=null;
   const example=$('gdd').value;
-  function creationOptions(){return {dimension:$('game-dimension').value,genre:$('game-style').value,theme:$('game-theme').value,size:Number($('game-world-size').value),quality:$('game-quality').value};}
+  function creationOptions(){return {dimension:$('game-dimension').value,genre:$('game-style').value,theme:$('game-theme').value,size:Number($('game-world-size').value),quality:$('game-quality').value,graphicsQuality:$('game-graphics-2d').value,visualStyle:$('game-visual-style').value};}
   function renderStyles(){
     const prior=$('game-style').value,dimension=$('game-dimension').value;
     const genres=GameForgeParser.styles[dimension]||Object.keys(GameForgeParser.labels);
@@ -18,6 +18,7 @@
   function restoreCreationOptions(options){
     const o=options||{};$('game-dimension').value=['2d','3d'].includes(o.dimension)?o.dimension:'auto';renderStyles();
     if([...$('game-style').options].some(x=>x.value===o.genre))$('game-style').value=o.genre;
+    $('game-graphics-2d').value=['low','medium','high'].includes(o.graphicsQuality)?o.graphicsQuality:'auto';$('game-visual-style').value=['forest','neon','desert','ruins'].includes(o.visualStyle)?o.visualStyle:'auto';
     $('game-theme').value=['forest','desert','neon','ruins'].includes(o.theme)?o.theme:'auto';$('game-world-size').value=o.size===72?'72':'48';$('game-quality').value=['low','high'].includes(o.quality)?o.quality:'auto';
   }
   const shooterExamples={"navinha":"# ARMADA DO ECLIPSE\n\n## Visão geral\nJogo de navinha espacial shoot em up vertical com chefes e armas evolutivas.\n\n## Mecânicas\n- Controlar nave com WASD/setas e atirar com espaço\n- Três níveis de arma, escudo, cura, créditos e power-ups\n- Ondas de inimigos com formações lineares, V e zigzag\n- Padrões de tiros inimigos e chefe de várias fases\n- Controles touch para celular, pausa e HUD\n\n## Fase 1 — Patrulha Estelar\nInimigos scouts em linha e formação V; chefe Sentinela Zero.\n\n## Fase 2 — Cinturão de Meteoros\nOndas zigzag e escolta com invasores resistentes.\n\n## Fase 3 — Núcleo Escarlate\nEnfrentar chefe final com três padrões de ataques.\n","neon":"# NEON SKY: O ÚLTIMO PILOTO\n\n## Visão geral\nShoot em up de nave cyberpunk com cidade neon, disparos luminosos e ondas de inimigos.\n\n## Mecânicas\n- Piloto da nave pode mover-se em quatro direções, atirar e usar escudo\n- Inimigos em linha, V, zigzag, cruzamento e enxame\n- Chefes com múltiplas etapas e dificuldade crescente\n- Melhorias de armas e power-ups\n- Qualidade gráfica adaptativa, partículas limitadas, áudio e controles touch\n\n## Fase 1 — Cidade Neon\nCombates sobre os prédios luminosos contra patrulhas.\n\n## Fase 2 — Estação Orbital\nOndas de escolta e franco-atiradores mecânicos.\n\n## Fase 3 — Núcleo Neon\nDerrote APEX OMEGA após o último enxame.\n","dragao":"# DRAGÕES DO CREPÚSCULO\n\n## Visão geral\nJogo de dragão voador no estilo Dragon Fury, shoot em up vertical, com magia e chefes.\n\n## Mecânicas\n- Dragão ataca com rajadas de fogo evolutivas\n- Ondas de águias, harpias e dragões inimigos\n- Inimigos com movimento zigzag, onda, escolta e tiros direcionados\n- Power-ups de energia, escudo e fogo\n- Chefes com etapas de batalha, pausa e controles touch\n\n## Fase 1 — Céu Sereno\nEnfrentar águias e caçadores do vale.\n\n## Fase 2 — Tempestade Iminente\nHarpias e dragões elementais cercam o herói.\n\n## Fase 3 — Fúria Ardente\nO Guardião Ancestral aparece com três fases de ataque.\n"};
@@ -792,7 +793,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       $('file-indicator').textContent='Exemplo '+GameForgeParser.labels[preset.genre]+' '+preset.dimension.toUpperCase();analyze();saveState();feedback('Exemplo carregado. Clique em Criar novo jogo para jogar.');
     });
   }
-  for(const id of ['game-dimension','game-style','game-theme','game-world-size','game-quality'])$(id).addEventListener('change',()=>{if(id==='game-dimension')renderStyles();analyze();saveState();});
+  for(const id of ['game-dimension','game-style','game-theme','game-world-size','game-quality','game-graphics-2d','game-visual-style'])$(id).addEventListener('change',()=>{if(id==='game-dimension')renderStyles();analyze();saveState();});
   $('generate').addEventListener('click',()=>projectOperation(generate));
   $('rerun').addEventListener('click',runPreview);
   $('apply-edit').addEventListener('click',applyEdit);

@@ -805,6 +805,17 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('instruction').addEventListener('input',()=>{renderReferences();scheduleSave();});
   $('project-name').addEventListener('input',scheduleSave);
   $('rpg-layout-json').addEventListener('input',scheduleSave);
+  $('rpg-layout-receive').addEventListener('click',()=>{
+    try{
+      const raw=localStorage.getItem('gameforge-rpg-layout-transfer-v1');
+      if(!raw)throw Error('Nenhum layout enviado. Abra o editor e clique em Enviar ao Studio.');
+      if(new Blob([raw]).size>30000)throw Error('Layout acima de 30 KB.');
+      const data=JSON.parse(raw),entries=Array.isArray(data?.stages)?data.stages:[data];
+      const valid=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=100&&p.x<=2250&&p.y>=100&&p.y<=1450;
+      if(!entries.length||entries.length>30||entries.some(e=>!e||!e.puzzle||!['key','lever','gate'].every(k=>valid(e.puzzle[k]))||!Array.isArray(e.chests)||e.chests.length>8||e.chests.some(c=>!valid(c)||!Number.isInteger(c.coins)||c.coins<0||c.coins>250)))throw Error('Layout inválido.');
+      $('rpg-layout-json').value=raw;scheduleSave();feedback(entries.length+' fase(s) recebida(s). Gere o RPG 2D para aplicar as posições.');
+    }catch(e){feedback('Falha ao receber layout: '+e.message,true);}
+  });
   $('repo-live-sources').addEventListener('change',saveState);
   $('gdd').addEventListener('change',saveState);$('instruction').addEventListener('change',saveState);$('project-name').addEventListener('change',saveState);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!qaState.candidate)saveState();});

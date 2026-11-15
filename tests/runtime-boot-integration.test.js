@@ -66,7 +66,7 @@ test('corrida completa uma fase e exibe vitoria sem perder o estado',()=>{
   assert.ok(game.telemetry().racing.distance>0);
 });
 test('corrida passa para a segunda fase e reinicia o percurso',()=>{
-  const game=boot('racing',['Fase 1','Fase 2']);game.start();game.keydown('ArrowUp');
+  const game=boot('racing',['Fase 1','Fase 2']);game.start();game.keydown('ArrowUp');game.keydown('ArrowLeft');
   for(let i=1;i<=1500&&game.telemetry().stage===0;i++)game.tick(i*16);
   assert.equal(game.telemetry().stage,1);
   assert.equal(game.telemetry().state,'play');

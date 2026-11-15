@@ -17,6 +17,9 @@ function gameForgeExpanded2DBoot() {
   const keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
   let facing={x:1,y:0},moving=false,walk=0;
   const portal={x:2220,y:800,r:46};
+  const puzzleEnabled=!td&&!!spec.mechanics?.requested?.includes('puzzles');
+  let puzzle={key:false,solved:false};
+  const keySpot={x:300,y:850},gateSpot={x:1940,y:800};
   const extra=document.createElement('div');extra.style.cssText='display:none;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px';
   document.querySelector('.dialog').appendChild(extra);
   function button(label,fn,parent=extra){const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',fn);parent.appendChild(b);return b;}
@@ -37,7 +40,7 @@ function gameForgeExpanded2DBoot() {
     if(td){d=R.createDefense(stage,tuning);if(configAt(stage).waves>0)d.waves=clamp(configAt(stage).waves,1,12);selected=null;cursor={x:2,y:1};}
     else{
       if(checkpoint)R.restore(player,checkpoint);player.x=210;player.y=800;facing={x:1,y:0};camera={x:0,y:clamp(player.y-H/2,0,world.height-H)};
-      buildMap();spawnRPG();
+      puzzle={key:false,solved:false};buildMap();spawnRPG();
       crystals=[{x:640,y:500},{x:1150,y:1030},{x:1740,y:630}].map(p=>({...p,r:18,taken:false}));
     }
     hide();note(stages[stage]);publish();
@@ -160,7 +163,11 @@ function gameForgeExpanded2DBoot() {
     }
     bullets=bullets.filter(b=>b.life>0);enemies=enemies.filter(e=>!e.dead);
     for(const c of crystals)if(!c.taken&&dist(player,c)<38){c.taken=true;collected++;player.coins+=35;R.gainXP(player,15);burst(c.x,c.y,'#89f7ed',25);note('Relíquia '+collected+'/3 · '+(bossDead?'Procure o portal':'Derrote o guardião do portal'));}
-    if(state==='play'&&R.portalReady(collected,bossDead)&&dist(player,portal)<65)advance();
+    if(puzzleEnabled){
+      if(!puzzle.key&&dist(player,keySpot)<48){puzzle.key=true;note('Chave antiga encontrada · procure o portão');}
+      if(!puzzle.solved&&dist(player,gateSpot)<65){if(puzzle.key){puzzle.solved=true;note('Enigma resolvido · portão aberto');}else if(time>noteUntil)note('Portão trancado · encontre a chave na vila');}
+    }
+    if(state==='play'&&R.portalReady(collected,bossDead)&&(!puzzleEnabled||puzzle.solved)&&dist(player,portal)<65)advance();
     camera.x+=(clamp(player.x-W/2,0,world.width-W)-camera.x)*Math.min(1,dt*8);
     camera.y+=(clamp(player.y-H/2,0,world.height-H)-camera.y)*Math.min(1,dt*8);
   }
@@ -219,6 +226,11 @@ function gameForgeExpanded2DBoot() {
     for(const o of obstacles){if(o.x<camera.x-180||o.x>camera.x+W+180||o.y<camera.y-150||o.y>camera.y+H+150)continue;
       if(o.kind==='house')drawHouse(o);
       else if(o.kind==='rock'){ellipse(o.x+o.w*.6,o.y+o.h*.8,o.w*.7,o.h*.4,'#122a2480');ellipse(o.x+o.w*.5,o.y+o.h*.45,o.w*.5,o.h*.5,'#687773');ellipse(o.x+o.w*.4,o.y+o.h*.3,o.w*.3,o.h*.2,'#89958a');}
+    }
+    if(puzzleEnabled){
+      if(!puzzle.key){circle(keySpot.x,keySpot.y,15,'#e8c76d');rect(keySpot.x-2,keySpot.y-22,5,29,'#f8e7a2');}
+      if(!puzzle.solved){rect(gateSpot.x-13,gateSpot.y-46,26,92,'#936a4b');rect(gateSpot.x-8,gateSpot.y-39,16,78,'#c6a06d');}
+      else circle(gateSpot.x,gateSpot.y,19,'#83e6a5');
     }
     // Relic shrines, portal, and a well form visible landmarks.
     for(const c of crystals){ellipse(c.x,c.y+13,32,14,'#213934');ellipse(c.x,c.y+8,25,12,'#738a7b');rect(c.x-16,c.y-1,32,9,'#9caa88');if(!c.taken){circle(c.x,c.y-10,32,'#8bf7dc18');diamond(c.x,c.y-19+Math.sin(time*3)*4,19,'#8ff9dd');diamond(c.x-3,c.y-23+Math.sin(time*3)*4,9,'#e1fff1');}else circle(c.x,c.y-7,7,'#3c6657');}
@@ -286,12 +298,12 @@ function gameForgeExpanded2DBoot() {
   }
   function hud(){
     if(td&&d){$('health').textContent=d.base;$('score').textContent=d.kills;$('ammo').textContent=d.coins;$('mission').textContent=(configAt(stage).objective?configAt(stage).objective+' · ':'')+'Proteja a base · '+d.wave+'/'+d.waves+' ondas';aux.disabled=state!=='play'||paused||d.active;}
-    else if(player){$('health').textContent=Math.ceil(player.hp);$('score').textContent=player.coins;$('ammo').textContent=player.potions;$('mission').textContent=(configAt(stage).objective?configAt(stage).objective+' · ':'')+(configAt(stage).boss==='no'?'3 relíquias → portal':'3 relíquias + guardião → portal');}
+    else if(player){$('health').textContent=Math.ceil(player.hp);$('score').textContent=player.coins;$('ammo').textContent=player.potions;$('mission').textContent=(configAt(stage).objective?configAt(stage).objective+' · ':'')+(configAt(stage).boss==='no'?'3 relíquias → portal':'3 relíquias + guardião → portal')+(puzzleEnabled?' · '+(puzzle.solved?'Portão aberto':puzzle.key?'Abra o portão':'Encontre a chave'):'');}
     $('level').textContent=(stage+1)+'/'+stages.length;$('timer').textContent=Math.floor(stageTime)+'s';
   }
   function publish(){
     const p=td?{x:cursor.x*54+27,y:cursor.y*54+27,screenX:48+cursor.x*54+27,screenY:80+cursor.y*54+27}:player?{x:player.x,y:player.y,screenX:player.x-camera.x,screenY:player.y-camera.y}: {x:210,y:800,screenX:210,screenY:270};
-    telemetry={genre:spec.genre,runtime:'expanded-2d',state:paused&&state==='play'?'paused':state,paused,frames,stage:stage+1,stageCount:stages.length,time,stageTime,player:p,camera:{...camera},health:td?d?.base||0:player?.hp||0,enemies:td?d?.enemies.length||0:enemies.length,bullets:bullets.length,particles:particles.length,score:td?d?.kills||0:player?.coins||0,resources:td?d?.coins||0:player?.coins||0,towers:d?.towers.length||0,wave:d?.wave||0,collectibles:collected,bossDefeated:bossDead,level:player?.level||1,objective:td?'protect-base':'relics-boss-portal'};
+    telemetry={genre:spec.genre,runtime:'expanded-2d',state:paused&&state==='play'?'paused':state,paused,frames,stage:stage+1,stageCount:stages.length,time,stageTime,player:p,camera:{...camera},health:td?d?.base||0:player?.hp||0,enemies:td?d?.enemies.length||0:enemies.length,bullets:bullets.length,particles:particles.length,score:td?d?.kills||0:player?.coins||0,resources:td?d?.coins||0:player?.coins||0,towers:d?.towers.length||0,wave:d?.wave||0,collectibles:collected,bossDefeated:bossDead,puzzleKey:puzzle.key,puzzleSolved:puzzle.solved,level:player?.level||1,objective:td?'protect-base':'relics-boss-portal'};
     Object.assign(window.__gameforgeTelemetry,telemetry);
   }
   function frame(now){const dt=last?Math.min(.05,Math.max(0,(now-last)/1000)):1/60;last=now;frames++;update(dt);ctx.clearRect(0,0,W,H);if(td)drawDefense();else drawRPG();hud();publish();requestAnimationFrame(frame);}

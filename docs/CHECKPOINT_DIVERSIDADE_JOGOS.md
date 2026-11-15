@@ -201,3 +201,11 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Criado tests/platform-runtime.test.js com verificações estáticas das regras de pisão, checkpoints, inimigos e partículas.
 - [ ] Executar testes em Node e validação interativa no navegador; não afirmar aprovação sem execução.
 - [ ] Próximo: cenários de física com testes dinâmicos e transição ao motor de corrida.
+
+## Corrida 2D — primeira evolução
+- [x] Aceleração, freio e turbo com velocidade variável e direção suavizada.
+- [x] Colisões reduzem velocidade, aplicam dano e exibem feedback.
+- [x] Geração de tráfego baseada em distância percorrida, com limite de proximidade por faixa.
+- [x] Telemetria de velocidade, distância e colisões; controles documentados na interface.
+- [ ] Testes reais no navegador e em dispositivos móveis ainda pendentes.
+- [ ] Próximo: pistas com curvas, tráfego que muda de faixa e HUD de velocidade.

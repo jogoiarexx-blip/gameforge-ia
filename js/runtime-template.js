@@ -172,8 +172,8 @@ function gameForgeBoot() {
       const otherFrom=other.lanePosition??other.lane;
       const otherTo=other.lane;
       // Reservar todo o corredor da troca, inclusive a faixa de origem.
-      return Math.max(Math.min(from,target),Math.min(otherFrom,otherTo))-.72<
-        Math.min(Math.max(from,target),Math.max(otherFrom,otherTo))+.72;
+      return Math.max(Math.min(from,target),Math.min(otherFrom,otherTo))-.45<
+        Math.min(Math.max(from,target),Math.max(otherFrom,otherTo))+.45;
     });
   }
   function stepRacing(dt){

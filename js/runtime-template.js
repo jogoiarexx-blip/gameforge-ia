@@ -12,7 +12,8 @@ function gameForgeBoot() {
   const graphicsDetail=()=>graphicsQuality==='low'?0:graphicsQuality==='medium'?1:2;
   const $ = id => document.getElementById(id);
   canvas.width = W; canvas.height = H;
-  const color = spec.colors || {bg:'#132235',accent:'#77e4be',ground:'#223247',enemy:'#ff7979'};
+  const visualPalettes={forest:{bg:'#102f32',accent:'#83e6ac',ground:'#315b4b',enemy:'#ef806b'},neon:{bg:'#10132d',accent:'#54e7f8',ground:'#303364',enemy:'#ff5bb5'},desert:{bg:'#493124',accent:'#f9cf77',ground:'#956a40',enemy:'#db6c51'},ruins:{bg:'#25273a',accent:'#c4a7f5',ground:'#515068',enemy:'#e28a9e'}};
+  const color = {...(spec.colors || {bg:'#132235',accent:'#77e4be',ground:'#223247',enemy:'#ff7979'}),...(visualPalettes[spec.visualStyle]||{})};
   const stages = spec.stages && spec.stages.length ? spec.stages : ['Fase 1'];
   const configAt=i=>Array.isArray(spec.stageConfig)&&spec.stageConfig[i]&&typeof spec.stageConfig[i]==='object'?spec.stageConfig[i]:{};
   const keys = new Set();

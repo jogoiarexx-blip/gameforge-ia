@@ -41,7 +41,7 @@ function gameForgeBoot() {
       const count=configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,45):Math.round((14+stage*3)*tuning.enemyMultiplier*tuning.difficulty);
       for(let i=0;i<count;i++){
         const p=platforms[Math.min(24,2+i%22)];
-        enemies.push({x:p.x+p.w*.5,y:p.y-18,r:18,hp:1,phase:rand(0,6),speed:35});
+        enemies.push({x:p.x+p.w*.5,y:p.y-18,r:18,hp:1,phase:rand(0,6),speed:35,patrolLeft:p.x+20,patrolRight:p.x+p.w-20,dir:i%2?1:-1});
       }
       for(let i=1;i<platforms.length;i+=2){const p=platforms[i];drops.push({x:p.x+p.w*.5,y:p.y-45,r:11,kind:'coin'});}
     } else if(spec.genre==='racing') {
@@ -122,7 +122,7 @@ function gameForgeBoot() {
       }
     }
     if(player.grounded&&platformJumpBuffer>0){player.vy=-480;player.grounded=false;platformJumpBuffer=0;}
-    if(player.y>H+110){platformDeaths++;hp=Math.max(0,hp-25);if(hp<=0){gameOver();return;}player.x=platformCheckpoint.x;player.y=platformCheckpoint.y;player.vx=0;player.vy=0;invulnerable=1.2;showMessage('Retorno ao checkpoint · -25 vida',2);}
+    if(player.y>H+110){platformDeaths++;hp=Math.max(0,hp-25);if(hp<=0){gameOver();return;}player.x=platformCheckpoint.x;player.y=platformCheckpoint.y;player.vx=0;player.vy=0;player.grounded=false;platformCoyote=0;platformJumpBuffer=0;invulnerable=1.2;showMessage('Retorno ao checkpoint · -25 vida',2);}
     for(let i=0;i<platforms.length;i++){
       const p=platforms[i];
       if(p.checkpoint&&i>platformCheckpointIndex&&player.grounded&&player.x>=p.x&&player.x<=p.x+p.w){
@@ -133,8 +133,11 @@ function gameForgeBoot() {
     cameraX=clamp(player.x-220,0,3540);
     for(const e of enemies){
       e.phase+=dt;
+      e.x+=e.dir*e.speed*dt;
+      if(e.x<=e.patrolLeft){e.x=e.patrolLeft;e.dir=1;}
+      if(e.x>=e.patrolRight){e.x=e.patrolRight;e.dir=-1;}
       const support=platforms.find(p=>e.x>=p.x&&e.x<=p.x+p.w);
-      e.y=(support?support.y-e.r:355)+Math.sin(e.phase)*4;
+      e.y=(support?support.y-e.r:355)+Math.sin(e.phase)*2;
       if(dist(player,e)<player.r+e.r+4){
         if(player.vy>70&&player.y+player.r<e.y+e.r*.55){e.dead=true;player.vy=-320;score+=100;xp+=2;}
         else damage(12);
@@ -201,8 +204,17 @@ function gameForgeBoot() {
       ctx.fillStyle=color.accent;ctx.fillRect(-15,-27,30,54);
       ctx.fillStyle='#74c2d4';ctx.fillRect(-11,-17,22,13);ctx.fillRect(-11,12,22,9);
       ctx.fillStyle='#080e1b';ctx.fillRect(-21,-27,6,15);ctx.fillRect(15,-27,6,15);ctx.fillRect(-21,13,6,15);ctx.fillRect(15,13,6,15);
+    }else if(spec.genre==='platform'){
+      const facing=player.vx<-.5?-1:1;
+      ctx.scale(facing,1);
+      const stride=player.grounded?Math.sin(clock*13)*Math.min(1,Math.abs(player.vx)/150):0;
+      ctx.fillStyle='#183a45';ctx.fillRect(-12,7,9,15+stride*4);ctx.fillRect(3,7,9,15-stride*4);
+      ctx.fillStyle=color.accent;ctx.fillRect(-13,-13,26,27);
+      ctx.fillStyle='#f5c7a0';ctx.beginPath();ctx.arc(0,-17,12,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#172733';ctx.fillRect(4,-20,5,4);
+      ctx.fillStyle='#f5c7a0';ctx.fillRect(-18,-7,5,16-stride*3);ctx.fillRect(13,-7,5,16+stride*3);
     }else{
-      if(spec.genre!=='platform')ctx.rotate(player.angle);
+      ctx.rotate(player.angle);
       ctx.shadowColor=color.accent;ctx.shadowBlur=14;
       ctx.fillStyle=color.accent;ctx.beginPath();ctx.arc(0,0,17,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
       ctx.fillStyle='#071b20';ctx.fillRect(5,-4,19,8);

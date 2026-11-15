@@ -11,9 +11,9 @@ textarea{width:100%;min-height:210px;box-sizing:border-box;font:13px monospace}s
 <div class="controls"><label>Fase <select id="stage"><option value="0">Fase 1</option></select></label><button id="add-stage">Adicionar fase</button><button id="delete-stage">Excluir última fase</button></div>
 <div class="controls"><label>Objeto <select id="kind"><option value="chest">Baú</option><option value="key">Chave</option><option value="lever">Alavanca</option><option value="gate">Portão</option></select></label>
 <label>Ouro por baú <input id="coins" type="number" min="0" max="250" value="35"></label>
-<button id="remove">Excluir selecionado</button><button id="reset">Restaurar padrão</button><button id="export">Gerar configuração</button><button id="copy">Copiar JSON</button></div>
+<button id="import">Importar JSON colado</button><button id="choose-file">Abrir arquivo JSON</button><button id="download">Baixar JSON</button><input type="file" id="import-file" accept=".json,application/json" hidden><button id="remove">Excluir selecionado</button><button id="reset">Restaurar padrão</button><button id="export">Gerar configuração</button><button id="copy">Copiar JSON</button></div>
 <canvas id="map" width="960" height="640" aria-label="Mapa do RPG, com objetos editáveis"></canvas>
-<p id="status" role="status">Pronto. Máximo de 8 baús por fase.</p><label for="output">Configuração para stageConfig[n]</label><textarea id="output" spellcheck="false" readonly></textarea>
+<p id="status" role="status">Pronto. Máximo de 8 baús por fase.</p><label for="output">Configuração de todas as fases (também aceita JSON para importar)</label><textarea id="output" spellcheck="false"></textarea>
 <small>Este editor gera dados JSON. Ainda não altera automaticamente o GDD ou o jogo publicado. Posições devem ser testadas no jogo antes da publicação.</small></main>
 <script>
 (()=>{'use strict';
@@ -40,6 +40,24 @@ canvas.addEventListener('pointerdown',e=>{const p=world(e),found=nearest(p);if(f
 canvas.addEventListener('pointermove',e=>{if(!dragging||!selected)return;Object.assign(selected,world(e));render();exportJSON();});
 function stop(){dragging=false;}canvas.addEventListener('pointerup',stop);canvas.addEventListener('pointercancel',stop);
 document.getElementById('remove').onclick=()=>{if(selected){objects=objects.filter(o=>o!==selected);selected=null;render();exportJSON();}};
+function importLayout(raw){
+ const data=JSON.parse(raw);
+ const entries=Array.isArray(data?.stages)?data.stages:[data];
+ if(!entries.length||entries.length>30)throw Error('O arquivo deve conter de 1 a 30 fases.');
+ const validPoint=p=>p&&typeof p==='object'&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=100&&p.x<=2250&&p.y>=100&&p.y<=1450;
+ const next=entries.map((entry,index)=>{
+   if(!entry||typeof entry!=='object'||Array.isArray(entry))throw Error('Fase '+(index+1)+' inválida.');
+   if(!entry.puzzle||!['key','lever','gate'].every(k=>validPoint(entry.puzzle[k])))throw Error('Fase '+(index+1)+': chave, alavanca e portão inválidos.');
+   if(!Array.isArray(entry.chests)||entry.chests.length>8||entry.chests.some(c=>!validPoint(c)||!Number.isInteger(c.coins)||c.coins<0||c.coins>250))throw Error('Fase '+(index+1)+': baús inválidos.');
+   return [...['key','lever','gate'].map(k=>({kind:k,x:entry.puzzle[k].x,y:entry.puzzle[k].y})),...entry.chests.map(c=>({kind:'chest',x:c.x,y:c.y,coins:c.coins}))];
+ });
+ stages=next;stageIndex=0;objects=stages[0].map(o=>({...o}));selected=null;refreshStages();render();exportJSON();
+ status.textContent=stages.length+' fase(s) importada(s) com sucesso.';
+}
+document.getElementById('choose-file').onclick=()=>document.getElementById('import-file').click();
+document.getElementById('import').onclick=()=>{try{importLayout(output.value);}catch(e){status.textContent='Importação rejeitada: '+e.message;}};
+document.getElementById('import-file').onchange=async e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;try{if(f.size>30000)throw Error('Arquivo acima de 30 KB.');importLayout(await f.text());}catch(err){status.textContent='Arquivo rejeitado: '+err.message;}};
+document.getElementById('download').onclick=()=>{const blob=new Blob([exportJSON()],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='gameforge-rpg-fases.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 document.getElementById('reset').onclick=defaults;document.getElementById('export').onclick=()=>{exportJSON();status.textContent='Configuração gerada abaixo.';};
 document.getElementById('copy').onclick=async()=>{try{await navigator.clipboard.writeText(exportJSON());status.textContent='JSON copiado.';}catch{output.focus();output.select();status.textContent='Selecione e copie o JSON manualmente.';}};
 stages=[[]];defaults();

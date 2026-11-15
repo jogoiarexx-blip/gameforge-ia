@@ -187,3 +187,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Telemetria expõe quantidade de armadilhas.
 - [ ] Testar colisão com espinhos e impactos nos inimigos no navegador e em controles móveis.
 - [ ] Próximo: melhorar efeitos visuais leves, balancear geração e acrescentar testes de regressão.
+
+## Plataforma 2D — efeitos leves e balanceamento
+- [x] Partículas curtas ao atingir inimigos por cima, sem imagens externas.
+- [x] Armadilhas deixam de ser posicionadas sobre plataformas de checkpoint.
+- [x] Partículas de impacto são removidas após curta duração.
+- [ ] Testes automatizados de física e colisão e validação real no navegador ainda pendentes.
+- [ ] Próximo: testes de regressão, correções da física e balanceamento por fase.

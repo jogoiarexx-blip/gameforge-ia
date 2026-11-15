@@ -75,3 +75,10 @@ Evoluir o GameForge para criar muitos jogos distintos, inclusive dentro do mesmo
 - [ ] Motor 4: aventura/FPS 3D — exploração, missões e interação com objetos.
 - [ ] Motores de corrida e tower defense — variações próprias após estabilização.
 Critério: cada motor só avança após testes, exportação, backup e revisão visual; mecânica pendente não pode ser marcada como implementada.
+
+## Motor 1 — RPG 2D: primeiro enigma jogável
+- [x] Chave coletável, portão ativável e condição adicional de conclusão quando o GDD solicita puzzles.
+- [x] HUD e telemetria mostram estado da chave e do portão; modo Tower Defense não afetado.
+- [ ] Validar no navegador que o portão seja fisicamente bloqueante e que o fluxo seja acessível.
+- [ ] Criar testes automatizados de integração do puzzle e verificar CI.
+- [ ] Tornar locais de chave e portão configuráveis por fase; integrar editor e misturador à interface.

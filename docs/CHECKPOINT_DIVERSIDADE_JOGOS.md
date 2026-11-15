@@ -248,3 +248,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Ajuste visual de pernas do jogador durante saltos.
 - [ ] Verificar suporte de CanvasRenderingContext2D.roundRect nos navegadores-alvo e testar o desenho no celular.
 - [ ] Próximo: animações de ataque, dano e derrota; biblioteca de estilos de personagens e controles gráficos no Studio.
+
+## Plataforma 2D — variações e animações de inimigos
+- [x] Inimigos walker, armored e scout com diferenças visuais.
+- [x] Flash de dano ao quebrar armadura.
+- [x] Animação breve de derrota com redução de altura e transparência, removida após 0,45 segundo.
+- [ ] Testar no navegador e celular, incluindo colisões e compatibilidade Canvas.
+- [ ] Próximo: integrar estilos visuais selecionáveis ao gerador e validar animações em testes dinâmicos.

@@ -116,3 +116,8 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [ ] Integrar editor diretamente à interface principal e salvar configuração no GDD/exportação.
 - [ ] Validar navegador e testes de regressão; ainda não confirmado.
 - [ ] Múltiplos enigmas independentes e verificação automática de caminhos permanecem pendentes.
+
+## Integração de navegação do editor RPG
+- [x] Interface principal inclui link direto ao editor visual RPG 2D, aberto em nova aba.
+- [ ] Aplicar JSON do editor ao spec do jogo pela interface (ainda é cópia manual).
+- [ ] Confirmar CI e teste visual em mobile e desktop.

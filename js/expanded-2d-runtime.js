@@ -19,8 +19,25 @@ function gameForgeExpanded2DBoot() {
   const portal={x:2220,y:800,r:46};
   const puzzleEnabled=!td&&!!spec.mechanics?.requested?.includes('puzzles');
   let puzzle={key:false,lever:false,solved:false};
-  const keySpot={x:300,y:850},leverSpot={x:1730,y:800},gateSpot={x:1940,y:800};
-  const gateObstacle={x:gateSpot.x-18,y:gateSpot.y-60,w:36,h:120,kind:'gate'};
+  let keySpot={x:300,y:850},leverSpot={x:1730,y:800},gateSpot={x:1940,y:800};
+  let gateObstacle=null;
+  function setupPuzzle(){
+    // Posições pré-testadas nas estradas, sem sobrepor relíquias ou o portal.
+    const presets=[
+      [{x:300,y:850},{x:1730,y:800},{x:1940,y:800}],
+      [{x:350,y:820},{x:1570,y:810},{x:1940,y:800}],
+      [{x:300,y:850},{x:1600,y:800},{x:1940,y:800}]
+    ];
+    const preset=presets[stage%presets.length];
+    const custom=configAt(stage).puzzle;
+    const point=(p,fallback)=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=80&&p.x<=2300&&p.y>=80&&p.y<=1500?{x:p.x,y:p.y}:{...fallback};
+    keySpot=point(custom?.key,preset[0]);
+    leverSpot=point(custom?.lever,preset[1]);
+    gateSpot=point(custom?.gate,preset[2]);
+    // A área do portão deve permanecer longe da origem e do portal.
+    if(dist(gateSpot,{x:210,y:800})<160||dist(gateSpot,portal)<140)gateSpot={...preset[2]};
+    gateObstacle={x:gateSpot.x-18,y:gateSpot.y-60,w:36,h:120,kind:'gate'};
+  }
   const extra=document.createElement('div');extra.style.cssText='display:none;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px';
   document.querySelector('.dialog').appendChild(extra);
   function button(label,fn,parent=extra){const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',fn);parent.appendChild(b);return b;}
@@ -41,7 +58,7 @@ function gameForgeExpanded2DBoot() {
     if(td){d=R.createDefense(stage,tuning);if(configAt(stage).waves>0)d.waves=clamp(configAt(stage).waves,1,12);selected=null;cursor={x:2,y:1};}
     else{
       if(checkpoint)R.restore(player,checkpoint);player.x=210;player.y=800;facing={x:1,y:0};camera={x:0,y:clamp(player.y-H/2,0,world.height-H)};
-      puzzle={key:false,lever:false,solved:false};buildMap();if(puzzleEnabled)obstacles.push(gateObstacle);spawnRPG();
+      puzzle={key:false,lever:false,solved:false};buildMap();if(puzzleEnabled){setupPuzzle();obstacles.push(gateObstacle);}spawnRPG();
       crystals=[{x:640,y:500},{x:1150,y:1030},{x:1740,y:630}].map(p=>({...p,r:18,taken:false}));
     }
     hide();note(stages[stage]);publish();

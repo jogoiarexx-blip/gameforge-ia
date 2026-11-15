@@ -103,3 +103,9 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Recompensa integrada ao saldo existente e registrada na telemetria.
 - [ ] Testar cenário completo no navegador e confirmar CI.
 - [ ] Próxima implementação: múltiplos enigmas independentes por fase, editor de posicionamento e baús.
+
+## RPG 2D — baús configuráveis
+- [x] Até oito baús por fase com ouro e XP, coleta por proximidade e indicadores de telemetria.
+- [x] Três baús padrão; opção `stageConfig[n].chests` para alterar posições e moedas.
+- [ ] Executar testes automatizados e QA de navegação; validar posicionamento customizado.
+- [ ] Próximo: editor visual e múltiplos puzzles independentes por fase.

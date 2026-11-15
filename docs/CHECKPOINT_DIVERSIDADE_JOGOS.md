@@ -273,3 +273,11 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - Testes adicionados: 5 casos Node `node:test` em `tests/racing-lane-logic.test.js`.
 - Não executados nesta sessão: suíte `npm test`, testes de navegador/celular, medição de FPS e regressão E2E dos demais motores. Os testes Node foram publicados, mas sua execução ainda não foi confirmada.
 - Pendências: validar integração no navegador e GitHub Actions, melhorar geração de tráfego e isolar subsistemas em módulos sem quebrar exportação offline.
+
+## Engenharia — etapa 3: validação CI e exportação offline
+- Inspeção confirmada: workflow `.github/workflows/verify.yml` executa `node --check js/*.js` e `npm test` no Node 20.
+- Execução GitHub Actions nº 96 (run 43767911857) do commit 8014d5dea8e31748d1d1912da298a0849f391e1b: concluída com sucesso, incluindo sintaxe e testes automatizados.
+- Arquivo criado: `tests/runtime-export-smoke.test.js`, cobrindo exportação offline dos gêneros plataforma, corrida e arena, presença de configuração gráfica e compilação sintática do código gerado.
+- A execução CI dos novos testes estava na fila quando consultada; não foi declarada aprovada.
+- Limitações: smoke tests não executam gameplay nem simulam DOM, física, GPU ou touch; faltam navegador real, medição de FPS e regressão dos motores RPG/TD/3D.
+- Próxima ação: confirmar CI do novo teste, corrigir falhas e adicionar harness de inicialização com DOM simulado.

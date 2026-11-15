@@ -8,6 +8,7 @@ canvas{width:100%;aspect-ratio:3/2;background:#24483d;border:2px solid #67897c;b
 textarea{width:100%;min-height:210px;box-sizing:border-box;font:13px monospace}small{color:#bed2cb}
 </style></head><body><main><h1>GameForge · Editor de fases RPG 2D</h1>
 <p>Posicione chave, alavanca, portão e baús no mapa. Arraste os objetos para mudar a posição; selecione um tipo e toque no mapa para adicioná-lo.</p>
+<div class="controls"><label>Fase <select id="stage"><option value="0">Fase 1</option></select></label><button id="add-stage">Adicionar fase</button><button id="delete-stage">Excluir última fase</button></div>
 <div class="controls"><label>Objeto <select id="kind"><option value="chest">Baú</option><option value="key">Chave</option><option value="lever">Alavanca</option><option value="gate">Portão</option></select></label>
 <label>Ouro por baú <input id="coins" type="number" min="0" max="250" value="35"></label>
 <button id="remove">Excluir selecionado</button><button id="reset">Restaurar padrão</button><button id="export">Gerar configuração</button><button id="copy">Copiar JSON</button></div>
@@ -17,8 +18,14 @@ textarea{width:100%;min-height:210px;box-sizing:border-box;font:13px monospace}s
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('map'),ctx=canvas.getContext('2d'),status=document.getElementById('status'),output=document.getElementById('output'),kind=document.getElementById('kind'),coins=document.getElementById('coins');
-const W=2400,H=1600;let objects=[],selected=null,dragging=false;
-function defaults(){objects=[{kind:'key',x:300,y:850},{kind:'lever',x:1730,y:800},{kind:'gate',x:1940,y:800},{kind:'chest',x:475,y:800,coins:25},{kind:'chest',x:1190,y:800,coins:35},{kind:'chest',x:1850,y:800,coins:45}];selected=null;render();exportJSON();}
+const W=2400,H=1600;let objects=[],selected=null,dragging=false,stageIndex=0,stages=[];const stageSelect=document.getElementById('stage');
+function saveStage(){stages[stageIndex]=objects.map(o=>({...o}));}
+function switchStage(index){saveStage();stageIndex=index;objects=stages[index].map(o=>({...o}));selected=null;render();exportJSON();}
+function refreshStages(){stageSelect.replaceChildren(...stages.map((_,i)=>new Option('Fase '+(i+1),String(i))));stageSelect.value=String(stageIndex);}
+stageSelect.onchange=()=>switchStage(Number(stageSelect.value));
+document.getElementById('add-stage').onclick=()=>{if(stages.length>=30){status.textContent='Limite de 30 fases.';return;}saveStage();stages.push(stages[stageIndex].map(o=>({...o})));stageIndex=stages.length-1;objects=stages[stageIndex].map(o=>({...o}));selected=null;refreshStages();render();exportJSON();};
+document.getElementById('delete-stage').onclick=()=>{if(stages.length===1)return;saveStage();stages.pop();stageIndex=Math.min(stageIndex,stages.length-1);objects=stages[stageIndex].map(o=>({...o}));selected=null;refreshStages();render();exportJSON();};
+function defaults(){objects=[{kind:'key',x:300,y:850},{kind:'lever',x:1730,y:800},{kind:'gate',x:1940,y:800},{kind:'chest',x:475,y:800,coins:25},{kind:'chest',x:1190,y:800,coins:35},{kind:'chest',x:1850,y:800,coins:45}];selected=null;stages[stageIndex]=objects.map(o=>({...o}));refreshStages();render();exportJSON();}
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
 function world(e){const r=canvas.getBoundingClientRect();return {x:clamp(Math.round((e.clientX-r.left)/r.width*W),100,2250),y:clamp(Math.round((e.clientY-r.top)/r.height*H),100,1450)};}
 function nearest(p){return objects.findLast(o=>Math.hypot(o.x-p.x,o.y-p.y)<70);}
@@ -26,13 +33,15 @@ function render(){ctx.clearRect(0,0,960,640);ctx.fillStyle='#24483d';ctx.fillRec
 ctx.fillStyle='#d5d0a1';ctx.font='14px system-ui';ctx.fillText('Início',65,310);ctx.fillText('Portal',880,310);
 for(const o of objects){const x=o.x*.4,y=o.y*.4;ctx.fillStyle=({key:'#f5d16c',lever:'#6fe1bd',gate:'#bfa085',chest:'#d78e50'})[o.kind];ctx.beginPath();ctx.arc(x,y,o===selected?13:10,0,Math.PI*2);ctx.fill();if(o===selected){ctx.strokeStyle='white';ctx.lineWidth=3;ctx.stroke();}ctx.fillStyle='white';ctx.fillText(({key:'Chave',lever:'Alavanca',gate:'Portão',chest:'Baú'})[o.kind],x+13,y-10);}}
 function exportJSON(){const get=k=>objects.find(o=>o.kind===k);const puzzle={};for(const k of ['key','lever','gate']){const o=get(k);if(o)puzzle[k]={x:o.x,y:o.y};}
-const config={puzzle,chests:objects.filter(o=>o.kind==='chest').map(({x,y,coins})=>({x,y,coins}))};output.value=JSON.stringify(config,null,2);return output.value;}
+const config={puzzle,chests:objects.filter(o=>o.kind==='chest').map(({x,y,coins})=>({x,y,coins}))};saveStage();
+const convert=items=>{const by=k=>items.find(o=>o.kind===k);const p={};for(const k of ['key','lever','gate']){const o=by(k);if(o)p[k]={x:o.x,y:o.y};}return {puzzle:p,chests:items.filter(o=>o.kind==='chest').map(({x,y,coins})=>({x,y,coins}))};};
+output.value=JSON.stringify({stages:stages.map(convert)},null,2);return output.value;}
 canvas.addEventListener('pointerdown',e=>{const p=world(e),found=nearest(p);if(found){selected=found;dragging=true;canvas.setPointerCapture(e.pointerId);}else{const k=kind.value;if(k==='chest'&&objects.filter(o=>o.kind==='chest').length>=8){status.textContent='Limite de oito baús atingido.';return;}if(k!=='chest'&&objects.some(o=>o.kind===k)){status.textContent='Já existe '+k+'. Selecione e arraste o objeto atual.';return;}selected={kind:k,...p,...(k==='chest'?{coins:clamp(Number(coins.value)||0,0,250)}:{})};objects.push(selected);dragging=true;canvas.setPointerCapture(e.pointerId);}render();exportJSON();});
 canvas.addEventListener('pointermove',e=>{if(!dragging||!selected)return;Object.assign(selected,world(e));render();exportJSON();});
 function stop(){dragging=false;}canvas.addEventListener('pointerup',stop);canvas.addEventListener('pointercancel',stop);
 document.getElementById('remove').onclick=()=>{if(selected){objects=objects.filter(o=>o!==selected);selected=null;render();exportJSON();}};
 document.getElementById('reset').onclick=defaults;document.getElementById('export').onclick=()=>{exportJSON();status.textContent='Configuração gerada abaixo.';};
 document.getElementById('copy').onclick=async()=>{try{await navigator.clipboard.writeText(exportJSON());status.textContent='JSON copiado.';}catch{output.focus();output.select();status.textContent='Selecione e copie o JSON manualmente.';}};
-defaults();
+stages=[[]];defaults();
 })();
 </script></body></html>

@@ -27,9 +27,9 @@
   const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','racing','platform']};
   // Catálogo declarativo: pedido no GDD não equivale a mecânica implementada.
   const mechanicCatalog = Object.freeze({
-    combat: { label:'Combate', pattern:/\b(combate|atacar|ataque|luta|espada|tiro|inimig|boss|chefe)\b/, supported:['arena','shooter','rpg','fps'] },
+    combat: { label:'Combate', pattern:/\b(combate|atacar|ataque|luta|espada|tiro|inimigos?|boss|chefe)\b/, supported:['arena','shooter','rpg','fps'] },
     exploration: { label:'Exploração', pattern:/\b(exploracao|explorar|mundo aberto|descobrir|mapa exploravel)\b/, supported:['arena','rpg'] },
-    puzzles: { label:'Puzzles', pattern:/\b(puzzle|quebra.cabeca|enigma|desafio logico)\b/, supported:[] },
+    puzzles: { label:'Puzzles', pattern:/\b(puzzles?|quebra.cabeca|enigma|desafio logico)\b/, supported:[] },
     economy: { label:'Economia', pattern:/\b(economia|dinheiro|moedas|comercio|comprar|vender|loja)\b/, supported:['rpg','tower-defense','lane-defense','block-td'] },
     inventory: { label:'Inventário', pattern:/\b(inventario|mochila|equipamentos|itens guardados)\b/, supported:['rpg'] },
     crafting: { label:'Fabricação', pattern:/\b(crafting|fabricacao|fabricar|construir itens)\b/, supported:[] },

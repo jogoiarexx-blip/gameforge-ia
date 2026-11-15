@@ -209,3 +209,11 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Telemetria de velocidade, distância e colisões; controles documentados na interface.
 - [ ] Testes reais no navegador e em dispositivos móveis ainda pendentes.
 - [ ] Próximo: pistas com curvas, tráfego que muda de faixa e HUD de velocidade.
+
+## Corrida 2D — curvas e HUD
+- [x] Pista com deslocamento lateral procedural em função da distância.
+- [x] Obstáculos e tráfego acompanham a curvatura visual da pista.
+- [x] Limites laterais do jogador acompanham o centro da estrada.
+- [x] HUD com velocímetro e distância percorrida.
+- [ ] Validar colisões em curvas e experiência no celular.
+- [ ] Próximo: transições de faixa com prevenção de colisão, variedade visual de carros e testes dinâmicos.

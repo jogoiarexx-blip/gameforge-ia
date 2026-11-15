@@ -281,3 +281,11 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - A execução CI dos novos testes estava na fila quando consultada; não foi declarada aprovada.
 - Limitações: smoke tests não executam gameplay nem simulam DOM, física, GPU ou touch; faltam navegador real, medição de FPS e regressão dos motores RPG/TD/3D.
 - Próxima ação: confirmar CI do novo teste, corrigir falhas e adicionar harness de inicialização com DOM simulado.
+
+## Engenharia — etapa 4: integração dos motores em DOM/Canvas simulados
+- CI anterior confirmada: GitHub Actions run 43768984046 (commit 548985a8a21a17be1d3e63aa818871a0a243cc7d) concluiu com sucesso.
+- Arquivos alterados: `tests/runtime-boot-integration.test.js` (novo) e este checkpoint.
+- Cobertura nova: inicialização, primeiro frame, início de jogo, avanço de relógio, pausa/retomada para plataforma, corrida e arena; aceleração e distância da corrida via entrada de teclado.
+- Técnica: Node `vm` com elementos DOM e Canvas 2D simulados; não substitui navegador real.
+- Resultado no momento da publicação: teste de integração publicado no commit 94d989f893b1b0113c32147794b671a0ff9256d8; workflow 43771066988 estava na fila. Não afirmar sucesso sem consulta posterior.
+- Pendências: confirmar CI, corrigir eventuais falhas, adicionar testes de colisão e transição de fases, realizar QA em browser/mobile e medir desempenho.

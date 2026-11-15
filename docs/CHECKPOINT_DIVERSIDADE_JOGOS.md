@@ -109,3 +109,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Três baús padrão; opção `stageConfig[n].chests` para alterar posições e moedas.
 - [ ] Executar testes automatizados e QA de navegação; validar posicionamento customizado.
 - [ ] Próximo: editor visual e múltiplos puzzles independentes por fase.
+
+## RPG 2D — primeiro editor visual
+- [x] Publicado `tools/rpg-layout-editor.html`, editor estático com arrastar objetos, até oito baús e exportação JSON para `stageConfig[n]`.
+- [x] Editor responsivo com controles de toque e mouse, seleção e exclusão.
+- [ ] Integrar editor diretamente à interface principal e salvar configuração no GDD/exportação.
+- [ ] Validar navegador e testes de regressão; ainda não confirmado.
+- [ ] Múltiplos enigmas independentes e verificação automática de caminhos permanecem pendentes.

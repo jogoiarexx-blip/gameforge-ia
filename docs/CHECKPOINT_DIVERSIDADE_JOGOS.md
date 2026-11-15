@@ -156,3 +156,11 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Layout recebido integra o salvamento existente e é usado na geração RPG 2D.
 - [ ] Testes no navegador pendentes; transferência requer mesma origem e armazenamento local habilitado.
 - [ ] Sincronização bidirecional e múltiplos enigmas por fase ainda pendentes.
+
+## Plataforma 2D — primeira rodada de melhorias
+- [x] Movimento com aceleração e desaceleração, pulo com altura variável, coyote time e jump buffer.
+- [x] Inimigos podem ser derrotados por salto sobre eles, com pontuação e XP.
+- [x] Câmera horizontal limitada à extensão de mundo usada pelo motor.
+- [x] Queda fora do mapa encerra a tentativa.
+- [ ] Executar testes de regressão e validar colisões, física e controles touch no navegador.
+- [ ] Criar fases com plataformas alcançáveis, checkpoints e novos padrões de inimigos.

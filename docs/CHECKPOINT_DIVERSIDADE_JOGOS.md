@@ -128,3 +128,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [ ] Persistir campo em backup/restauração do projeto; integração atual não garante preservação no backup.
 - [ ] Testar exportação, importação e execução no navegador; ainda não verificados.
 - [ ] Estender importação a múltiplas fases.
+
+## RPG 2D — persistência do layout
+- [x] Campo de JSON do layout incluído no snapshot do Studio, carregamento de projeto e salvamento automático.
+- [x] Normalização do backup portátil e do armazenamento local agora preserva `rpgLayoutJson` (máximo 30 KB).
+- [x] Adicionados testes de backup, restauração local e limite de tamanho em `tests/rpg-layout-backup.test.js`.
+- [ ] Execução do CI e validação de navegador pendentes.
+- [ ] Importação de múltiplas fases e sincronização bidirecional com editor visual ainda pendentes.

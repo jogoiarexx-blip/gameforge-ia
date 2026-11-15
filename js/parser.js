@@ -27,14 +27,14 @@
   const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','racing','platform']};
   // Catálogo declarativo: pedido no GDD não equivale a mecânica implementada.
   const mechanicCatalog = Object.freeze({
-    combat: { label:'Combate', pattern:/\\b(combate|atacar|ataque|luta|espada|tiro|inimig|boss|chefe)\\b/, supported:['arena','shooter','rpg','fps'] },
-    exploration: { label:'Exploração', pattern:/\\b(exploracao|explorar|mundo aberto|descobrir|mapa exploravel)\\b/, supported:['arena','rpg'] },
-    puzzles: { label:'Puzzles', pattern:/\\b(puzzle|quebra.cabeca|enigma|desafio logico)\\b/, supported:[] },
-    economy: { label:'Economia', pattern:/\\b(economia|dinheiro|moedas|comercio|comprar|vender|loja)\\b/, supported:['rpg','tower-defense','lane-defense','block-td'] },
-    inventory: { label:'Inventário', pattern:/\\b(inventario|mochila|equipamentos|itens guardados)\\b/, supported:['rpg'] },
-    crafting: { label:'Fabricação', pattern:/\\b(crafting|fabricacao|fabricar|construir itens)\\b/, supported:[] },
-    stealth: { label:'Furtividade', pattern:/\\b(stealth|furtividade|esconder|sorrateiro)\\b/, supported:[] },
-    progression: { label:'Progressão', pattern:/\\b(evolucao|evoluir|xp|nivel|melhorias|upgrades)\\b/, supported:['rpg','shooter','tower-defense','lane-defense','block-td'] }
+    combat: { label:'Combate', pattern:/\b(combate|atacar|ataque|luta|espada|tiro|inimig|boss|chefe)\b/, supported:['arena','shooter','rpg','fps'] },
+    exploration: { label:'Exploração', pattern:/\b(exploracao|explorar|mundo aberto|descobrir|mapa exploravel)\b/, supported:['arena','rpg'] },
+    puzzles: { label:'Puzzles', pattern:/\b(puzzle|quebra.cabeca|enigma|desafio logico)\b/, supported:[] },
+    economy: { label:'Economia', pattern:/\b(economia|dinheiro|moedas|comercio|comprar|vender|loja)\b/, supported:['rpg','tower-defense','lane-defense','block-td'] },
+    inventory: { label:'Inventário', pattern:/\b(inventario|mochila|equipamentos|itens guardados)\b/, supported:['rpg'] },
+    crafting: { label:'Fabricação', pattern:/\b(crafting|fabricacao|fabricar|construir itens)\b/, supported:[] },
+    stealth: { label:'Furtividade', pattern:/\b(stealth|furtividade|esconder|sorrateiro)\b/, supported:[] },
+    progression: { label:'Progressão', pattern:/\b(evolucao|evoluir|xp|nivel|melhorias|upgrades)\b/, supported:['rpg','shooter','tower-defense','lane-defense','block-td'] }
   });
   function planMechanics(text, genre) {
     const normalized=normalize(text);

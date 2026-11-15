@@ -142,3 +142,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Configurações importadas são aplicadas a `stageConfig[n]` na especificação do jogo.
 - [ ] Verificar testes e funcionamento no navegador, especialmente seleção de fases e exportação.
 - [ ] Adicionar importação de JSON de volta ao editor, persistência integrada e múltiplos puzzles por fase.
+
+## RPG 2D — reabertura de layouts no editor
+- [x] Editor visual aceita JSON colado ou arquivo JSON local com uma ou até 30 fases.
+- [x] Importação valida chave, alavanca, portão, coordenadas, quantidade de baús e recompensas antes de substituir o layout atual.
+- [x] Download do JSON de todas as fases pelo editor.
+- [ ] Validar interface no navegador e execução de testes automatizados.
+- [ ] Sincronização automática entre Studio e editor e múltiplos enigmas independentes por fase ainda pendentes.

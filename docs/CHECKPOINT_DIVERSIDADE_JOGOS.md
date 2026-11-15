@@ -54,3 +54,11 @@ Evoluir o GameForge para criar muitos jogos distintos, inclusive dentro do mesmo
 - 2026-11-14: inspeção estática de árvore, LEIA-ME, parser, generator, development-engine, runtimes 2D/3D, package.json e workflow.
 - Não houve alteração de código, execução de testes ou publicação de melhorias funcionais nesta etapa.
 - Próxima ação recomendada: P0, matriz de testes de diversidade; em seguida P1, manifesto modular de mecânicas.
+
+## Atualização — composição de mecânicas (2026-11-14)
+- [x] Catálogo declarativo inicial em `js/parser.js` para combate, exploração, puzzles, economia, inventário, crafting, furtividade e progressão.
+- [x] GDD gera `spec.mechanics` com `requested`, `available` e `pending`, sem afirmar implementação inexistente.
+- [x] Testes de regressão adicionados em `tests/mechanics-composition.test.js`.
+- [ ] Executar testes Node no CI e verificar status.
+- [ ] Implementar mecânicas executáveis interoperáveis, começando por puzzles + inventário + economia no RPG 2D.
+- [ ] Integrar editor visual e escolhas explícitas de mecânicas na interface.

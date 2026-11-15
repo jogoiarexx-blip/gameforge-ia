@@ -217,3 +217,11 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] HUD com velocímetro e distância percorrida.
 - [ ] Validar colisões em curvas e experiência no celular.
 - [ ] Próximo: transições de faixa com prevenção de colisão, variedade visual de carros e testes dinâmicos.
+
+## Corrida 2D — tráfego e modelos visuais
+- [x] Tráfego adversário tenta mudanças de faixa com intervalo e verificação de proximidade de outros carros.
+- [x] Quatro variações de cores de carros com janelas e faróis.
+- [x] Cones com desenho próprio e faixa de sinalização.
+- [ ] Suavizar interpolação das mudanças de faixa (atualmente o centro da faixa muda imediatamente).
+- [ ] Validar colisões e espaçamento com testes dinâmicos e navegador.
+- [ ] Próximo: interpolação lateral, melhorias de física e testes de regressão.

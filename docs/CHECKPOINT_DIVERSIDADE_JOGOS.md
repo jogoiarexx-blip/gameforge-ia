@@ -179,3 +179,11 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Retorno ao checkpoint limpa estado de salto e movimento vertical.
 - [ ] Validar colisões, animações e patrulhas no navegador e no celular.
 - [ ] Próximo: armadilhas, inimigos variados, efeitos visuais e testes automatizados.
+
+## Plataforma 2D — armadilhas e inimigos blindados
+- [x] Armadilhas de espinhos geradas em plataformas selecionadas, com colisão e dano.
+- [x] Inimigos blindados exigem dois saltos: quebra da armadura e derrota.
+- [x] Velocidades variadas de patrulha e indicação visual dos inimigos blindados.
+- [x] Telemetria expõe quantidade de armadilhas.
+- [ ] Testar colisão com espinhos e impactos nos inimigos no navegador e em controles móveis.
+- [ ] Próximo: melhorar efeitos visuais leves, balancear geração e acrescentar testes de regressão.

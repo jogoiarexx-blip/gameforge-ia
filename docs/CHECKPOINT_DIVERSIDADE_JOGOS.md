@@ -164,3 +164,11 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Queda fora do mapa encerra a tentativa.
 - [ ] Executar testes de regressão e validar colisões, física e controles touch no navegador.
 - [ ] Criar fases com plataformas alcançáveis, checkpoints e novos padrões de inimigos.
+
+## Plataforma 2D — checkpoints e progressão
+- [x] Plataformas com variação vertical reduzida e moedas distribuídas nas plataformas.
+- [x] Checkpoints a cada seis plataformas, com bandeira visual e cura de 10 pontos.
+- [x] Quedas retornam ao checkpoint com penalidade de 25 de vida; game over ao esgotar vida.
+- [x] Telemetria inclui checkpoint alcançado e número de quedas.
+- [ ] Validar no navegador alcance dos saltos, colisões, geração de fases e desempenho no celular.
+- [ ] Próximo: inimigos patrulhando plataformas, armadilhas e animações.

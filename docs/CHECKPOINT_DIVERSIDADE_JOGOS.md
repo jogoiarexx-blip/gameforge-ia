@@ -289,3 +289,11 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - Técnica: Node `vm` com elementos DOM e Canvas 2D simulados; não substitui navegador real.
 - Resultado no momento da publicação: teste de integração publicado no commit 94d989f893b1b0113c32147794b671a0ff9256d8; workflow 43771066988 estava na fila. Não afirmar sucesso sem consulta posterior.
 - Pendências: confirmar CI, corrigir eventuais falhas, adicionar testes de colisão e transição de fases, realizar QA em browser/mobile e medir desempenho.
+
+## Engenharia — etapa 5: transição e conclusão de fases
+- Auditoria: confirmado sucesso das execuções CI 43771083834 e 43771083505 (commit 65a9f8bdf261a43782b59814c75399204b363772), cobrindo testes de inicialização simulada dos três motores.
+- Arquivos modificados: `tests/runtime-boot-integration.test.js` e este checkpoint. Código de produção inalterado nesta etapa.
+- Novos testes: simulação prolongada de corrida até vitória na última fase e transição da primeira para a segunda fase, verificando reinicialização do percurso e manutenção do estado de jogo.
+- Resultado: commit dc0a4440786885680c03f5ab6d47ea6e6b4bbcb5 publicado; CI dos novos cenários estava na fila na última consulta, sem resultado confirmado.
+- Riscos: o tráfego aleatório pode provocar colisões e derrota antes do objetivo; teste de progressão pode revelar falta de controle determinístico da simulação.
+- Pendências: analisar CI e estabilizar simulações com semente aleatória e controle de estado; validar física/colisão e executar testes em navegador e dispositivo móvel.

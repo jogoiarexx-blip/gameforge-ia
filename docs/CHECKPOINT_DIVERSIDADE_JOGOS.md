@@ -97,3 +97,9 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Guia `docs/RPG_PUZZLES_POR_FASE.md` publicado.
 - [ ] Executar testes Node e validar manualmente jogabilidade/colisões no navegador.
 - [ ] Construir editor visual e múltiplos enigmas por fase; coordenadas personalizadas ainda não possuem verificação automática de caminho.
+
+## RPG 2D — recompensa por enigma
+- [x] Resolver chave + alavanca + portão concede XP e ouro configurável por fase, uma vez por resolução.
+- [x] Recompensa integrada ao saldo existente e registrada na telemetria.
+- [ ] Testar cenário completo no navegador e confirmar CI.
+- [ ] Próxima implementação: múltiplos enigmas independentes por fase, editor de posicionamento e baús.

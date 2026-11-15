@@ -172,3 +172,10 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - [x] Telemetria inclui checkpoint alcançado e número de quedas.
 - [ ] Validar no navegador alcance dos saltos, colisões, geração de fases e desempenho no celular.
 - [ ] Próximo: inimigos patrulhando plataformas, armadilhas e animações.
+
+## Plataforma 2D — patrulha e animação procedural
+- [x] Inimigos patrulham os limites da plataforma e invertem a direção nas extremidades.
+- [x] Personagem recebe animação procedural de braços/pernas ao caminhar e orientação conforme movimento.
+- [x] Retorno ao checkpoint limpa estado de salto e movimento vertical.
+- [ ] Validar colisões, animações e patrulhas no navegador e no celular.
+- [ ] Próximo: armadilhas, inimigos variados, efeitos visuais e testes automatizados.

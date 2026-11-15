@@ -213,7 +213,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('stage-reset').addEventListener('click',()=>stageEditorSave(true));
   function projectSnapshot(){
     roadmapSync();
-    return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,creationOptions:creationOptions(),roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
+    return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,creationOptions:creationOptions(),rpgLayoutJson:$('rpg-layout-json').value,roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
   }
   function storageMessage(result){
     $('project-storage-status').textContent=result.message;
@@ -234,6 +234,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     unrestoredProject=false;
     clearTimeout(saveTimer);
     $('gdd').value=snap.gdd;$('project-name').value=snap.name;$('instruction').value=snap.instruction;
+    $('rpg-layout-json').value=typeof snap.rpgLayoutJson==='string'?snap.rpgLayoutJson:'';
     pinnedReferences=snap.pinnedReferences.filter(x=>repoKnowledge.entries.some(r=>r.id===x));
     devHistory.length=0;devHistory.push(...snap.history);
     $('deep-plan').checked=snap.deepPlan;
@@ -798,6 +799,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('gdd').addEventListener('input',()=>{renderReferences();scheduleSave();});
   $('instruction').addEventListener('input',()=>{renderReferences();scheduleSave();});
   $('project-name').addEventListener('input',scheduleSave);
+  $('rpg-layout-json').addEventListener('input',scheduleSave);
   $('repo-live-sources').addEventListener('change',saveState);
   $('gdd').addEventListener('change',saveState);$('instruction').addEventListener('change',saveState);$('project-name').addEventListener('change',saveState);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!qaState.candidate)saveState();});

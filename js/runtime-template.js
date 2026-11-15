@@ -166,8 +166,15 @@ function gameForgeBoot() {
     return Math.abs(delta)<=dt*1.35?target:position+Math.sign(delta)*dt*1.35;
   }
   function racingLaneClear(car,target){
-    return !obstacles.some(other=>other!==car&&!other.hit&&Math.abs(other.y-car.y)<155&&
-      Math.abs((other.lanePosition??other.lane)-target)<.8);
+    const from=car.lanePosition??car.lane;
+    return !obstacles.some(other=>{
+      if(other===car||other.hit||Math.abs(other.y-car.y)>=155)return false;
+      const otherFrom=other.lanePosition??other.lane;
+      const otherTo=other.lane;
+      // Reservar todo o corredor da troca, inclusive a faixa de origem.
+      return Math.max(Math.min(from,target),Math.min(otherFrom,otherTo))-.72<
+        Math.min(Math.max(from,target),Math.max(otherFrom,otherTo))+.72;
+    });
   }
   function stepRacing(dt){
     const dx=(input('right')||isPressed('d')||isPressed('ArrowRight')?1:0)-(input('left')||isPressed('a')||isPressed('ArrowLeft')?1:0);

@@ -88,3 +88,31 @@ test('motor 3D carrega o GLB no cenário e preserva posição ao iniciar a fase'
   element('start').click();callbacks.shift()(33.4);
   assert.equal(props().length,1);
 });
+
+test('dois GLBs distintos entram juntos na cena e sobrevivem ao reinicio',()=>{
+ const T=three(),callbacks=[],els={};let scene=null;
+ const element=id=>els[id]||(els[id]={textContent:'',style:{},classList:{add(){},remove(){}},dataset:{},addEventListener(type,fn){this[type]=fn;},focus(){},getBoundingClientRect(){return {width:960,height:540};}});
+ const THREE={...T,WebGLRenderer:class{
+   constructor(){this.shadowMap={};this.info={render:{calls:0},memory:{geometries:0}};this.renderLists={dispose(){}};}
+   setClearColor(){}setPixelRatio(){}setSize(){}render(s){scene=s;}
+ }};
+ const base=Buffer.from(fixture()).toString('base64');
+ const env={THREE,GAME_SPEC:{dimension:'3d',genre:'arena',stages:['Primeira fase'],worldOptions:{size:48,seed:12,quality:'low'}},
+   GF_SCENE_ASSETS:[{id:'modelo0001',base64:base,x:8,z:7,scale:1.4},{id:'modelo0002',base64:base,x:-6,z:3,scale:2}],
+   gameForgeDecodeGLB:GLB.decode,gameForgeWorldRules:require('../js/world-rules.js'),gameForgeSoftwareRenderer:null,
+   document:{getElementById:element,querySelectorAll:()=>[],addEventListener(){}},
+   performance:{now:()=>0},requestAnimationFrame:fn=>callbacks.push(fn),addEventListener(){},window:null,globalThis:null};
+ env.window=env;env.globalThis=env;vm.createContext(env);
+ vm.runInContext('('+require('../js/three-runtime.js').toString()+')()',env);
+ const check=()=>{
+   const imported=[];scene.traverse(o=>{if(o.userData.gameForgeImported)imported.push(o);});
+   assert.equal(imported.length,2);
+   const a=imported.find(o=>o.userData.gameForgeAssetId==='modelo0001');
+   const b=imported.find(o=>o.userData.gameForgeAssetId==='modelo0002');
+   assert.ok(a&&b);
+   assert.equal(a.position.x,8);assert.equal(a.position.z,7);assert.equal(a.scale.x,1.4);
+   assert.equal(b.position.x,-6);assert.equal(b.position.z,3);assert.equal(b.scale.x,2);
+ };
+ callbacks.shift()(16.7);check();
+ element('start').click();callbacks.shift()(33.4);check();
+});

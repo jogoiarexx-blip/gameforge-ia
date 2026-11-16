@@ -62,7 +62,7 @@ function gameForgeUrbanMissionBoot(){
  const guardGroup=new T.Group(),itemGroup=new T.Group();scene.add(guardGroup);scene.add(itemGroup);
  const marker=new T.Mesh(new T.ConeGeometry(.4,.9,6),material(0xffd36b));scene.add(marker);
  let sim=F.initial(plan),gameState='menu',paused=false,frames=0,simSteps=0,clock=0,walk=0;
- let heading=0,prev=0,acc=0,attackCooldown=0,invuln=0,fireCooldown=0,reloading=0,saveTimer=0;
+ let heading=0,prev=0,acc=0,attackCooldown=0,invuln=0,fireCooldown=0,reloading=0,saveTimer=0,shotNoise=0;
  let guards=[],items=[],lastStepId=null,saveStatus='novo',saveEnabled=true,cameraOccluded=false;
  function save(){
   sim.position={x:sim.position.x,z:sim.position.z};
@@ -150,7 +150,7 @@ function gameForgeUrbanMissionBoot(){
   }else if(sim.status==='intermission')sim=F.advance(plan,sim).state;
   else if(sim.status==='victory')sim=F.initial(plan);
   gameState='play';paused=false;clock=0;prev=0;acc=0;keys.clear();
-  attackCooldown=0;invuln=0;fireCooldown=0;reloading=0;
+  attackCooldown=0;invuln=0;fireCooldown=0;reloading=0;shotNoise=0;
   lastStepId=null;
   hero.position.set(sim.position.x,0,sim.position.z);
   syncObjects();hud();
@@ -180,7 +180,7 @@ function gameForgeUrbanMissionBoot(){
  function fire(){
   if(gameState!=='play'||paused||fireCooldown>0||reloading>0)return;
   if(sim.ammo<=0){notice('Munição esgotada: pressione R.');return;}
-  fireCooldown=.23;sim.ammo--;
+  fireCooldown=.23;sim.ammo--;shotNoise=1.1;
   const p={x:sim.position.x,z:sim.position.z,heading};
   const targets=guards.filter(g=>g.alive&&R.canHit(p,g.mesh.position,blockers));
   targets.sort((a,b)=>Math.hypot(a.mesh.position.x-p.x,a.mesh.position.z-p.z)-
@@ -226,6 +226,7 @@ function gameForgeUrbanMissionBoot(){
  }
  function simulate(dt){
   clock+=dt;fireCooldown=Math.max(0,fireCooldown-dt);attackCooldown=Math.max(0,attackCooldown-dt);
+  shotNoise=Math.max(0,shotNoise-dt);
   invuln=Math.max(0,invuln-dt);
   if(reloading>0){
    reloading=Math.max(0,reloading-dt);
@@ -261,7 +262,7 @@ function gameForgeUrbanMissionBoot(){
   }
   for(const g of guards){
    if(!g.alive)continue;
-   g.brain=R.guardStep(g.brain,sim.position,dt,blockers);
+   g.brain=R.guardStep(g.brain,{...sim.position,noise:len>0||shotNoise>0},dt,blockers);
    g.mesh.position.x=g.brain.x;g.mesh.position.z=g.brain.z;
    g.mesh.rotation.y=-g.brain.heading;
    if(g.brain.canAttack&&attackCooldown===0&&invuln===0){

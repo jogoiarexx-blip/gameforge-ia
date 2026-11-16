@@ -68,7 +68,7 @@ def run():
             page.locator('#file-list').get_by_text('game.js',exact=True).click()
             initial=page.locator('#file-editor').input_value()
             assert 'GAME_SPEC' in initial
-            marker='\\n// GF005: edição de código persistente'
+            marker='\n// GF005: edição de código persistente'
             page.locator('#file-editor').fill(initial+marker)
             page.locator('#apply-edit').click()
             page.wait_for_function("document.querySelector('#preview').getAttribute('srcdoc').includes('GF005: edição')",

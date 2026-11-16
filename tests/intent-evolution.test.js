@@ -25,7 +25,8 @@ test('comando composto faz campanha de navinha 3D com cinco fases, quatro ondas 
 test('editor permite ondas no shooter 3D e missão real no RPG 3D',()=>{
  const a=project('shooter','3d'),out=Campaign.edit(a.files,1,{waves:4,boss:'no',theme:'ruins'});
  assert.equal(out.spec.stageConfig[1].waves,4);
- const b=project('rpg','3d'),q=Campaign.edit(b.files,1,{mission:'survive',seconds:75});
+ const b=project('rpg','3d');b.files['game.js']+='\n'+require('../js/three-runtime').toString();
+ const q=Campaign.edit(b.files,1,{mission:'survive',seconds:75});
  assert.equal(q.spec.stageConfig[1].mission,'survive');assert.equal(q.spec.stageConfig[1].seconds,75);
 });
 test('missão de sobrevivência da fase 3 em RPG 3D preserva outras fases',()=>{

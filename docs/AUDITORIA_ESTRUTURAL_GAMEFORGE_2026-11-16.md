@@ -101,3 +101,10 @@ Cada turno futuro deve selecionar **um ID principal**, com:
 - `docs/PLANO_MESTRE_GAMEFORGE.md`, `docs/CHECKPOINT_DIVERSIDADE_JOGOS.md` e relatórios GF-003/GF-004/GF-005: histórico de entregas e dívida anterior.
 
 **Observação de concorrência:** foram observados novos commits de URB-01 enquanto esta auditoria era produzida. Um protótipo integrado pode ser adicionado e passar CI depois da inspeção; nenhuma afirmação de aprovação definitiva deve ser extrapolada de uma execução pendente. Revise o HEAD novamente antes de implementar cada item.
+
+
+## Atualização de evidência URB-01 — integração confirmada na CI
+
+Durante o fechamento da auditoria, o protótipo urbano avançou além do estado de integração inicial. A execução [43887382720](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43887382720), SHA `9ec2995cb8`, **aprovou 261 testes Node, 16 variantes de exportação e 17 cenários Chromium** (15 jogos, editor/ZIP e cenário urbano), além do teste GF-005 de restauração GLB. Portanto, **a integração técnica do URB-01 está validada para o protótipo testado em Chromium**. Isto não revoga os achados AUD-02/03/04: a detecção de pedidos urbanos curtos continua falhando nos três exemplos acima, e o protótipo permanece com bairro e missão de conteúdo fixo. A publicação verificada desse SHA foi separada da CI e a rota antiga do Pages continua sendo uma pendência administrativa.
+
+**Ajuste de interpretação do AUD-04:** não significa que o motor urbano inexista; há um **vertical slice jogável** que exige evolução para gerar mapas, missões, carros e sistemas completos a partir do GDD, sem apresentar a missão demonstrativa como campanha produzida.

@@ -323,18 +323,20 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     };
     if(!manifest.assets.length){
       $('preview-empty').classList.add('hide');
-      try{render(state.files);}catch(err){feedback('Prévia indisponível: '+err.message,true);}
-      return Promise.resolve();
+      try{render(state.files);return Promise.resolve(true);}
+      catch(err){feedback('Prévia indisponível: '+err.message,true);return Promise.resolve(false);}
     }
     $('preview-empty').classList.add('hide');$('qa-run').disabled=true;status('Lendo modelos do projeto...');
     return GameForgeAssetLibrary.materialize(project,manifest).then(binary=>{
       if(stamp!==previewAssetSequence)return;
       render({...state.files,...binary});
+      return true;
     }).catch(err=>{
       if(stamp!==previewAssetSequence)return;
       $('qa-run').disabled=true;$('live-indicator').classList.remove('active');
       status('Modelo GLB indisponível',true);
       feedback('Prévia não carregada: '+err.message,true);
+      return false;
     });
   }
   function fileBlob(blob,filename){
@@ -866,8 +868,8 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       }
       qaState.last=null;qaState.baseline=null;
       restoreSceneAssetControls(lastId);listFiles();saveState();
-      await runPreview();
-      feedback(imported+' modelo(s) GLB salvo(s) no projeto e na biblioteca do navegador. Exporte ZIP para backup completo.');
+      const previewOk=await runPreview();
+      feedback(imported+' modelo(s) GLB salvo(s) na biblioteca. '+(previewOk?'A prévia foi preparada. ':'A prévia não carregou; revise os avisos. ')+'Exporte ZIP para backup completo.',!previewOk);
     }catch(err){
       restoreSceneAssetControls(lastId);listFiles();
       if(imported){saveState();await runPreview();}

@@ -23,7 +23,7 @@ function fixture(extra={}){
   return all;
 }
 function three(){
-  const context={console};vm.createContext(context);
+  // Three.js usa AbortController no navegador; expor os globais equivalentes no VM Node.\n  const context={console,AbortController,AbortSignal};vm.createContext(context);
   vm.runInContext(fs.readFileSync(require.resolve('../vendor/three-source.js'),'utf8'),context);
   vm.runInContext(context.GameForgeThreeSource,context);
   return context.THREE;

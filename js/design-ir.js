@@ -6,7 +6,7 @@
 const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const patterns=Object.freeze([
  {id:'shooting',label:'Tiros e armas',pattern:/\b(tiros?|tiroteios?|atirar|disparar|pistolas?|fuzis?|municao|armas? de fogo)\b/,engines:['fps-3d','urban-action-3d','arena-2d','arena-3d','shooter-2d','shooter-3d'],partial:['urban-action-3d']},
- {id:'driving',label:'Veículos dirigíveis',pattern:/\b(dirigir|pilot(?:ar|agem)|entrar em carros?|conduzir|carros? dirigiveis|caminhoes? dirigiveis)\b/,engines:['racing-3d','racing-2d']},
+ {id:'driving',label:'Veículos dirigíveis',pattern:/\b(dirigir|pilot(?:ar|agem)|entrar em carros?|conduzir|carros?|veiculos?|caminhoes?|carros? dirigiveis|caminhoes? dirigiveis)\b/,engines:['racing-3d','racing-2d']},
  {id:'police',label:'Polícia e nível de procurado',pattern:/\b(policia|viaturas?|estrelas? de procurad[oa]|perseguicao policial)\b/,engines:[]},
  {id:'business',label:'Conquistar ou administrar negócios',pattern:/\b(negocios?|estabelecimentos?|empresas?|propriedades|lojas? comerciais?)\b/,engines:['urban-action-3d'],partial:['urban-action-3d']},
  {id:'territories',label:'Territórios conquistáveis',pattern:/\b(territorios?|distritos?|dominar bairros?|recaptura)\b/,engines:[]},
@@ -14,10 +14,10 @@ const patterns=Object.freeze([
  {id:'stealth',label:'Furtividade e esconder-se',pattern:/\b(furtividade|stealth|esconder(?:-se)?|escondid[oa]s?|se esconder|nao ser visto)\b/,engines:[]},
  {id:'dialogue',label:'Diálogos interativos',pattern:/\b(dialogos?|conversar com npcs?|falar com npcs?|falas? ramificadas)\b/,engines:[]},
  {id:'quests',label:'Missões/quests roteirizadas',pattern:/\b(quests?|missoes? com escolhas|missoes? de historia|campanha roteirizada)\b/,engines:[]},
- {id:'skill-tree',label:'Árvore de habilidades',pattern:/\b(arvore de habilidades?|skill tree|habilidades? permanentes?|pontos? de habilidade)\b/,engines:[]},
+ {id:'skill-tree',label:'Árvore de habilidades',pattern:/\b(arvore de habilidades?|skill tree|habilidades? permanentes?|pontos? de habilidade|evolu(?:cao|ir|ir as) habilidades?|melhorar habilidades?)\b/,engines:[]},
  {id:'craft',label:'Fabricação de itens',pattern:/\b(crafting|fabricar itens?|fabricar armas?|sistema de fabricacao)\b/,engines:[]},
  {id:'farming',label:'Plantar, colher e gerir fazenda',pattern:/\b(fazenda|plantar|colheita|cultivar|agricultura)\b/,engines:[]},
- {id:'sailing',label:'Navegação de barcos',pattern:/\b(navegar barcos?|navegar no mar|dirigir barcos?|pilot(?:ar)? navios?|navios? dirigiveis|batalhas? navais?)\b/,engines:[]},
+ {id:'sailing',label:'Navegação de barcos',pattern:/\b(navegar barcos?|navegar no mar|dirigir barcos?|pilot(?:ar)? navios?|navios? dirigiveis|batalhas? navais?|barcos?|navios?|piratas?)\b/,engines:[]},
  {id:'inventory-3d',label:'Inventário de itens 3D',pattern:/\b(inventario|mochila|guardar itens?)\b/,engines:['rpg-2d'],partial:['rpg-2d']},
  {id:'animated-assets',label:'Personagens GLB animados',pattern:/\b(glb animad|personagem animad|animationmixer|esqueleto glb)\b/,engines:[]}
 ]);
@@ -52,7 +52,6 @@ function inspect(spec,gdd='',command=''){
    const before=row.normal.slice(Math.max(0,match.index-60),match.index);
    // Restrições não viram requisitos positivos, nem campos do motor.
    if(/\b(sem|nao quero|nao usar|proibid[ao]|evitar|fora de escopo)\b.{0,48}$/.test(before))continue;
-   if(restrictions.some(x=>x.pattern.test(row.normal)))continue;
    origin=row.origin;
   }
   if(!origin)continue;

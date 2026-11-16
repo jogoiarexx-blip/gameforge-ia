@@ -26,9 +26,12 @@ const DIG='(?:\\d{1,3}|uma?|duas?|dois|tres|quatro|cinco|seis|sete|oito|nove|dez
 function number(value){const n=Number(value);return Number.isFinite(n)?Math.trunc(n):words[normalize(value)]||null;}
 function quantity(text,noun){
  const t=normalize(text),n=noun;
+ // Evitar confundir «fase dois coloque 7 inimigos»: o número encostado
+ // ao substantivo tem prioridade sobre quantidades mais distantes.
+ const direct=new RegExp('\\b('+DIG+')\\s+(?:'+n+')\\b','i').exec(t);
  const before=new RegExp('\\b('+DIG+')\\s+(?:\\w+\\s+){0,2}(?:'+n+')\\b','i').exec(t);
  const after=new RegExp('\\b(?:'+n+')\\s*(?:[:=]|de|com|por fase|em cada fase|no total)\\s*('+DIG+')\\b','i').exec(t);
- return number(before?.[1]||after?.[1]);
+ return number(direct?.[1]||before?.[1]||after?.[1]);
 }
 function briefFromCommand(instruction){
  const value=String(instruction||'').trim();

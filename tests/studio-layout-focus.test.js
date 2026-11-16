@@ -60,6 +60,23 @@ test('estilos dão prioridade ao centro, responsividade e foco de teclado',()=>{
  assert.match(css,/\.studio\s*\{[\s\S]*?grid-template-columns:minmax\(270px,310px\) minmax\(0,1fr\) minmax\(270px,300px\)/);
  assert.match(css,/\.studio-disclosure>summary:focus-visible/);
  assert.match(css,/@media\(max-width:780px\)/);
- assert.match(css,/\.left-panel \.panel-scroll>#gdd\{order:5\}/);
+ assert.doesNotMatch(css,/\.left-panel \.panel-scroll>[^{}\n]+\{order:/,'Fluxo não deve usar CSS order');
  assert.match(css,/\.center-panel \.preview-box\s*\{/);
+});
+
+test('ordem real do DOM acompanha os campos visíveis e o teclado',()=>{
+ const left=html.slice(html.indexOf('<section class="panel left-panel"'),html.indexOf('<section class="panel center-panel"'));
+ const markers=[
+  'for="project-name"','id="project-name"','class="label-row"','class="file-pick"',
+  'id="gdd"','id="analyze"','id="analysis"','class="step-continue"',
+  'class="studio-disclosure engine-disclosure"','class="studio-disclosure examples-disclosure"',
+  'class="studio-disclosure backup-disclosure"','class="studio-disclosure rpg-disclosure"',
+  'class="studio-disclosure knowledge-disclosure"'
+ ];
+ let previous=-1;
+ for(const marker of markers){
+   const index=left.indexOf(marker);
+   assert.ok(index>previous,'Ordem visual/teclado incorreta: '+marker);
+   previous=index;
+ }
 });

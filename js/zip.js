@@ -25,6 +25,36 @@
     const end=new Uint8Array([80,75,5,6,...u16(0),...u16(0),...u16(count),...u16(count),...u32(csize),...u32(offset),...u16(0)]);
     return new Blob([...local,...center,end],{type:'application/zip'});
   }
-  root.GameForgeZip={zipFiles};
+  function unzipFiles(source){
+    const bytes=source instanceof Uint8Array?source:new Uint8Array(source);
+    if(bytes.length>110_000_000)throw Error('ZIP acima do limite de 110 MB.');
+    const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),files={},decode=new TextDecoder('utf-8',{fatal:true});
+    let offset=0,count=0,total=0;
+    const safe=(name)=>name&&name.length<220&&!name.includes('..')&&!name.startsWith('/')&&!name.includes('\\\\')&&!name.includes('//');
+    while(offset+4<=bytes.length){
+      const sig=view.getUint32(offset,true);
+      if(sig===0x02014b50)break;
+      if(sig!==0x04034b50)throw Error('Estrutura ZIP invalida.');
+      if(offset+30>bytes.length)throw Error('Cabecalho ZIP incompleto.');
+      const flags=view.getUint16(offset+6,true),method=view.getUint16(offset+8,true);
+      const checksum=view.getUint32(offset+14,true);
+      const packed=view.getUint32(offset+18,true),size=view.getUint32(offset+22,true);
+      const nameLen=view.getUint16(offset+26,true),extra=view.getUint16(offset+28,true);
+      if(flags&9||method!==0||packed!==size)throw Error('Apenas ZIPs sem compressao, criptografia ou descritor sao aceitos.');
+      if(!nameLen||size>30_000_000||total+size>100_000_000)throw Error('Arquivo ZIP excede os limites.');
+      const start=offset+30+nameLen+extra,end=start+size;
+      if(start>bytes.length||end>bytes.length)throw Error('Arquivo ZIP truncado.');
+      const name=decode.decode(bytes.subarray(offset+30,offset+30+nameLen));
+      if(!safe(name)||Object.prototype.hasOwnProperty.call(files,name))throw Error('Caminho inseguro ou duplicado no ZIP.');
+      const content=bytes.subarray(start,end);
+      if(crc32(content)!==checksum)throw Error('Checksum ZIP incorreto: '+name);
+      files[name]=content;
+      count++;total+=size;offset=end;
+      if(count>100)throw Error('ZIP contem muitos arquivos.');
+    }
+    if(count===0||offset+4>bytes.length||view.getUint32(offset,true)!==0x02014b50)throw Error('Diretorio central ZIP ausente.');
+    return files;
+  }
+  root.GameForgeZip={zipFiles,unzipFiles};
   if(typeof module!=='undefined')module.exports=root.GameForgeZip;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -169,6 +169,7 @@ function gameForgeMissionSemanticsFactory(){
     ' '+step.target+(step.objectQuantity?' (itens: '+step.objectQuantity+')':'')+
     ' · '+step.source.document+' linha '+step.source.line+
     (step.preconditions?.length?' · depende de '+step.preconditions.join(', '):'')+
+    (step.conditions?.length?' · condição mencionada: '+step.conditions.join('; '):'')+
     (step.reason?' · '+step.reason:''));
    for(const relation of mission.relations)rows.push('Relação: '+relation.from+' antes de '+relation.to+' ('+relation.reason+')');
    rows.push('');

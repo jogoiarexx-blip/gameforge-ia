@@ -809,3 +809,24 @@ O teste novo confirmou, em perfis isolados: criação só por comando, edição 
 5. WebGL em Chromium da CI não substitui testes em hardware Android/iOS nem medições de memória/temperatura/FPS no dispositivo. GF-001 ainda requer confirmar a configuração protegida de Pages.
 
 **Próximo ID do motor: URB-02.** Priorizar oclusão da câmera, mira baseada no retículo, guardas com patrulha/suspeita/busca/combate e rotas/coberturas, com testes unitários e Chromium. URB-03/04/05 permanecem no plano mestre.
+
+
+## GF-003/004 — Game Design IR v1 e correções de comandos leigos (16/11/2026)
+
+**Estado: EM REVISÃO — verificar CI no SHA mais recente antes de marcar VALIDADO.** Especificação em `docs/GF003_004_DESIGN_IR_V1.md`.
+
+**Problema reproduzido:** três exemplos curtos de ação urbana GTA/máfia/padrinho com carros, negócios e 3D eram classificados como arena 3D. O scanner não aceitava sinônimos e não registrava várias mecânicas pedidas (ex.: diálogo, quests, árvore de habilidades). "Sem tiros" podia chegar ao motor FPS armado e "sem 3D" podia ser interpretado como dimensão 3D.
+
+**Código desta evolução:**
+- `js/urban-design.js` conta sinais urbanos relevantes por cláusula, aceita referências curtas de máfia/GTA/padrinho, câmera por trás e negócios/lojas. Mantém filtros contra FPS explícito, GoldenEye, corridas, navinhas e exclusões de escopo.
+- `js/design-ir.js` (novo) rastreia solicitações de sistemas (dirigir, polícia, negócios, interiores, territórios, stealth, diálogos, quests, habilidades, fabricar, agricultura, naval, inventário, animação GLB) e proibições explícitas (sem tiros, sem 3D, sem multiplayer/crafting). Classifica suporte como **suportado/parcial/pendente** e proibições **respeitada/incompatível** com origem/linha.
+- `js/parser.js` inclui `spec.designIR` em comandos e GDDs, passa o IR ao contexto opcional de IA e não infere 3D de "sem 3D".
+- `js/generator.js` impede exportação quando o motor contradiz proibições e inclui `PLANO_REQUISITOS.md` no ZIP; `js/project-backup.js` preserva o relatório; `js/app.js` exibe os requisitos e mensagens claras na tela.
+- `tests/design-ir.test.js` acrescenta 16 briefs leigos, negativas, casos de motor não suportado, requisitos faltantes, origens/linhas e backup.
+- `tests/browser-project-continuity-gf005.py` passou a exigir alteração concreta no código do editor **e em localStorage**, não o texto exato da mensagem de QA visual. O QA é testado separadamente e o histórico/undo continua exigido.
+
+**Evidência preliminar:** os três exemplos urbanos e os casos adjacentes foram reavaliados diretamente no interpretador, passando. Em execução intermediária `43891099343`, os testes Node estavam verdes, mas Chromium falhou por aguardar uma mensagem `Melhoria salva` enquanto o editor mostrava `Melhoria aplicada... Executando teste de regressão`; a espera foi substituída por verificação de persistência após a revisão. **NÃO extrapolar CI verde de commits anteriores para o HEAD**. A rota antiga de Pages segue ativa até alterar Settings → Pages → Source para GitHub Actions (GF-001).
+
+**Limites explícitos:** o IR não cria código arbitrário nem IA de inimigos. Sem motor compatível para FPS sem armas, fazenda ou navegação, a geração é bloqueada e a capacidade é reportada como ausente; um motor futuro deverá realmente implementar essas mecânicas. URB-01 continua com apenas um bairro, uma missão e sistemas parciais.
+
+**Próxima tarefa:** benchmark >=100 pedidos infantis/curtos com campos ação/objeto/condição/quantidade e controle por fase, depois `UrbanLevelSpec` para gerar dois bairros/missões distintos, preservando o protótipo URB-01 e a CI. GF-001 administrativo é requisito paralelo.

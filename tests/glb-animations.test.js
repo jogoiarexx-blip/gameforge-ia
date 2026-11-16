@@ -92,3 +92,31 @@ test('GF-015 player e inimigo GLB são acoplados aos dois runtimes urbanos, sem 
   assert.match(s,/actorClipCount/);
  }
 });
+
+test('GF-015 v2 ataques e impactos aguardam clip; morte não volta a caminhar',()=>{
+ const T=three(),model=GLB.decode(T,fixture()),anim=Animator.create(T,model);
+ assert.equal(anim.setState('walk'),true);
+ assert.equal(anim.setState('hit'),true);
+ assert.equal(anim.state,'hit');
+ assert.equal(anim.setState('walk'),false,'movimento não interrompe impacto imediatamente');
+ for(let i=0;i<11;i++)anim.update(.1);
+ assert.equal(anim.setState('walk'),true,'locomoção volta após fim do clipe de impacto');
+ assert.equal(anim.setState('attack'),true);
+ assert.equal(anim.setState('walk'),false,'tiro não reinicia locomoção antes da animação');
+ assert.ok(anim.duration('death')>=.35);
+ assert.equal(anim.setState('death'),true);
+ assert.equal(anim.state,'death');
+ for(let i=0;i<12;i++)anim.update(.1);
+ assert.equal(anim.setState('walk'),false,'morte é terminal mesmo depois de terminar o clip');
+ assert.equal(anim.state,'death');
+ anim.dispose();
+});
+test('GF-015 v2 morte urbana persiste em grupo independente após objetivo e não altera recompensa',()=>{
+ const source=fs.readFileSync(require('node:path').join(__dirname,'../js/urban-mission-runtime.js'),'utf8');
+ assert.match(source,/corpseGroup=new T\.Group/);
+ assert.match(source,/keepFallen\(target\)/);
+ assert.match(source,/if\(!paused&&fallenGuards\.length\)updateFallen/);
+ assert.match(source,/deathAnimations:fallenGuards\.length/);
+ assert.match(source,/for\(const g of guards\)g\.animation\?\.dispose/);
+ assert.match(source,/clearFallen\(\)/);
+});

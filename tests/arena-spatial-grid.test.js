@@ -38,7 +38,7 @@ test('busca inclui projétil grande distante por mais de uma célula',()=>{
  assert.deepEqual(Array.from(result,b=>b.id),[0]);
 });
 test('busca limita candidatos pelo raio sem ignorar bordas',()=>{
- const bullets=[{x:0,y:0,r:5,id:0},{x:60,y:0,r:5,id:1},{x:180,y:0,r:5,id:2}];
+ const bullets=[{x:0,y:0,r:5,id:0},{x:130,y:0,r:5,id:1},{x:260,y:0,r:5,id:2}];
  assert.deepEqual(Array.from(near(build(bullets),0,0,15),b=>b.id),[0]);
- assert.deepEqual(Array.from(near(build(bullets),64,0,15),b=>b.id),[1]);
+ assert.deepEqual(Array.from(near(build(bullets),130,0,15),b=>b.id),[1]);
 });

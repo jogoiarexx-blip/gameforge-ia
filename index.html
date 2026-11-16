@@ -199,10 +199,11 @@ Derrote o chefe.
     <section class="panel right-panel" id="files-step" aria-label="Arquivos de código">
       <div class="panel-head slim"><span class="eyebrow">ARQUIVOS DO JOGO</span><h2>Editar e baixar</h2><p>Veja o código quando precisar.</p></div>
       <div class="right-content"><div id="file-list" class="files"><div class="muted tiny">Nenhum arquivo gerado.</div></div><div class="code-head"><label for="file-editor" id="editor-label">Editor de código</label><button id="apply-edit" class="small outline" disabled>Salvar alteração</button></div><textarea spellcheck="false" id="file-editor" class="code" aria-label="Editor de código" placeholder="Selecione um arquivo gerado..." disabled></textarea><details class="studio-disclosure model-disclosure"><summary><span>Inserir modelo 3D (GLB)</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><div class="asset-inspector"><strong>Usar modelo GLB no cenário 3D</strong>
-<p class="hint">Biblioteca de até 4 objetos estáticos GLB: 25 MB cada, 50 MB no total. O modelo entra na cena; personagens e animações ainda não são substituídos.</p>
+<p class="hint">Biblioteca de até 4 GLBs (25 MB cada, 50 MB totais). No motor urbano 3D, defina um GLB como Jogador ou Inimigo para substituir a aparência procedural e reproduzir os clips compatíveis que existirem no modelo. Modelos sem rig/clips permanecem estáticos.</p>
 <label class="small file-btn" for="scene-asset-file">Adicionar objeto ao jogo</label>
 <input type="file" id="scene-asset-file" accept=".glb,model/gltf-binary" multiple>
-<label for="scene-asset-select">Objetos do projeto</label>
+<label for="scene-asset-role">Uso do GLB no jogo</label><select id="scene-asset-role"><option value="scene">Cenário (decorativo)</option><option value="player">Personagem principal (motor urbano)</option><option value="enemy">Inimigo (motor urbano)</option></select>
+ <label for="scene-asset-select">Objetos do projeto</label>
 <select id="scene-asset-select" aria-label="Selecione o objeto 3D"><option value="">Nenhum objeto</option></select>
 <div id="scene-asset-list" class="hint" aria-live="polite">0 modelos no projeto.</div>
 <div class="split"><div><label for="scene-asset-x">Posição X</label><input id="scene-asset-x" type="number" min="-35" max="35" step="1" value="5"></div><div><label for="scene-asset-z">Posição Z</label><input id="scene-asset-z" type="number" min="-35" max="35" step="1" value="5"></div></div>
@@ -222,6 +223,7 @@ Derrote o chefe.
   <script src="./js/urban-rules.js"></script>
   <script src="./js/urban-input.js"></script>
   <script src="./js/urban-save.js"></script>
+  <script src="./js/actor-animations.js"></script>
   <script src="./js/stage-branches.js"></script>
   <script src="./js/mission-semantics.js"></script>
   <script src="./js/urban-mission-flow.js"></script>

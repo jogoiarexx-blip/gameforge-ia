@@ -1,3 +1,15 @@
+# GameForge Studio v0.17 — Asset GLB estático no cenário 3D
+
+A primeira integração funcional de GLB a uma fase 3D está disponível. O Studio agora consegue importar **um objeto estático** e posicioná-lo dentro do motor Three.js, além de preservar o modelo na prévia, HTML único, ZIP e backup.
+
+**Como usar:** escolha um exemplo 3D, gere o jogo com **Sem IA**, e no painel direito selecione **Usar modelo GLB no cenário 3D → Adicionar objeto ao jogo**. Escolha um `.glb`, ajuste X/Z/escala e execute a prévia. O ZIP inclui `assets/cenario.glb`; o backup `.gameforge.json` também guarda o asset para reabertura.
+
+**Limites desta versão:** um arquivo GLB por projeto, de até **1,2 MB**. Suporta geometria triangular estática, materiais básicos e texturas embutidas compatíveis (PNG/JPEG/WebP); não suporta extensões GLB obrigatórias que exijam decodificadores externos, animação esquelética, skinning, morphs ou colisão do objeto. A geometria é decorativa e não substitui jogador/inimigos automaticamente. Por usar base64, HTML e backup ficam maiores; baixe seu backup se o navegador não conseguir salvar por falta de quota.
+
+**Arquivos da implementação:** `js/glb-runtime.js`, `js/three-runtime.js`, `js/generator.js`, `js/app.js`, `js/project-backup.js`, `tests/glb-import.test.js`. Consulte `docs/CHECKPOINT_DIVERSIDADE_JOGOS.md` para testes e pendências.
+
+---
+
 # GameForge Studio v0.15 — Dois novos motores de Tower Defense
 
 ## Jardim — defesa por linhas

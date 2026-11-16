@@ -77,7 +77,8 @@ function gameForgeShooter3DBoot(){
   wave=0;waveTimer=0;bossSpawned=false;bossPhase=1;stageTransition=0;stageClock=0;invulnerable=0;fireDelay=0;
   player={x:0,y:0,z:size*.27,speed:0};
   scene=new T.Scene();
-  const bg=custom.theme==='ruins'?0x101325:opts.theme==='desert'?0x342837:0x080e27;
+  const selectedTheme=['forest','desert','neon','ruins'].includes(custom.theme)?custom.theme:opts.theme;
+  const bg=selectedTheme==='ruins'?0x101325:selectedTheme==='desert'?0x342837:selectedTheme==='forest'?0x0d2630:0x080e27;
   scene.background=new T.Color(bg);scene.fog=new T.Fog(bg,size*.7,size*2.1);
   renderer.setClearColor(bg);
   world=new T.Group();scene.add(world);

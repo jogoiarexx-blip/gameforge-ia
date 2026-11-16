@@ -167,7 +167,7 @@ function gameForgeWorldRules(){
   const home={x:base.x+1.6,z:base.z};
   if(!npc.walk||!Number.isFinite(elapsed))return home;
   const radius=clamp(Number(size)||48,32,88)/2-2;
-  return {x:clamp(home.x+Math.sin(elapsed*.75)*1.1,-radius,radius),
+  return {x:clamp(home.x+Math.sin(elapsed*.75)*.8,-radius,radius),
    z:clamp(home.z+(1-Math.cos(elapsed*.75))*.34,-radius,radius)};
  }
  function npcNear(quest,player,size,radius=2.6,position){

@@ -118,7 +118,8 @@ function gameForgeWorldRules(){
    typeof raw.dialogue!=='string'||raw.dialogue.length>160||/[<>]/.test(raw.dialogue)||
    !Object.prototype.hasOwnProperty.call(ZONES,raw.zone)||
    !Array.isArray(raw.steps)||raw.steps.length<2||raw.steps.length>5||
-   !raw.reward||typeof raw.reward!=='object'||(raw.walk!==undefined&&typeof raw.walk!=='boolean'))
+   !raw.reward||typeof raw.reward!=='object'||(raw.walk!==undefined&&typeof raw.walk!=='boolean')||
+   (raw.sideQuest!==undefined&&typeof raw.sideQuest!=='boolean'))
    return null;
   function checkSteps(input){
    if(!Array.isArray(input)||input.length<2||input.length>5)return null;
@@ -153,13 +154,22 @@ function gameForgeWorldRules(){
     const value=raw.choices[i];
     if(!value||value.id!=='choice-'+(i+1)||typeof value.label!=='string'||
      !value.label.trim()||value.label.length>56||/[<>]/.test(value.label))return null;
+    if(value.effect!==undefined&&!['aid','threat'].includes(value.effect))return null;
     const choiceSteps=checkSteps(value.steps),choiceReward=checkReward(value.reward);
     if(!choiceSteps||!choiceReward)return null;
-    choices.push({id:value.id,label:value.label,steps:choiceSteps,reward:choiceReward});
+    choices.push({id:value.id,label:value.label,steps:choiceSteps,reward:choiceReward,
+     ...(value.effect?{effect:value.effect}:{})});
    }
   }
+  let routine;
+  if(raw.routine!==undefined){
+   if(!raw.routine||typeof raw.routine!=='object'||Array.isArray(raw.routine)||!['morning','afternoon','night'].every(k=>
+    typeof raw.routine[k]==='string'&&Object.prototype.hasOwnProperty.call(ZONES,raw.routine[k])))return null;
+   routine={morning:raw.routine.morning,afternoon:raw.routine.afternoon,night:raw.routine.night};
+  }
   return {id:raw.id,name:raw.name,zone:raw.zone,dialogue:raw.dialogue,steps,reward,
-   ...(raw.walk===true?{walk:true}:{}),...(choices?{choices}:{})};
+   ...(raw.walk===true?{walk:true}:{}),...(choices?{choices}:{}),
+   ...(raw.sideQuest===true?{sideQuest:true}:{}),...(routine?{routine}:{})};
  }
  function npcPatrolPosition(quest,elapsed,size){
   const npc=npcQuestContract(quest),base=npc&&waypoint(npc.zone,size);
@@ -169,6 +179,24 @@ function gameForgeWorldRules(){
   const radius=clamp(Number(size)||48,32,88)/2-2;
   return {x:clamp(home.x+Math.sin(elapsed*.75)*.8,-radius,radius),
    z:clamp(home.z+(1-Math.cos(elapsed*.75))*.34,-radius,radius)};
+ }
+ // Um dia simulado dura 90 segundos: manhã/tarde/noite, 30s cada.
+ function npcDailyPeriod(elapsed){
+  if(!Number.isFinite(elapsed)||elapsed<0)return 'morning';
+  return ['morning','afternoon','night'][Math.floor((elapsed%90)/30)];
+ }
+ function npcRoutineTarget(quest,elapsed,size){
+  const npc=npcQuestContract(quest);
+  if(!npc)return null;
+  if(!npc.routine)return npcPatrolPosition(npc,elapsed,size);
+  const target=waypoint(npc.routine[npcDailyPeriod(elapsed)],size);
+  return target?{x:target.x+1.6,z:target.z}:null;
+ }
+ function npcMissionEffect(quest,choiceId,sourceStage){
+  const npc=npcQuestContract(quest);
+  if(!npc?.choices||!Number.isInteger(sourceStage)||sourceStage<0||sourceStage>=29)return null;
+  const choice=npc.choices.find(c=>c.id===choiceId);
+  return choice?.effect?{sourceStage,choiceId,kind:choice.effect}:null;
  }
  function npcNear(quest,player,size,radius=2.6,position){
   if(!npcQuestContract(quest))return false;
@@ -207,9 +235,20 @@ function gameForgeWorldRules(){
    !bounded(data.clock,0,1e7)||!Number.isInteger(data.rpgLevel)||!bounded(data.rpgLevel,1,30)||
    !Number.isInteger(data.rpgXP)||!bounded(data.rpgXP,0,2000)||
    !Number.isInteger(data.rpgPotions)||!bounded(data.rpgPotions,0,9))return null;
+  let campaignEffect=null;
+  if(data.campaignEffect!==undefined&&data.campaignEffect!==null){
+   const effect=data.campaignEffect;
+   if(!effect||!Number.isInteger(effect.sourceStage)||effect.sourceStage!==data.stage-1||
+    !['choice-1','choice-2'].includes(effect.choiceId)||!['aid','threat'].includes(effect.kind))return null;
+   const source=spec.stageConfig?.[effect.sourceStage]?.npcQuest;
+   const valid=npcMissionEffect(source,effect.choiceId,effect.sourceStage);
+   if(!valid||valid.kind!==effect.kind)return null;
+   campaignEffect=valid;
+  }
   return {version:1,projectId:data.projectId,stage:data.stage,health:data.health,
    score:data.score,ammo:data.ammo,clock:data.clock,rpgLevel:data.rpgLevel,
-   rpgXP:data.rpgXP,rpgPotions:data.rpgPotions};
+   rpgXP:data.rpgXP,rpgPotions:data.rpgPotions,
+   ...(campaignEffect?{campaignEffect}:{})};
  }
  function checkpointPayload(spec,progress){
   if(!checkpointKey(spec))return null;
@@ -217,7 +256,8 @@ function gameForgeWorldRules(){
  }
  return {clamp,rng,moveCircle,crowdDirection,platformRoute,raceProgress,trackRibbon,goalReady,missionReady,
   enemyProfile,dueStageEvents,waypoint,enteredZone,missionStepReady,dueZoneEvents,
-  npcQuestContract,npcPatrolPosition,npcNear,npcReward,checkpointKey,readCheckpoint,checkpointPayload};
+  npcQuestContract,npcPatrolPosition,npcDailyPeriod,npcRoutineTarget,npcMissionEffect,
+  npcNear,npcReward,checkpointKey,readCheckpoint,checkpointPayload};
 }
 if(typeof module!=='undefined')module.exports=gameForgeWorldRules;
 if(typeof globalThis!=='undefined')globalThis.gameForgeWorldRules=gameForgeWorldRules;

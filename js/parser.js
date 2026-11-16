@@ -24,7 +24,7 @@
   }
   function unique(items) { return [...new Set(items.map(x => x.trim()).filter(Boolean))]; }
   const labels={arena:'Aventura / ação',shooter:'Nave / shoot’em up vertical',racing:'Corrida',platform:'Plataforma',rpg:'RPG de ação',fps:'FPS / primeira pessoa','tower-defense':'Defesa de torres (caminhos)','lane-defense':'Defesa por linhas / Jardim','block-td':'Defesa de torres em blocos'};
-  const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','racing','platform']};
+  const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','shooter','rpg','racing','platform']};
   // Catálogo declarativo: pedido no GDD não equivale a mecânica implementada.
   const mechanicCatalog = Object.freeze({
     combat: { label:'Combate', pattern:/\b(combate|atacar|ataque|luta|espada|tiro|inimigos?|boss|chefe)\b/, supported:['arena','shooter','rpg','fps'] },
@@ -52,10 +52,14 @@
     const combined = source + '\n' + extra;
     const norm = normalize(combined);
     const dimension=options.dimension&&options.dimension!=='auto'?options.dimension:/\b(3d|three\.?js|tres dimensoes|fps|primeira pessoa|first.person)\b/.test(norm)||options.genre==='fps'?'3d':'2d';
-    let genre=options.genre&&options.genre!=='auto'?options.genre:detectGenre(combined);
+    // Um comando de criacao recente e explicito tem prioridade sobre um GDD antigo.
+    const direct=normalize(extra);
+    const requestedGenre=/\b(cria|criar|crie|quero|faca|fazer|gere|gerar|desenvolva|novo|transforme|jogo|game)\b.{0,95}\b(navinha|nave espacial|jogo de nave|shoot.?em.?up|shmup)\b/.test(direct)?'shooter':
+      /\b(cria|criar|crie|quero|faca|fazer|gere|gerar|desenvolva|novo|transforme|jogo|game)\b.{0,95}\b(rpg|role.playing|roguelike)\b/.test(direct)?'rpg':null;
+    let genre=options.genre&&options.genre!=='auto'?options.genre:requestedGenre||detectGenre(combined);
     if(!styles[dimension])throw Error('Dimensão não compatível.');
     if(!styles[dimension].includes(genre)){
-      if(options.genre&&options.genre!=='auto')throw Error('Estilo não compatível com '+dimension+'.');
+      if(options.dimension===dimension||options.genre&&options.genre!=='auto')throw Error('O estilo '+(labels[genre]||genre)+' ainda não possui motor '+dimension.toUpperCase()+'. Escolha 2D ou um estilo compatível nas opções.');
       genre='arena';
     }
     const levelHeads = headings.filter(x => /\b(fase|missao|ato|capitulo|level|stage)\s*[0-9ivx]+\b/i.test(normalize(x)));
@@ -120,7 +124,8 @@
         ...(allLevels.length>stageLimit?[`O GDD contém ${allLevels.length} fases; este motor utiliza as primeiras ${stageLimit}. O documento original permanece completo.`]:[]),
         ...(dimension==='3d'?['O motor 3D usa cenários e personagens low poly procedurais com Three.js local; requer WebGL2. GLBs detalhados, animações importadas e campanha escrita livremente ainda exigem trabalho adicional.']:[]),
         ...(['lane-defense','block-td'].includes(genre)?['Dois motores originais de Tower Defense com regras predefinidas. Não copia personagens, nomes, arte, níveis nem unidades de jogos comerciais.']:[]),
-        ...(genre === 'shooter' ? ['O shoot’em up usa desenhos e formações procedurais; não copia sprites nem reproduz campanhas específicas dos projetos usados como referência.', 'As fases possuem chefes, ondas e melhorias configuráveis, mas objetivos especiais descritos livremente no GDD exigem IA ou código manual.'] : []),
+        ...(genre === 'shooter' ? [(dimension==='3d'?'O shoot’em up 3D usa naves low poly, ondas, chefes e power-ups procedurais; ainda não reproduz campanhas específicas do GDD nem carrega naves GLB animadas.':'O shoot’em up 2D usa desenhos e formações procedurais; não copia sprites nem reproduz campanhas específicas dos projetos usados como referência.'), 'Objetivos especiais descritos livremente no GDD exigem IA ou programação manual.'] : []),
+        ...(genre==='rpg'&&dimension==='3d'?['RPG 3D inclui exploração e progressão inicial de experiência, níveis e poções; diálogo, quests roteirizadas, crafting e inventário completo ainda não estão implementados.']:[]),
         'O gerador sem IA usa mecânicas pré-programadas e não interpreta regras inéditas livremente.',
         'Personagens detalhados, animações GLB e narrativa completa exigem uma etapa adicional.',
         'Imagens, áudios e fases específicas mencionadas no GDD não são criados automaticamente neste modo.'

@@ -7,7 +7,13 @@ import json
 import traceback
 from playwright.sync_api import sync_playwright
 
-from browser_gameplay_training import OUTPUT, ROOT, QuietHandler, read_export, play, tele
+# O arquivo da rodada anterior usa hífens no nome; não é módulo importável.
+# Reutilizamos as funções de QA sem executar o main guard do script original.
+import runpy
+_gf4 = runpy.run_path(str(Path(__file__).with_name("browser-gameplay-training.py")))
+OUTPUT, ROOT, QuietHandler, read_export, play, tele = (
+    _gf4[k] for k in ("OUTPUT", "ROOT", "QuietHandler", "read_export", "play", "tele")
+)
 
 def assert_no_errors(errors, label):
     assert not errors, (label, "erros JavaScript no navegador", errors)

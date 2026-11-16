@@ -15,10 +15,12 @@ function directInterpretation(instruction,files){
  const updated=intent.compile(JSON.parse(JSON.stringify(old)),'',instruction);
  const changedStore=JSON.stringify(old.combatEconomy||null)!==JSON.stringify(updated.combatEconomy||null);
  const hasStoreRuntime=files['game.js'].includes('const gameForgeCombatEconomyFactory = ');
+ const hasMissionRuntime=files['game.js'].includes('R.missionReady(');
  const differences=JSON.stringify(old.stages)!==JSON.stringify(updated.stages)||
    JSON.stringify(old.stageConfig||[])!==JSON.stringify(updated.stageConfig||[])||
    (changedStore&&hasStoreRuntime);
  const tasks=differences?updated.implementation.applied.filter(item=>directIds.has(item.id)&&
+   (item.id!=='mission'||hasMissionRuntime)&&
    (!item.id.startsWith('combat-store')||changedStore&&hasStoreRuntime)).map(item=>({
    id:item.id,number:0,title:item.description,rationale:'Comando interpretado: '+item.where,checks:[
      'GAME_SPEC.stages / GAME_SPEC.stageConfig atualizados',
@@ -28,6 +30,8 @@ function directInterpretation(instruction,files){
  const pending=updated.implementation.pending.map(item=>item.description);
  if(changedStore&&!hasStoreRuntime&&old.genre==='fps'&&old.dimension==='3d')
   pending.push('Este FPS foi criado antes do módulo de loja. Gere um projeto FPS atualizado para ativar compras; o código antigo foi preservado.');
+ if(!hasMissionRuntime&&updated.implementation.applied.some(item=>item.id==='mission'))
+  pending.push('Este jogo não contém o runtime de objetivos. Missões programadas não podem ser ativadas apenas editando GAME_SPEC.');
  return {tasks,pending};
 }
 const actions={
@@ -136,6 +140,16 @@ function modify(files,spec,planResult){
   next.tuning=tuning;
   if(planResult.tasks.some(task=>task.direct&&task.possible)&&intent){
     const candidate=intent.compile(JSON.parse(JSON.stringify(next)),'',planResult.instruction);
+    if(!files['game.js'].includes('R.missionReady(')){
+      // Não insira uma missão que depende de R.missionReady em um runtime legado.
+      candidate.stageConfig?.forEach((row,i)=>{
+        const existing=next.stageConfig?.[i]||{};
+        if(row.mission!==existing.mission){
+          if(existing.mission===undefined)delete row.mission;else row.mission=existing.mission;
+          if(existing.seconds===undefined)delete row.seconds;else row.seconds=existing.seconds;
+        }
+      });
+    }
     const changedStages=JSON.stringify(candidate.stages)!==JSON.stringify(next.stages);
     const changedConfig=JSON.stringify(candidate.stageConfig)!==JSON.stringify(next.stageConfig);
     const changedStore=JSON.stringify(candidate.combatEconomy||null)!==JSON.stringify(next.combatEconomy||null);

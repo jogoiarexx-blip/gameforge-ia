@@ -10,8 +10,8 @@ const start=source.indexOf('  function circlesOverlap(');
 const end=source.indexOf('  let stage =',start);
 assert.ok(start>=0&&end>start,'geometria e índice espacial do runtime presentes');
 const ctx={};
-vm.runInNewContext(source.slice(start,end)+';this.ops={circle:circlesOverlap,build:buildBulletGrid,near:nearbyBullets};',ctx);
-const {circle,build,near}=ctx.ops;
+vm.runInNewContext(source.slice(start,end)+';this.ops={circle:circlesOverlap,build:buildBulletGrid,indexes:nearbyBulletIndexes};',ctx);
+const {circle,build,indexes}=ctx.ops;
 
 function rng(seed){
  let value=seed>>>0;
@@ -35,17 +35,21 @@ function scene(seed,enemyCount,bulletCount){
 function run(initial,indexed){
  let enemies=initial.enemies.map(e=>({...e})),bullets=initial.bullets.map(b=>({...b}));
  const events=[];
+ let reusableGrid=null;
  for(let frame=0;frame<5;frame++){
   for(const e of enemies){e.x+=e.vx;e.y+=e.vy;}
   for(const b of bullets){b.x+=b.vx;b.y+=b.vy;}
-  const grid=indexed?build(bullets):null;
+  if(indexed)reusableGrid=build(bullets,64,reusableGrid);
   for(const e of enemies){
-   const candidates=indexed?near(grid,e.x,e.y,e.r):bullets;
-   for(const b of candidates)if(!b.dead&&circle(b,e)){
-    b.dead=true;e.hp-=1;
-    events.push([frame,e.id,b.id,e.hp]);
-    if(e.hp<=0)e.dead=true;
-    break;
+   const candidates=indexed?indexes(reusableGrid,e.x,e.y,e.r):bullets;
+   for(const candidate of candidates){
+    const b=indexed?bullets[candidate]:candidate;
+    if(!b.dead&&circle(b,e)){
+      b.dead=true;e.hp-=1;
+      events.push([frame,e.id,b.id,e.hp]);
+      if(e.hp<=0)e.dead=true;
+      break;
+    }
    }
   }
   bullets=bullets.filter(b=>!b.dead);

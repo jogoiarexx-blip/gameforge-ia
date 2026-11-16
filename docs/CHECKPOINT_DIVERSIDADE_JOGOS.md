@@ -330,3 +330,13 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - Limite: AABB disponível mas ainda não conectada aos cenários; não houve benchmark de FPS, navegador ou QA móvel.
 - Resultado: commits 40408c2425ec76607aa55afeca33d751e36d31a2 e d66613283119dcff0769ad46aa8bbfd173a84356 publicados; CI ainda pendente de confirmação.
 - Próximo: confirmar CI, resolver regressões e investigar grade espacial para projéteis e inimigos numerosos.
+
+## Engenharia — etapa 8: grade espacial para colisão de projéteis (arena)
+- CI etapa 7: runs 43841441554 e 43841441121 aprovados (commit 53db2172f6546d2ccd68dee68bf7dbf2d35feeb5).
+- Diagnóstico: arena comparava cada inimigo com todos os projéteis, custo O(E×B) mesmo distantes.
+- Arquivos alterados: `js/runtime-template.js`, `tests/arena-spatial-grid.test.js` e este checkpoint.
+- Implementação: índice espacial de projéteis com células de 64px por frame; busca em nove células vizinhas, ordenada pelo índice original do projétil para preservar prioridade de acerto. O raio máximo atual de colisão é 36px (boss 31 + projétil 5), inferior ao tamanho da célula.
+- Testes: proximidade, ordem, fronteiras, coordenadas negativas, zero objetos, 100 objetos sem duplicação e presença de integração.
+- Limites: custo de criação do grid por quadro e ordenação dos candidatos; sem benchmark real, sem índice para inimigos ou outros gêneros; raio de colisão maior que 64px exigirá ampliar vizinhança.
+- Publicado nos commits 92ddbe83370d1615ec2b3c467bfb5c50eec92406 e 2fa5a591d91d4825aeae7c2ec895842f03858e60; CI ainda não confirmado.
+- Próximo: confirmar CI, testar equivalência de colisões por simulação determinística e medir custo em cenários densos antes de otimizar outros motores.

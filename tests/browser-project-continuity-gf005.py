@@ -59,7 +59,9 @@ def run():
             page.locator('#gdd').fill('')
             command='Crie FPS 3D com duas fases, loja para comprar munição e melhorar armas.'
             page.locator('#instruction').fill(command)
-            page.locator('#api-token').fill('GF005_TOKEN_NUNCA_EXPORTAR')
+            # Token is intentionally hidden in offline mode; set its value to
+            # verify the serializer cannot leak it into portable backups.
+            page.evaluate("document.querySelector('#api-token').value='GF005_TOKEN_NUNCA_EXPORTAR'")
             page.locator('#generate').click()
             page.wait_for_function("document.querySelector('#preview').hasAttribute('srcdoc')",timeout=25000)
             assert page.locator('#gdd').input_value()==''
@@ -75,6 +77,7 @@ def run():
             page.wait_for_function("document.querySelector('#scene-asset-list').textContent.includes('1 de 4')",timeout=15000)
             assert page.locator('#gdd').input_value()==''
 
+            page.locator('.backup-disclosure > summary').click()
             with page.expect_download(timeout=30000) as d:page.locator('#project-backup').click()
             path=Path(directory)/'gf005.gameforge.zip';d.value.save_as(path)
             with zipfile.ZipFile(path) as z:

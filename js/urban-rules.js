@@ -30,6 +30,44 @@ function gameForgeUrbanRulesFactory(){
   }
   return true;
  }
+ // Oclusao de camera em 3D por segmento vs. caixas AABB expandidas.
+ // A camera recua ate antes do primeiro obstaculo, inclusive quando a
+ // interpolacao de frames anteriores atravessaria um edificio.
+ function cameraPosition(eye,wanted,solids=[],radius=.26){
+  const axes=['x','y','z'];
+  if(!axes.every(axis=>Number.isFinite(eye?.[axis])&&Number.isFinite(wanted?.[axis])))
+   return {...wanted,occluded:false};
+  let fraction=1;
+  for(const rect of solids){
+   if(!Number.isFinite(rect?.x)||!Number.isFinite(rect?.z)||
+      !Number.isFinite(rect?.w)||!Number.isFinite(rect?.d))continue;
+   const bounds={
+    x:[rect.x-rect.w/2-radius,rect.x+rect.w/2+radius],
+    y:[-radius,(Number.isFinite(rect.h)?rect.h:4.7)+radius],
+    z:[rect.z-rect.d/2-radius,rect.z+rect.d/2+radius]
+   };
+   let enter=0,exit=1,possible=true;
+   for(const axis of axes){
+    const delta=wanted[axis]-eye[axis],min=bounds[axis][0],max=bounds[axis][1];
+    if(Math.abs(delta)<1e-9){
+     if(eye[axis]<min||eye[axis]>max){possible=false;break;}
+     continue;
+    }
+    let a=(min-eye[axis])/delta,b=(max-eye[axis])/delta;
+    if(a>b){const swap=a;a=b;b=swap;}
+    enter=Math.max(enter,a);exit=Math.min(exit,b);
+    if(enter>exit){possible=false;break;}
+   }
+   if(possible&&enter<=1&&exit>=0)
+    fraction=Math.min(fraction,Math.max(0,enter-.018));
+  }
+  return {
+   x:eye.x+(wanted.x-eye.x)*fraction,
+   y:eye.y+(wanted.y-eye.y)*fraction,
+   z:eye.z+(wanted.z-eye.z)*fraction,
+   occluded:fraction<1
+  };
+ }
  function canHit(player,target,solids=[],maxRange=15,halfAngle=.42){
   const dx=target.x-player.x,dz=target.z-player.z,distance=Math.hypot(dx,dz);
   if(distance<.1||distance>maxRange)return false;
@@ -58,7 +96,7 @@ function gameForgeUrbanRulesFactory(){
    heading:finite(raw.heading,0,-Math.PI*4,Math.PI*4)
   };
  }
- return {clamp,intersects,move,clearShot,canHit,capture,load};
+ return {clamp,intersects,move,clearShot,canHit,cameraPosition,capture,load};
 }
 root.gameForgeUrbanRulesFactory=gameForgeUrbanRulesFactory;
 if(typeof module!=='undefined')module.exports=gameForgeUrbanRulesFactory;

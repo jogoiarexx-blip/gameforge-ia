@@ -18,35 +18,14 @@
     <section class="panel left-panel" id="idea-step" aria-label="Projeto e documento GDD">
       <div class="panel-head"><span class="eyebrow">PASSO 1 · SUA IDEIA</span><h1>Vamos criar seu jogo</h1><p>Escreva a ideia ou importe um GDD. O restante pode ser ajustado depois.</p></div>
       <div class="panel-scroll">
-        <details class="studio-disclosure backup-disclosure"><summary><span>Abrir ou salvar projeto</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="project-backups" aria-label="Continuar projeto">
-          <strong>Continuar seu projeto</strong>
-          <p class="hint">Preserve código, GDD, tarefas e histórico para continuar em outro computador.</p>
-          <div class="project-backup-actions"><button type="button" id="project-backup" class="small outline">Baixar backup</button><button type="button" id="project-open" class="small outline">Abrir backup</button></div>
-          <input type="file" id="project-file" accept=".json,.zip,application/json,application/zip" hidden>
-          <p id="project-storage-status" class="hint" role="status" aria-live="polite">Projetos com GLBs usam backup ZIP completo. Projetos sem assets usam JSON.</p>
-        </section></details>
+        
         <label for="project-name">Nome do projeto</label><input id="project-name" type="text" maxlength="90" value="Meu jogo" placeholder="Nome do jogo">
-        <details class="studio-disclosure rpg-disclosure"><summary><span>Editor de mapas RPG</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="project-backups" aria-label="Editor visual de fases RPG 2D">
-          <strong>Editor visual RPG 2D</strong>
-          <p class="hint">Monte o mapa de objetos arrastando chaves, alavancas, portões e baús. Exporte o JSON para configurar a fase.</p>
-          <a class="subtle-link" href="./tools/rpg-layout-editor.html" target="_blank" rel="noopener noreferrer">Abrir editor de fases RPG 2D ↗</a>
-          <label for="rpg-layout-json">Configuração JSON das fases</label>
-          <button id="rpg-layout-receive" type="button">Importar layout enviado pelo editor</button>
-          <textarea id="rpg-layout-json" rows="4" spellcheck="false" placeholder='Cole aqui o JSON exportado pelo editor de fases'></textarea>
-          <p class="hint">A configuração será aplicada ao próximo jogo RPG 2D gerado. O editor pode enviar o layout diretamente para este Studio.</p>
-        </section></details>
-        <details class="studio-disclosure engine-disclosure"><summary><span>Personalizar tipo e gráficos</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="engine-settings" aria-label="Estilo e gráficos do jogo">
-          <div class="mini-head"><span>Como será seu jogo?</span><span class="tag">Até 30 fases</span></div>
-          <div class="split"><div><label for="game-dimension">Dimensão</label><select id="game-dimension"><option value="auto">Detectar pelo GDD</option value="2d">2D · Canvas</option><option value="3d">3D · Three.js</option></select></div><div><label for="game-style">Estilo de jogo</label><select id="game-style"><option value="auto">Detectar pelo GDD</option></select></div></div>
-          <label for="game-theme">Ambiente 3D</label><select id="game-theme"><option value="auto">Detectar pelo GDD</option><option value="forest">Floresta e vilarejo</option><option value="desert">Deserto dourado</option><option value="neon">Cidade neon</option><option value="ruins">Ruínas e mistério</option></select>
-          <div class="split"><div><label for="game-world-size">Área 3D</label><select id="game-world-size"><option value="48">Padrão</option><option value="72">Ampla</option></select></div><div><label for="game-quality">Gráficos 3D</label><select id="game-quality"><option value="auto">Adaptativos</option><option value="low">Leves</option><option value="high">Altos</option></select></div></div>
-          <div class="split"><div><label for="game-graphics-2d">Qualidade gráfica 2D</label><select id="game-graphics-2d"><option value="auto">Automática</option><option value="low">Leve</option><option value="medium">Equilibrada</option><option value="high">Alta</option></select></div><div><label for="game-visual-style">Estilo visual 2D</label><select id="game-visual-style"><option value="auto">Padrão</option><option value="forest">Natureza</option><option value="neon">Neon</option><option value="desert">Deserto</option><option value="ruins">Ruínas</option></select></div></div><p class="hint">O estilo escolhido vale para a próxima criação. Os novos motores geram cenários e personagens procedurais; regras livres e assets detalhados continuam exigindo desenvolvimento.</p>
-          <div class="engine-examples"><button class="small outline" type="button" id="example-rpg">RPG 2D</button><button class="small outline" type="button" id="example-defense">Defesa de torres</button><button class="small outline" type="button" id="example-adventure3d">Aventura 3D</button><button class="small outline" type="button" id="example-fps3d">FPS 3D</button><button class="small outline" type="button" id="example-racing3d">Corrida 3D</button><button class="small outline" type="button" id="example-platform3d">Plataforma 3D</button></div>
-        </section></details>
+        
+        
         <div class="label-row"><label for="gdd">Sua ideia ou GDD</label><span id="file-indicator" class="muted tiny">.md até 1 MB</span></div>
         <div class="file-pick"><label for="md-file" class="file-btn">📁 Carregar arquivo .md</label><input type="file" id="md-file" accept=".md,.markdown,text/markdown,text/plain"><button id="example" class="small outline" type="button">Usar exemplo</button></div>
-        <details class="studio-disclosure examples-disclosure"><summary><span>Modelos de defesa por torres</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><div class="shooter-examples" aria-label="Modelos avançados de Tower Defense"><span>Novos motores de Tower Defense</span><div class="shooter-example-buttons"><button class="outline small" id="example-lanes" type="button">Jardim · Defesa por linhas</button><button class="outline small" id="example-blocks" type="button">Torres · Blocos e altura</button><a class="outline small" href="./examples/GDD_MODELO_DEFESA_POR_LINHAS.md" download>Baixar GDD base (.md)</a></div><p class="hint">O modelo aplica regras de coleta, cartas e ondas. Histórias, sprites e habilidades especiais ainda exigem implementação própria.</p></div></details>
-        <details class="studio-disclosure examples-disclosure"><summary><span>Modelos de nave</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><div class="shooter-examples" aria-label="Exemplos de jogos de nave"><span>Novos exemplos de navinha</span><div class="shooter-example-buttons"><button class="outline small" id="example-navinha" type="button">Nave espacial</button><button class="outline small" id="example-neon" type="button">Neon</button><button class="outline small" id="example-dragao" type="button">Dragão</button></div></div></details>
+        
+        
         <textarea id="gdd" class="gdd-editor" spellcheck="false" aria-label="Conteúdo Markdown do GDD" placeholder="# Nome do Jogo&#10;&#10;## História&#10;..."># SOMBRAS DO VALE
 
 ## Gênero
@@ -78,6 +57,32 @@ Derrote o chefe.
 </textarea>
         <div class="mini-head"><span>Interpretação do documento</span><button id="analyze" class="small outline" type="button">Analisar GDD</button></div>
         <div id="analysis" class="analysis muted">Clique em analisar para identificar gênero, fases e funcionalidades.</div><a class="step-continue" href="#create-step">Continuar para criação <span aria-hidden="true">→</span></a>
+        <details class="studio-disclosure engine-disclosure"><summary><span>Personalizar tipo e gráficos</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="engine-settings" aria-label="Estilo e gráficos do jogo">
+          <div class="mini-head"><span>Como será seu jogo?</span><span class="tag">Até 30 fases</span></div>
+          <div class="split"><div><label for="game-dimension">Dimensão</label><select id="game-dimension"><option value="auto">Detectar pelo GDD</option value="2d">2D · Canvas</option><option value="3d">3D · Three.js</option></select></div><div><label for="game-style">Estilo de jogo</label><select id="game-style"><option value="auto">Detectar pelo GDD</option></select></div></div>
+          <label for="game-theme">Ambiente 3D</label><select id="game-theme"><option value="auto">Detectar pelo GDD</option><option value="forest">Floresta e vilarejo</option><option value="desert">Deserto dourado</option><option value="neon">Cidade neon</option><option value="ruins">Ruínas e mistério</option></select>
+          <div class="split"><div><label for="game-world-size">Área 3D</label><select id="game-world-size"><option value="48">Padrão</option><option value="72">Ampla</option></select></div><div><label for="game-quality">Gráficos 3D</label><select id="game-quality"><option value="auto">Adaptativos</option><option value="low">Leves</option><option value="high">Altos</option></select></div></div>
+          <div class="split"><div><label for="game-graphics-2d">Qualidade gráfica 2D</label><select id="game-graphics-2d"><option value="auto">Automática</option><option value="low">Leve</option><option value="medium">Equilibrada</option><option value="high">Alta</option></select></div><div><label for="game-visual-style">Estilo visual 2D</label><select id="game-visual-style"><option value="auto">Padrão</option><option value="forest">Natureza</option><option value="neon">Neon</option><option value="desert">Deserto</option><option value="ruins">Ruínas</option></select></div></div><p class="hint">O estilo escolhido vale para a próxima criação. Os novos motores geram cenários e personagens procedurais; regras livres e assets detalhados continuam exigindo desenvolvimento.</p>
+          <div class="engine-examples"><button class="small outline" type="button" id="example-rpg">RPG 2D</button><button class="small outline" type="button" id="example-defense">Defesa de torres</button><button class="small outline" type="button" id="example-adventure3d">Aventura 3D</button><button class="small outline" type="button" id="example-fps3d">FPS 3D</button><button class="small outline" type="button" id="example-racing3d">Corrida 3D</button><button class="small outline" type="button" id="example-platform3d">Plataforma 3D</button></div>
+        </section></details>
+        <details class="studio-disclosure examples-disclosure"><summary><span>Modelos de defesa por torres</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><div class="shooter-examples" aria-label="Modelos avançados de Tower Defense"><span>Novos motores de Tower Defense</span><div class="shooter-example-buttons"><button class="outline small" id="example-lanes" type="button">Jardim · Defesa por linhas</button><button class="outline small" id="example-blocks" type="button">Torres · Blocos e altura</button><a class="outline small" href="./examples/GDD_MODELO_DEFESA_POR_LINHAS.md" download>Baixar GDD base (.md)</a></div><p class="hint">O modelo aplica regras de coleta, cartas e ondas. Histórias, sprites e habilidades especiais ainda exigem implementação própria.</p></div></details>
+        <details class="studio-disclosure examples-disclosure"><summary><span>Modelos de nave</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><div class="shooter-examples" aria-label="Exemplos de jogos de nave"><span>Novos exemplos de navinha</span><div class="shooter-example-buttons"><button class="outline small" id="example-navinha" type="button">Nave espacial</button><button class="outline small" id="example-neon" type="button">Neon</button><button class="outline small" id="example-dragao" type="button">Dragão</button></div></div></details>
+        <details class="studio-disclosure backup-disclosure"><summary><span>Abrir ou salvar projeto</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="project-backups" aria-label="Continuar projeto">
+          <strong>Continuar seu projeto</strong>
+          <p class="hint">Preserve código, GDD, tarefas e histórico para continuar em outro computador.</p>
+          <div class="project-backup-actions"><button type="button" id="project-backup" class="small outline">Baixar backup</button><button type="button" id="project-open" class="small outline">Abrir backup</button></div>
+          <input type="file" id="project-file" accept=".json,.zip,application/json,application/zip" hidden>
+          <p id="project-storage-status" class="hint" role="status" aria-live="polite">Projetos com GLBs usam backup ZIP completo. Projetos sem assets usam JSON.</p>
+        </section></details>
+        <details class="studio-disclosure rpg-disclosure"><summary><span>Editor de mapas RPG</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="project-backups" aria-label="Editor visual de fases RPG 2D">
+          <strong>Editor visual RPG 2D</strong>
+          <p class="hint">Monte o mapa de objetos arrastando chaves, alavancas, portões e baús. Exporte o JSON para configurar a fase.</p>
+          <a class="subtle-link" href="./tools/rpg-layout-editor.html" target="_blank" rel="noopener noreferrer">Abrir editor de fases RPG 2D ↗</a>
+          <label for="rpg-layout-json">Configuração JSON das fases</label>
+          <button id="rpg-layout-receive" type="button">Importar layout enviado pelo editor</button>
+          <textarea id="rpg-layout-json" rows="4" spellcheck="false" placeholder='Cole aqui o JSON exportado pelo editor de fases'></textarea>
+          <p class="hint">A configuração será aplicada ao próximo jogo RPG 2D gerado. O editor pode enviar o layout diretamente para este Studio.</p>
+        </section></details>
         <details class="studio-disclosure knowledge-disclosure"><summary><span>Biblioteca de técnicas dos seus jogos</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="repo-learning" aria-label="Biblioteca de conhecimento dos jogos">
           <div class="mini-head"><span>05 / Biblioteca dos seus jogos</span><button type="button" id="knowledge-refresh" class="small outline">Buscar padrões</button></div>
           <p class="hint">Técnicas identificadas nos seus jogos para orientar melhorias. As referências não são sistemas automaticamente importados.</p>
@@ -85,6 +90,7 @@ Derrote o chefe.
           <div id="knowledge-results" class="repo-learning-results" aria-live="polite"></div>
           <button type="button" id="knowledge-clear" class="small outline">Limpar referências fixadas</button>
         </section></details>
+        
       </div>
     </section>
     <section class="panel center-panel" id="create-step" aria-label="Configuração e jogo">

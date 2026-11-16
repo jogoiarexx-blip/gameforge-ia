@@ -156,18 +156,7 @@ body{background:radial-gradient(ellipse at 50% 0%,#17263b 0%,#0a1120 54%) fixed}
 .eyebrow{font-size:10px;letter-spacing:.09em;color:#93e6c9;font-weight:750}
 .panel-scroll{max-height:none;padding:19px;overflow-y:auto}
 .left-panel .panel-scroll{display:flex;flex-direction:column;gap:0}
-.left-panel .panel-scroll>label[for="project-name"]{order:1}
-.left-panel .panel-scroll>#project-name{order:2;margin-bottom:18px}
-.left-panel .panel-scroll>.label-row{order:3}
-.left-panel .panel-scroll>.file-pick{order:4}
-.left-panel .panel-scroll>#gdd{order:5}
-.left-panel .panel-scroll>.mini-head{order:6}
-.left-panel .panel-scroll>#analysis{order:7;margin-bottom:14px}
-.left-panel .panel-scroll>.engine-disclosure{order:8}
-.left-panel .panel-scroll>.examples-disclosure{order:9}
-.left-panel .panel-scroll>.backup-disclosure{order:10}
-.left-panel .panel-scroll>.rpg-disclosure{order:11}
-.left-panel .panel-scroll>.knowledge-disclosure{order:12}
+.left-panel .panel-scroll>#project-name{margin-bottom:18px}
 .gdd-editor{
   width:100%;height:310px;min-height:230px;max-height:55vh;
   line-height:1.55;font-size:12px;border-radius:11px;

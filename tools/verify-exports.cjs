@@ -34,7 +34,7 @@ function validateCatalog(){
   'js/software-renderer.js','js/three-runtime.js','js/shooter-3d-runtime.js',
   'js/strategy-rules.js','js/expanded-2d-runtime.js',
   'js/advanced-td-rules.js','js/advanced-td-runtime.js',
-  'js/combat-economy.js','js/qa-bridge.js','vendor/three-source.js'
+  'js/combat-economy.js','js/urban-rules.js','js/urban-runtime.js','js/qa-bridge.js','vendor/three-source.js'
  ])require(path.join(root,file));
  const parser=require('../js/parser.js');
  const generator=require('../js/generator.js');

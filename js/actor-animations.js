@@ -27,26 +27,33 @@ function gameForgeActorAnimationsFactory(){
    setState(){return false;},update(){},dispose(){}};
   const map=classify(clips),mixer=new T.AnimationMixer(model),actions={};
   for(const clip of clips)actions[clip.name]=mixer.clipAction(clip);
-  let active=null,state='static';
+  let active=null,state='static',oneShotRemaining=0,terminal=false;
+  const duration=next=>Math.max(.08,Math.min(3,clips.find(c=>c.name===map[next])?.duration||.65));
   function setState(next){
+   if(terminal&&next!=='death')return false;
+   if(oneShotRemaining>0&&next!=='death'&&next!=='hit'&&next!=='attack')return false;
    const target=map[next]||((next==='run'||next==='aim')?map.walk:null)||map.idle||clips[0].name;
    if(target===active)return target===map[next];
    const action=actions[target];
    if(!action)return false;
    if(active&&actions[active])actions[active].fadeOut(.14);
    action.reset().fadeIn(.14).play();
-   if(next==='death'||next==='hit'||next==='attack'){
+   if(['death','hit','attack'].includes(next)&&map[next]){
     action.setLoop(T.LoopOnce,1);action.clampWhenFinished=true;
+    oneShotRemaining=duration(next);
+    if(next==='death')terminal=true;
    }else{
     action.setLoop(T.LoopRepeat,Infinity);action.clampWhenFinished=false;
+    oneShotRemaining=0;
    }
    active=target;state=next;
    return target===map[next];
   }
   setState('idle');
   return {available:true,clips:clips.map(x=>x.name),map,
-   get state(){return state;},setState,
-   update(dt){if(Number.isFinite(dt)&&dt>0)mixer.update(Math.min(dt,.1));},
+   get state(){return state;},get oneShotRemaining(){return oneShotRemaining;},
+   duration,setState,
+   update(dt){if(Number.isFinite(dt)&&dt>0){const step=Math.min(dt,.1);mixer.update(step);oneShotRemaining=Math.max(0,oneShotRemaining-step);}},
    dispose(){mixer.stopAllAction();mixer.uncacheRoot(model);}
   };
  }

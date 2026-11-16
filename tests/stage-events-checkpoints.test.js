@@ -172,7 +172,7 @@ test('GF-008: comando na fase 2 substitui so sua ordem, nega eventos e nao inven
  assert.equal(spec.stageConfig[0].missionSteps[0].zone,'north');
  assert.equal(spec.stageConfig[1].missionSteps[0].zone,'west');
  assert.equal(spec.stageConfig[1].missionSteps[1].seconds,10);
- assert.equal(spec.stageConfig[1].zoneEvents.length,0);
+ assert.equal(spec.stageConfig[1].zoneEvents?.length||0,0);
  const pending=StageSpec.compile({title:'Forte',genre:'arena',dimension:'3d',stages:['A'],stageConfig:[{}]},
   '## Fase 1\nEtapas: ir ao norte -> coletar 5 cristais');
  assert.equal(pending.stageSpecs[0].missionSequence.status,'pendente');

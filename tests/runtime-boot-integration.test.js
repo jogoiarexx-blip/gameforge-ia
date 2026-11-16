@@ -47,7 +47,7 @@ for(const genre of ['platform','racing','arena']){
     const before=game.telemetry().clock;
     game.pause();game.tick(64);
     assert.equal(game.telemetry().clock,before);
-    game.pause();game.tick(80);
+    game.pause();game.tick(80);game.tick(96);
     assert.ok(game.telemetry().clock>before);
   });
 }

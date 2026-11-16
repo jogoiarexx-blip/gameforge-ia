@@ -79,6 +79,63 @@ function decodeGLB(T, source) {
     }
     return m;
   }
+  // Reject malformed hierarchies before Three.js recursively traverses them.
+  const parents=new Array(nodes.length).fill(-1),visits=new Uint8Array(nodes.length);
+  for(let i=0;i<nodes.length;i++){
+    const node=nodes[i];
+    if(!node||typeof node!=='object'||Array.isArray(node)||(node.children!==undefined&&!Array.isArray(node.children)))throw Error('Hierarquia GLB inválida.');
+    for(const child of node.children||[]){
+      if(!Number.isInteger(child)||child<0||child>=nodes.length||child===i||parents[child]!==-1)throw Error('Hierarquia GLB inválida: nós ou pais repetidos.');
+      parents[child]=i;
+    }
+    if(node.mesh!==undefined&&(!Number.isInteger(node.mesh)||node.mesh<0||node.mesh>=meshes.length))throw Error('Nó refere malha inexistente.');
+    const finite=(values,length)=>Array.isArray(values)&&values.length===length&&values.every(v=>typeof v==='number'&&Number.isFinite(v));
+    if(node.matrix!==undefined&&!finite(node.matrix,16))throw Error('Transformação GLB inválida: matrix.');
+    for(const [key,n] of [['translation',3],['rotation',4],['scale',3]])if(node[key]!==undefined&&!finite(node[key],n))throw Error('Transformação GLB inválida: '+key);
+    if(node.rotation!==undefined&&Math.hypot(...node.rotation)<1e-8)throw Error('Rotação GLB inválida.');
+  }
+  function checkNode(i){
+    if(visits[i]===1)throw Error('Hierarquia GLB cíclica.');
+    if(visits[i]===2)return;
+    visits[i]=1;
+    for(const id of nodes[i].children||[])checkNode(id);
+    visits[i]=2;
+  }
+  for(let i=0;i<nodes.length;i++)checkNode(i);
+  const sceneRoots=json.scenes?.[json.scene??0]?.nodes??nodes.map((_,i)=>i).filter(i=>parents[i]===-1);
+  if(!Array.isArray(sceneRoots)||!sceneRoots.length||new Set(sceneRoots).size!==sceneRoots.length||sceneRoots.some(i=>!Number.isInteger(i)||i<0||i>=nodes.length||parents[i]!==-1))throw Error('Raiz de cena GLB inválida.');
+  // Preflight: validates GLB without Three.js, keeping previous assets if invalid.
+  if(!T){
+    let primitives=0;
+    for(const mesh of meshes){
+      if(!mesh||!Array.isArray(mesh.primitives))throw Error('Malha GLB inválida.');
+      for(const prim of mesh.primitives){
+        if(!prim||(prim.mode??4)!==4||prim.attributes?.POSITION===undefined)throw Error('Malha GLB não triangular ou sem POSITION.');
+        const pos=attribute(prim.attributes.POSITION,'POSITION');
+        if(pos.itemSize!==3)throw Error('POSITION GLB inválida.');
+        for(const [field,dim] of [['NORMAL',3],['TEXCOORD_0',2]])if(prim.attributes[field]!==undefined){
+          const a=attribute(prim.attributes[field],field);
+          if(a.itemSize!==dim||a.count!==pos.count)throw Error('Atributo GLB incompatível: '+field);
+        }
+        if(prim.indices!==undefined){
+          const idx=attribute(prim.indices,'indices');
+          if(![5121,5123,5125].includes(idx.type)||idx.itemSize!==1||idx.count%3!==0||idx.array.some(i=>!Number.isInteger(i)||i<0||i>=pos.count))throw Error('Índices GLB inválidos.');
+        }else if(pos.count%3!==0)throw Error('Malha GLB sem triângulos completos.');
+        const index=materials[prim.material]?.pbrMetallicRoughness?.baseColorTexture?.index;
+        if(index!==undefined){
+          const img=json.images?.[json.textures?.[index]?.source];
+          if(!img)throw Error('Textura GLB inexistente.');
+          if(img.bufferView!==undefined){
+            const v=views[img.bufferView];
+            if(!v||v.buffer!==0||!['image/png','image/jpeg','image/webp'].includes(img.mimeType)||!Number.isInteger(v.byteLength)||(v.byteOffset||0)+v.byteLength>bin.length)throw Error('Textura GLB inválida.');
+          }else if(typeof img.uri!=='string'||!/^data:image\/(png|jpeg|webp);base64,/i.test(img.uri))throw Error('Textura GLB externa não suportada.');
+        }
+        if(++primitives>500)throw Error('GLB com malhas demais.');
+      }
+    }
+    if(!primitives)throw Error('GLB sem malha triangular utilizável.');
+    return {primitives,nodes:nodes.length};
+  }
   let primitiveCount=0;
   const meshGroups=meshes.map(src=>{
     const group=new T.Group();
@@ -91,7 +148,7 @@ function decodeGLB(T, source) {
       geo.setAttribute('position',new T.Float32BufferAttribute(pos.array,3));
       if(prim.attributes.NORMAL!==undefined){const normals=attribute(prim.attributes.NORMAL,'NORMAL');if(normals.itemSize!==3||normals.count!==pos.count)throw Error('NORMAL incompatível.');geo.setAttribute('normal',new T.Float32BufferAttribute(normals.array,3));}
       if(prim.attributes.TEXCOORD_0!==undefined){const uv=attribute(prim.attributes.TEXCOORD_0,'TEXCOORD_0');if(uv.itemSize!==2||uv.count!==pos.count)throw Error('UV incompatível.');geo.setAttribute('uv',new T.Float32BufferAttribute(uv.array,2));}
-      if(prim.indices!==undefined){const ind=attribute(prim.indices,'indices');if(ind.itemSize!==1||ind.array.some(n=>!Number.isInteger(n)||n<0||n>=pos.count))throw Error('Índices de triângulos inválidos.');geo.setIndex(ind.array);}
+      if(prim.indices!==undefined){const ind=attribute(prim.indices,'indices');if(![5121,5123,5125].includes(ind.type)||ind.itemSize!==1||ind.count%3!==0||ind.array.some(n=>!Number.isInteger(n)||n<0||n>=pos.count))throw Error('Índices de triângulos inválidos.');geo.setIndex(ind.array);}
       if(!geo.getAttribute('normal'))geo.computeVertexNormals();
       const obj=new T.Mesh(geo,material(prim.material));obj.castShadow=true;obj.receiveShadow=true;group.add(obj);primitiveCount++;
       if(primitiveCount>500)throw Error('GLB com malhas demais.');

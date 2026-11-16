@@ -307,14 +307,34 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(['game.js','style.css','index.html'].includes(state.selected))runPreview();
     feedback('Alteração aplicada ao arquivo '+state.selected+'.');
   }
+  function currentAssetManifest(){
+    return GameForgeAssetLibrary.parse(state.files['ASSET_LIBRARY.json']);
+  }
   function runPreview(){
-    if(!state.files['game.js']||!state.files['style.css'])return;
-    const spec=state.spec||GameForgeParser.parseGdd($('gdd').value);
-    $('preview-empty').classList.add('hide');
-    const doc=GameForgeGenerator.shell(spec.title,state.files['style.css'],state.files['game.js'],true,state.files);
-    $('preview').srcdoc=doc;
-    $('qa-run').disabled=false;
-    $('live-indicator').classList.add('active');status('Prévia carregada');
+    if(!state.files['game.js']||!state.files['style.css'])return Promise.resolve();
+    const stamp=++previewAssetSequence,project=assetProjectId,manifest=currentAssetManifest();
+    const render=files=>{
+      if(stamp!==previewAssetSequence)return;
+      const spec=state.spec||GameForgeParser.parseGdd($('gdd').value);
+      const doc=GameForgeGenerator.shell(spec.title,files['style.css'],files['game.js'],true,files);
+      $('preview').srcdoc=doc;
+      $('qa-run').disabled=false;
+      $('live-indicator').classList.add('active');status('Prévia carregada');
+    };
+    if(!manifest.assets.length){
+      try{render(state.files);}catch(err){feedback('Prévia indisponível: '+err.message,true);}
+      return Promise.resolve();
+    }
+    $('preview-empty').classList.add('hide');$('qa-run').disabled=true;status('Lendo modelos do projeto...');
+    return GameForgeAssetLibrary.materialize(project,manifest).then(binary=>{
+      if(stamp!==previewAssetSequence)return;
+      render({...state.files,...binary});
+    }).catch(err=>{
+      if(stamp!==previewAssetSequence)return;
+      $('qa-run').disabled=true;$('live-indicator').classList.remove('active');
+      status('Modelo GLB indisponível',true);
+      feedback('Prévia não carregada: '+err.message,true);
+    });
   }
   function fileBlob(blob,filename){
     const url=URL.createObjectURL(blob);const a=document.createElement('a');
@@ -327,9 +347,12 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(raw.length>1_500_000)throw Error('Captura muito grande para o ZIP');
     return Uint8Array.from(raw,ch=>ch.charCodeAt(0));
   }
-  function getExportFiles(){
+  async function assetBinaryFiles(){
+    return GameForgeAssetLibrary.materialize(assetProjectId,currentAssetManifest());
+  }
+  async function getExportFiles(){
     roadmapSaveFiles();
-    const files={...state.files};
+    const files={...state.files,...await assetBinaryFiles()};
     files['PROJETO.gameforge.json']=GameForgeProject.encode(projectSnapshot());
     if(files['ASSET_CENARIO.b64'])files['assets/cenario.glb']=Uint8Array.from(atob(files['ASSET_CENARIO.b64']),c=>c.charCodeAt(0));
     if(qaState.last){
@@ -341,21 +364,27 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(state.spec)files['index.html']=GameForgeGenerator.shell(state.spec.title,files['style.css'],files['game.js'],false,files);
     return files;
   }
-  function downloadZip(){
+  async function downloadZip(){
     if(!state.files['game.js'])return;
     if(qaState.candidate){feedback('Aceite ou descarte a correção antes de exportar.',true);return;}
     try{
-      const blob=GameForgeZip.zipFiles(getExportFiles());
-      fileBlob(blob,projectName().replace(/\s+/g,'-')+'-gameforge.zip');feedback('ZIP gerado localmente, incluindo código-fonte e GDD.');
+      status('Preparando ZIP com modelos...');
+      const blob=GameForgeZip.zipFiles(await getExportFiles());
+      fileBlob(blob,projectName().replace(/\\s+/g,'-')+'-gameforge.zip');
+      feedback('ZIP exportado, com modelos GLB originais, código, HTML jogável e backup.');
     }catch(e){feedback('Erro ao empacotar: '+e.message,true);}
+    finally{status('Pronto');}
   }
-  function downloadHtml(){
+  async function downloadHtml(){
     if(!state.files['game.js'])return;
     if(qaState.candidate){feedback('Aceite ou descarte a correção antes de exportar.',true);return;}
-    const spec=state.spec||GameForgeParser.parseGdd($('gdd').value);
-    const text=GameForgeGenerator.shell(spec.title,state.files['style.css'],state.files['game.js'],true,state.files);
-    fileBlob(new Blob([text],{type:'text/html;charset=utf-8'}),projectName().replace(/\s+/g,'-')+'.html');
-    feedback('Jogo HTML autônomo exportado.');
+    try{
+      const spec=state.spec||GameForgeParser.parseGdd($('gdd').value);
+      const files={...state.files,...await assetBinaryFiles()};
+      const html=GameForgeGenerator.shell(spec.title,files['style.css'],files['game.js'],true,files);
+      fileBlob(new Blob([html],{type:'text/html;charset=utf-8'}),projectName().replace(/\\s+/g,'-')+'.html');
+      feedback('HTML autônomo gerado, incluindo modelos GLB. Para guardar fontes e modelos separados, prefira ZIP.');
+    }catch(e){feedback('HTML não exportado: '+e.message,true);}
   }
   async function projectOperation(action){
     if(projectOperations){feedback('Aguarde a operação atual antes de continuar.',true);return;}
@@ -848,8 +877,17 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('generate').addEventListener('click',()=>projectOperation(generate));
   $('rerun').addEventListener('click',runPreview);
   $('apply-edit').addEventListener('click',applyEdit);
-  $('export').addEventListener('click',downloadZip);$('export-top').addEventListener('click',downloadZip);$('html-export').addEventListener('click',downloadHtml);
-  $('open-game').addEventListener('click',()=>{const spec=state.spec||GameForgeParser.parseGdd($('gdd').value);const html=GameForgeGenerator.shell(spec.title,state.files['style.css'],state.files['game.js'],true,state.files);const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000);});
+  $('export').addEventListener('click',()=>projectOperation(downloadZip));$('export-top').addEventListener('click',()=>projectOperation(downloadZip));$('html-export').addEventListener('click',()=>projectOperation(downloadHtml));
+  $('open-game').addEventListener('click',()=>projectOperation(async()=>{
+    try{
+      const spec=state.spec||GameForgeParser.parseGdd($('gdd').value);
+      const files={...state.files,...await assetBinaryFiles()};
+      const html=GameForgeGenerator.shell(spec.title,files['style.css'],files['game.js'],true,files);
+      const blob=new Blob([html],{type:'text/html'}),url=URL.createObjectURL(blob);
+      window.open(url,'_blank','noopener');
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+    }catch(e){feedback('Não foi possível abrir o jogo: '+e.message,true);}
+  }));
   $('fullscreen').addEventListener('click',()=>{const el=$('preview-box');if(document.fullscreenElement)document.exitFullscreen();else if(el.requestFullscreen)el.requestFullscreen();});
   window.addEventListener('message',ev=>{if(ev.source!==$('preview').contentWindow)return;if(ev.data&&ev.data.kind==='gameforge-error'){log('[Prévia] '+String(ev.data.message).slice(0,400));status('Erro na prévia',true);}});
   $('file-editor').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const t=e.target;const s=t.selectionStart;t.setRangeText('  ',s,t.selectionEnd,'end');}if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();applyEdit();}});

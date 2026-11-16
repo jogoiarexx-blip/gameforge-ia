@@ -228,6 +228,11 @@
       // O modo urbano executa somente ações suportadas e com ordem verificável.
       // Pedidos sem ações explícitas usam o slice original de uma missão.
       const urbanMissions=missionSemantics?.executable(compiled.actionModel)||[];
+      const hasExplicitActions=(compiled.actionModel?.missions||[]).some(m=>m.actions.length||m.issues.length);
+      if(hasExplicitActions&&!urbanMissions.length){
+        compiled.engineAvailability={status:'blocked',
+          reason:'As missões detalhadas do GDD exigem ações/condições ainda não implementadas. O GameForge não vai substituí-las por uma missão genérica. Consulte o Modelo de Ações.'};
+      }
       compiled.urbanMissions=urbanMissions;
       compiled.stages=urbanMissions.length?urbanMissions.map(m=>m.title):['Bairro 1 — Guarda e Armazém'];
       compiled.campaign={maxStages:3,detectedStages:Math.max(allLevels.length,compiled.actionModel?.sourcePhases||0),

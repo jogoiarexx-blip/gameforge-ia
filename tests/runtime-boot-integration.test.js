@@ -72,3 +72,24 @@ test('corrida passa para a segunda fase e reinicia o percurso',()=>{
   assert.equal(game.telemetry().state,'play');
   assert.ok(game.telemetry().racing.distance<6000);
 });
+
+test('passo fixo mantém tempo de simulação equivalente em 30, 60 e 120 FPS',()=>{
+  const clocks=[];
+  for(const fps of [30,60,120]){
+    const game=boot('arena');game.start();
+    for(let i=1;i<=fps*2;i++)game.tick(i*1000/fps);
+    clocks.push(game.telemetry().clock);
+  }
+  assert.ok(Math.max(...clocks)-Math.min(...clocks)<.035,'divergência temporal entre FPS');
+});
+test('aba suspensa não provoca salto de física nem acumula pausa',()=>{
+  const game=boot('arena');game.start();game.tick(16);game.tick(32);
+  const before=game.telemetry().clock;
+  game.tick(20000);
+  const delta=game.telemetry().clock-before;
+  assert.ok(delta<=5/60+.00001,'limite de cinco passos por quadro');
+  game.pause();const paused=game.telemetry().clock;
+  game.tick(40000);assert.equal(game.telemetry().clock,paused);
+  game.pause();game.tick(40016);
+  assert.ok(game.telemetry().clock-paused<=1/60+.00001);
+});

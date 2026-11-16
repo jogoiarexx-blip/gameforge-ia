@@ -220,7 +220,7 @@ function gameForgeUrban3DBoot(){
    progress.guardHp=Math.max(0,progress.guardHp-25);
    guardPhase=1;notice('Guarda atingido! '+progress.guardHp+' HP');
    if(progress.guardHp===0){
-    progress.guardDefeated=true;deathRemaining=actorAnimation.enemy?.map?.death?.9:0;
+    progress.guardDefeated=true;deathRemaining=actorAnimation.enemy?.map?.death ? .9 : 0;
     actorAnimation.enemy?.setState('death');guard.visible=deathRemaining>0;
     notice('Guarda neutralizado. Interaja com o armazém (E).');
    }
@@ -343,7 +343,7 @@ function gameForgeUrban3DBoot(){
   updateHud();
  }
  function draw(){
-  guard.visible=!progress.guardDefeated;
+  guard.visible=!progress.guardDefeated||deathRemaining>0;
   const eye={x:progress.x,y:1.45,z:progress.z};
   const desired=R.cameraPosition(eye,{x:progress.x+2.6,y:4.4,z:progress.z+6.5},blockers);
   camera.position.lerp(new T.Vector3(desired.x,desired.y,desired.z),.16);
@@ -369,7 +369,7 @@ function gameForgeUrban3DBoot(){
  }
  hero.position.set(progress.x,0,progress.z);
  guard.position.set(0,0,1.5);
- guard.visible=!progress.guardDefeated;
+ guard.visible=!progress.guardDefeated||deathRemaining>0;
  const firstCamera=R.cameraPosition({x:progress.x,y:1.45,z:progress.z},
   {x:progress.x+2.6,y:4.4,z:progress.z+6.5},blockers);
  camera.position.set(firstCamera.x,firstCamera.y,firstCamera.z);

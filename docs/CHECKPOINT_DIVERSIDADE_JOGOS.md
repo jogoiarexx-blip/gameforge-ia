@@ -450,7 +450,7 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 
 **Implementado:** \`js/glb-runtime.js\` usa \`Float32Array\` para posições/normais/UVs e \`Uint8Array\`/\`Uint16Array\`/\`Uint32Array\` para índices; os objetos \`BufferAttribute\` recebem esses arrays sem copiar de novo. Materiais são memorizados por índice por importação; texturas com mesmo índice têm um só carregamento e uma única referência, sem misturar materiais distintos. Índices normalizados são rejeitados no runtime.
 
-**Cobertura adicionada:** \`tests/glb-import.test.js\` compara identidade dos materiais e texturas, número de carregamentos, tipos dos buffers e rejeição de índice normalizado. Verificação sintática em V8 concluída. No GitHub Actions run \`43851747931\`, etapa \`Testes automatizados\` aprovada; benchmark de arena ainda em execução no momento deste registro.
+**Cobertura adicionada:** \`tests/glb-import.test.js\` compara identidade dos materiais e texturas, número de carregamentos, tipos dos buffers e rejeição de índice normalizado. Verificação sintática em V8 concluída. GitHub Actions run \`43851747931\` **aprovado**: 153 testes passaram, zero falhas; sintaxe e benchmark informativo da arena também concluídos com sucesso.
 
 **Escopo e limites:** foram eliminadas cópias/alocações desnecessárias no caminho de decodificação. Ganho exato de memória, pausas de GC, tempo de carga e FPS não foram medidos em browser real; a biblioteca continua limitada aos modelos GLB estáticos e o carregamento ainda é síncrono. Manter testes de todos os motores e fazer perfil Chrome/Android com arquivos 3D reais antes de anunciar melhora numérica.
 

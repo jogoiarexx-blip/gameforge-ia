@@ -9,12 +9,12 @@
 ### Fila de execução — não avançar sem registrar resultado
 
 - [ ] **GF-001 · P0 — Gate de publicação (EM REVISÃO):** workflow, preflight, testes negativos e dupla verificação de SHA implementados; **ainda falta mudar Settings → Pages → Source para GitHub Actions** para remover a rota automática da branch.
-- [ ] **GF-002 · P0 — Matriz de exportação e boot:** cada gênero/dimensão, scripts autossuficientes, inicialização, editor e ZIP com/sem GLB.
+- [ ] **GF-002 · P0 — Matriz de exportação e boot (EM REVISÃO):** 14 motores + FPS com loja iniciam após exportação real de game.js; ZIP preserva binários e GLB é carregado em cena 3D simulada; falta QA em navegador real e interface de edição.
 - [ ] **GF-003 · P0 — Reconhecimento real de GDD:** corpus versionado de gêneros e casos longos (incluindo GoldenEye FPS 3D), incerteza e conflitos.
 - [ ] **GF-004 · P0 — Contrato de capacidades:** diferenciar requisito solicitado, parâmetro configurado e mecânica implementada/testada.
 - [ ] **GF-005 · P0 — Integridade de projeto:** trazer Playwright de backup/recarga/ZIP/IndexedDB para CI, incluindo GLB e restauração limpa.
 
-**Próxima tarefa única: GF-001.** Depois seguir a ordem GF-002 → 003 → 004 → 005. Os **22 itens P1/P2** (interface, evolução de motores, campanhas, assets, animações, performance, segurança, backend e editor) estão detalhados no plano mestre. Manter IDs estáveis e alterar o estado para `VALIDADO` somente com código publicado, testes e CI no mesmo commit; QA visual requer navegador real.
+**Bloqueio externo:** GF-001 precisa da mudança administrativa na origem de publicação do Pages. **Próxima tarefa técnica:** concluir GF-002 com QA em navegador real; GF-003 segue em revisão. Os **22 itens P1/P2** (interface, evolução de motores, campanhas, assets, animações, performance, segurança, backend e editor) estão detalhados no plano mestre. Manter IDs estáveis e alterar o estado para `VALIDADO` somente com código publicado, testes e CI no mesmo commit; QA visual requer navegador real.
 
 **Escopo desta auditoria:** análise estática de código, documentação, testes e GitHub Actions. **Não** foi feito teste manual real em Android/iPhone, nem auditoria do servidor opcional (código backend não está neste repositório).
 
@@ -670,3 +670,20 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Limites:** o GameForge continua com motores parciais e capacidade determinística. O exemplo de habilidades de Folclorevania não gera automaticamente uma árvore; o GDD do Godfather não implementa cidade livre; GoldenEye exige novos objetivos interativos; Brumária não entrega automaticamente animações de dragão. Não copiar assets nem conteúdo sujeito a direitos de terceiros. Não chamar padrões do catálogo de funcionalidades implementadas.
 
 **Próximo:** expandir benchmark para mais GDDs reais (tipos híbridos, múltiplas perspectivas e negações), validar UI e QA real em navegador, e avançar **GF-004** com manifesto de capacidades executáveis por gênero para converter referências técnicas em módulos próprios testados. GF-001 continua dependente de migração administrativa da fonte Pages; não considerar gate exclusivo enquanto rota antiga de branch permanecer.
+
+## GF-002 — Matriz offline de inicialização, reexportação, ZIP e GLB (16/11/2026)
+
+**Estado: EM REVISÃO.** A geração e a inicialização estão validadas em Node/VM; falta conferir a interface e os jogos em navegador real, sem rede. GF-001 continua EM REVISÃO porque a rota antiga de Pages por branch permanece ativa.
+
+**Problema:** validar apenas sintaxe JS não garantia que os jogos iniciassem, que os ZIPs preservassem arquivos ou que GLBs fossem carregados.
+
+**Implementação:** novo teste em tests/export-boot-matrix.test.js cria e inicializa todos os **14 pares gênero/dimensão** declarados no parser, além do FPS 3D com loja. Executa o game.js exportado em ambiente isolado, carrega engine-3d.js real com WebGL simulado, testa Jogar, frames, controles e Pausar. Cada ZIP é gerado e reaberto, com verificação byte a byte dos arquivos, motor e licença. Uma malha GLB válida é colocada em ASSET_LIBRARY.json + arquivo binário e verificada no cenário 3D após desempacotar, incluindo posição e escala. Uma campanha com fases modificadas é reexportada e inicializada novamente.
+
+**Commits:** 84ba74767c59d1dc9779180e0927324cbed0faf3 (matriz), f05403ba3679ab1b5af88d4a7c18b7bc845051f0 e 10bc2a8cf05f276f827a8acd0a12cda9e9c5ae9d (mocks DOM mais completos), 5bf107e20f9652c206387fb6955c3ba9441574ca (GLB e reexportação). As falhas intermediárias foram dos mocks da DOM e da atualização de telemetria, sem alterar os motores.
+
+**Evidência:** GitHub Actions run https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43874026698, commit 5bf107e20f9652c206387fb6955c3ba9441574ca, **237 testes aprovados, zero falhas**. Pré-validação confirmou **15 variantes, 624.821 bytes de JS gerado sintaticamente válido**. Benchmark de arena passou.
+
+**Limites:** o teste Node não equivale a Chrome, Android ou WebGL real. A edição foi validada por reexportação do spec alterado, não por cliques no editor do Studio. O GLB testado é estático; rig/animações permanecem tarefas GF-015/GF-016.
+
+**Para concluir GF-002:** Playwright em navegador real deve abrir todos os HTMLs com scripts defer e sem CDN, validar preview srcdoc, editor, exportação/reimportação, logs, controles e execução offline. Registrar capturas, versão e SHA antes de mudar o estado para VALIDADO. A rota legada de Pages ainda precisa ser desativada administrativamente para concluir GF-001.
+

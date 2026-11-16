@@ -177,7 +177,7 @@ function gameForgeUrbanRulesFactory(){
   // Reutilizar caminho entre frames para nao executar busca de grafo a 60 FPS.
   // Se a rota fica livre, elimina desvios e volta a caminhar diretamente.
   if(direct){navRoute=[];navCooldown=0;}
-  else if(!navRoute.length||guard.navMode!==mode||goalChanged||navCooldown<=0){
+  else if(guard.navMode!==mode||goalChanged||navCooldown<=0){
    navRoute=planGuardRoute({x,z},goal,solids);
    navCooldown=.65;
   }

@@ -65,6 +65,74 @@ function timedEvents(rows){
  }
  return events.slice(0,2).sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id));
 }
+
+// GF-008: gramática explícita e pequena: cada termo reconhecido vira regra jogável.
+const ZONE_PATTERN=/\b(norte|sul|leste|oeste|centro)\b/;
+const ZONE_IDS={norte:'north',sul:'south',leste:'east',oeste:'west',centro:'center'};
+function parseMissionStep(source){
+ const t=normalize(source).trim().replace(/^primeiro\s+/, '');
+ const reach=/\b(va|ir|visite|visitar|chegue|chegar|alcance|alcancar|entre|entrar|passe|passar)\b/.test(t)&&ZONE_PATTERN.exec(t);
+ if(reach)return {kind:'reach',zone:ZONE_IDS[ZONE_PATTERN.exec(t)[1]],label:'Chegue ao ponto '+ZONE_PATTERN.exec(t)[1]};
+ if(/\b(elimine|eliminar|derrote|derrotar|mate|matar|limpe|limpar)\b/.test(t)&&
+    /\b(inimigos?|guardas?|monstros?|soldados?|chefes?|guardioes?)\b/.test(t))
+  return {kind:'eliminate',label:'Derrote os inimigos'};
+ if(/\b(colete|coletar|pegue|pegar|reuna|reunir)\b/.test(t)&&
+    /\b(cristais?|fragmentos?)\b/.test(t)){
+  const qty=/\b(\d{1,2})\s+(?:cristais?|fragmentos?)\b/.exec(t);
+  if(qty&&Number(qty[1])!==3)return null; // Motor atual coloca 3 cristais.
+  return {kind:'collect',label:'Colete 3 cristais'};
+ }
+ const survive=/\b(sobreviva|sobreviver|aguarde|resista)\b.{0,45}\b(\d{1,3})\s*(?:segundos?|s\b)/.exec(t);
+ if(survive){
+  const seconds=Number(survive[2]);
+  if(seconds>=5&&seconds<=180)return {kind:'survive',seconds,label:'Resista por '+seconds+'s'};
+ }
+ return null;
+}
+function missionSequence(rows){
+ let latest=null;
+ for(const row of rows){
+  const t=row.normal.replace(/^[-*+]\s*/, '').replace(/^(?:(?:na|no|para a|para o)\s+)?(?:fase|missao|etapa|stage|level)\s*\d{1,2}\s*[:,-]?\s*/, '');
+  if(!/^(?:etapas|sequencia|objetivos em ordem)\s*[:\-]|^\s*primeiro\s+/.test(t))continue;
+  if(/\b(sem|nao quero|remover|desativar)\b.{0,22}\b(etapas|sequencia)\b/.test(t)){
+   latest={steps:null,status:'nao_solicitado',origin:{document:row.document,line:row.line}};
+   continue;
+  }
+  const body=t.replace(/^(?:etapas|sequencia|objetivos em ordem)\s*[:\-]\s*/,'');
+  const segments=body.split(/\s*(?:->|=>|;|\s*,?\s+(?:depois|entao|em seguida|por fim)\s+)\s*/).map(x=>x.trim()).filter(Boolean);
+  const steps=segments.map(parseMissionStep);
+  const ok=segments.length>=2&&segments.length<=5&&steps.every(Boolean);
+  latest={steps:ok?steps.map((item,i)=>({...item,id:'step-'+(i+1)})):null,
+   status:ok?'implementado':'pendente',
+   origin:{document:row.document,line:row.line}};
+ }
+ return latest;
+}
+function zoneEvents(rows){
+ const events=[];
+ for(const row of rows){
+  const t=row.normal;
+  if(!/\b(?:ao entrar|quando entrar|ao chegar|quando chegar|ao pisar|quando pisar)\b/.test(t))continue;
+  const zone=ZONE_PATTERN.exec(t);
+  if(!zone)continue;
+  const zoneId=ZONE_IDS[zone[1]];
+  const negative=/\b(sem|nao quero|remover|retirar|evitar|desativar)\b.{0,50}\b(reforcos?|curas?|kit medico)\b/.test(t);
+  const type=/\b(reforcos?|inimigos? extras?|onda extra)\b/.test(t)?'reinforcements':
+   /\b(cura|curar|recuperar vida|kit medico)\b/.test(t)?'heal':null;
+  if(!type)continue;
+  const id='zone-'+type+'-'+zoneId,old=events.findIndex(e=>e.id===id);
+  if(old>=0)events.splice(old,1);
+  if(negative)continue;
+  const qty=type==='reinforcements'?
+   /(\d{1,2})\s+(?:novos?\s+)?(?:inimigos?\s+)?(?:reforcos?|inimigos? extras?)/.exec(t)||/\breforcos?\s*(?:de|com)?\s*(\d{1,2})/.exec(t):
+   /\b(?:cura|curar|recuperar vida|kit medico)\s*(?:de|com|\+)?\s*(\d{1,2})\b/.exec(t);
+  const amount=Math.max(type==='heal'?10:2,Math.min(type==='heal'?45:8,Number(qty?.[1])||(type==='heal'?25:3)));
+  events.push({id,type,zone:zoneId,amount,status:'implementado',
+   origin:{document:row.document,line:row.line}});
+ }
+ return events.slice(0,4);
+}
+
 function records(source,document){
  const rows=[],lines=String(source||'').split(/\r?\n/);
  let stage=null;
@@ -120,6 +188,14 @@ function compile(spec,gdd='',command=''){
   if(combat&&enemy)c.enemyArchetype=enemy.kind;
   const events=combat?timedEvents(rows):[];
   if(combat&&events.length)c.events=events;
+  const sequence=combat?missionSequence(rows):null;
+  if(combat&&sequence){
+   if(sequence.steps)c.missionSteps=sequence.steps;
+   else delete c.missionSteps; // Ordem recente inválida não pode fingir manter roteiro anterior.
+  }
+  const spatial=combat?zoneEvents(rows):[];
+  if(combat&&(spatial.length||rows.some(row=>/\b(?:ao entrar|quando entrar|ao chegar|quando chegar|ao pisar|quando pisar)\b/.test(row.normal))))c.zoneEvents=spatial;
+  // Sem gatilho declarado, deixa a configuração original intacta.
   configs[index]=c;
   const mapLayout=combat?(LAYOUTS.some(x=>x.id===c.layout)?c.layout:'cross'):null;
   const configuredTheme=['forest','desert','neon','ruins'].includes(c.theme)?c.theme:
@@ -136,11 +212,16 @@ function compile(spec,gdd='',command=''){
     ...(enemy?{archetypeOrigin:enemy.origin}:{}),
     waves:Number.isInteger(c.waves)&&c.waves>0?c.waves:null,
     boss:c.boss==='yes'?true:c.boss==='no'?false:null},
-   objective,checkpoint:{kind:combat?'between-stages':spec.genre==='platform'&&spec.dimension==='3d'?'platform':'unsupported',
+   objective,
+   missionSequence:{steps:combat?(c.missionSteps||[]):[],
+    status:combat?(sequence?.status||(c.missionSteps?.length?'implementado':'nao_solicitado')):'nao_verificado',
+    ...(sequence?{origin:sequence.origin}:{})},
+   zoneEvents:combat?(c.zoneEvents||[]):[],
+   checkpoint:{kind:combat?'between-stages':spec.genre==='platform'&&spec.dimension==='3d'?'platform':'unsupported',
     status:combat&&!spec.combatEconomy?.enabled?'implementado':'nao_verificado'},
    events:combat?c.events||[]:[],
    scriptedEvents:[],customTriggers:[],
-   note:'Apenas eventos tipados de reforços e cura são executados; diálogos e roteiros livres continuam pendentes.'
+   note:'Executa sequências tipadas e zonas cardeais no combate 3D. Diálogos e roteiro livre não são interpretados como lógica.'
   };
  });
  spec.stageConfig=configs.slice(0,stages.length);
@@ -158,6 +239,8 @@ function report(spec){
    '- Arquétipo: '+(s.encounters.archetype||'padrão do motor')+
    ' · Eventos tipados: '+(s.events?.map(e=>e.type+' após '+e.at+'s').join(', ')||'nenhum')+
    ' · Checkpoint: '+s.checkpoint.status,
+   '- Missão encadeada: '+s.missionSequence.status+' · '+(s.missionSequence.steps.map(x=>x.label).join(' → ')||'padrão do motor'),
+   '- Gatilhos de zona: '+(s.zoneEvents.map(x=>x.type+' em '+x.zone).join(', ')||'nenhum'),
    '- Inimigos definidos: '+(s.encounters.enemyCount??'procedural do motor')+
    ' · Ondas: '+(s.encounters.waves??'padrão do motor')+' · Chefe: '+
     (s.encounters.boss===null?'padrão do motor':s.encounters.boss?'sim':'não'),
@@ -167,7 +250,8 @@ function report(spec){
  lines.push('**Limite técnico:** não confundir variação real de geometria/objetivos existentes com implementação integral do GDD.');
  return lines.join('\n')+'\n';
 }
-const api={compile,report,records,selectLayout,selectArchetype,timedEvents,projectIdentity};
+const api={compile,report,records,selectLayout,selectArchetype,timedEvents,projectIdentity,
+ parseMissionStep,missionSequence,zoneEvents};
 root.GameForgeStageSpec=api;
 if(typeof module!=='undefined')module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

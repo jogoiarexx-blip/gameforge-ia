@@ -136,3 +136,117 @@ test('GF-007: save invalido, homonimos, economia FPS e schema futuro nao escapam
  assert.equal(R.readCheckpoint(JSON.stringify(valid),other),null);
  assert.equal(R.checkpointKey({...spec,genre:'fps',combatEconomy:{enabled:true}}),null);
 });
+
+
+test('GF-008: GDD simples cria objetivos na ordem e eventos de localizacao rastreaveis',()=>{
+ const source=[
+  '# Missão do Forte','## Fase 1 — Pátio',
+  'Etapas: ir ao norte -> eliminar inimigos -> coletar cristais',
+  'Ao entrar na área norte surgem 3 reforços',
+  'Quando chegar ao centro, cura 25',
+  '## Fase 2 — Armazém','Etapas: ir ao leste -> sobreviver 7 segundos'
+ ].join('\n');
+ const spec=StageSpec.compile({title:'Missão do Forte',genre:'arena',dimension:'3d',
+  stages:['Pátio','Armazém'],stageConfig:[{},{}]},source);
+ assert.deepEqual(spec.stageSpecs[0].missionSequence.steps.map(s=>s.kind),['reach','eliminate','collect']);
+ assert.equal(spec.stageConfig[0].missionSteps[0].zone,'north');
+ assert.equal(spec.stageConfig[1].missionSteps[0].zone,'east');
+ assert.equal(spec.stageConfig[1].missionSteps[1].seconds,7);
+ assert.deepEqual(spec.stageConfig[0].zoneEvents.map(e=>[e.type,e.zone,e.amount]),[
+  ['reinforcements','north',3],['heal','center',25]
+ ]);
+ assert.equal(spec.stageSpecs[0].zoneEvents[0].origin.line,4);
+ assert.equal(spec.stageSpecs[0].missionSequence.origin.line,3);
+ assert.equal(spec.stageSpecs[0].missionSequence.status,'implementado');
+ assert.match(StageSpec.report(spec),/Missão encadeada: implementado/);
+ const same=StageSpec.compile({title:'Missão do Forte',genre:'arena',dimension:'3d',
+  stages:['Pátio','Armazém'],stageConfig:[{},{}]},source);
+ assert.deepEqual(spec.stageConfig,same.stageConfig);
+});
+test('GF-008: comando na fase 2 substitui so sua ordem, nega eventos e nao inventa cinco cristais',()=>{
+ const original='# Forte\n## Fase 1\nEtapas: ir ao norte -> eliminar inimigos\n'+
+  '## Fase 2\nEtapas: ir ao sul -> coletar cristais\nQuando entrar na área sul surgem 3 reforços';
+ const cfg={title:'Forte',genre:'arena',dimension:'3d',stages:['A','B'],stageConfig:[{},{}]};
+ const spec=StageSpec.compile(cfg,original,
+  'Fase 2: Etapas: ir ao oeste -> sobreviver 10 segundos\nNa fase 2, quando entrar na área sul sem reforços');
+ assert.equal(spec.stageConfig[0].missionSteps[0].zone,'north');
+ assert.equal(spec.stageConfig[1].missionSteps[0].zone,'west');
+ assert.equal(spec.stageConfig[1].missionSteps[1].seconds,10);
+ assert.equal(spec.stageConfig[1].zoneEvents?.length||0,0);
+ const pending=StageSpec.compile({title:'Forte',genre:'arena',dimension:'3d',stages:['A'],stageConfig:[{}]},
+  '## Fase 1\nEtapas: ir ao norte -> coletar 5 cristais');
+ assert.equal(pending.stageSpecs[0].missionSequence.status,'pendente');
+ assert.equal(pending.stageConfig[0].missionSteps,undefined);
+ const two=StageSpec.compile({title:'Forte',genre:'rpg',dimension:'2d',stages:['A'],stageConfig:[{}]},
+  '## Fase 1\nEtapas: ir ao norte -> eliminar inimigos\nAo entrar na área norte surgem 3 reforços');
+ assert.deepEqual(two.stageSpecs[0].missionSequence.steps,[]);
+ assert.deepEqual(two.stageSpecs[0].zoneEvents,[]);
+});
+test('GF-008: regras de area e objetivos recusam coordenadas malformadas e IDs externos',()=>{
+ assert.deepEqual(R.waypoint('north',48),{x:0,z:-13.440000000000001});
+ assert.equal(R.waypoint('outside',48),null);
+ assert.equal(R.enteredZone('center',{x:0,z:0},48),true);
+ assert.equal(R.enteredZone('center',{x:8,z:8},48),false);
+ assert.equal(R.missionStepReady({kind:'eliminate'},{enemies:0,pendingReinforcements:true}),false);
+ assert.equal(R.missionStepReady({kind:'eliminate'},{enemies:0,pendingReinforcements:false}),true);
+ assert.equal(R.missionStepReady({kind:'survive',seconds:7},{elapsedInStep:6.9}),false);
+ assert.equal(R.missionStepReady({kind:'survive',seconds:7},{elapsedInStep:7}),true);
+ const valid={id:'zone-reinforcements-center',type:'reinforcements',zone:'center',amount:3};
+ const forged={...valid,id:'zone-reinforcements-north'};
+ const invalid={...valid,amount:99};
+ assert.deepEqual(R.dueZoneEvents([valid,forged,invalid],{x:0,z:0},48,[]),[valid]);
+ assert.deepEqual(R.dueZoneEvents([valid],{x:0,z:0},48,[valid.id]),[]);
+});
+test('GF-008: mapa 3D mostra marcador ativo e so avanca a sequencia em sua ordem',()=>{
+ const spec={genre:'arena',dimension:'3d',title:'Missao Encadeada',stages:['Fase 1'],
+  stageConfig:[{enemies:1,boss:'no',missionSteps:[
+   {id:'step-1',kind:'reach',zone:'north',label:'Ir ao norte'},
+   {id:'step-2',kind:'eliminate',label:'Eliminar inimigos'}
+  ]}],
+  features:{bosses:false},worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const b=boot(spec);b.start();b.tick(2);
+ const t=b.telemetry();
+ assert.equal(t.missionStepIndex,0);
+ assert.equal(t.missionSteps,2);
+ assert.equal(t.activeMissionStep,'reach');
+ assert.equal(t.missionReady,false);
+ assert.ok(Array.from(t.zoneGuides).includes('north'));
+ assert.match(b.elements.mission.textContent,/Etapa 1\/2/);
+ b.tick(80);
+ assert.equal(b.telemetry().missionStepIndex,0);
+});
+test('GF-008: ponto sul dispara reforcos uma so vez, depois exige eliminar',()=>{
+ const spec={genre:'arena',dimension:'3d',title:'Trigger por zona',stages:['Fase 1'],
+  stageConfig:[{enemies:1,boss:'no',
+   missionSteps:[{id:'step-1',kind:'reach',zone:'south',label:'Ir ao sul'},
+    {id:'step-2',kind:'eliminate',label:'Eliminar inimigos'}],
+   zoneEvents:[{id:'zone-reinforcements-south',type:'reinforcements',zone:'south',amount:2}]}],
+  features:{bosses:false},worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const b=boot(spec);b.start();b.tick(2);
+ const t=b.telemetry();
+ assert.equal(t.missionStepIndex,1);
+ assert.equal(t.enemies,3);
+ assert.equal(t.missionReady,false);
+ assert.deepEqual(Array.from(t.eventsFired),['zone-reinforcements-south']);
+ assert.equal(t.activeMissionStep,'eliminate');
+ b.tick(40);
+ assert.equal(b.telemetry().enemies,3);
+ assert.deepEqual(Array.from(b.telemetry().zoneGuides),[]);
+});
+test('GF-008: sobrevivencia so conta tempo depois de chegar ao ponto inicial',()=>{
+ const spec={genre:'arena',dimension:'3d',title:'Sobrevivência progressiva',stages:['A'],
+  stageConfig:[{enemies:1,boss:'no',missionSteps:[
+   {id:'step-1',kind:'reach',zone:'south',label:'Chegue ao sul'},
+   {id:'step-2',kind:'survive',seconds:5,label:'Sobreviva por 5s'}
+  ]}],features:{bosses:false},worldOptions:{size:48,seed:42,quality:'low'},
+  tuning:{difficulty:.25}};
+ const b=boot(spec);b.start();b.tick(3);
+ assert.equal(b.telemetry().missionStepIndex,1);
+ assert.equal(b.telemetry().missionReady,false);
+ b.tick(140);
+ assert.equal(b.telemetry().missionStepIndex,1);
+ b.tick(210);
+ assert.equal(b.telemetry().missionStepIndex,2);
+ assert.equal(b.telemetry().missionReady,true);
+ assert.equal(b.telemetry().state,'play','portal deve ser alcancado para completar a fase');
+});

@@ -35,6 +35,9 @@ function gameForgeThreeBoot(){
  let random=R.rng(opts.seed),raceRx=0,raceRz=0,lapTarget=2,frameCost=0,perfSamples=0;
  let rpgLevel=1,rpgXP=0,rpgPotions=2,rpgHealHeld=false;
  let firedEvents=new Set(),nextEnemyId=0,checkpointStored=null;
+ let missionStepIndex=0,missionStepStartedAt=0,missionGuides=[];
+ const missionPlan=()=>Array.isArray(configAt(stage).missionSteps)?configAt(stage).missionSteps.slice(0,5):[];
+ function activeMissionStep(){return missionPlan()[missionStepIndex]||null;}
  const checkpointStorageKey=R.checkpointKey(spec);
  function loadCheckpoint(){
   if(!checkpointStorageKey)return null;
@@ -81,8 +84,17 @@ function gameForgeThreeBoot(){
  const combatGoal=()=>({enemies:enemies.length,collected,required,elapsed:stageClock,seconds:configAt(stage).seconds});
  const pendingReinforcements=()=>Array.isArray(configAt(stage).events)&&
   configAt(stage).events.some(e=>e?.type==='reinforcements'&&!firedEvents.has(e.id));
- const combatReady=()=>!pendingReinforcements()&&R.missionReady(missionAt(stage),combatGoal());
+ const combatReady=()=>!pendingReinforcements()&&
+  (missionPlan().length?missionStepIndex>=missionPlan().length:R.missionReady(missionAt(stage),combatGoal()));
  function combatObjective(){
+  const plan=missionPlan();
+  if(plan.length){
+   const step=plan[missionStepIndex];
+   return step?('Etapa '+(missionStepIndex+1)+'/'+plan.length+' · '+step.label+
+    (step.kind==='eliminate'?' ('+enemies.length+' restantes)':step.kind==='collect'?' ('+collected+'/'+required+')':
+     step.kind==='survive'?' ('+Math.max(0,Math.ceil(step.seconds-(stageClock-missionStepStartedAt)))+'s)':'')):
+    'Etapas '+plan.length+'/'+plan.length+' completas · Alcance o portal';
+  }
   const mode=missionAt(stage);
   if(mode==='survive')return 'Sobreviva '+Math.max(0,Math.ceil(R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock))+'s · Alcance o portal';
   if(mode==='collect')return 'Colete os cristais '+collected+'/'+required+' · Portal';
@@ -178,7 +190,10 @@ function gameForgeThreeBoot(){
    phase:random()*6,mesh:actor});
  }
  function runStageEvents(){
-  const events=R.dueStageEvents(configAt(stage).events,stageClock,[...firedEvents]);
+  const events=[
+   ...R.dueStageEvents(configAt(stage).events,stageClock,[...firedEvents]),
+   ...R.dueZoneEvents(configAt(stage).zoneEvents,player,size,[...firedEvents])
+  ];
   for(const event of events){
    firedEvents.add(event.id);
    if(event.type==='heal'){
@@ -194,6 +209,44 @@ function gameForgeThreeBoot(){
     notice('Reforços inimigos chegaram: '+count,2.6);
    }
   }
+  if(events.length)updateMissionGuides();
+ }
+ function buildMissionGuides(){
+  missionGuides=[];
+  if(!['arena','fps','rpg'].includes(genre))return;
+  const zones=new Set();
+  for(const step of missionPlan())if(step.kind==='reach'&&R.waypoint(step.zone,size))zones.add(step.zone);
+  for(const event of (Array.isArray(configAt(stage).zoneEvents)?configAt(stage).zoneEvents:[]))
+   if(R.waypoint(event?.zone,size))zones.add(event.zone);
+  for(const zone of zones){
+   const point=R.waypoint(zone,size),marker=new T.Group();
+   marker.position.set(point.x,0,point.z);world.add(marker);
+   mesh(new T.CylinderGeometry(1.6,1.6,.035,20),mats.crystal,marker,0,.05,0);
+   mesh(new T.CylinderGeometry(.14,.14,2.2,8),mats.gold,marker,0,1.2,0);
+   mesh(new T.OctahedronGeometry(.34),mats.crystal,marker,0,2.5,0);
+   marker.userData.gameForgeWaypoint=zone;
+   missionGuides.push({zone,mesh:marker});
+  }
+  updateMissionGuides();
+ }
+ function updateMissionGuides(){
+  const active=activeMissionStep();
+  for(const marker of missionGuides){
+   const needed=active?.kind==='reach'&&active.zone===marker.zone;
+   const triggered=Array.isArray(configAt(stage).zoneEvents)&&
+    configAt(stage).zoneEvents.some(e=>e?.zone===marker.zone&&!firedEvents.has(e.id));
+   marker.mesh.visible=!!(needed||triggered);
+  }
+ }
+ function progressMissionSequence(){
+  const step=activeMissionStep();
+  if(!step)return;
+  if(!R.missionStepReady(step,{player,size,enemies:enemies.length,
+   pendingReinforcements:pendingReinforcements(),collected,required,
+   elapsedInStep:stageClock-missionStepStartedAt}))return;
+  missionStepIndex++;missionStepStartedAt=stageClock;
+  updateMissionGuides();
+  notice('Etapa '+missionStepIndex+'/'+missionPlan().length+' concluída · '+step.label,2.5);
  }
  function buildStage(){
   const stageRules=configAt(stage),requestedTheme=stageRules.theme;
@@ -207,7 +260,7 @@ function gameForgeThreeBoot(){
   mats={ground:material(palette.ground),road:material(palette.road),leaf:material(palette.grass),leafLight:material(palette.grass+0x081008),wood:material(palette.wood),stone:material(palette.stone),trim:material(0x2e4950),crystal:material(palette.accent,palette.accent),portal:material(0x8b5867,0x5e354a),gold:material(0xf8cf77,0x755521)};
   bulletGeometry=geometry(new T.SphereGeometry(.12,6,4));
   random=R.rng((Number(opts.seed)||12345)+stage*907);collected=0;stageClock=0;invulnerable=0;fireDelay=0;reloadDelay=0;transition=0;jumpHeld=false;checkpoint=0;
-  firedEvents=new Set();nextEnemyId=0;
+  firedEvents=new Set();nextEnemyId=0;missionStepIndex=0;missionStepStartedAt=0;missionGuides=[];
   if(genre==='platform'){
    platforms=R.platformRoute(Number(opts.seed)||12345,stage,size);
    for(let i=0;i<platforms.length;i++){const p=platforms[i];box(p.w,.8,p.d,mats.stone,world,p.x,p.y-.4,p.z);box(p.w+.05,.08,p.d+.05,mats.leaf,world,p.x,p.y+.015,p.z);if(i>0)coinAt(p.x,p.y+1,p.z);if(i%3===1){box(.15,2,.15,mats.wood,world,p.x-1.7,p.y+1,p.z-1.7);mesh(new T.OctahedronGeometry(.22),mats.crystal,world,p.x-1.7,p.y+2,p.z-1.7);}}
@@ -268,7 +321,7 @@ function gameForgeThreeBoot(){
     spawnCombatEnemy(i,x,z,boss);
    }
    for(const c of [{x:-size*.22,z:0},{x:size*.22,z:-2},{x:0,z:-size*.24}])coinAt(c.x,1,c.z);
-   setGoal(0,0,-size*.37);scenery();
+   setGoal(0,0,-size*.37);scenery();buildMissionGuides();
    for(const sign of [-1,1])for(let i=0;i<7;i++){const x=sign*(size/2-.6),z=(i-3)*size/7;box(.6,1.2,size/7-.2,mats.stone,world,x,.6,z);}
    if(genre==='fps'){
     const gun=new T.Group();gun.userData.gameForgeGun=true;gunRig=gun;box(.16,.2,.75,mats.trim,gun,.36,-.28,-.7);box(.12,.13,.55,mats.crystal,gun,.36,-.26,-1.07);camera.add(gun);
@@ -392,7 +445,9 @@ function gameForgeThreeBoot(){
    b.life-=dt;if(b.life<=0)b.dead=true;b.mesh.position.set(b.x,b.y,b.z);
   }
   enemies=enemies.filter(e=>e.hp>0);bullets=bullets.filter(b=>{if(b.dead){world.remove(b.mesh);return false;}return true;});
-  collect();const ready=combatReady();goal.portal.material=ready?mats.crystal:mats.portal;if(ready&&distance(player,goal)<2)finishStage();
+  collect();progressMissionSequence();
+  const ready=combatReady();goal.portal.material=ready?mats.crystal:mats.portal;
+  if(ready&&distance(player,goal)<2)finishStage();
  }
  function collect(){for(const c of coins)if(!c.taken&&distance(c,player)<1.2&&Math.abs(player.y+.9-c.y)<1.6){c.taken=true;c.mesh.visible=false;collected++;score+=80;health=Math.min(100,health+8);notice('Cristal '+collected+' / '+required,1.5);}}
  function updatePlatform(dt){
@@ -473,6 +528,9 @@ function gameForgeThreeBoot(){
   vec.set(player.x,player.y+1,player.z);if(camera)vec.project(camera);
   return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,layout:['arena','fps','rpg'].includes(genre)?(configAt(stage).layout||'cross'):'engine-default',
    enemyArchetypes:enemies.map(e=>e.archetype),eventsFired:[...firedEvents],
+   missionSteps:missionPlan().length,missionStepIndex,
+   activeMissionStep:activeMissionStep()?.kind||null,
+   zoneGuides:missionGuides.filter(g=>g.mesh.visible).map(g=>g.zone),
    checkpointAvailable:!!loadCheckpoint(),checkpointStage:loadCheckpoint()?.stage??null,
    clock,health,score,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
  };

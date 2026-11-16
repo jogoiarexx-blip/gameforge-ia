@@ -80,6 +80,36 @@ function gameForgeWorldRules(){
    (e.id==='event-'+e.type)&&Number.isInteger(e.at)&&e.at>=5&&e.at<=120&&
    Number.isInteger(e.amount)&&e.amount>=2&&e.amount<=45&&elapsed>=e.at&&!used.has(e.id));
  }
+ // GF-008: zonas sem scripts injetados pelo GDD e com coordenadas proporcionais.
+ const ZONES={north:[0,-.28],south:[0,.28],east:[.28,0],west:[-.28,0],center:[0,0]};
+ function waypoint(zone,size){
+  const vector=ZONES[zone];
+  if(!vector)return null;
+  const range=clamp(Number(size)||48,32,88);
+  return {x:vector[0]*range,z:vector[1]*range};
+ }
+ function enteredZone(zone,player,size){
+  const point=waypoint(zone,size);
+  return !!point&&!!player&&Number.isFinite(player.x)&&Number.isFinite(player.z)&&
+   Math.hypot(player.x-point.x,player.z-point.z)<=2.5;
+ }
+ function missionStepReady(step,state){
+  if(!step||!state)return false;
+  if(step.kind==='reach')return enteredZone(step.zone,state.player,state.size);
+  if(step.kind==='eliminate')return state.enemies===0&&!state.pendingReinforcements;
+  if(step.kind==='collect')return state.collected>=state.required;
+  if(step.kind==='survive')return Number.isFinite(state.elapsedInStep)&&
+   state.elapsedInStep>=clamp(Number(step.seconds)||30,5,180);
+  return false;
+ }
+ function dueZoneEvents(events,player,size,fired){
+  if(!Array.isArray(events)||events.length>8)return [];
+  const used=new Set(Array.isArray(fired)?fired:[]);
+  return events.filter(e=>e&&['reinforcements','heal'].includes(e.type)&&
+   typeof e.zone==='string'&&Object.prototype.hasOwnProperty.call(ZONES,e.zone)&&
+   e.id==='zone-'+e.type+'-'+e.zone&&Number.isInteger(e.amount)&&
+   e.amount>=2&&e.amount<=45&&!used.has(e.id)&&enteredZone(e.zone,player,size));
+ }
  // A chave usa ID do projeto, nao o titulo, para separar jogos homonimos.
  function checkpointKey(spec){
   if(!spec||!/^gf-[0-9a-f]{8}-[0-9a-f]{8}$/.test(String(spec.projectId||''))||
@@ -106,7 +136,8 @@ function gameForgeWorldRules(){
   return readCheckpoint(JSON.stringify({version:1,projectId:spec.projectId,...progress}),spec);
  }
  return {clamp,rng,moveCircle,crowdDirection,platformRoute,raceProgress,trackRibbon,goalReady,missionReady,
-  enemyProfile,dueStageEvents,checkpointKey,readCheckpoint,checkpointPayload};
+  enemyProfile,dueStageEvents,waypoint,enteredZone,missionStepReady,dueZoneEvents,
+  checkpointKey,readCheckpoint,checkpointPayload};
 }
 if(typeof module!=='undefined')module.exports=gameForgeWorldRules;
 if(typeof globalThis!=='undefined')globalThis.gameForgeWorldRules=gameForgeWorldRules;

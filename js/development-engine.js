@@ -6,22 +6,29 @@ const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLo
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const specPattern=/\bconst GAME_SPEC = (\{[^\n]*\});/;
 const intent=root.GameForgeIntent||(typeof require==='function'?require('./intent-compiler'):null);
-const directIds=new Set(['stage-count','waves','enemies','laps','boss-only-last','boss-last','boss-all','boss-off','boss-stage','mission','theme-stage','objective-label']);
+const directIds=new Set(['stage-count','waves','enemies','laps','boss-only-last','boss-last','boss-all','boss-off','boss-stage','mission','theme-stage','objective-label','combat-store','combat-store-prices','combat-store-off']);
 function directInterpretation(instruction,files){
  if(!intent||!files?.['game.js'])return {tasks:[],pending:[]};
  const match=files['game.js'].match(specPattern);
  if(!match)return {tasks:[],pending:[]};
  let old;try{old=JSON.parse(match[1]);}catch{return {tasks:[],pending:[]};}
  const updated=intent.compile(JSON.parse(JSON.stringify(old)),'',instruction);
+ const changedStore=JSON.stringify(old.combatEconomy||null)!==JSON.stringify(updated.combatEconomy||null);
+ const hasStoreRuntime=files['game.js'].includes('const gameForgeCombatEconomyFactory = ');
  const differences=JSON.stringify(old.stages)!==JSON.stringify(updated.stages)||
-   JSON.stringify(old.stageConfig||[])!==JSON.stringify(updated.stageConfig||[]);
- const tasks=differences?updated.implementation.applied.filter(item=>directIds.has(item.id)).map(item=>({
+   JSON.stringify(old.stageConfig||[])!==JSON.stringify(updated.stageConfig||[])||
+   (changedStore&&hasStoreRuntime);
+ const tasks=differences?updated.implementation.applied.filter(item=>directIds.has(item.id)&&
+   (!item.id.startsWith('combat-store')||changedStore&&hasStoreRuntime)).map(item=>({
    id:item.id,number:0,title:item.description,rationale:'Comando interpretado: '+item.where,checks:[
      'GAME_SPEC.stages / GAME_SPEC.stageConfig atualizados',
      'Motor reconhece esta configuração no jogo gerado',
      'Prévia e regressões devem ser verificadas'
    ],possible:true,direct:true})):[];
- return {tasks,pending:updated.implementation.pending.map(item=>item.description)};
+ const pending=updated.implementation.pending.map(item=>item.description);
+ if(changedStore&&!hasStoreRuntime&&old.genre==='fps'&&old.dimension==='3d')
+  pending.push('Este FPS foi criado antes do módulo de loja. Gere um projeto FPS atualizado para ativar compras; o código antigo foi preservado.');
+ return {tasks,pending};
 }
 const actions={
   difficulty:{title:'Ajustar dificuldade',checks:['Inimigos mais resistentes ou mais leves','Fases ainda completáveis']},
@@ -131,9 +138,12 @@ function modify(files,spec,planResult){
     const candidate=intent.compile(JSON.parse(JSON.stringify(next)),'',planResult.instruction);
     const changedStages=JSON.stringify(candidate.stages)!==JSON.stringify(next.stages);
     const changedConfig=JSON.stringify(candidate.stageConfig)!==JSON.stringify(next.stageConfig);
+    const changedStore=JSON.stringify(candidate.combatEconomy||null)!==JSON.stringify(next.combatEconomy||null);
     if(changedStages)next.stages=candidate.stages;
     if(changedConfig)next.stageConfig=candidate.stageConfig;
-    if(changedStages||changedConfig){
+    if(changedStore&&files['game.js'].includes('const gameForgeCombatEconomyFactory = '))
+      next.combatEconomy=candidate.combatEconomy;
+    if(changedStages||changedConfig||(changedStore&&files['game.js'].includes('const gameForgeCombatEconomyFactory = '))){
       next.implementation=candidate.implementation;
       for(const row of planResult.tasks.filter(task=>task.direct&&task.possible)){
         if(!applied.includes(row.title))applied.push(row.title);

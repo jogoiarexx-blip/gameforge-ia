@@ -137,6 +137,43 @@ for(const {dimension,genre} of combinations){
   }
  });
 }
+test('GF-018 gamepad funciona no game.js urbano exportado: anda, atira, pausa sem repetir e desconecta',()=>{
+ const files=filesFor('3d','urban-action');
+ assert.match(files['game.js'],/gameForgeUrbanInputFactory/);
+ assert.match(files['game.js'],/gameForgeUrbanSaveFactory/);
+ const h=environment(files,'3d');
+ function pad(buttons=[],axes=[0,0,0,0]){
+  return {connected:true,mapping:'standard',axes,
+   buttons:Array.from({length:17},(_,i)=>({pressed:buttons.includes(i),value:buttons.includes(i)?1:0}))};
+ }
+ let connected=[pad()];
+ h.env.navigator.getGamepads=()=>connected;
+ h.tick(2);
+ h.element('start').click();
+ const initial=h.telemetry();
+ connected=[pad([],[0,-1,0,0])];
+ h.tick(15);
+ const moved=h.telemetry();
+ assert.ok(moved.player.z<initial.player.z-0.3,'analógico esquerdo move o personagem');
+ assert.equal(moved.gamepadConnected,true);
+ connected=[pad([7],[0,0,0,0])];
+ const shots=h.telemetry().ammo;
+ h.tick(2);
+ assert.ok(h.telemetry().ammo<shots,'gatilho direito efetua disparo');
+ connected=[pad([9])];
+ h.tick(1);
+ assert.equal(h.telemetry().paused,true,'menu do controle pausa');
+ h.tick(10);
+ assert.equal(h.telemetry().paused,true,'botao segurado nao alterna pausa sozinho');
+ connected=[pad()];
+ h.tick(1);
+ connected=[pad([9])];
+ h.tick(1);
+ assert.equal(h.telemetry().paused,false,'nova borda retoma');
+ connected=[];
+ h.tick(1);
+ assert.equal(h.telemetry().gamepadConnected,false,'desconexao nao deixa pad ativo');
+});
 test('GF-002 exportação FPS com loja inicia após serializar múltiplos módulos',()=>{
  const files=filesFor('3d','fps','Crie um FPS 3D com loja para comprar munição, kit médico e melhorar armas.');
  assert.match(files['game.js'],/gameForgeCombatEconomyFactory/);

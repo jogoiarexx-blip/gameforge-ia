@@ -62,6 +62,9 @@
       if(options.dimension===dimension||options.genre&&options.genre!=='auto')throw Error('O estilo '+(labels[genre]||genre)+' ainda não possui motor '+dimension.toUpperCase()+'. Escolha 2D ou um estilo compatível nas opções.');
       genre='arena';
     }
+    const oldGenre=source.trim()?detectGenre(source):null;
+    const sourceConflict=requestedGenre&&oldGenre&&requestedGenre!==oldGenre
+      ?'A ideia recente pede '+labels[requestedGenre]+', mas o GDD carregado descreve '+labels[oldGenre]+'. Os títulos e fases do GDD antigo serão preservados. Para criar outro jogo, use a opção de novo GDD pela ideia.':null;
     const levelHeads = headings.filter(x => /\b(fase|missao|ato|capitulo|level|stage)\s*[0-9ivx]+\b/i.test(normalize(x)));
     const allLevels=unique(levelHeads);
     const stageLimit=genre==='lane-defense'?40:30;
@@ -116,10 +119,12 @@
       summary: headings.slice(0, 14), enemyNames, features, world,
       sourceLength: source.length, sectionCount: headings.length, sectionsIndexed: headings.length, instructions: extra,
       colors: colorPalettes[genre],
+      sourceConflict,
       detected: [`Gênero: ${labels[genre]}`,`Dimensão: ${dimension.toUpperCase()}`,
         `${stages.length} fase(s) no protótipo`, `${headings.length} capítulos lidos`, `${enemyNames.length} nome(s) de inimigos encontrados`,
         ...Object.keys(features).filter(k => features[k]).map(k => ({inventory:'Inventário',enemies:'Inimigos',bosses:'Chefes',quests:'Objetivos',checkpoints:'Checkpoints',upgrades:'Melhorias',mobile:'Controles mobile',timer:'Cronômetro',audio:'Áudio previsto'})[k])],
       limitations: [
+        ...(sourceConflict?[sourceConflict]:[]),
         ...(mechanics.pending.length?['Mecânicas solicitadas sem implementação garantida neste motor: '+mechanics.pending.map(id=>mechanics.labels[id]).join(', ')+'. Necessitam desenvolvimento adicional.']:[]),
         ...(allLevels.length>stageLimit?[`O GDD contém ${allLevels.length} fases; este motor utiliza as primeiras ${stageLimit}. O documento original permanece completo.`]:[]),
         ...(dimension==='3d'?['O motor 3D usa cenários e personagens low poly procedurais com Three.js local; requer WebGL2. GLBs detalhados, animações importadas e campanha escrita livremente ainda exigem trabalho adicional.']:[]),

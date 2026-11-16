@@ -129,6 +129,7 @@ def run():
 
             # Reuse restored project, apply one supported gameplay change and
             # undo it without losing the code that came from the other computer.
+            restored.locator('.tools-collection > summary').click()
             restored.locator('.development-disclosure > summary').click()
             restored.locator('#instruction').fill('adicione uma fase "Terceira Etapa"')
             restored.locator('#improve').click()

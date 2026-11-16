@@ -1,3 +1,20 @@
+# GameForge Studio v0.19 — Mais gêneros jogáveis em 3D
+
+O aviso "Estilo não compatível com 3D" ocorria porque o parser só aceitava Arena, FPS, Corrida e Plataforma na lista do motor Three.js. Agora a matriz inclui **Shoot'em up 3D** e **RPG 3D**, com implementações de jogabilidade próprias, além de preservar todos os gêneros antigos.
+
+## Novidades
+- **Shoot'em up 3D (navinha):** motor independente `js/shooter-3d-runtime.js`, nave e inimigos low poly procedurais, movimentação em X/Z, disparos e projéteis inimigos com colisão, ondas por fase, chefão com três fases, power-ups de armas até nível 3, recuperação de vida, pontuação, avanço de campanha, HUD, teclado/toque, pausa, reinício, compatibilidade com HTML offline e fallback de renderização compatível.
+- **RPG 3D:** sistema de progressão inicial integrado ao motor de aventura 3D: experiência por eliminações, subida de nível com fortalecimento de magia, poções consumíveis via H, cura e continuidade entre fases. Não é ainda um RPG com árvore de habilidades, inventário de equipamentos ou diálogos completos.
+- **Compreensão da ideia:** quando o usuário escreve "criar um game de navinha" e o navegador mantém um GDD anterior de FPS, o pedido recente explícito determina o gênero detectado. O Studio mostra um aviso da incompatibilidade de conteúdo, sem fingir que os capítulos do GDD antigo viraram uma nova história.
+- **Novo GDD pela ideia:** botão **Usar esta ideia como novo GDD** cria um GDD inicial a partir da descrição, evitando reaproveitar o GoldenEye ou qualquer projeto salvo por engano. Para GDD longo, pede confirmação antes de substituir o texto. Não descarta automaticamente o projeto antigo.
+- **Exemplos:** modelos **Navinha 3D** e **RPG 3D** em "Personalizar tipo e gráficos". Motor 3D continua exclusivamente em **Sem IA** no GitHub Pages; "Com IA" exige backend independente e não implementa 3D neste fluxo.
+
+**Limitações:** Tower Defense 3D, simulação naval 3D e outros gêneros ainda precisam de motores específicos. Os templates são protótipos com regras procedurais, não traduções integrais de GDDs longos ou de jogos existentes. Importação de GLB continua estática/decorativa. FPS/arena/corrida/plataforma 3D e motores 2D mantidos; nenhuma alegação de WebGL real ou teste em celular nesta etapa.
+
+**Verificação:** pipeline CI `43854140712` com **164 testes aprovados, zero falhas**, e GitHub Pages `43854140495` publicados. Inclui testes do novo motor de navinha, geração offline e regressões dos outros gêneros. Consulte `docs/CHECKPOINT_DIVERSIDADE_JOGOS.md`.
+
+---
+
 # GameForge Studio v0.18 — Biblioteca de modelos 3D e backups completos
 
 A importação de GLB evoluiu de **um arquivo de até 1,2 MB** para uma **biblioteca de até 4 objetos GLB**, com **25 MiB por arquivo** e **50 MiB de arquivos no projeto**. Os modelos são **estáticos/decorativos**; não substituem automaticamente jogador, NPCs ou inimigos e ainda não recebem animação, rig, física ou colisão.

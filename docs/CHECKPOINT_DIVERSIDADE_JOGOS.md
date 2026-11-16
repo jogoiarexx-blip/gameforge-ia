@@ -1,6 +1,20 @@
 # CHECKPOINT — GameForge Studio | 2026-11-14
 
 
+## GF-017 / GF-025 — Estudo Asas do Último Ninho v0.4.0 (16/11/2026)
+
+**Fonte:** `Asas_do_Ultimo_Ninho_v0.4.0_Caminhos_dos_Esquecidos.zip` enviado em 16/11/2026. Auditoria: [ESTUDO_ASAS_ULTIMO_NINHO_V040_2026-11-16.md](./ESTUDO_ASAS_ULTIMO_NINHO_V040_2026-11-16.md). **Sem cópia de arquivos artísticos, dados de fases, código literal ou fontes.**
+
+**Achados:** pacote com 24 fases em JSON e scripts locais para `file://`; a fase 02 contém escolhas superior/inferior/central, passagem secreta, tesouros únicos, checkpoint da rota, eventos condicionais e índice estável de eventos. Cache guarda fase atual e próxima, com proteção contra resposta de carregamento antiga. Cenas 3D usam geometria/material compartilhados e descarte ao sair; testes Node comprovam funções, não FPS real de dispositivos.
+
+**GF-025 implementado:** `js/urban-save.js` ganhou backup validado `<chave>:backup`. Caso a chave principal esteja corrompida, a leitura tenta o backup somente se passar no validador do motor. A escrita preserva a versão anterior válida, e reiniciar remove principal/temporário/backup. Os esquemas e chaves antigas v1/v2 não mudaram; não duplique recompensas nem devolva save de versão incompatível. `tests/urban-save.test.js` inclui regressões de corrupção, fallback e limpeza.
+
+**GF-017 implementado:** `js/shooter-3d-runtime.js` agrupa as 65–110 estrelas do cenário em um `THREE.InstancedMesh` para WebGL, com atualização de matrizes por frame e descarte na troca de fase. A renderização CPU preserva as malhas individuais (35) por falta de instancing no software renderer. `__gameforgeTelemetry()` inclui `starCount`/`starDrawBatches`; `tests/shooter-3d.test.js` verifica a instância real, movimentação e descarte. **Redução de draws não é comprovação de FPS.**
+
+**Verificações:** rodar `npm test`, `verify:exports`, matriz Chromium e continuidade do Studio no SHA final. Considerar esta etapa EM REVISÃO até CI desse SHA passar.
+
+**Pendente GF-010:** criar `StageBranchSpec` e executor de escolhas com fases/destinos/eventos/recompensas e checkpoint real derivado de GDD; não anunciar que os 24 níveis ou todas as rotas já foram reproduzidos no GameForge. Próxima etapa recomendada: branch de missão jogável no motor shooter e regressão por caminhos alternativos. GF-001 de GitHub Pages permanece como requisito administrativo independente.
+
 ## GF-028 / URB-02 — Rotas geométricas de NPCs em bairros 3D (16/11/2026)
 
 **Estado:** EM REVISÃO, confirmar CI Node/Chromium do SHA final e workflow de publicação. A navegação foi implementada no código utilizado pelos dois jogos urbanos; não é somente plano ou botão.

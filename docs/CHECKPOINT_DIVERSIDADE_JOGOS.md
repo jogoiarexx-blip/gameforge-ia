@@ -423,3 +423,23 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Validação:** checagem sintática de JavaScript antes de cada publicação; GitHub Actions \`43850704275\` (commit \`877e77ebac\`) e \`43850716944\` (commit \`6bb0a889c1\`) concluídos com sucesso, incluindo os testes e benchmark informativo da arena. A execução não equivale a QA visual em navegador real.
 
 **Pendências:** testar modelos Meshy com texturas no Chrome e Android; medir consumo de memória com quatro GLBs de até 25 MB; ampliar suporte a animações, rigs e colisões sem comprometer motores 2D. Novas alterações paralelas ao repositório devem ser reavaliadas sobre o HEAD atual, sem sobrescrever arquivos.
+
+
+## Engenharia — etapa 12: biblioteca multi-asset GLB 25 MiB e backup binário (16/11/2026)
+
+**Problema real observado:** importação de apenas 1 GLB (até 1,2 MB) e armazenamento como base64 no projeto/backup JSON. Arquivos maiores sobrecarregariam o localStorage, impediriam reabertura e não permitiriam usar vários objetos ao mesmo tempo.
+
+**Arquivos de implementação:**
+- `js/asset-library.js` (novo): manifesto de até 4 GLBs, limite 25 MiB por arquivo / 50 MiB por projeto, IDs seguros, validação e operações binárias no IndexedDB.
+- `js/app.js`: importar múltiplos arquivos, seleção individual, posição X/Z/escala, exclusão, persistência e carregamento assíncrono dos binários na prévia; exportação HTML e ZIP; backup ZIP com restauração dos GLBs em novo namespace de armazenamento.
+- `js/generator.js` e `js/three-runtime.js`: incorporam múltiplos objetos decorativos GLB em cada fase, sem mexer nos comportamentos dos motores 2D/3D; mantém compatibilidade com o antigo `ASSET_CENARIO.b64`.
+- `js/glb-runtime.js`: limite de 25 MiB, codificação de texturas por blocos, validação estática pré-importação de triângulos, índices e hierarquia; recusa ciclos e extensões não suportadas.
+- `js/zip.js`: leitura de ZIP sem compressão com limite de tamanho, CRC32 e validação de caminhos; suporte a HTML grande nos projetos 3D.
+- `js/project-backup.js`, `index.html`, `LEIA-ME.md`, `package.json`: manifesto versionado e ID persistente do armazenamento, controles novos e documentação.
+- `tests/asset-library.test.js`, `tests/glb-import.test.js`, `tests/project-backup.test.js`: validação de manifestos, IndexedDB simulado, ZIP/CRC, exportação, múltiplos objetos instanciados em Three.js e ausência de regressões de opções gráficas.
+
+**Verificação automatizada confirmada:** GitHub Actions `43850982361` no commit `2d9d57f2`: **146 testes aprovados, 0 falhas**, sintaxe dos módulos JS e `npm run bench:arena` concluídos. Os testes Node incluem o Three.js r180 real com renderizador substituto. Após atualizações de documentação, executar/confirmar novamente o workflow do HEAD.
+
+**Limites honestos:** armazenamento IndexedDB depende da disponibilidade/quota do navegador; apenas o backup ZIP completo transporta arquivos binários entre dispositivos; GLBs continuam **objetos estáticos/decorativos**, não jogador/inimigo com rig, animações ou colisão; a prévia e o HTML único ainda incorporam modelos via base64 e podem gastar muita RAM com dezenas de MB. O leitor glTF limitado não suporta Draco/meshopt/extensões obrigatórias. Teste com arquivos Meshy reais, WebGL real e Android permanece pendente; GitHub Pages publicar não equivale a QA visual.
+
+**Próxima etapa recomendada:** medir memória e latência ao importar 25 MiB num celular real e com vários modelos; separar transferência dos bytes da prévia do HTML para reduzir base64 em memória; preparar importação GLTFLoader completa, papéis de asset e AnimationMixer por estados antes de permitir substituir o jogador/inimigos.

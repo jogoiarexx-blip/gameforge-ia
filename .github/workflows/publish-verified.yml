@@ -72,6 +72,18 @@ jobs:
         with:
           path: ./_site
 
+      - name: Revalidar SHA imediatamente antes do deploy
+        shell: bash
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          CURRENT="$(git ls-remote https://github.com/${{ github.repository }}.git refs/heads/main | cut -f1)"
+          if [ "$CURRENT" != "$VERIFIED_SHA" ]; then
+            echo "::error::Main avançou para $CURRENT durante o empacotamento. Publicação cancelada."
+            exit 1
+          fi
+
       - name: Publicar artefato somente após CI aprovada
         id: pages
         uses: actions/deploy-pages@v4

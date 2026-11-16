@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict');
 const knowledge=require('../js/repository-knowledge.js');
-assert.equal(knowledge.entries.length,29);
+assert.ok(knowledge.entries.length>=29,'catálogo não pode perder referências existentes');
+assert.equal(new Set(knowledge.entries.map(entry=>entry.id)).size,knowledge.entries.length,'IDs únicos');
 for(const [query,expected] of [
  ['personagem andando de ré camera e WASD','character-facing'],
  ['o caminhão fica cortado no notebook na oficina','workshop-framing'],

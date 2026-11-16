@@ -171,6 +171,7 @@ function gameForgeWorldRules(){
    z:clamp(home.z+(1-Math.cos(elapsed*.75))*.34,-radius,radius)};
  }
  function npcNear(quest,player,size,radius=2.6,position){
+  if(!npcQuestContract(quest))return false;
   const p=position&&Number.isFinite(position.x)&&Number.isFinite(position.z)
    ?position:npcPatrolPosition(quest,0,size);
   return !!p&&player&&Number.isFinite(player.x)&&Number.isFinite(player.z)&&

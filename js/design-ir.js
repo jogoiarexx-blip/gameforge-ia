@@ -14,7 +14,7 @@ const patterns=Object.freeze([
  {id:'stealth',label:'Furtividade e esconder-se',pattern:/\b(furtividade|stealth|esconder(?:-se)?|escondid[oa]s?|se esconder|nao ser visto)\b/,engines:[]},
  {id:'dialogue',label:'Diálogos interativos',pattern:/\b(dialogos?|conversar com npcs?|falar com npcs?|falas? ramificadas)\b/,engines:[]},
  {id:'quests',label:'Missões/quests roteirizadas',pattern:/\b(quests?|missoes? com escolhas|missoes? de historia|campanha roteirizada)\b/,engines:[]},
- {id:'skill-tree',label:'Árvore de habilidades',pattern:/\b(arvore de habilidades?|skill tree|habilidades? permanentes?|pontos? de habilidade|evolu(?:cao|ir|ir as) habilidades?|melhorar habilidades?)\b/,engines:[]},
+ {id:'skill-tree',label:'Árvore de habilidades',pattern:/\b(arvore de habilidades?|skill tree|habilidades? permanentes?|pontos? de habilidade|evolu(?:cao|ir|ir as)(?: de| das)? habilidades?|melhorar habilidades?)\b/,engines:[]},
  {id:'craft',label:'Fabricação de itens',pattern:/\b(crafting|fabricar itens?|fabricar armas?|sistema de fabricacao)\b/,engines:[]},
  {id:'farming',label:'Plantar, colher e gerir fazenda',pattern:/\b(fazenda|plantar|colheita|cultivar|agricultura)\b/,engines:[]},
  {id:'sailing',label:'Navegação de barcos',pattern:/\b(navegar barcos?|navegar no mar|dirigir barcos?|pilot(?:ar)? navios?|navios? dirigiveis|batalhas? navais?|barcos?|navios?|piratas?)\b/,engines:[]},
@@ -49,7 +49,7 @@ function inspect(spec,gdd='',command=''){
   for(const row of rows){
    const match=rule.pattern.exec(row.normal);
    if(!match)continue;
-   const before=row.normal.slice(Math.max(0,match.index-60),match.index);
+   const before=row.normal.slice(Math.max(0,match.index-60),match.index).split(/[;,.]/).pop();
    // Restrições não viram requisitos positivos, nem campos do motor.
    if(/\b(sem|nao quero|nao usar|proibid[ao]|evitar|fora de escopo)\b.{0,48}$/.test(before))continue;
    origin=row.origin;
@@ -69,6 +69,20 @@ function inspect(spec,gdd='',command=''){
     reason:incompatible?'O motor '+engine+' contém esta mecânica obrigatória; não pode ignorar a proibição.':'Restrição explicitamente registrada.'};
   constraints.push(item);
   if(incompatible)blocked.push(item);
+ }
+ // Não transformar um simulador agrícola ou jogo naval em arena sem avisar.
+ const primary=normalize((String(command||'').trim()||String(gdd||'').slice(0,1400))).slice(0,1200);
+ const unsupportedCore=/\b(farming simulator|simulador (?:de|da) fazenda|jogo de fazenda|simulador agricola|aventura naval|batalha naval|jogo de piratas?|jogo naval)\b/.exec(primary);
+ if(unsupportedCore&&spec.genre==='arena'){
+   const id=/fazenda|farm|agricola/.test(unsupportedCore[0])?'farming':'sailing';
+   const item=requirements.find(r=>r.id===id);
+   if(item&&item.status==='pendente'){
+     const reason='Não há motor de '+(id==='farming'?'simulação agrícola':'navegação naval')+
+       '. Gerar arena ignoraria a mecânica central do pedido.';
+     const block={id:'missing-core-engine',label:item.label,status:'incompativel',
+       origin:item.origin,reason};
+     blocked.push(block);constraints.push(block);
+   }
  }
  const counts={suportado:0,parcial:0,pendente:0,incompativel:blocked.length};
  requirements.forEach(r=>counts[r.status]++);

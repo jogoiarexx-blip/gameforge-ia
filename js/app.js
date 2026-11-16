@@ -16,6 +16,11 @@
     $('game-style').replaceChildren(new Option('Detectar pelo GDD','auto'),...genres.map(g=>new Option(GameForgeParser.labels[g],g)));
     $('game-style').value=genres.includes(prior)?prior:'auto';
   }
+  function enableAutoDetection(){
+    $('game-dimension').value='auto';
+    $('game-style').value='auto';
+    renderStyles();
+  }
   function restoreCreationOptions(options){
     const o=options||{};$('game-dimension').value=['2d','3d'].includes(o.dimension)?o.dimension:'auto';renderStyles();
     if([...$('game-style').options].some(x=>x.value===o.genre))$('game-style').value=o.genre;
@@ -157,7 +162,9 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         for(const k of ['requested','available']){if(!Array.isArray(spec.mechanics[k]))spec.mechanics[k]=[];if(!spec.mechanics[k].includes('puzzles'))spec.mechanics[k].push('puzzles');}
       }catch(e){feedback('JSON do editor inválido: '+e.message,true);return null;}
     }
-    state.spec=GameForgeProject.activeSpec(state.files,spec);
+    // Um GDD recém-importado não deve herdar o GAME_SPEC de outro jogo salvo.
+    const generatedGdd=typeof state.files['GDD_original.md']==='string'?state.files['GDD_original.md'].trim():null;
+    state.spec=generatedGdd===md?GameForgeProject.activeSpec(state.files,spec):spec;
     renderReferences();
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');
     const plan=spec.implementation||{applied:[],pending:[],warnings:[]};
@@ -166,11 +173,19 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     $('analysis').innerHTML=`<strong>${esc(spec.title)}</strong><div class="tags">${tags}</div><div class="muted">Fases: ${spec.stages.map(esc).join(' • ')}</div><p class="muted">${esc(sourceLabel)}. ${plan.applied.length} configurações compiladas; ${plan.pending.length} requisitos adicionais pendentes.</p>`+
       `<details><summary>Entendimento do pedido: ${plan.applied.length} aplicado(s) / ${plan.pending.length} pendente(s)</summary><p>Configurações adicionadas ao código:</p><ul>${section(plan.applied,25)||'<li>Motor padrão do gênero selecionado.</li>'}</ul><p>O que ainda não foi programado:</p><ul>${section(plan.pending,15)||'<li>Nenhum pedido adicional reconhecido como pendente.</li>'}</ul></details>`+
       `<p class="muted">Modo Sem IA: somente configurações e mecânicas suportadas são executadas. Regras inéditas requerem desenvolvimento específico.</p>`;
-    if(spec.sourceConflict){
+    for(const message of [spec.sourceConflict,spec.genreOverrideWarning].filter(Boolean)){
       const warning=document.createElement('p');
       warning.setAttribute('role','status');
-      warning.textContent='⚠ '+spec.sourceConflict;
+      warning.textContent='⚠ '+message;
       $('analysis').appendChild(warning);
+    }
+    if(spec.genreInference){
+      const explanation=document.createElement('p');
+      explanation.className='muted tiny';
+      explanation.textContent='Identificação pelo GDD: '+(GameForgeParser.labels[spec.genreInference.genre]||spec.genreInference.genre)
+        +' · confiança '+spec.genreInference.confidence
+        +(spec.genreInference.signals.length?' · '+spec.genreInference.signals.join(', '):'');
+      $('analysis').appendChild(explanation);
     }
     return spec;
   }
@@ -959,20 +974,21 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const name=genre==='shooter'?'ARMADA ESTELAR':genre==='rpg'?'CRÔNICAS DO VALE':genre==='fps'?'OPERAÇÃO HORIZONTE':'NOVO PROJETO';
     const gdd='# '+name+'\\n\\n## Conceito\\n'+idea+'\\n\\n## Controles e sistemas\\nImplementar os controles e as mecanicas disponiveis deste estilo.\\n\\n## Fase 1 — Início\\nIntroduzir as mecânicas básicas.\\n\\n## Fase 2 — Desafio\\nAumentar o desafio.\\n\\n## Fase 3 — Confronto\\nObjetivo final da campanha.\\n';
     $('gdd').value=gdd;$('instruction').value='';$('project-name').value=name;
-    if($('game-dimension').value==='auto')$('game-dimension').value=dim;
-    renderStyles();
-    if([...$('game-style').options].some(x=>x.value===genre))$('game-style').value=genre;
+    enableAutoDetection();
     unrestoredProject=false;
     $('file-indicator').textContent='Novo GDD criado a partir da sua ideia';
     analyze();saveState();feedback('Novo GDD criado. Clique em Criar jogo para gerar o motor '+dim.toUpperCase()+'.');
   });
 
-  $('example').addEventListener('click',()=>{unrestoredProject=false;$('gdd').value=example;$('instruction').value='';$('project-name').value='Sombras do Vale';analyze();saveState();});
+  $('example').addEventListener('click',()=>{unrestoredProject=false;$('gdd').value=example;$('instruction').value='';$('project-name').value='Sombras do Vale';enableAutoDetection();analyze();saveState();});
   $('md-file').addEventListener('change',async e=>{
     const file=e.target.files&&e.target.files[0];if(!file)return;
     if(!/\.(md|markdown)$/i.test(file.name)){feedback('Envie um GDD .md ou .markdown.',true);return;}
     if(file.size>1_000_000){feedback('GDD acima de 1 MB. Separe anexos ou partes do documento.',true);return;}
     const value=await file.text();unrestoredProject=false;$('gdd').value=value; // Não cortar o documento importado
+    $('instruction').value=''; // Não misturar comando de outro projeto com o novo documento.
+    $('rpg-layout-json').value='';
+    enableAutoDetection(); // Arquivos novos sempre começam com interpretação automática.
     const parsed=analyze();if(parsed)$('project-name').value=parsed.title;
     $('file-indicator').textContent=file.name+' · '+(file.size/1024).toFixed(1)+' KB · '+(parsed?.sectionCount||0)+' capítulos';feedback('GDD integral carregado: '+file.name+' ('+file.size+' bytes).');saveState();e.target.value='';
   });
@@ -1025,6 +1041,15 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('fullscreen').addEventListener('click',()=>{const el=$('preview-box');if(document.fullscreenElement)document.exitFullscreen();else if(el.requestFullscreen)el.requestFullscreen();});
   window.addEventListener('message',ev=>{if(ev.source!==$('preview').contentWindow)return;if(ev.data&&ev.data.kind==='gameforge-error'){log('[Prévia] '+String(ev.data.message).slice(0,400));status('Erro na prévia',true);}});
   $('file-editor').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const t=e.target;const s=t.selectionStart;t.setRangeText('  ',s,t.selectionEnd,'end');}if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();applyEdit();}});
+  $('gdd').addEventListener('paste',event=>{
+    const el=$('gdd'),newText=event.clipboardData?.getData('text')||'';
+    const replacingWhole=!el.value.trim()||(el.selectionStart===0&&el.selectionEnd===el.value.length);
+    if(replacingWhole&&newText.trim().length>80){
+      enableAutoDetection();
+      $('instruction').value='';
+      $('rpg-layout-json').value='';
+    }
+  });
   $('gdd').addEventListener('input',()=>{renderReferences();scheduleSave();});
   $('instruction').addEventListener('input',()=>{renderReferences();scheduleSave();});
   $('project-name').addEventListener('input',scheduleSave);

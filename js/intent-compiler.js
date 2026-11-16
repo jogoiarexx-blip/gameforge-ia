@@ -5,6 +5,7 @@
 (function(root){
 'use strict';
 const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const capabilities=root.GameForgeCapabilities||(typeof require==='function'?require('./game-capabilities'):null);
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const words={um:1,uma:1,dois:2,duas:2,tres:3,quatro:4,cinco:5,seis:6,sete:7,oito:8,nove:9,dez:10,quinze:15,vinte:20,trinta:30};
 const DIG='(?:\\d{1,3}|uma?|duas?|dois|tres|quatro|cinco|seis|sete|oito|nove|dez|quinze|vinte|trinta)';
@@ -120,10 +121,13 @@ function compile(spec,gdd,instruction='',options={}){
   changeTuning('difficulty',1.4,'difficulty','Dificuldade ampliada no motor');
  else if(/\b(mais facil|dificuldade (baixa|facil)|inimigos? mais fracos?)\b/.test(combined))
   changeTuning('difficulty',.8,'difficulty','Dificuldade reduzida no motor');
- if(/\b(nave|jogador|personagem|carro|veiculo)\b.{0,22}\b(mais rapid[oa]|mais veloz)\b|\baument(?:ar|e)\b.{0,20}\bvelocidade\b/.test(combined))
-  changeTuning('playerSpeedMultiplier',1.25,'speed','Velocidade do jogador aumentada');
- else if(/\b(nave|jogador|personagem|carro)\b.{0,20}\bmais lent[oa]\b/.test(combined))
-  changeTuning('playerSpeedMultiplier',.8,'speed','Velocidade do jogador reduzida');
+ if(/\b(nave|jogador|personagem|carro|veiculo)\b.{0,22}\b(mais rapid[oa]|mais veloz)\b|\baument(?:ar|e)\b.{0,20}\bvelocidade\b/.test(combined)){
+  if(!capabilities||capabilities.capability('speed',spec).allowed)changeTuning('playerSpeedMultiplier',1.25,'speed','Velocidade do jogador aumentada');
+  else push('pending','speed','Velocidade do jogador não configurável neste motor','Jogo inteiro');
+ }else if(/\b(nave|jogador|personagem|carro)\b.{0,20}\bmais lent[oa]\b/.test(combined)){
+  if(!capabilities||capabilities.capability('speed',spec).allowed)changeTuning('playerSpeedMultiplier',.8,'speed','Velocidade do jogador reduzida');
+  else push('pending','speed','Velocidade do jogador não configurável neste motor','Jogo inteiro');
+ }
  if(/\b(tiros?|disparos?|cadencia)\b.{0,20}\b(mais rapid|mais veloz|maior|aument)/.test(combined)&&supports(['shooter','fps','rpg','arena']))
   changeTuning('fireRateMultiplier',1.3,'fire','Cadência dos disparos aumentada');
  if(Object.keys(tuning).length)parsed.tuning=tuning;
@@ -175,7 +179,9 @@ function compile(spec,gdd,instruction='',options={}){
   const objective=/^(?:[-*+]\s*)?(?:objetivo|missao principal|meta)\s*:\s*(.{5,140})/i.exec(line.text);
   if(objective&&where!==null){
    const readable=objective[1].replace(/[<>]/g,'').trim().slice(0,140);
-   configure(where,'objective',readable,'objective-label','Texto do objetivo visível no HUD (não define vitória)',origin);
+   if(spec.dimension==='3d')
+    configure(where,'objective',readable,'objective-label','Texto do objetivo visível no HUD (não define vitória)',origin);
+   else push('pending','objective-label','Texto de objetivo personalizado ainda não é suportado no HUD deste motor',origin);
   }
   const laps=quantity(t,'voltas');
   if(laps!==null){
@@ -217,16 +223,25 @@ function compile(spec,gdd,instruction='',options={}){
  // Loja de combate: este contrato só é executável no FPS 3D com módulo integrado.
  // A presença de palavras como "economia" isoladas não habilita compras automáticas.
  const demand=normalize(source+'\n'+extra);
- const shopDisable=/\b(sem loja|remova? a loja|desativar? a loja|retirar a loja)\b/.test(demand);
- const shopRequest=/\b(comprar|compre|compra|loja|mercador|mercado)\b/.test(demand)&&
-   /\b(municao|balas?|cartuchos?|armas?|vida|cura|kit medico|medkits?|upgrades?|melhorias?)\b/.test(demand);
- const priceRequest=/\b(municao|balas?|kit medico|cura|melhoria de arma|upgrade de arma)\b.{0,32}\b(custa|custo|preco)\b/.test(demand);
+ // Escolher a ÚLTIMA ordem explícita. "Sem loja" no GDD não vence
+ // "adicione uma loja" escrito depois pelo usuário, nem vice-versa.
+ const shopLines=[...sections.filter(r=>r.origin==='GDD'),...sections.filter(r=>r.origin==='Comando')];
+ const disableStore=/\b(sem loja|nao quero (?:uma )?loja|remova? a loja|desativar? a loja|retirar a loja)\b/;
+ const enableStore=/\b(comprar|compre|compra|loja|mercador|mercado)\b.*\b(municao|balas?|cartuchos?|armas?|vida|cura|kit medico|medkits?|upgrades?|melhorias?)\b|\b(ativar|habilitar|adicionar|criar)\b.{0,26}\bloja\b/;
+ const pricePattern=/\b(municao|balas?|kit medico|cura|melhoria de arma|upgrade de arma)\b.{0,32}\b(custa|custo|preco)\b/;
+ let storeAction=null,shopRequest=false,priceRequest=false;
+ for(const record of shopLines){
+  if(disableStore.test(record.normal))storeAction='off';
+  else if(enableStore.test(record.normal)){storeAction='on';shopRequest=true;}
+  if(pricePattern.test(record.normal)){priceRequest=true;if(storeAction===null)storeAction='on';}
+ }
+ const shopDisable=storeAction==='off';
  if(shopRequest||priceRequest||shopDisable||parsed.combatEconomy?.enabled){
   if(spec.dimension==='3d'&&spec.genre==='fps'){
-   const config={enabled:!shopDisable,startingCredits:90,startingReserve:60,
+   const config={enabled:storeAction==='on'||(storeAction===null&&!!parsed.combatEconomy?.enabled),startingCredits:90,startingReserve:60,
      ...(parsed.combatEconomy||{}),prices:{ammo:30,heal:45,upgrade:125,...parsed.combatEconomy?.prices}};
+   if(storeAction==='on')config.enabled=true;
    if(shopDisable)config.enabled=false;
-   const shopLines=[...sections.filter(r=>r.origin==='GDD'),...sections.filter(r=>r.origin==='Comando')];
    for(const entry of shopLines){
     const t=entry.normal;
     const credit=/\b(?:comec|inici|creditos? iniciais?|saldo inicial)\w*.{0,26}\b(?:com|de|:)?\s*(\d{1,4})\s*(?:creditos?)?\b/.exec(t);
@@ -264,15 +279,27 @@ function compile(spec,gdd,instruction='',options={}){
   ['story',/cutscenes?|cenas? cinematicas?|historia ramificada/,'Cenas e narrativa personalizadas'],
   ['skills',/sistema de habilidades? completo|skill points|pontos de habilidade/,'Sistema de habilidades personalizáveis']
  ];
- if(spec.genre==='rpg'&&spec.dimension==='3d'&&/\b(inventario|mochila|equipamentos? colecionaveis?)\b/.test(combined))
+ if(spec.genre==='rpg'&&spec.dimension==='3d'&&sections.some(x=>/\b(inventario|mochila|equipamentos? colecionaveis?)\b/.test(x.normal)&&
+      !/\b(sem|nao quero|fora de escopo|nao usar|nao deve)\b.{0,35}\b(inventario|mochila|equipamentos?)\b/.test(x.normal)))
    push('pending','inventory-3d','Inventário equipado e persistente no RPG 3D ainda não implementado','Jogo inteiro');
- for(const [id,regex,label] of pendingCatalog)if(regex.test(normalize(source+'\n'+extra)))
-  push('pending',id,label+' — requer implementação própria','Jogo inteiro');
+ // Exclusões de escopo NÃO são exigências a programar.
+ // A última decisão em cada documento ganha; o comando recente vem depois do GDD.
+ for(const [id,regex,label] of pendingCatalog){
+  let last=null;
+  for(const line of sections){
+   if(!regex.test(line.normal))continue;
+   const negative=/\b(sem|nao quero|fora de escopo|nao usar|nao deve|evitar|exclui)\b.{0,70}$/.test(line.normal.slice(0,Math.max(0,line.normal.search(regex))))||
+     /\b(sem|nao quero|fora de escopo|nao usar|nao deve|evitar|exclui)\b.{0,75}\b(multiplayer|crafting|furtividade|skill tree|arvore de habilidades?|dialogo|cutscenes?|mundo infinito|inventario)\b/.test(line.normal);
+   last=negative?null:line;
+  }
+  if(last)push('pending',id,label+' — requer implementação própria','Jogo inteiro',last.origin+' linha '+last.line);
+ }
  // Separar intenção de evidencia: configuracoes serializadas no código sao verificaveis.
  parsed.stageConfig=stageConfig;
  implementation.requirements=[...implementation.applied,...implementation.pending].slice(0,120);
  implementation.summary=implementation.applied.length+' configuração(ões) aplicadas; '+implementation.pending.length+' requisito(s) pendente(s)';
  parsed.implementation=implementation;
+ if(capabilities)implementation.audit=capabilities.audit(parsed,source,extra);
  return parsed;
 }
 function report(spec){
@@ -290,7 +317,7 @@ function report(spec){
   '## Requisitos ainda não implementados\n'+li(p.pending,'Nenhuma solicitação adicional reconhecida como pendente')+'\n\n'+
   '## Alertas e limites\n'+(p.warnings.length?p.warnings.map(x=>'- '+x).join('\n'):'- Nenhum')+'\n\n'+
   reference+
-  '**Como verificar:** abra game.js, localize GAME_SPEC e confira stageConfig/tuning; execute a prévia e faça testes. Não se deve marcar tarefas do GDD como concluídas apenas por aparecerem no relatório.\n';
+  '**Como verificar:** abra game.js, localize GAME_SPEC e confira stageConfig/tuning; execute a prévia e faça testes. Não se deve marcar tarefas do GDD como concluídas apenas por aparecerem no relatório.\n\n'+(capabilities?capabilities.report(spec):'');
 }
 root.GameForgeIntent={compile,briefFromCommand,requirements,quantity,report,normalize};
 if(typeof module!=='undefined')module.exports=root.GameForgeIntent;

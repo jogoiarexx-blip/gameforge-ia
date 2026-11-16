@@ -62,8 +62,9 @@ function boot(genre,overrides={},webglFails=false){
  const env={THREE,GAME_SPEC:{genre,dimension:'3d',stages:['A','B'],features:{bosses:true},worldOptions:{size:48,seed:42,quality:'low'},...overrides},document:{getElementById:element,querySelectorAll:()=>[],addEventListener(){}},performance:{now:()=>now},requestAnimationFrame:f=>callbacks.push(f),addEventListener:(k,f)=>{(handlers[k]||(handlers[k]=[])).push(f);},gameForgeWorldRules:factory,gameForgeSoftwareRenderer:makeSoftware,window:null,globalThis:null};
  env.window=env;env.globalThis=env;vm.createContext(env);vm.runInContext('('+require('../js/three-runtime.js').toString()+')()',env);
  const fire=(type,key)=>{for(const f of handlers[type]||[])f({key,preventDefault(){},repeat:false});};
- const tick=(count=1)=>{for(let i=0;i<count;i++){now+=1000/60;const fn=callbacks.shift();assert.equal(typeof fn,'function');fn(now);}};
- return {elements,fire,tick,start:()=>element('start').click(),telemetry:()=>env.__gameforgeTelemetry(),scene:()=>lastScene,disposed:()=>disposed};
+ const advance=ms=>{now+=ms;const fn=callbacks.shift();assert.equal(typeof fn,'function');fn(now);};
+ const tick=(count=1,fps=60)=>{for(let i=0;i<count;i++)advance(1000/fps);};
+ return {elements,fire,tick,advance,start:()=>element('start').click(),telemetry:()=>env.__gameforgeTelemetry(),scene:()=>lastScene,disposed:()=>disposed};
 }
 test('serialized 3D arena moves, pauses without simulating, releases inputs and restarts resources',()=>{
  const b=boot('arena');b.start();b.tick(2);const before=b.telemetry();b.fire('keydown','ArrowRight');b.tick(30);b.fire('keyup','ArrowRight');const moved=b.telemetry();assert.ok(moved.player.x-before.player.x>200);
@@ -112,4 +113,55 @@ test('restarting a 3D scene releases the old light shadow render target',()=>{
 test('ampliar mundo de plataforma cria uma rota mais extensa com saltos alcançáveis',()=>{
  const r=factory(),small=r.platformRoute(42,0,48),large=r.platformRoute(42,0,72);
  assert(large.length>small.length);for(let i=1;i<large.length;i++)assert(large[i].x-large[i-1].x<=5.3);
+});
+
+test('todos os cinco gêneros 3D simulam um segundo em 30, 60 e 120 FPS',()=>{
+ for(const genre of ['arena','fps','rpg','racing','platform']){
+  const values=[];
+  for(const fps of [30,60,120]){
+   const b=boot(genre);b.start();b.tick(2);
+   const before=b.telemetry();
+   b.tick(fps,fps);
+   const after=b.telemetry();
+   assert.equal(after.simulationHz,60,genre+' '+fps+' FPS');
+   assert.equal(after.frames-before.frames,fps,genre+' quadros renderizados');
+   assert.ok(after.simulationSteps-before.simulationSteps>=59,genre+' simulação >=59 passos');
+   assert.ok(after.simulationSteps-before.simulationSteps<=61,genre+' simulação <=61 passos');
+   values.push(after.clock-before.clock);
+  }
+  assert.ok(Math.max(...values)-Math.min(...values)<.035,genre+': FPS alterou tempo da física: '+values);
+ }
+});
+
+test('movimento 3D da arena fica equivalente em 30, 60 e 120 FPS',()=>{
+ const xs=[];
+ for(const fps of [30,60,120]){
+  const b=boot('arena',{tuning:{difficulty:.25,enemyMultiplier:.25}});
+  b.start();b.tick(2);b.fire('keydown','ArrowRight');b.tick(fps,fps);
+  b.fire('keyup','ArrowRight');xs.push(b.telemetry().player.x);
+ }
+ assert.ok(Math.max(...xs)-Math.min(...xs)<18,'posição divergiu com FPS: '+xs);
+});
+
+test('motor 3D limita física após aba suspensa e não acumula pausa',()=>{
+ const b=boot('arena');b.start();b.tick(2);
+ const before=b.telemetry();
+ b.advance(20000);
+ const after=b.telemetry();
+ assert.ok(after.clock-before.clock<=5/60+1e-7,'salto maior que 5 substeps');
+ assert.ok(after.simulationSteps-before.simulationSteps<=5,'excedeu orçamento de física por quadro');
+ b.elements.pause.click();const paused=b.telemetry();
+ b.advance(30000);
+ assert.equal(b.telemetry().clock,paused.clock,'pausa acumulou tempo de jogo');
+ assert.equal(b.telemetry().simulationSteps,paused.simulationSteps,'pausa executou física');
+ b.elements.start.click();b.advance(1000/60);
+ assert.ok(b.telemetry().clock-paused.clock<=1/60+1e-7,'retomada tentou recuperar 30 segundos');
+});
+
+test('reiniciar campanha 3D limpa acumulador e contagem da simulação',()=>{
+ const b=boot('arena');b.start();b.tick(30);
+ assert.ok(b.telemetry().simulationSteps>20);
+ b.elements.restart.click();assert.equal(b.telemetry().simulationSteps,0);
+ assert.equal(b.telemetry().clock,0);b.tick(1);
+ assert.ok(b.telemetry().simulationSteps<=1);
 });

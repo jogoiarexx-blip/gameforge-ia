@@ -767,3 +767,22 @@ O teste novo confirmou, em perfis isolados: criação só por comando, edição 
 **Limite de publicação:** a rota antiga `pages build and deployment` continua ativa até alterar Settings → Pages → Source para GitHub Actions (GF-001). Esta validação demonstra qualidade da GF-005, **não** resolve a dupla rota de publicação.
 
 **Próximo checkpoint:** GF-006 (fluxo visual simplificado) / GF-009 (migração de saves), preservando esta matriz Chromium como regressão obrigatória.
+
+
+## AUD-2026-11-16 — Auditoria geral e próximos passos
+
+**Tipo de entrega:** diagnóstico estrutural e roadmap, **sem alterar motores nesta etapa**. Relatório completo em `docs/AUDITORIA_ESTRUTURAL_GAMEFORGE_2026-11-16.md`. Plano mestre atualizado. Base inspecionada: código `main` de 16/11/2026, com múltiplos commits urbanos acontecendo em paralelo.
+
+**Metodologia:** leitura direta de árvore com 112 arquivos, principais interpretadores, geradores, runtimes 2D/3D, GLB, backup, app, CI/Pages; execução isolada de 12 pedidos de linguagem natural; revisão de logs de Actions. Sem usar métricas inventadas de FPS nem supor que testes Node garantam gameplay em dispositivos físicos.
+
+**Pontos de falha auditados:**
+- **P0 — GF-001:** coexistência confirmada da publicação antiga da branch com o workflow protegido por CI; alteração administrativa de Pages permanece necessária.
+- **P0 — GF-003/004:** três pedidos curtos de ação urbana 3D em português classificados como `arena/3d`, apesar de existir URB-01; falta um `GameDesignIR` com requisitos obrigatórios, negativos e pendências rigorosas. Pedido de terror "sem tiros" ainda usa arquétipo FPS sem especificar implementação de stealth.
+- **P1 — GF-028/010:** o bairro URB-01 é jogável e validado em Chromium, mas o mapa/guarda/negócio/missão são protótipo fixo, não gerados semanticamente do GDD. Criar LevelSpec por projeto e provar diferenças em dois pedidos.
+- **P1 — GF-007/008/009:** `js/app.js` ~87 KB centraliza operações; evolução via substituição textual de `GAME_SPEC`; salvamento urbano usa chave por título (risco de colisão entre jogos homônimos).
+- **P1 — GF-015/016/017/019:** GLB de cenário estático não equivale a rigs animados; não há evidência de orçamento de FPS/1% lows, nem E2E de campanhas completas em cada gênero.
+- **P1 — GF-020/021:** riscos de tokens, importação de código e licenças exigem auditoria própria; backend opcional não constou na árvore analisada.
+
+**Evidência positiva URB-01:** GitHub Actions [43887382720](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43887382720), SHA `9ec2995cb8`, aprovou **261 testes Node, zero falhas, 16 exportações válidas e 17 cenários Chromium** (15 jogos + Studio + cenário urbano), além da continuidade GF-005. Isto é evidência do **protótipo jogável**, não de mundo aberto completo.
+
+**Próxima tarefa única sugerida:** corrigir **GF-001** no Settings → Pages; no código, executar **GF-003/004 — benchmark reproduzível + representação semântica de comandos curtos**. Critério: 3 erros urbanos identificados virarem classificação correta sem quebrar GoldenEye, navinha, terror e corrida. Depois passar ao `UrbanLevelSpec` de GF-028, com duas missões/cidades de teste distintas do mesmo gênero. Não marcar tarefas concluídas por relatório ou texto de HUD.

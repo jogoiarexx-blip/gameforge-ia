@@ -195,6 +195,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         ' — '+esc(actionNames[a.action]||a.action)+' '+esc(a.quantity)+' × '+esc(a.target)+
         (a.objectQuantity?' (itens: '+esc(a.objectQuantity)+')':'')+
         (a.preconditions.length?' · requer '+esc(a.preconditions.join(', ')):'')+
+        (a.conditions?.length?' · condição: '+esc(a.conditions.join('; ')):'')+
         ' <small>('+esc(a.source.document)+' linha '+esc(a.source.line)+')</small></li>').join('')+
       '</ul></li>').join('');
     const issuesRows=flow.issues.slice(0,12).map(x=>'<li>'+esc(x.reason)+

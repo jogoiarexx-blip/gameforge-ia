@@ -69,15 +69,33 @@ function gameForgeThreeBoot(){
  function mesh(g,mat,parent=world,x=0,y=0,z=0){const o=new T.Mesh(geometry(g),mat);o.position.set(x,y,z);o.castShadow=renderer.shadowMap.enabled;o.receiveShadow=true;parent.add(o);return o;}
  function disposeStage(){if(!scene)return;for(const g of geometries)g.dispose();for(const m of materials)m.dispose();scene.traverse(o=>{if(o.isLight&&o.shadow&&typeof o.shadow.dispose==='function')o.shadow.dispose();});scene.clear();renderer.renderLists.dispose();}
  function humanoid(color,boss=false){
-  const g=new T.Group(),scale=boss?1.55:1,m=material(color),dark=material(0x23394b),skin=material(0xe8c39c),glow=material(palette.accent,palette.accent);
-  const torso=box(.68,.85,.38,m,g,0,1.12,0);box(.72,.19,.43,dark,g,0,.74,0);
-  mesh(new T.IcosahedronGeometry(.29,1),skin,g,0,1.83,0);box(.45,.13,.18,dark,g,0,1.86,.22);
+  const g=new T.Group(),upperBody=new T.Group(),scale=boss?1.55:1;
+  const m=material(color),dark=material(0x23394b),skin=material(0xe8c39c),glow=material(palette.accent,palette.accent);
+  g.add(upperBody);
+  const torso=box(.68,.85,.38,m,upperBody,0,1.12,0);box(.72,.19,.43,dark,upperBody,0,.74,0);
+  mesh(new T.IcosahedronGeometry(.29,1),skin,upperBody,0,1.83,0);box(.45,.13,.18,dark,upperBody,0,1.86,.22);
   const limbs=[];
-  for(const side of [-1,1]){const arm=new T.Group();arm.position.set(side*.48,1.48,0);g.add(arm);box(.22,.68,.24,m,arm,0,-.27,0);box(.23,.17,.27,skin,arm,0,-.67,.01);limbs.push(arm);}
+  for(const side of [-1,1]){const arm=new T.Group();arm.position.set(side*.48,1.48,0);upperBody.add(arm);box(.22,.68,.24,m,arm,0,-.27,0);box(.23,.17,.27,skin,arm,0,-.67,.01);limbs.push(arm);}
   for(const side of [-1,1]){const leg=new T.Group();leg.position.set(side*.21,.73,0);g.add(leg);box(.26,.62,.28,dark,leg,0,-.3,0);box(.29,.18,.45,m,leg,0,-.64,.06);limbs.push(leg);}
-  box(.22,.28,.12,glow,g,0,1.2,.23);g.scale.setScalar(scale);world.add(g);g.userData={limbs,torso};return g;
+  box(.22,.28,.12,glow,upperBody,0,1.2,.23);
+  g.scale.setScalar(scale);world.add(g);g.userData={limbs,torso,upperBody,attack:0,hurt:0};return g;
  }
- function animateActor(actor,speed,phase){const a=Math.sin(phase)*Math.min(.7,speed*.15);actor.userData.limbs.forEach((limb,i)=>limb.rotation.x=a*(i%2?1:-1));actor.position.y+=Math.abs(Math.sin(phase))*Math.min(.045,speed*.008);}
+ // Poses absolutas: respiração, passada, ataque e impacto sem acumular altura no mundo.
+ function animateActor(actor,speed,phase,dt=1/60){
+  const rig=actor.userData;if(!rig||!rig.upperBody)return;
+  const motion=Math.min(1,Math.max(0,Math.abs(speed))/2.8);
+  const stride=Math.sin(phase)*.62*motion;
+  const attack=Math.max(0,rig.attack||0),hurt=Math.max(0,rig.hurt||0);
+  rig.limbs[0].rotation.x=-stride*.7-attack*.75;
+  rig.limbs[1].rotation.x=stride*.7-attack*1.05;
+  rig.limbs[2].rotation.x=stride;
+  rig.limbs[3].rotation.x=-stride;
+  rig.upperBody.position.y=Math.sin(phase*.28)*.012+Math.abs(Math.sin(phase))*.035*motion;
+  rig.upperBody.rotation.x=-attack*.12;
+  rig.upperBody.rotation.z=Math.sin(phase*.5)*.025*motion+hurt*.15;
+  rig.attack=Math.max(0,attack-dt*5);
+  rig.hurt=Math.max(0,hurt-dt*7);
+ }
  function car(color){
   const g=new T.Group(),body=material(color),glass=material(0x20394d),rubber=material(0x202a35),light=material(0xffe3a0,0xffbb55);
   box(1.3,.44,2.3,body,g,0,.55,0);box(1.03,.48,1.18,glass,g,0,.96,-.12);box(1.08,.12,1.26,body,g,0,1.23,-.12);
@@ -150,7 +168,7 @@ function gameForgeThreeBoot(){
    for(let i=0;i<count;i++){
     const a=(i/count)*Math.PI*2,x=Math.sin(a)*size*.26,z=Math.cos(a)*size*.24-4,boss=i===count-1&&(stageRules.boss==='yes'||(stageRules.boss!=='no'&&!!(spec.features&&spec.features.bosses)));
     const actor=humanoid(boss?0x91637f:palette.enemy,boss);actor.position.set(x,0,z);
-    enemies.push({x,z,y:0,hp:Math.ceil((boss?8*tuning.bossMultiplier:2+Math.floor(stage/7))*Math.sqrt(tuning.difficulty)),boss,speed:(boss?1.4:1.75+Math.min(stage,15)*.065)*Math.sqrt(tuning.difficulty),phase:random()*6,mesh:actor});
+    enemies.push({id:i,x,z,y:0,stagger:0,hp:Math.ceil((boss?8*tuning.bossMultiplier:2+Math.floor(stage/7))*Math.sqrt(tuning.difficulty)),boss,speed:(boss?1.4:1.75+Math.min(stage,15)*.065)*Math.sqrt(tuning.difficulty),phase:random()*6,mesh:actor});
    }
    for(const c of [{x:-size*.22,z:0},{x:size*.22,z:-2},{x:0,z:-size*.24}])coinAt(c.x,1,c.z);
    setGoal(0,0,-size*.37);scenery();
@@ -187,6 +205,7 @@ function gameForgeThreeBoot(){
    let nearest=null,near=18;for(const e of enemies){const d=distance(e,player);if(d<near){near=d;nearest=e;}}if(nearest){dx=(nearest.x-player.x)/near;dz=(nearest.z-player.z)/near;player.yaw=Math.atan2(dx,dz);}
   }
   const o=new T.Mesh(bulletGeometry,genre==='rpg'?mats.crystal:mats.gold);o.position.set(player.x+dx*.6,player.y+1.2,player.z+dz*.6);world.add(o);
+  if(hero&&hero.userData?.limbs)hero.userData.attack=1;
   bullets.push({x:o.position.x,y:o.position.y,z:o.position.z,dx,dz,life:1.8,mesh:o});
  }
  function rpgReward(boss){
@@ -218,14 +237,26 @@ function gameForgeThreeBoot(){
   move(dx*speed*dt,dz*speed*dt);player.speed=Math.hypot(dx,dz)*speed;
   if(down(' ','Enter','fire')||pointerDown)shoot();
   for(const e of enemies){
-   const d=Math.max(.01,distance(e,player)),m=R.moveCircle(e,(player.x-e.x)/d*e.speed*dt,(player.z-e.z)/d*e.speed*dt,e.boss?.65:.38,solids,size);e.x=m.x;e.z=m.z;e.mesh.position.set(e.x,0,e.z);e.mesh.rotation.y=Math.atan2(player.x-e.x,player.z-e.z);e.phase+=dt*6;animateActor(e.mesh,e.speed,e.phase);
-   if(d<(e.boss?1.5:1))damage(e.boss?18:10);
+   const distanceToPlayer=distance(e,player),beforeX=e.x,beforeZ=e.z;
+   const steer=R.crowdDirection(e,player,enemies);
+   e.stagger=Math.max(0,(e.stagger||0)-dt);
+   const chaseSpeed=e.speed*(e.stagger>0?.25:1);
+   if(distanceToPlayer>(e.boss?1.1:.6)){
+    const m=R.moveCircle(e,steer.x*chaseSpeed*dt,steer.z*chaseSpeed*dt,e.boss?.65:.38,solids,size);
+    e.x=m.x;e.z=m.z;
+   }
+   e.mesh.position.set(e.x,0,e.z);
+   e.mesh.rotation.y=Math.atan2(player.x-e.x,player.z-e.z);
+   const actualSpeed=Math.hypot(e.x-beforeX,e.z-beforeZ)/dt;
+   e.phase+=dt*(3+actualSpeed*1.7);
+   animateActor(e.mesh,actualSpeed,e.phase,dt);
+   if(distance(e,player)<(e.boss?1.5:1))damage(e.boss?18:10);
   }
   for(const b of bullets){
    const steps=Math.ceil(27*dt/.28);for(let i=0;i<steps&&!b.dead;i++){
     b.x+=b.dx*27*dt/steps;b.z+=b.dz*27*dt/steps;
     if(solids.some(o=>Math.abs(b.x-o.x)<o.w/2+.1&&Math.abs(b.z-o.z)<o.d/2+.1)){b.dead=true;break;}
-    for(const e of enemies)if(e.hp>0&&distance(e,b)<(e.boss?.95:.65)){e.hp-=genre==='rpg'?1+Math.floor((rpgLevel-1)/2):1;b.dead=true;if(e.hp<=0){score+=e.boss?250:70;rpgReward(e.boss);world.remove(e.mesh);ammo+=7;}break;}
+    for(const e of enemies)if(e.hp>0&&distance(e,b)<(e.boss?.95:.65)){e.hp-=genre==='rpg'?1+Math.floor((rpgLevel-1)/2):1;e.stagger=Math.max(e.stagger||0,e.boss?.06:.13);if(e.mesh?.userData)e.mesh.userData.hurt=1;b.dead=true;if(e.hp<=0){score+=e.boss?250:70;rpgReward(e.boss);world.remove(e.mesh);ammo+=7;}break;}
    }
    b.life-=dt;if(b.life<=0)b.dead=true;b.mesh.position.set(b.x,b.y,b.z);
   }
@@ -277,7 +308,7 @@ function gameForgeThreeBoot(){
    else if(genre==='platform')updatePlatform(dt);else if(genre==='racing')updateRacing(dt);else updateCombat(dt);
    if(state!=='play')return;
    hero.position.set(player.x,player.y,player.z);hero.rotation.y=player.yaw;
-   if(genre!=='racing')animateActor(hero,player.speed,clock*10);
+   if(genre!=='racing')animateActor(hero,player.speed,clock*10,dt);
    hero.visible=genre!=='fps'&&(invulnerable<=0||Math.floor(invulnerable*12)%2===0);
    for(const c of coins)if(!c.taken){c.mesh.rotation.y+=dt*1.6;c.mesh.position.y=c.y+Math.sin(clock*3+c.x)*.1;}
    if(goal)goal.portal.scale.x=1+Math.sin(clock*2)*.035;

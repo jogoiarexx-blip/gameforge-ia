@@ -189,9 +189,13 @@
     colorPalettes.fps=colorPalettes.arena;
     colorPalettes['urban-action']={bg:'#263a46',accent:'#f5ba64',ground:'#55636a',enemy:'#ad5e52'};
     const shooterTheme = /dragon|dragao|drag[oõ]es|fogo|asas|harpia|reino|magia|medieval/.test(norm) ? 'dragon' : /neon|cyber|cidade futurista|sintetico|synthwave/.test(norm) ? 'neon' : 'space';
+    // Somente shooter 3D recebe escolha de caminho jogavel nesta etapa.
+    // Outro motor ainda nao promete executar a mecanica.
+    const stageBranches=genre==='shooter'&&dimension==='3d'
+      ?(root.gameForgeStageBranchesFactory||(typeof require==='function'?require('./stage-branches'):null))?.().parse(combined)||null:null;
     const shooterOptions = { theme: shooterTheme, autofire: /tiro automatico|auto.?fire|disparo automatico/.test(norm), waves: /onda|wave|formac|esquadrao|enxame|ataque em v|zigzag|escolta/.test(norm), boss: genre === 'shooter' || features.bosses, powerups: genre === 'shooter', parallax: true };
     const compiled={
-      title: title.slice(0, 90), genre, dimension, stages, shooterOptions, mechanics,
+      title: title.slice(0, 90), genre, dimension, stages, shooterOptions, stageBranches, mechanics,
       defenseOptions:{mode:genre==='lane-defense'?'lane':genre==='block-td'?'blocks':'path',heightLevels:genre==='block-td'?3:0,upgradeChoices:genre==='block-td',
        resourceLabel:genre==='lane-defense'&&/\bbrilhos?\b/.test(norm)?'Brilhos':'Energia',
        startingGlow:genre==='lane-defense'?150:280,collectibleDrops:genre==='lane-defense',cardSystem:genre==='lane-defense'},

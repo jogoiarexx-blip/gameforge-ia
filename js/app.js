@@ -130,9 +130,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       (headings.length>500?'\n- Outros '+(headings.length-500)+' cabeçalhos não exibidos no relatório.':'')+'\n';
   }
   function analyze(){
-    const md=$('gdd').value.trim();
-    if(!md){feedback('Cole ou importe um documento GDD antes de analisar.',true);return null;}
+    const md=$('gdd').value.trim(),command=$('instruction').value.trim();
+    if(!md&&!command){feedback('Escreva uma ideia no campo de comando ou importe um GDD para começar.',true);return null;}
     if(new Blob([md]).size>1_000_000){feedback('O GDD ultrapassa 1 MB; divida anexos externos.',true);return null;}
+    if(command.length>12000){feedback('O comando ultrapassa 12.000 caracteres. Para documentação extensa, utilize o GDD.',true);return null;}
     roadmapSync();
     let spec;try{spec=GameForgeParser.parseGdd(md,$('instruction').value,creationOptions());}catch(e){feedback(e.message,true);return null;}
     const layoutText=$('rpg-layout-json')?.value.trim();
@@ -159,7 +160,12 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     state.spec=GameForgeProject.activeSpec(state.files,spec);
     renderReferences();
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');
-    $('analysis').innerHTML=`<strong>${esc(spec.title)}</strong><div class="tags">${tags}</div><div class="muted">Fases: ${spec.stages.map(esc).join(' • ')}</div><p class="muted">Documento inteiro analisado: ${spec.sourceLength.toLocaleString('pt-BR')} caracteres e ${spec.sectionCount} títulos. O protótipo utiliza até ${spec.stages.length} fases reconhecidas. </p><p class="muted">Sem IA: será gerado um protótipo nas mecânicas disponíveis, não uma reprodução integral do GDD.</p>`;
+    const plan=spec.implementation||{applied:[],pending:[],warnings:[]};
+    const section=(items,limit)=>items.slice(0,limit).map(x=>'<li>'+esc(x.description)+' <small>('+esc(x.where)+')</small></li>').join('');
+    const sourceLabel=md?'Documento: '+spec.sourceLength.toLocaleString('pt-BR')+' caracteres e '+spec.sectionCount+' títulos':'Comando direto, sem GDD obrigatório';
+    $('analysis').innerHTML=`<strong>${esc(spec.title)}</strong><div class="tags">${tags}</div><div class="muted">Fases: ${spec.stages.map(esc).join(' • ')}</div><p class="muted">${esc(sourceLabel)}. ${plan.applied.length} configurações compiladas; ${plan.pending.length} requisitos adicionais pendentes.</p>`+
+      `<details><summary>Entendimento do pedido: ${plan.applied.length} aplicado(s) / ${plan.pending.length} pendente(s)</summary><p>Configurações adicionadas ao código:</p><ul>${section(plan.applied,25)||'<li>Motor padrão do gênero selecionado.</li>'}</ul><p>O que ainda não foi programado:</p><ul>${section(plan.pending,15)||'<li>Nenhum pedido adicional reconhecido como pendente.</li>'}</ul></details>`+
+      `<p class="muted">Modo Sem IA: somente configurações e mecânicas suportadas são executadas. Regras inéditas requerem desenvolvimento específico.</p>`;
     if(spec.sourceConflict){
       const warning=document.createElement('p');
       warning.setAttribute('role','status');
@@ -491,12 +497,14 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       if(mode==='offline'){
         lastPlan=GameForgeDevelopment.plan($('instruction').value,spec,{});
         state.files=GameForgeGenerator.generate(spec,$('gdd').value);
-        state.files['RELATORIO_LEITURA_GDD.md']=readingReport($('gdd').value,spec);
-        $('development-plan').textContent='Criação inicial: '+spec.genre+' · '+spec.stages.length+' fases. As instruções livres que ultrapassarem as regras precisam de IA.';
+        state.files['RELATORIO_LEITURA_GDD.md']=$('gdd').value.trim()?readingReport($('gdd').value,spec):'# Criação por comando direto\\n\\nNenhum GDD foi fornecido. O código foi gerado a partir da instrução em COMANDO_ORIGINAL.md.\\n';
+        state.files['PLANO_INTERPRETACAO.md']=GameForgeIntent.report(spec);
+        if($('instruction').value.trim())state.files['COMANDO_ORIGINAL.md']='# Comando original\\n\\n'+$('instruction').value;
+        $('development-plan').textContent=GameForgeIntent.report(spec);
         state.files['RELATORIO_REFERENCIAS.md']=repoKnowledge.report(references())+'\nModo sem IA: estas recomendações não foram automaticamente aplicadas ao motor do jogo.\n';
         log(`[Sem IA] Tipo ${spec.genre}, ${spec.stages.length} fase(s), código gerado no navegador.`);
-        log('[Sem IA] Mecânicas de modelos pré-programados. Não é interpretação integral de regras inéditas.');
-        feedback('Jogo gerado sem IA. Ele já pode ser jogado, editado e exportado.');
+        log('[Sem IA] '+spec.implementation.applied.length+' instruções transformadas em configurações do jogo; '+spec.implementation.pending.length+' pendências.');
+        feedback('Jogo gerado: '+spec.implementation.applied.length+' configurações aplicadas, '+spec.implementation.pending.length+' requisito(s) ainda não implementado(s). Confira a prévia.');
       }else{
         if(spec.dimension==='3d')throw Error('Para criar um jogo 3D com o motor local, selecione Sem IA. O backend atual gera os modelos 2D; o painel 3D do backend continua separado.');
         const server=$('api-url').value.trim() || (!/github\.io$/i.test(location.hostname) && /^https?:$/.test(location.protocol)?location.origin:'');
@@ -515,7 +523,9 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         if(!res.ok)throw new Error(typeof data.detail==='string'?data.detail:JSON.stringify(data.detail||data).slice(0,300));
         if(!data.files||!data.files['game.js']||!data.files['style.css'])throw new Error('Resposta da IA incompleta: game.js e style.css são obrigatórios.');
         state.files={...GameForgeGenerator.generate(spec,$('gdd').value),...data.files};
-        state.files['RELATORIO_LEITURA_GDD.md']=readingReport($('gdd').value,spec)+'\n## Leitura por IA\n\n'+JSON.stringify(data.gdd_coverage||{},null,2)+'\n';
+        state.files['PLANO_INTERPRETACAO.md']=GameForgeIntent.report(spec);
+        if($('instruction').value.trim())state.files['COMANDO_ORIGINAL.md']='# Comando original\\n\\n'+$('instruction').value;
+        state.files['RELATORIO_LEITURA_GDD.md']=($('gdd').value.trim()?readingReport($('gdd').value,spec):'# Solicitação por comando direto\\n')+'\n## Leitura por IA\n\n'+JSON.stringify(data.gdd_coverage||{},null,2)+'\n';
         if(data.gdd_coverage)log('[GDD] '+data.gdd_coverage.chunks_processed+'/'+data.gdd_coverage.chunks_total+' partes processadas pela IA.');
         state.files['RELATORIO_REFERENCIAS.md']=repoKnowledge.report((data.references_used||[]).length?data.references_used:references())+'\nArquivos atuais lidos:\n'+((data.source_files_read||[]).map(x=>'- '+x).join('\n')||'- Nenhum (somente resumos curados)')+'\n\nReferências passadas como contexto ao modelo; aplicação concreta precisa de inspeção do código e testes.\n';
         state.files['RELATORIO_GERACAO.md']='# Relatório da IA\n\n'+(data.summary||'Código gerado com IA.')+'\n\n## Implementado\n'+(data.implemented||[]).map(x=>'- '+x).join('\n')+'\n\n## Pendências\n'+(data.pending||[]).map(x=>'- '+x).join('\n');

@@ -20,8 +20,13 @@
      if(item.role!=='scene')throw Error('Papel de asset ainda nao suportado; somente cenario.');
      const p=item.placement;
      if(!p||!validNumber(p.x,-35,35)||!validNumber(p.z,-35,35)||!validNumber(p.scale,.2,4))throw Error('Posicao do asset invalida.');
+     // Manifestos antigos sem hash continuam válidos; novos GLBs têm integridade SHA-256.
+     if(item.sha256!==undefined && (typeof item.sha256!=='string'||!/^[a-f0-9]{64}$/i.test(item.sha256)))
+       throw Error('Checksum SHA-256 de asset inválido.');
      total+=item.bytes;
-     return {id:item.id,name:item.name,bytes:item.bytes,role:'scene',placement:{x:p.x,z:p.z,scale:p.scale}};
+     return {id:item.id,name:item.name,bytes:item.bytes,role:'scene',
+       ...(item.sha256?{sha256:item.sha256.toLowerCase()}:{}),
+       placement:{x:p.x,z:p.z,scale:p.scale}};
    });
    if(total>MAX_TOTAL)throw Error('Biblioteca excede 50 MB.');
    return {version:1,assets};
@@ -55,6 +60,21 @@
    if(d.getUint32(0,true)!==0x46546c67||d.getUint32(4,true)!==2||d.getUint32(8,true)!==bytes.length)throw Error('Arquivo GLB 2.0 invalido.');
    return bytes;
  }
+ async function sha256(bytes){
+   validateGLB(bytes);
+   if(!root.crypto?.subtle?.digest)throw Error('SHA-256 indisponível. Para importar GLB, abra o GameForge por HTTPS ou localhost.');
+   const digest=await root.crypto.subtle.digest('SHA-256',bytes);
+   return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+ }
+ async function verify(bytes,expectedSha){
+   validateGLB(bytes);
+   if(expectedSha!==undefined && expectedSha!==null && expectedSha!==''){
+     if(typeof expectedSha!=='string'||!/^[a-f0-9]{64}$/i.test(expectedSha))
+       throw Error('Checksum de GLB inválido.');
+     if(await sha256(bytes)!==expectedSha.toLowerCase())throw Error('Integridade do GLB comprometida: SHA-256 diferente do manifesto.');
+   }
+   return bytes;
+ }
  function openDB(){
    if(!root.indexedDB)throw Error('IndexedDB indisponivel. Use navegador atualizado e armazenamento habilitado.');
    return new Promise((resolve,reject)=>{
@@ -84,16 +104,16 @@
    validateGLB(bytes);
    await record(project,id,'put',new Blob([bytes],{type:'model/gltf-binary'}));
  }
- async function get(project,id,expectedBytes){
+ async function get(project,id,expectedBytes,expectedSha){
    const blob=await record(project,id,'get');
    if(!blob)throw Error('Arquivo binario nao encontrado no navegador: '+id+'. Importe o backup ZIP completo.');
    if(blob.size!==expectedBytes)throw Error('Asset armazenado apresenta tamanho diferente do manifesto.');
-   return validateGLB(new Uint8Array(await blob.arrayBuffer()));
+   return verify(new Uint8Array(await blob.arrayBuffer()),expectedSha);
  }
  async function erase(project,id){await record(project,id,'delete');}
  async function materialize(project,source){
    const manifest=parse(source),result={};
-   for(const a of manifest.assets)result['assets/'+a.id+'.glb']=await get(project,a.id,a.bytes);
+   for(const a of manifest.assets)result['assets/'+a.id+'.glb']=await get(project,a.id,a.bytes,a.sha256);
    return result;
  }
  function base64(bytes){
@@ -108,6 +128,6 @@
    }
    return value;
  }
- root.GameForgeAssetLibrary={MAX_ASSETS,MAX_BYTES,MAX_TOTAL,parse,append,update,remove,newId,validateGLB,put,get,erase,materialize,base64};
+ root.GameForgeAssetLibrary={MAX_ASSETS,MAX_BYTES,MAX_TOTAL,parse,append,update,remove,newId,validateGLB,sha256,verify,put,get,erase,materialize,base64};
  if(typeof module!=='undefined')module.exports=root.GameForgeAssetLibrary;
 })(typeof globalThis!=='undefined'?globalThis:this);

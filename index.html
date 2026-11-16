@@ -12,9 +12,10 @@
   <header class="top">
     <a class="brand" href="#" aria-label="GameForge Studio"><span class="brand-icon">◆</span><span>GAMEFORGE <b>STUDIO</b><small>CRIE · TESTE · EXPORTE</small></span></a>
     <nav class="top-actions"><span id="storage-tag" class="chip">Projeto no navegador</span><a class="subtle-link" href="./examples/gdd-exemplo.md" download>Exemplo .md</a><button class="small outline" id="export-top">Exportar ZIP ↗</button></nav>
+    <nav class="mobile-steps" aria-label="Ir para uma etapa do Studio"><a href="#idea-step">1 · Ideia</a><a href="#create-step">2 · Criar</a><a href="#preview-step">3 · Jogar</a><a href="#files-step">4 · Código</a></nav>
   </header>
   <main class="studio">
-    <section class="panel left-panel" aria-label="Projeto e documento GDD">
+    <section class="panel left-panel" id="idea-step" aria-label="Projeto e documento GDD">
       <div class="panel-head"><span class="eyebrow">PASSO 1 · SUA IDEIA</span><h1>Vamos criar seu jogo</h1><p>Escreva a ideia ou importe um GDD. O restante pode ser ajustado depois.</p></div>
       <div class="panel-scroll">
         <details class="studio-disclosure backup-disclosure"><summary><span>Abrir ou salvar projeto</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="project-backups" aria-label="Continuar projeto">
@@ -76,7 +77,7 @@ Enfrente inimigos perigosos.
 Derrote o chefe.
 </textarea>
         <div class="mini-head"><span>Interpretação do documento</span><button id="analyze" class="small outline" type="button">Analisar GDD</button></div>
-        <div id="analysis" class="analysis muted">Clique em analisar para identificar gênero, fases e funcionalidades.</div>
+        <div id="analysis" class="analysis muted">Clique em analisar para identificar gênero, fases e funcionalidades.</div><a class="step-continue" href="#create-step">Continuar para criação <span aria-hidden="true">→</span></a>
         <details class="studio-disclosure knowledge-disclosure"><summary><span>Biblioteca de técnicas dos seus jogos</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="repo-learning" aria-label="Biblioteca de conhecimento dos jogos">
           <div class="mini-head"><span>05 / Biblioteca dos seus jogos</span><button type="button" id="knowledge-refresh" class="small outline">Buscar padrões</button></div>
           <p class="hint">Técnicas identificadas nos seus jogos para orientar melhorias. As referências não são sistemas automaticamente importados.</p>
@@ -86,7 +87,7 @@ Derrote o chefe.
         </section></details>
       </div>
     </section>
-    <section class="panel center-panel" aria-label="Configuração e jogo">
+    <section class="panel center-panel" id="create-step" aria-label="Configuração e jogo">
       <div class="toolbar"><div class="toolbar-left"><span class="eyebrow">PASSO 2 · CRIAR</span><h2>Crie e teste</h2></div><span id="status" class="status">Pronto para criar</span></div>
       <div class="setup">
         <div class="mode-row"><label class="mode"><input type="radio" name="mode" value="offline" checked><span><strong>⚙️ Sem IA</strong><small>Rápido · gratuito · funciona offline</small></span></label><label class="mode"><input type="radio" name="mode" value="ai"><span><strong>✦ Com IA</strong><small>GPT, Claude ou Gemini · via API</small></span></label></div>
@@ -105,7 +106,7 @@ Derrote o chefe.
         
         <p id="feedback" class="hint" role="status">Você pode começar sem instalar nada. O projeto e seu código ficam armazenados neste navegador.</p>
       </div>
-      <div class="preview-head"><div><span class="eyebrow">PASSO 3 · TESTAR</span><h3>Seu jogo <span id="live-indicator" class="live-dot"></span></h3></div><div class="preview-tools"><button id="fullscreen" class="small outline">⛶ Tela cheia</button><button id="open-game" class="small outline" disabled>Abrir jogo</button></div></div>
+      <div class="preview-head" id="preview-step"><div><span class="eyebrow">PASSO 3 · TESTAR</span><h3>Seu jogo <span id="live-indicator" class="live-dot"></span></h3></div><div class="preview-tools"><button id="fullscreen" class="small outline">⛶ Tela cheia</button><button id="open-game" class="small outline" disabled>Abrir jogo</button></div></div>
       <div class="preview-box" id="preview-box"><iframe id="preview" title="Prévia isolada do jogo" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe><div class="preview-empty" id="preview-empty"><div class="empty-symbol">▣</div><h3>Seu jogo aparece aqui</h3><p>Escreva sua ideia e clique em <b>Criar jogo</b>.</p></div></div>
       <details class="studio-disclosure tools-collection"><summary><span>Mais ferramentas de criação</span><span class="disclosure-marker" aria-hidden="true">+</span></summary>
         <details class="studio-disclosure roadmap-disclosure"><summary><span>Etapas e tarefas do GDD</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="roadmap-panel" aria-label="Plano implementável do GDD">
@@ -187,7 +188,7 @@ Derrote o chefe.
       </section></details>
       <details class="studio-disclosure log-disclosure"><summary><span>Registro técnico</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><div id="log" class="log">[Studio] Aguardando um GDD.</div></details>
     </section>
-    <section class="panel right-panel" aria-label="Arquivos de código">
+    <section class="panel right-panel" id="files-step" aria-label="Arquivos de código">
       <div class="panel-head slim"><span class="eyebrow">ARQUIVOS DO JOGO</span><h2>Editar e baixar</h2><p>Veja o código quando precisar.</p></div>
       <div class="right-content"><div id="file-list" class="files"><div class="muted tiny">Nenhum arquivo gerado.</div></div><div class="code-head"><label for="file-editor" id="editor-label">Editor de código</label><button id="apply-edit" class="small outline" disabled>Salvar alteração</button></div><textarea spellcheck="false" id="file-editor" class="code" aria-label="Editor de código" placeholder="Selecione um arquivo gerado..." disabled></textarea><details class="studio-disclosure model-disclosure"><summary><span>Inserir modelo 3D (GLB)</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><div class="asset-inspector"><strong>Usar modelo GLB no cenário 3D</strong>
 <p class="hint">Biblioteca de até 4 objetos estáticos GLB: 25 MB cada, 50 MB no total. O modelo entra na cena; personagens e animações ainda não são substituídos.</p>

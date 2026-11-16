@@ -484,7 +484,10 @@ function gameForgeThreeBoot(){
      box(2,1.8,2,mats.stone,world,x,.9,z);solids.push({x,z,w:2,d:2});
     }
    }
-   const count=stageRules.enemies>0?R.clamp(stageRules.enemies,1,24):Math.min(22,Math.max(3,Math.round((4+stage*.6)*tuning.enemyMultiplier*tuning.difficulty)));
+   const baseCount=stageRules.enemies>0?R.clamp(stageRules.enemies,1,24):
+    Math.min(22,Math.max(3,Math.round((4+stage*.6)*tuning.enemyMultiplier*tuning.difficulty)));
+   const count=Math.min(26,baseCount+(campaignEffect?.kind==='threat'&&
+    campaignEffect.sourceStage===stage-1?2:0));
    for(let i=0;i<count;i++){
     const a=(i/count)*Math.PI*2,x=Math.sin(a)*size*.26,z=Math.cos(a)*size*.24-4;
     const boss=i===count-1&&(stageRules.boss==='yes'||(stageRules.boss!=='no'&&!!(spec.features&&spec.features.bosses)));
@@ -518,7 +521,8 @@ function gameForgeThreeBoot(){
   stage=saved?.stage??0;health=saved?.health??100;score=saved?.score??0;
   ammo=saved?.ammo??(storeEnabled?20:80);rpgLevel=saved?.rpgLevel??1;
   rpgXP=saved?.rpgXP??0;rpgPotions=saved?.rpgPotions??2;
-  rpgHealHeld=false;clock=saved?.clock??0;simulationAccumulator=0;simulationSteps=0;
+  rpgHealHeld=false;clock=saved?.clock??0;campaignEffect=saved?.campaignEffect||null;
+  simulationAccumulator=0;simulationSteps=0;
   state='play';paused=false;keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);
   pointerDown=false;buildStage();$('overlay').classList.add('hidden');
   $('pause').textContent='Pausar';canvas.focus();
@@ -532,9 +536,14 @@ function gameForgeThreeBoot(){
    clearCheckpoint();state='victory';
    overlay('Jornada concluída!','Todas as '+stages.length+' fases concluídas · Pontuação '+score,'Jogar novamente');
   }else{
-   stage++;health=Math.min(100,health+25);
+   const npc=npcAt();
+   const effect=npcStatus==='completed'?R.npcMissionEffect(npc,npcSelectedChoice,stage):null;
+   stage++;campaignEffect=effect;
+   health=Math.min(100,health+25+(effect?.kind==='aid'?20:0));
    if(!storeEnabled)ammo=Math.max(80,ammo+40);
    saveCheckpoint();buildStage();
+   if(effect)notice(effect.kind==='aid'?'Aliados ajudaram! +20 vida nesta fase.':
+    'Emboscada! +2 inimigos nesta fase.',4);
   }
  }
  function togglePause(){if(shopOpen){closeShop();return;}if(state!=='play')return;paused=!paused;simulationAccumulator=0;keys.clear();pointerDown=false;Object.keys(touch).forEach(k=>touch[k]=false);$('pause').textContent=paused?'Continuar':'Pausar';if(paused)overlay('Jogo pausado','Sua jornada continua daqui.','Continuar');else{$('overlay').classList.add('hidden');canvas.focus();}}
@@ -653,7 +662,9 @@ function gameForgeThreeBoot(){
  }
  function updateHUD(){
   $('health').textContent=Math.ceil(health);$('score').textContent=score;$('ammo').textContent=genre==='racing'?Math.round(Math.abs(player.speed)*12)+' km/h':genre==='platform'?collected+'/'+required:genre==='rpg'?'🧪'+rpgPotions+' · '+ammo:combatStore?ammo+'/'+combatStore.state().reserve+' · ¢'+combatStore.state().credits:ammo;
-  $('level').textContent=(stage+1)+'/'+stages.length;$('timer').textContent=Math.floor(clock)+'s';
+  $('level').textContent=(stage+1)+'/'+stages.length+
+   (campaignEffect?.kind==='aid'?' · Apoio':campaignEffect?.kind==='threat'?' · Emboscada':'');
+  $('timer').textContent=Math.floor(clock)+'s';
   $('mission').textContent=(configAt(stage).objective?String(configAt(stage).objective).slice(0,140)+' · ':'')+(genre==='racing'?'Volta '+Math.min(lapTarget,race.lap+1)+'/'+lapTarget+' · Portal '+(race.next+1)+'/8':genre==='platform'?'Cristais '+collected+'/'+required+' · Alcance o portal':genre==='rpg'?'Nível '+rpgLevel+' · XP '+rpgXP+'/'+(rpgLevel*65)+' · '+combatObjective():combatObjective());
   refreshNpcButton();
  }
@@ -700,11 +711,15 @@ function gameForgeThreeBoot(){
   return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,layout:['arena','fps','rpg'].includes(genre)?(configAt(stage).layout||'cross'):'engine-default',
    enemyArchetypes:enemies.map(e=>e.archetype),eventsFired:[...firedEvents],
    missionSteps:missionPlan().length,missionStepIndex,
+   sideQuestSteps:sideQuestPlan().length,sideQuestStepIndex:npcSideStepIndex,
+   campaignEffect:campaignEffect?{...campaignEffect}:null,
    activeMissionStep:activeMissionStep()?.kind||null,
    zoneGuides:missionGuides.filter(g=>g.mesh.visible).map(g=>g.zone),
    npc:npcAt()?{id:npcAt().id,name:npcAt().name,zone:npcAt().zone,
     state:npcStatus,near:!!npcNearby(),rewardsGiven:npcStatus==='completed',
     position:npcPosition?{...npcPosition}:null,walk:!!npcAt().walk,
+    routine:npcAt().routine||null,dayPeriod:npcAt().routine?R.npcDailyPeriod(stageClock):null,
+    sideQuest:!!npcAt().sideQuest,
     choice:npcSelectedChoice,choices:npcAt().choices?.map(c=>({id:c.id,label:c.label}))||[]}:null,
    checkpointAvailable:!!loadCheckpoint(),checkpointStage:loadCheckpoint()?.stage??null,
    clock,health,score,ammo,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};

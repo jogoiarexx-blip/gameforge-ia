@@ -756,3 +756,14 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Escopo preservado:** o exemplo Godfather informa **3 cidades, 18 distritos, 36 negócios, 24 missões e três chefes** para aquele projeto. São metas do GDD 3D, **não defaults para outros jogos**. A classificação correta não cria veículos dirigíveis, polícia, IA de guardas, interiores, economia, animação GLB nem campanha 3D.
 
 **Próximo passo específico para ação urbana: URB-01.** Implementar um vertical slice de bairro pequeno com XZ/Y, protagonista/câmera em terceira pessoa, colisores, mira, um inimigo, um negócio, uma missão concluível, HUD, pausa e save/load; validar em Chromium sem rede e adicionar à matriz de jogos exportáveis somente depois de funcionar. **GF-001** continua dependendo da configuração administrativa do Pages e **GF-005** deve passar integralmente para impedir perda de dados. Não proclamar motor urbano pronto antes de URB-01.
+
+
+### Encerramento GF-005 — evidência Chromium (16/11/2026)
+
+**VALIDADO no escopo de continuidade em Chromium + GLB pequeno**, após o checkpoint inicial em revisão. Execução GitHub Actions [43881202409](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43881202409), commit `7ca72df8`, com **256/256 testes Node aprovados e 0 falhas**, `verify:exports` de 15 variantes e teste GF-005 em Chromium aprovado.
+
+O teste novo confirmou, em perfis isolados: criação só por comando, edição persistente do `game.js`, recarga, GLB binário preservado em IndexedDB e ZIP, backup e exportação, restauração em navegador limpo, melhoria incremental, desfazer, rejeição de GLB adulterado com CRC ZIP recalculado, erro simulado de IndexedDB com rollback, aviso de quota e verificação de viewport mobile. O GLB era triângulo sintético de 408 bytes; modelos rigados, arquivos grandes e dispositivos móveis físicos exigem novos testes.
+
+**Limite de publicação:** a rota antiga `pages build and deployment` continua ativa até alterar Settings → Pages → Source para GitHub Actions (GF-001). Esta validação demonstra qualidade da GF-005, **não** resolve a dupla rota de publicação.
+
+**Próximo checkpoint:** GF-006 (fluxo visual simplificado) / GF-009 (migração de saves), preservando esta matriz Chromium como regressão obrigatória.

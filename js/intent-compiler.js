@@ -214,6 +214,42 @@ function compile(spec,gdd,instruction='',options={}){
    }
   }
  }
+ // Loja de combate: este contrato só é executável no FPS 3D com módulo integrado.
+ // A presença de palavras como "economia" isoladas não habilita compras automáticas.
+ const demand=normalize(source+'\n'+extra);
+ const shopDisable=/\b(sem loja|remova? a loja|desativar? a loja|retirar a loja)\b/.test(demand);
+ const shopRequest=/\b(comprar|compre|compra|loja|mercador|mercado)\b/.test(demand)&&
+   /\b(municao|balas?|cartuchos?|armas?|vida|cura|kit medico|medkits?|upgrades?|melhorias?)\b/.test(demand);
+ const priceRequest=/\b(municao|balas?|kit medico|cura|melhoria de arma|upgrade de arma)\b.{0,32}\b(custa|custo|preco)\b/.test(demand);
+ if(shopRequest||priceRequest||shopDisable||parsed.combatEconomy?.enabled){
+  if(spec.dimension==='3d'&&spec.genre==='fps'){
+   const config={enabled:!shopDisable,startingCredits:90,startingReserve:60,
+     ...(parsed.combatEconomy||{}),prices:{ammo:30,heal:45,upgrade:125,...parsed.combatEconomy?.prices}};
+   if(shopDisable)config.enabled=false;
+   const shopLines=[...sections.filter(r=>r.origin==='GDD'),...sections.filter(r=>r.origin==='Comando')];
+   for(const entry of shopLines){
+    const t=entry.normal;
+    const credit=/\b(?:comec|inici|creditos? iniciais?|saldo inicial)\w*.{0,26}\b(?:com|de|:)?\s*(\d{1,4})\s*(?:creditos?)?\b/.exec(t);
+    if(credit)config.startingCredits=clamp(Number(credit[1]),0,9999);
+    const stock=/\b(?:municao inicial|reserva inicial|iniciar com)\b.{0,26}\b(\d{1,3})\s*(?:balas?|municao|cartuchos?)\b/.exec(t);
+    if(stock)config.startingReserve=clamp(Number(stock[1]),0,250);
+    const kinds=[['ammo','municao|balas?|pacote de municao'],['heal','kit medico|kit de cura|cura|medkit'],['upgrade','upgrade de arma|melhoria de arma|melhorar arma']];
+    for(const [key,noun] of kinds){
+     const match=new RegExp('\\b(?:'+noun+')\\b.{0,24}\\b(?:custa|custar|preco|valor)\\s*(?:de|:|=)?\\s*(\\d{1,4})\\s*(?:creditos?)?\\b').exec(t);
+     if(match)config.prices[key]=clamp(Number(match[1]),key==='upgrade'?20:5,key==='upgrade'?2000:500);
+    }
+   }
+   parsed.combatEconomy=config;
+   if(shopDisable)push('applied','combat-store-off','Loja desativada conforme instrução','FPS 3D');
+   else if(config.enabled)push('applied','combat-store','Loja jogável com créditos, compra de munição, kits médicos e melhoria real de dano','FPS 3D');
+   if(config.enabled&&(shopRequest||priceRequest))push('applied','combat-store-prices',
+     'Preços: munição '+config.prices.ammo+', cura '+config.prices.heal+', melhorias '+config.prices.upgrade+' (aumenta por nível)',
+     'FPS 3D');
+  }else if(shopRequest||priceRequest){
+   push('pending','combat-store','Loja de munição, cura e melhoria de armas ainda não está disponível para este motor',
+     spec.genre+' '+spec.dimension);
+  }
+ }
  // Requisitos de recursos não implementados precisam permanecer visiveis e auditaveis.
  const pendingCatalog=[
   ['skill-tree',/arvore de habilidades?|skill tree|habilidades? (permanentes?|desbloqueaveis?)/,'Árvore de habilidades interativa'],

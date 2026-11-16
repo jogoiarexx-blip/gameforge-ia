@@ -114,7 +114,7 @@ function gameForgeUrban3DBoot(){
  let progress=initial(),state='menu',paused=false,frames=0,simulationSteps=0;
  let last=0,acc=0,walkPhase=0,clock=0,attackCooldown=0,invulnerable=0,
      fireCooldown=0,reloadRemaining=0,saveCooldown=0,guardAttack=0,guardPhase=0;
- let saveEnabled=true,saveStatus='novo';
+ let saveEnabled=true,saveStatus='novo',cameraOccluded=false;
  function readSave(){
   try{
    const raw=window.localStorage?.getItem(saveKey);
@@ -310,7 +310,12 @@ function gameForgeUrban3DBoot(){
  }
  function draw(){
   guard.visible=!progress.guardDefeated;
-  camera.position.lerp(new T.Vector3(progress.x+2.6,4.4,progress.z+6.5),.16);
+  const eye={x:progress.x,y:1.45,z:progress.z};
+  const desired=R.cameraPosition(eye,{x:progress.x+2.6,y:4.4,z:progress.z+6.5},blockers);
+  camera.position.lerp(new T.Vector3(desired.x,desired.y,desired.z),.16);
+  const safe=R.cameraPosition(eye,camera.position,blockers);
+  camera.position.set(safe.x,safe.y,safe.z);
+  cameraOccluded=desired.occluded||safe.occluded;
   camera.lookAt(progress.x,1.25,progress.z-2.5);
   renderer.render(scene,camera);
  }
@@ -331,7 +336,9 @@ function gameForgeUrban3DBoot(){
  hero.position.set(progress.x,0,progress.z);
  guard.position.set(0,0,1.5);
  guard.visible=!progress.guardDefeated;
- camera.position.set(progress.x+2.6,4.4,progress.z+6.5);
+ const firstCamera=R.cameraPosition({x:progress.x,y:1.45,z:progress.z},
+  {x:progress.x+2.6,y:4.4,z:progress.z+6.5},blockers);
+ camera.position.set(firstCamera.x,firstCamera.y,firstCamera.z);
  updateHud();
  notice('Um bairro, uma missão. W/S/A/D: mover; espaço: atirar; E: interagir.');
  window.__gameforgeTelemetry=()=>({
@@ -342,7 +349,7 @@ function gameForgeUrban3DBoot(){
   enemies:progress.guardDefeated?0:1,enemyHp:progress.guardHp,
   mission:{guardDefeated:progress.guardDefeated,captured:progress.captured,
    complete:progress.missionComplete,rewardGranted:progress.rewardGranted},
-  colliders:blockers.length,saveStatus,saveEnabled,saveKey,
+  colliders:blockers.length,cameraOccluded,saveStatus,saveEnabled,saveKey,
   prototype:true
  });
  requestAnimationFrame(frame);

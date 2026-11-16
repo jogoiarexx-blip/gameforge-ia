@@ -63,3 +63,27 @@ test('backup portátil preserva modelo GLB e posição sem apagar dados antigos'
   assert.equal(copy.files['ASSET_CENARIO.json'],json);
   assert.equal(copy.files['game.js'],snapshot.files['game.js']);
 });
+
+test('motor 3D carrega o GLB no cenário e preserva posição ao iniciar a fase',()=>{
+  const T=three(),handlers=[],callbacks=[],els={};let rendered=null;
+  const element=id=>els[id]||(els[id]={textContent:'',style:{},classList:{add(){},remove(){}},dataset:{},addEventListener(type,fn){this[type]=fn;},focus(){},getBoundingClientRect(){return {width:960,height:540};}});
+  const THREE={...T,WebGLRenderer:class{
+    constructor(){this.shadowMap={};this.info={render:{calls:0},memory:{geometries:0}};this.renderLists={dispose(){}};}
+    setClearColor(){}setPixelRatio(){}setSize(){}render(scene){rendered=scene;}
+  }};
+  const env={THREE,GAME_SPEC:{dimension:'3d',genre:'arena',stages:['Primeira fase'],worldOptions:{size:48,seed:12,quality:'low'}},
+    GF_SCENE_GLB_BASE64:Buffer.from(fixture()).toString('base64'),
+    GF_SCENE_GLB_OPTIONS:{x:8,z:7,scale:1.4},gameForgeDecodeGLB:GLB.decode,
+    gameForgeWorldRules:require('../js/world-rules.js'),gameForgeSoftwareRenderer:null,
+    document:{getElementById:element,querySelectorAll:()=>[],addEventListener(){}},
+    performance:{now:()=>0},requestAnimationFrame:fn=>callbacks.push(fn),addEventListener:(k,fn)=>handlers.push([k,fn]),window:null,globalThis:null};
+  env.window=env;env.globalThis=env;
+  vm.createContext(env);vm.runInContext('('+require('../js/three-runtime.js').toString()+')()',env);
+  callbacks.shift()(16.7);
+  const props=()=>{const found=[];rendered.traverse(o=>{if(o.userData.gameForgeImported)found.push(o);});return found;};
+  assert.equal(props().length,1);
+  assert.equal(props()[0].position.x,8);assert.equal(props()[0].position.z,7);
+  assert.equal(props()[0].scale.x,1.4);
+  element('start').click();callbacks.shift()(33.4);
+  assert.equal(props().length,1);
+});

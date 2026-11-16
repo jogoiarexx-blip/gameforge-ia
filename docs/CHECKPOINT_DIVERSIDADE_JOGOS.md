@@ -413,3 +413,13 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - **Ajuste editorial posterior:** removida descrição longa e contagem estática de 29 referências na biblioteca; commit `8a968ed21a89307f52b75cb5a039b12cadf34184`. Esse commit exige confirmação própria da CI.
 - **Não realizado:** inspeção visual real da tela em navegador/celular (capturas e teste com usuário), métricas de usabilidade e verificação manual de todos os acordeões. Não declarar QA visual concluído sem teste real.
 - **Próxima etapa:** QA visual em 375px/768px/1366px, conferir overflow e prévia real com jogos gerados, melhorar descida para área de edição com acessibilidade e corrigir qualquer regressão observada.
+
+## Engenharia — etapa 12b: validação robusta de GLB e backup visual (16/11/2026)
+
+**Falhas identificadas:** o backup e o armazenamento local ignoravam os controles de qualidade gráfica 2D e estilo visual; o leitor GLB podia montar hierarquias cíclicas e aceitar transformações inválidas. A nova biblioteca de múltiplos GLBs verificava inicialmente apenas cabeçalho e metadados antes de armazenar.
+
+**Implementado e publicado:** \`js/project-backup.js\` conserva \`graphicsQuality\` e \`visualStyle\`. \`js/glb-runtime.js\` verifica pais duplicados, ciclos, referências de nós e raízes, transformações finitas e valida malhas, índices, atributos e texturas sem precisar de Three.js. \`js/app.js\` aplica esta pré-validação antes de salvar novos assets no IndexedDB. Há testes em \`tests/project-backup.test.js\` e \`tests/glb-import.test.js\`.
+
+**Validação:** checagem sintática de JavaScript antes de cada publicação; GitHub Actions \`43850704275\` (commit \`877e77ebac\`) e \`43850716944\` (commit \`6bb0a889c1\`) concluídos com sucesso, incluindo os testes e benchmark informativo da arena. A execução não equivale a QA visual em navegador real.
+
+**Pendências:** testar modelos Meshy com texturas no Chrome e Android; medir consumo de memória com quatro GLBs de até 25 MB; ampliar suporte a animações, rigs e colisões sem comprometer motores 2D. Novas alterações paralelas ao repositório devem ser reavaliadas sobre o HEAD atual, sem sobrescrever arquivos.

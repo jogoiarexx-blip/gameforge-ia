@@ -73,3 +73,31 @@ test('GF-025 pacote de salvamento nao exige DOM nem rede',()=>{
  const context={};vm.createContext(context);vm.runInContext(source,context);
  assert.equal(typeof context.gameForgeUrbanSaveFactory,'function');
 });
+test('GF-025 copia progresso anterior validado para backup antes de substituir o save',()=>{
+ const db=storage(),store=Save.create(db,'demo',value=>value?.version===1?value:null);
+ assert.equal(store.write({version:1,cash:1000}),true);
+ assert.equal(store.write({version:1,cash:1800}),true);
+ assert.deepEqual(JSON.parse(db.getItem('demo:backup')),{version:1,cash:1000});
+ assert.equal(store.read().cash,1800);
+ db.setItem('demo','{corrompido');
+ assert.equal(store.read().cash,1000,'backup valido recupera progresso sem aceitar JSON corrompido');
+});
+test('GF-025 corrupcao do save principal nao sobrescreve o backup valido',()=>{
+ const db=storage(),store=Save.create(db,'demo',value=>value?.version===1?value:null);
+ store.write({version:1,cash:1400});store.write({version:1,cash:1800});
+ db.setItem('demo','{');
+ assert.equal(store.write({version:1,cash:2000}),true);
+ assert.equal(JSON.parse(db.getItem('demo:backup')).cash,1400);
+ db.setItem('demo','{');
+ assert.equal(store.read().cash,1400);
+});
+test('GF-025 nao restaura backup de schema incompativel e remove todas as chaves',()=>{
+ const db=storage(),store=Save.create(db,'demo',value=>value?.version===1?value:null);
+ db.setItem('demo','{');
+ db.setItem('demo:backup',JSON.stringify({version:2,cash:900000}));
+ assert.equal(store.read(),null);
+ store.remove();
+ assert.equal(db.getItem('demo'),null);
+ assert.equal(db.getItem('demo:backup'),null);
+ assert.equal(db.getItem('demo:pending'),null);
+});

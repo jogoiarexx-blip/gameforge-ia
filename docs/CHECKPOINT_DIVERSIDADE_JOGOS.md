@@ -485,3 +485,22 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Compatibilidade:** mantidos controles existentes, modos de renderização e serialização do runtime nos arquivos `game.js` exportados. As políticas anti-stall descartam simulação excedente após mais de cinco passos: isso protege o jogo de travamentos, mas significa que o relógio do jogo não precisa avançar o mesmo que tempo real durante lentidão extrema.
 
 **Pendências:** realizar QA manual em Chrome/Android, coletar métricas de frame time e quedas de FPS com WebGL real, validar qualidade visual/câmera em 120 Hz e testar gamepad. Evitar extrapolar resultado automatizado para ganho numérico de FPS.
+
+
+## Engenharia — etapa 13: ampliação dos motores 3D e interpretação de ideias (16/11/2026)
+
+**Origem do bug:** tela do usuário mostrava "Estilo não compatível com 3D" ao pedir "criar um game de navinha" enquanto o navegador mantinha um GDD de GOLDENEYE 007. `js/parser.js` reconhecia `shooter`, mas `styles['3d']` não tinha esse gênero. A geração 3D existente ainda limitava o runtime a arena, FPS, corrida e plataforma. O GDD antigo e a ideia recente apontavam para estilos diferentes.
+
+**Entrega técnica:**
+- `js/parser.js`: suporte explícito a `shooter` e `rpg` em 3D; prioridade ao pedido recente de criação do gênero quando a seleção está em detecção automática; avisos explicativos quando o GDD descreve outro gênero; erro específico para gêneros ainda sem runtime.
+- `js/shooter-3d-runtime.js` **novo**: motor procedural dedicado com naves e inimigos low poly em Three.js offline, movimentação X/Z, tiros de jogador e inimigos, ondas, boss com 3 estados de combate, coleta de power-ups, 3 níveis de tiro, saúde, HUD, progressão entre fases, pausa/restart, controles touch e telemetria QA. Não reaproveita apenas a lógica de combate da arena.
+- `js/three-runtime.js`: caminho RPG 3D com XP por eliminações, evolução de níveis com aumento do dano mágico e poções de cura, mantendo exploração e objetivos de portal.
+- `js/generator.js`: escolhe o motor próprio de shooter 3D e continua gerando o 2D antigo; motores 3D não exigem boot do motor 2D.
+- `index.html` e `js/app.js`: exemplos Navinha 3D e RPG 3D; botão "Usar esta ideia como novo GDD" para criar novo projeto quando o GDD salvo não condiz com a descrição; mensagem de conflito clara e confirmação ao substituir GDD longo.
+- `tests/shooter-3d.test.js` e `tests/expanded-generator.test.js`: simulação com Three.js real em test harness, movimento, tiro, pausa/restart, compilação de jogo autônomo e teste de incompatibilidade genuína.
+
+**Resultado verificado:** execução GitHub Actions `43854140712`: **164 testes aprovados, 0 falhas**, sintaxe e benchmark de arena executados; publicação GitHub Pages `43854140495` concluída. Testes antigos de motores 2D e 3D incluídos na suíte. Atualizações posteriores de versão/documentação requerem confirmação do HEAD.
+
+**Limites não ocultados:** criação livre de lógica inédita por IA no modo estático não existe; RPG 3D tem progressão inicial e não inclui crafting/inventário completo; shooter 3D usa objetos procedurais e padrões programados, não gera automaticamente modelos a partir de textos. Sem QA visual WebGL real/Android e sem benchmark de FPS em dispositivos. Outros gêneros 3D como Tower Defense ainda exigem motores próprios.
+
+**Próxima fase:** testes visuais dos dois gêneros novos em PC e celular, ergonomia do editor e câmera do shooter, integração de assets como jogador e inimigo animado, e sistema de eventos/quests por fase a partir de GDD estruturado.

@@ -133,6 +133,17 @@ def run():
             restored.locator('.development-disclosure > summary').click()
             restored.locator('#instruction').fill('adicione uma fase "Terceira Etapa"')
             restored.locator('#improve').click()
+            # O QA visual usa até 10 tentativas de 5 s para conectar à
+            # prévia 3D. Esperar o resultado terminal antes de dar Desfazer
+            # evita que um QA ainda em curso sobrescreva o feedback do ZIP.
+            restored.wait_for_function("""()=>{
+                const t=document.querySelector('#feedback')?.textContent||'';
+                return t.includes('Melhoria salva')||
+                    t.includes('Mudança aplicada, mas QA não concluiu')||
+                    t.includes('Possível regressão detectada')||
+                    t.includes('Falha na melhoria');
+            }""",timeout=110000)
+            assert 'Falha na melhoria' not in restored.locator('#feedback').inner_text()
             # GF-005 confirma mutação durável; mensagem final de QA é assunto
             # do teste visual independente, não uma condição de persistência.
             restored.wait_for_function("""()=>{

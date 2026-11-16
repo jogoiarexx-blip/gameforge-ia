@@ -54,7 +54,7 @@ function match(text){
    const offset=first.indexOf(needle);
    if(offset<0)return false;
    const prior=first.slice(Math.max(0,offset-30),offset);
-   return !/(inspirad|referencia|parecid|semelhant|tipo|igual|estilo|baseado em)\s+(?:n[oa]s?|em|de)?\s*$/.test(prior);
+   return !/(inspirad[oa]s?|referencia|parecid[oa]s?|semelhant[ea]s?|tipo|igual|estilo|baseado em)\s+(?:n[oa]s?|em|de)?\s*$/.test(prior);
   }))return row;
  }
  return null;

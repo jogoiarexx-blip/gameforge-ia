@@ -84,3 +84,24 @@ test('combinações ainda nao suportadas exibem mensagem util, sem fingir implem
  assert.throws(()=>Parser.parseGdd('# Defesa\nTower defense 3D','',{dimension:'3d',genre:'tower-defense'}),/ainda não possui motor 3D/);
  assert.ok(!Parser.styles['3d'].includes('tower-defense'));
 });
+test('GF-017 lote de estrelas reduz dezenas de meshes a uma chamada de desenho',()=>{
+ const b=boot({worldOptions:{size:48,quality:'high',theme:'neon',seed:33}});
+ b.tick(2);
+ const instanced=[];
+ b.scene().traverse(o=>{if(o.isInstancedMesh)instanced.push(o);});
+ assert.equal(instanced.length,1,'campo de estrelas deve ser um InstancedMesh no WebGL');
+ assert.equal(instanced[0].count,110);
+ assert.equal(b.telemetry().starCount,110);
+ assert.equal(b.telemetry().starDrawBatches,1,'um lote no lugar de 110 draws');
+ const before=new Float32Array(instanced[0].instanceMatrix.array);
+ b.item('start').click();b.tick(15);
+ const latest=[];
+ b.scene().traverse(o=>{if(o.isInstancedMesh)latest.push(o);});
+ assert.equal(latest.length,1);
+ assert.equal(b.telemetry().starDrawBatches,1);
+ const initial=latest[0].instanceMatrix.array;
+ b.tick(8);
+ const moved=latest[0].instanceMatrix.array;
+ assert.notDeepEqual(Array.from(initial.slice(12,16)),Array.from(moved.slice(12,16)), 'estrelas instanciadas devem se mover');
+ assert.ok(b.disposed()>0,'reinicio descarta geometria da fase anterior');
+});

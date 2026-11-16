@@ -3,14 +3,33 @@
   function safeText(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   const BASE_CSS = `:root{color-scheme:dark;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:#0a1320;color:#ecf5ff}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#0c1422;display:flex;align-items:center;justify-content:center}.shell{width:min(100%,1200px);padding:12px}.head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 12px;border:1px solid #2b4058;background:#152337;border-radius:12px 12px 0 0}.head h1{font-size:16px;margin:0}.stats{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;color:#c4d9e8}.stat b{color:white;font-size:13px}.world{position:relative;background:#101b2a;border:1px solid #314c66;overflow:hidden}canvas{width:100%;height:auto;max-height:75vh;display:block;touch-action:none;outline:0;aspect-ratio:16/9}.overlay{position:absolute;inset:0;background:linear-gradient(#0b1627d9,#0b1721ea);display:flex;align-items:center;justify-content:center;text-align:center}.overlay.hidden{display:none}.dialog{padding:24px;max-width:480px}.dialog h2{font-size:clamp(24px,5vw,44px);margin:0 0 10px}.dialog p{line-height:1.5;color:#acc1d5}button{background:#62e0b8;color:#052c26;font-weight:800;border:0;border-radius:8px;padding:10px 17px;cursor:pointer}button:hover{filter:brightness(1.08)}.floating{position:absolute;left:50%;top:68px;transform:translateX(-50%);text-align:center;pointer-events:none;background:#0b1b30cc;border:1px solid #6dcbae54;border-radius:9px;padding:8px 16px;font-weight:700;transition:opacity .35s}footer{display:flex;justify-content:space-between;gap:12px;padding:10px;font-size:12px;color:#acbfd1}.buttons{display:flex;flex-wrap:wrap;gap:8px}.buttons button{font-size:11px;padding:6px 10px;background:#25394c;color:#cde9e7}.touch{display:flex;gap:8px;justify-content:space-between;margin:10px auto 0;max-width:600px}.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.touch button{width:50px;height:38px;background:#283a50;color:#fff;touch-action:none;user-select:none}.touch .action{align-self:center;width:90px;height:62px;background:#edbd65;color:#161c2c}@media(min-width:900px) and (pointer:fine){.touch{display:none}}@media(max-width:600px){.shell{padding:3px}.stats{gap:6px}.head{flex-wrap:wrap}.head h1{width:100%}.stat{font-size:10px}footer{flex-wrap:wrap}.dialog{padding:10px}}`;
   function assetPrelude(files){
-    const base64=String(files['ASSET_CENARIO.b64']||'');
-    if(!base64)return '';
-    if(!/^[A-Za-z0-9+/]+={0,2}$/.test(base64)||base64.length>1_600_000)throw Error('Asset GLB não é base64 válido.');
-    if(!root.GameForgeGLB?.decode)throw Error('Leitor GLB não carregado no Studio.');
-    let settings;try{settings=JSON.parse(files['ASSET_CENARIO.json']||'{}');}catch{throw Error('Posição do GLB inválida.');}
-    const safe=(v,min,max,fallback)=>Number.isFinite(Number(v))?Math.max(min,Math.min(max,Number(v))):fallback;
-    const placement={x:safe(settings.x,-35,35,5),z:safe(settings.z,-35,35,5),scale:safe(settings.scale,.2,4,1)};
-    return 'const GF_SCENE_GLB_BASE64='+JSON.stringify(base64)+';\nconst GF_SCENE_GLB_OPTIONS='+JSON.stringify(placement)+';\nconst gameForgeDecodeGLB='+root.GameForgeGLB.decode.toString()+';\n';
+    const legacy=String(files['ASSET_CENARIO.b64']||'');
+    let script='';
+    if(legacy){
+      if(!/^[A-Za-z0-9+/]+={0,2}$/.test(legacy)||legacy.length>1_600_000)throw Error('Asset GLB antigo nao e base64 valido.');
+      let settings;try{settings=JSON.parse(files['ASSET_CENARIO.json']||'{}');}catch{throw Error('Posicao do GLB antigo invalida.');}
+      const safe=(v,min,max,fallback)=>Number.isFinite(Number(v))?Math.max(min,Math.min(max,Number(v))):fallback;
+      script+='const GF_SCENE_GLB_BASE64='+JSON.stringify(legacy)+';\nconst GF_SCENE_GLB_OPTIONS='+JSON.stringify({
+        x:safe(settings.x,-35,35,5),z:safe(settings.z,-35,35,5),scale:safe(settings.scale,.2,4,1)
+      })+';\n';
+    }
+    if(files['ASSET_LIBRARY.json']){
+      const library=root.GameForgeAssetLibrary;
+      if(!library)throw Error('Modulo Asset Library nao carregado.');
+      const manifest=library.parse(files['ASSET_LIBRARY.json']);
+      const assets=manifest.assets.map(a=>{
+        const bytes=files['assets/'+a.id+'.glb'];
+        if(!(bytes instanceof Uint8Array))throw Error('GLB binario ausente para '+a.name+'. Reimporte backup ZIP completo.');
+        if(bytes.length!==a.bytes)throw Error('GLB binario diferente do manifesto: '+a.name);
+        return {id:a.id,base64:library.base64(bytes),...a.placement};
+      });
+      if(assets.length)script+='const GF_SCENE_ASSETS='+JSON.stringify(assets)+';\n';
+    }
+    if(script){
+      if(!root.GameForgeGLB?.decode)throw Error('Leitor GLB nao carregado no Studio.');
+      script+='const gameForgeDecodeGLB='+root.GameForgeGLB.decode.toString()+';\n';
+    }
+    return script;
   }
   function shell(title, css, script, preview=false, files={}){
     const safeTitle = safeText(title);

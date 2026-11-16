@@ -137,7 +137,7 @@ function zoneEvents(rows){
 function npcQuest(rows,index){
  let current=null,origin=null,pending=false;
  const parseLine=t=>t.replace(/^[-*+]\s*/,'')
-  .replace(/^(?:(?:na|no|para a|para o)\s+)?(?:fase|missao|etapa|stage|level)\s*\d{1,2}\s*[:,-]?\s*/,'');
+  .replace(/^(?:(?:na|no|para a|para o)\s+)?(?:fase|missao|etapa|stage|level)\s*\d{1,2}\s*[:,-]?\s*/,'i);
  for(const row of rows){
   const normalized=parseLine(row.normal);
   const raw=parseLine(row.text);

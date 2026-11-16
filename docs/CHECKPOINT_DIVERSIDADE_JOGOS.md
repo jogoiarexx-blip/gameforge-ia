@@ -9,6 +9,8 @@
 
 **Implementação:** `js/urban-rules.js` recebe `routeClear` (colisão de segmento versus blocos ampliados) e `planGuardRoute` (grafo de visibilidade com nós nos cantos válidos e Dijkstra). `guardStep` passa a consumir waypoints por proximidade, manter um cache por ~0,65 s e recomputar quando a intenção do guarda ou a posição desejada muda. Um caminho inexistente não habilita atravessar obstáculo. `js/urban-runtime.js` e `js/urban-mission-runtime.js` expõem a quantidade de waypoints na telemetria.
 
+**Ativação em gameplay:** passos e disparos próximos ao NPC sinalizam ruído nos dois runtimes. Sem visão, o guarda investiga por rota; combate só é permitido após restabelecer linha de visão. Esse caso agora tem teste automatizado com obstáculo real.
+
 **Testes:** `tests/urban-slice.test.js` valida segmentos livres, caminho mais longo que a reta obstruída, múltiplos prédios, alvos inválidos, 600 ticks a 60 Hz sem atravessar paredes ou exceder velocidade e cache. `tests/browser-export-matrix.py` confirma que os dois modos exportados apresentam a informação de navegação.
 
 **Commits:** `74235351` (rotas), `a2331c0a` (testes), `537b682c`/`c6509e9c` (telemetria) e `ef4a63f5` (Chromium). Pendente de relatar o resultado específico do SHA final. Não foi alterado o modelo de missões, economia ou schema de savegame.

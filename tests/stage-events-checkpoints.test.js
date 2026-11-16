@@ -11,7 +11,7 @@ function boot(spec,storage=new Map()){
  vm.createContext(THREE_CTX);
  vm.runInContext(fs.readFileSync(require.resolve('../vendor/three-source.js'),'utf8'),THREE_CTX);
  vm.runInContext(THREE_CTX.GameForgeThreeSource,THREE_CTX);
- const handlers={},elements={},frames=[],uiButtons=[];let elapsed=0;
+ const handlers={},elements={},frames=[],uiButtons=[];let elapsed=0,lastScene=null;
  const element=id=>elements[id]||(elements[id]={
   textContent:'',style:{},classList:{add(){},remove(){}},dataset:{},
   addEventListener(type,fn){this[type]=fn;},focus(){},
@@ -28,7 +28,7 @@ function boot(spec,storage=new Map()){
  const THREE={...THREE_CTX.THREE,WebGLRenderer:class{
   constructor(){this.shadowMap={};this.info={render:{calls:0},memory:{geometries:0}};this.renderLists={dispose(){}};}
   setClearColor(){}setPixelRatio(){}setSize(w,h){element('game').width=w;element('game').height=h;}
-  render(){}
+  render(scene){lastScene=scene;}
  }};
  const localStorage={
   getItem(k){return storage.has(k)?storage.get(k):null;},
@@ -49,7 +49,7 @@ function boot(spec,storage=new Map()){
  };
  return {tick,start:()=>element('start').click(),restart:()=>element('restart').click(),
   key:(type,key)=>{for(const fn of handlers[type]||[])fn({key,repeat:false,preventDefault(){}});},
-  telemetry:()=>env.__gameforgeTelemetry(),elements,storage,uiButtons};
+  telemetry:()=>env.__gameforgeTelemetry(),scene:()=>lastScene,elements,storage,uiButtons};
 }
 test('GF-007: GDD separa inimigos rápidos, brutamontes, eventos e fontes por fase',()=>{
  const gdd=[
@@ -276,7 +276,7 @@ test('GF-009: GDD cria NPC com fala, quest oferecida, prêmios e origem por fase
  const spec=make();
  const one=spec.stageConfig[0].npcQuest,two=spec.stageConfig[1].npcQuest;
  assert.equal(one.id,'npc-stage-01');
- assert.equal(one.name,'exploradora lia');
+ assert.equal(one.name,'exploradora Lia');
  assert.equal(one.zone,'south');
  assert.equal(one.dialogue,'Socorro, precisamos defender a cidade!');
  assert.deepEqual(one.steps.map(s=>s.kind),['reach','survive']);
@@ -311,6 +311,10 @@ test('GF-009: comando muda NPC apenas na fase 2 e rejects quests sem contrato va
   '## Fase 1\nNPC: guia no centro\nMissão do NPC: ir ao norte -> eliminar inimigos');
  assert.equal(no.stageSpecs[0].npcQuest.status,'nao_verificado');
  assert.equal(no.stageConfig[0].npcQuest,undefined);
+ const remove=StageSpec.compile({title:'Base',genre:'arena',dimension:'3d',stages:['A'],
+  stageConfig:[{npcQuest:c.stageConfig[0].npcQuest}]},'','Na fase 1: sem NPC');
+ assert.equal(remove.stageConfig[0].npcQuest,undefined);
+ assert.equal(remove.stageSpecs[0].npcQuest.status,'nao_solicitado');
 });
 test('GF-009: contrato valida limites, evita recompensa arbitraria e calcula pagamento limitado',()=>{
  const valid={id:'npc-stage-01',name:'Guia',zone:'south',dialogue:'Precisamos de ajuda',
@@ -342,6 +346,9 @@ test('GF-009: 3D bloqueia a fase ate dialogar, aceitar, concluir e receber prêm
  assert.equal(b.telemetry().missionReady,false);
  assert.equal(b.telemetry().missionStepIndex,0);
  assert.ok(b.uiButtons.some(x=>x.textContent==='Conversar [E]'&&!x.hidden));
+ const actors=[];b.scene().traverse(o=>{if(o.userData?.gameForgeNPC)actors.push(o);});
+ assert.equal(actors.length,1,'NPC deve possuir um modelo visivel na cena 3D');
+ assert.equal(actors[0].visible,true);
  const btn=b.uiButtons.find(x=>x['aria-label']==='Conversar com personagem próximo');
  assert.ok(btn);btn.click();
  assert.equal(b.telemetry().npc.state,'offered');

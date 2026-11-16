@@ -67,13 +67,14 @@
     const data=JSON.stringify(spec).replace(/<\//g,'<\\/');
     const expanded=!three&&['rpg','tower-defense'].includes(spec.genre);
     const advanced=!three&&['lane-defense','block-td'].includes(spec.genre);
-    const runtime=three?(spec.genre==='urban-action'?root.gameForgeUrban3DBoot:spec.genre==='shooter'?root.gameForgeShooter3DBoot:root.gameForgeThreeBoot):advanced?root.gameForgeAdvancedTDBoot:expanded?root.gameForgeExpanded2DBoot:spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
+    const runtime=three?(spec.genre==='urban-action'?(spec.urbanMissions?.length?root.gameForgeUrbanMissionBoot:root.gameForgeUrban3DBoot):spec.genre==='shooter'?root.gameForgeShooter3DBoot:root.gameForgeThreeBoot):advanced?root.gameForgeAdvancedTDBoot:expanded?root.gameForgeExpanded2DBoot:spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
     if(typeof runtime!=='function')throw Error('Motor '+spec.genre+' '+(spec.dimension||'2d')+' não carregado. Atualize o Studio.');
     if(three&&!root.GameForgeThreeSource)throw Error('Biblioteca 3D local ausente. Atualize o Studio.');
     if(advanced&&typeof root.gameForgeTDRulesFactory!=='function')throw Error('Motor de regras Tower Defense não carregado. Atualize o Studio.');
-    const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n'+(spec.genre==='urban-action'?'const GameForgeUrbanRules = ('+root.gameForgeUrbanRulesFactory.toString()+')();\n':''):advanced?'const GameForgeTDRules = ('+root.gameForgeTDRulesFactory.toString()+')();\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
+    const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n'+(spec.genre==='urban-action'?'const GameForgeUrbanRules = ('+root.gameForgeUrbanRulesFactory.toString()+')();\n'+(spec.urbanMissions?.length?'const GameForgeUrbanMissionFlow = ('+root.gameForgeUrbanMissionFlowFactory.toString()+')();\n':''):''):advanced?'const GameForgeTDRules = ('+root.gameForgeTDRulesFactory.toString()+')();\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
     // Incluído no FPS para permitir loja por comandos futuros sem reconstruir o motor.
     if(spec.genre==='urban-action'&&typeof root.gameForgeUrbanRulesFactory!=='function')throw Error('Regras urbanas URB-01 não carregadas. Atualize o Studio.');
+    if(spec.genre==='urban-action'&&spec.urbanMissions?.length&&typeof root.gameForgeUrbanMissionFlowFactory!=='function')throw Error('Regras das missões não carregadas. Atualize o Studio.');
     const combatFactory=root.gameForgeCombatEconomyFactory||
       (typeof require==='function'?require('./combat-economy'):null);
     if(three&&spec.genre==='fps'&&typeof combatFactory!=='function')

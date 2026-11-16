@@ -48,7 +48,7 @@ test('GDD 3D é ação urbana em terceira pessoa e nunca FPS/corrida/arena',()=>
  assert.equal(x.implementation.audit.counts.implementada,0);
  assert.equal(x.implementation.audit.counts.configurada,8);
  assert.equal(x.implementation.audit.counts.pendente,x.implementation.pending.length);
- assert.ok(x.limitations.some(v=>/motor urbano 3D/i.test(v)));
+ assert.ok(x.limitations.some(v=>/URB-01/i.test(v)));
  assert.deepEqual(x.urbanProfile.contentCounts,{cities:3,districts:18,businesses:36,missions:24,bosses:3});
  const files=generator.generate(x,gdd3d);
  assert.ok(files['game.js'].includes('function gameForgeUrban3DBoot'));

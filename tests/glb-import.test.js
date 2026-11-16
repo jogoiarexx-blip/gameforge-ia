@@ -4,12 +4,12 @@ const fs=require('node:fs'),vm=require('node:vm');
 const GLB=require('../js/glb-runtime.js');
 const Project=require('../js/project-backup.js');
 const Generator=require('../js/generator.js');
-function fixture(){
+function fixture(extra={}){
   const json={
     asset:{version:'2.0'},buffers:[{byteLength:44}],
     bufferViews:[{buffer:0,byteOffset:0,byteLength:36},{buffer:0,byteOffset:36,byteLength:6}],
     accessors:[{bufferView:0,componentType:5126,type:'VEC3',count:3},{bufferView:1,componentType:5123,type:'SCALAR',count:3}],
-    meshes:[{primitives:[{attributes:{POSITION:0},indices:1}]}],nodes:[{mesh:0}],scenes:[{nodes:[0]}],scene:0
+    meshes:[{primitives:[{attributes:{POSITION:0},indices:1}]}],nodes:[{mesh:0}],scenes:[{nodes:[0]}],scene:0,...extra
   };
   const bin=new Uint8Array(44);
   const view=new DataView(bin.buffer);
@@ -37,14 +37,8 @@ test('GLB estático com geometria real converte em Mesh e é normalizado para a 
 });
 test('GLB com cabeçalho inválido e extensão obrigatória é rejeitado sem executar código',()=>{
   assert.throws(()=>GLB.decode(three(),new Uint8Array(30)),/GLB inválido|Cabeçalho/);
-  const b=fixture();
-  const jsonLen=new DataView(b.buffer).getUint32(12,true);
-  const json=JSON.parse(new TextDecoder().decode(b.subarray(20,20+jsonLen)).trim());
-  json.extensionsRequired=['KHR_draco_mesh_compression'];
-  const payload=JSON.stringify(json);
-  assert.ok(payload.length<=jsonLen);
-  b.fill(32,20,20+jsonLen);b.set(new TextEncoder().encode(payload),20);
-  assert.throws(()=>GLB.decode(three(),b),/Extensões GLB obrigatórias/);
+  const compressed=fixture({extensionsRequired:['KHR_draco_mesh_compression']});
+  assert.throws(()=>GLB.decode(three(),compressed),/Extensões GLB obrigatórias/);
 });
 test('GLB importado entra na prévia HTML isolada e na exportação, com limites de coordenadas',()=>{
   globalThis.GameForgeGLB=GLB;

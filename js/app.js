@@ -292,6 +292,13 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   }
   function scheduleSave(){unrestoredProject=false;clearTimeout(saveTimer);saveTimer=setTimeout(saveState,600);}
   function loadProject(snap){
+    // Restauração de projetos sem GDD: GAME_SPEC é suficiente e evita o
+    // parser disparado inadvertidamente com string vazia.
+    const storedSpec=GameForgeProject.activeSpec(snap.files,null);
+    const sourceText=snap.gdd?.trim()?snap.gdd:(snap.instruction?.trim()?GameForgeIntent.briefFromCommand(snap.instruction):'# Novo Jogo');
+    const baseSpec=storedSpec||GameForgeParser.parseGdd(sourceText,'',{
+      genre:snap.creationOptions?.genre||'auto',dimension:snap.creationOptions?.dimension||'auto'
+    });
     unrestoredProject=false;
     clearTimeout(saveTimer);
     $('gdd').value=snap.gdd;$('project-name').value=snap.name;$('instruction').value=snap.instruction;
@@ -303,7 +310,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     assetProjectId=snap.assetProjectId||GameForgeAssetLibrary.newId();
     state.files=snap.files;state.selected=null;preparedTaskId=null;lastPlan=null;state.generation++;
     restoreSceneAssetControls();
-    state.spec=GameForgeProject.activeSpec(state.files,GameForgeParser.parseGdd(snap.gdd));
+    state.spec=baseSpec;
     restoreCreationOptions(snap.creationOptions||{dimension:state.spec.dimension,genre:state.spec.genre,...state.spec.worldOptions});
     roadmapTasks=GameForgeRoadmap.build(snap.gdd,snap.roadmapRecords);roadmapSource=snap.gdd;roadmapCount=60;
     selectedTaskId=roadmapTasks.some(t=>t.id===snap.selectedTaskId)?snap.selectedTaskId:null;
@@ -488,7 +495,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         for(const a of manifest.assets){
           const key='assets/'+a.id+'.glb',binary=entries[key];
           if(!binary||binary.length!==a.bytes)throw Error('ZIP não contém o modelo original '+a.name+'.');
-          assetFiles[a.id]=GameForgeAssetLibrary.validateGLB(binary);
+          assetFiles[a.id]=await GameForgeAssetLibrary.verify(binary,a.sha256);
         }
       }else{
         if(file.size>20_000_000)throw Error('Backup JSON acima de 20 MB.');
@@ -918,7 +925,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         const data=GameForgeAssetLibrary.validateGLB(new Uint8Array(await file.arrayBuffer()));
         GameForgeGLB.decode(null,data); // valida geometria, hierarquia e texturas antes de salvar
         const id=GameForgeAssetLibrary.newId();
-        const item={id,name:file.name,bytes:data.length,role:'scene',placement:assetPlacement()};
+        const item={id,name:file.name,bytes:data.length,sha256:await GameForgeAssetLibrary.sha256(data),role:'scene',placement:assetPlacement()};
         const next=GameForgeAssetLibrary.append(current,item);
         await GameForgeAssetLibrary.put(assetProjectId,id,data);
         state.files['ASSET_LIBRARY.json']=JSON.stringify(next);

@@ -213,9 +213,18 @@ function compile(spec,gdd,instruction='',options={}){
     if(spec.dimension==='3d'&&['arena','fps','rpg'].includes(spec.genre)){
      const seconds=/\b(\d{1,3})\s*(segundos?|s\b)/.exec(t);
      const targets=where!==null?[where]:Array.from({length:count},(_,i)=>i);
-     for(const i of targets){if(i<0||i>=count){warn('Missão referencia fase inexistente.');continue;}stageConfig[i]={...stageConfig[i],mission:mode};
-      if(mode==='survive')stageConfig[i].seconds=clamp(Number(seconds?.[1])||45,5,180);}
-     push('applied','mission','Objetivo de '+({survive:'sobrevivência',collect:'coleta',eliminate:'eliminação'}[mode]),where===null?'Todas as fases':'Fase '+(where+1),origin);
+     let affected=0;
+     for(const i of targets){
+      if(i<0||i>=count){warn('Missão referencia fase inexistente.');continue;}
+      // "Objetivo: sobreviver" é rótulo descritivo e não pode apagar 60 s
+      // configurados na linha anterior da mesma fase.
+      const same=stageConfig[i].mission===mode;
+      if(same&&!seconds&&/^[-*+]?\s*(?:objetivo|missao principal|meta)\s*:/.test(t))continue;
+      stageConfig[i]={...stageConfig[i],mission:mode};
+      if(mode==='survive')stageConfig[i].seconds=clamp(Number(seconds?.[1])||stageConfig[i].seconds||45,5,180);
+      affected++;
+     }
+     if(affected)push('applied','mission','Objetivo de '+({survive:'sobrevivência',collect:'coleta',eliminate:'eliminação'}[mode]),where===null?'Todas as fases':'Fase '+(where+1),origin);
     }else push('pending','mission','Objetivo solicitado não implementado neste motor',origin);
    }
   }

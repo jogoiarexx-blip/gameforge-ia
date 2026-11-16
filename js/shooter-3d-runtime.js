@@ -21,7 +21,7 @@ function gameForgeShooter3DBoot(){
  let scene,world,camera,geometries=[],materials=[],geos={},mats={},ship,stage=0;
  let health=100,score=0,weapon=1,kills=0,state='menu',paused=false,invulnerable=0,fireDelay=0;
  let wave=0,waveMax=3,waveTimer=0,bossSpawned=false,bossPhase=1,stageTransition=0;
- let enemies=[],shots=[],hostileShots=[],drops=[],stars=[];
+ let enemies=[],shots=[],hostileShots=[],drops=[],stars=[],starField=null,starTransform=null;
  let clock=0,stageClock=0,frames=0,last=0,lastDraw=-1e6,noticeTime=0;
  let player={x:0,y:0,z:size*.27,speed:0},pendingPointer=false;
  const keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
@@ -34,6 +34,7 @@ function gameForgeShooter3DBoot(){
  function release(){keys.clear();pendingPointer=false;for(const k of Object.keys(touch))touch[k]=false;}
  function disposeStage(){
   if(!scene)return;
+  starField?.dispose?.();starField=null;starTransform=null;
   for(const g of geometries)g.dispose();
   for(const m of materials)m.dispose();
   scene.clear();
@@ -97,9 +98,25 @@ function gameForgeShooter3DBoot(){
   makeMesh(geos.ground,mats.ground,world,0,-.35,0);
   for(let i=-4;i<=4;i++)makeMesh(geos.line,mats.line,world,i*size/9,-.12,0);
   const rng=R.rng((Number(opts.seed)||12345)+stage*501);
-  for(let i=0;i<(software?35:opts.quality==='high'?110:65);i++){
-   const o=makeMesh(geos.star,mats.star,world,(rng()-.5)*size,.02,(rng()-.5)*size*1.15);
-   stars.push({mesh:o,speed:1+rng()*3});
+  // Um lote instanciado substitui 65–110 meshes independentes no WebGL.
+  // O renderizador CPU ainda recebe meshes comuns porque nao processa instancias.
+  const starCount=software?35:opts.quality==='high'?110:65;
+  if(!software&&typeof T.InstancedMesh==='function'){
+   starField=new T.InstancedMesh(geos.star,mats.star,starCount);
+   starField.frustumCulled=false;
+   starTransform=new T.Object3D();
+   for(let i=0;i<starCount;i++){
+    const s={x:(rng()-.5)*size,z:(rng()-.5)*size*1.15,speed:1+rng()*3};
+    stars.push(s);
+    starTransform.position.set(s.x,.02,s.z);starTransform.updateMatrix();
+    starField.setMatrixAt(i,starTransform.matrix);
+   }
+   starField.instanceMatrix.needsUpdate=true;world.add(starField);
+  }else{
+   for(let i=0;i<starCount;i++){
+    const o=makeMesh(geos.star,mats.star,world,(rng()-.5)*size,.02,(rng()-.5)*size*1.15);
+    stars.push({mesh:o,speed:1+rng()*3});
+   }
   }
   drawImports();
   ship=starfighter('player');ship.position.set(player.x,.25,player.z);
@@ -232,7 +249,17 @@ function gameForgeShooter3DBoot(){
   ship.visible=invulnerable<=0||Math.floor(invulnerable*14)%2===0;
   if(down(' ','Enter','fire')||pendingPointer)playerShoot();
   updateEnemies(dt);updateProjectiles(dt);updateDrops(dt);
-  for(const s of stars){s.mesh.position.z+=dt*s.speed*2.5;if(s.mesh.position.z>size*.53)s.mesh.position.z=-size*.53;}
+  if(starField){
+   for(let i=0;i<stars.length;i++){
+    const s=stars[i];s.z+=dt*s.speed*2.5;
+    if(s.z>size*.53)s.z=-size*.53;
+    starTransform.position.set(s.x,.02,s.z);starTransform.updateMatrix();
+    starField.setMatrixAt(i,starTransform.matrix);
+   }
+   starField.instanceMatrix.needsUpdate=true;
+  }else{
+   for(const s of stars){s.mesh.position.z+=dt*s.speed*2.5;if(s.mesh.position.z>size*.53)s.mesh.position.z=-size*.53;}
+  }
   if(enemies.length===0){
    waveTimer+=dt;
    if(waveTimer>=1.2){
@@ -288,6 +315,7 @@ function gameForgeShooter3DBoot(){
   return {dimension:'3d',genre:'shooter',state,paused,frames,stage:stage+1,stages:stages.length,clock,health,score,
     enemies:enemies.length,playerBullets:shots.length,enemyBullets:hostileShots.length,powerups:drops.length,
     wave,waveMax,bossSpawned,bossPhase,weapon,kills,
+    starCount:stars.length,starDrawBatches:starField?1:stars.length,
     render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},
     player:{x:player.x*100,y:player.z*100,z:0,angle:0,screenX:(playerPosition.x*.5+.5)*canvas.width,screenY:(-.5*playerPosition.y+.5)*canvas.height,radius:24}};
  };

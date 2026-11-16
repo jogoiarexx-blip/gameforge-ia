@@ -90,7 +90,7 @@ test('GF-004: instrução recente ativa ou desativa a loja sobreposta ao GDD ant
  const off=Parser.parseGdd('# FPS\nCrie uma loja para comprar munição','Remova a loja.',{genre:'fps',dimension:'3d'});
  assert.equal(off.combatEconomy.enabled,false);
  assert.equal(item(off,'combat-store-off').status,'configurada');
- assert.equal(item(off,'combat-store').status,undefined);
+ assert.equal(item(off,'combat-store'),undefined);
 });
 test('GF-004: exportador rejeita configuração incompatível de motor sem executar código',()=>{
  const spec=Parser.parseGdd('# Arena\n## Fase 1','',{genre:'arena',dimension:'3d'});

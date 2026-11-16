@@ -37,7 +37,7 @@ test('GF-010 duas rotas limitam botoes, nomes e recompensas',()=>{
 test('GF-010 checkpoint so restaura escolha valida sem injetar dinheiro ou fase',()=>{
  const opts=Branches.parse('3 caminhos e passagem secreta');
  const raw={version:1,stage:1,route:'middle',health:90,score:2000,weapon:2,kills:11};
- assert.deepEqual(Branches.validateCheckpoint(opts,raw,3),raw);
+ assert.deepEqual(Branches.validateCheckpoint(opts,raw,3),{...raw,claimed:[]});
  assert.equal(Branches.validateCheckpoint(opts,{...raw,stage:999},3),null);
  assert.equal(Branches.validateCheckpoint(opts,{...raw,score:-1},3),null);
  assert.equal(Branches.validateCheckpoint(opts,{...raw,route:'hacked'},3),null);

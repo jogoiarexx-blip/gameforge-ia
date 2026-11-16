@@ -384,3 +384,152 @@ test('GF-009: jogos 3D sem NPC conservam progressão e controles anteriores',()=
  b.tick(315);
  assert.equal(b.telemetry().missionReady,true);
 });
+
+
+test('GF-010 NPC: GDD cria duas escolhas tipadas, patrulha e resultados separados',()=>{
+ const source=[
+  '# Vila das Colinas','## Fase 1',
+  'NPC: Exploradora Lia no sul',
+  'Fala do NPC: "Duas rotas, escolha uma!"',
+  'NPC caminha: sim',
+  'Opção 1: Proteger a vila | ir ao sul -> sobreviver 5 segundos | 120 pontos e 20 de vida',
+  'Opção 2: Explorar as ruínas | ir ao norte -> coletar cristais | 300 pontos e 40 balas'
+ ].join('\n');
+ const spec=StageSpec.compile({title:'Vila das Colinas',genre:'arena',dimension:'3d',
+  stages:['Vila'],stageConfig:[{}]},source);
+ const npc=spec.stageConfig[0].npcQuest;
+ assert.ok(npc);
+ assert.equal(npc.name,'Exploradora Lia');
+ assert.equal(npc.walk,true);
+ assert.deepEqual(npc.choices.map(c=>c.id),['choice-1','choice-2']);
+ assert.equal(npc.choices[0].steps[1].seconds,5);
+ assert.equal(npc.choices[1].steps[0].zone,'north');
+ assert.deepEqual(npc.choices[0].reward,{score:120,health:20,ammo:0});
+ assert.deepEqual(npc.choices[1].reward,{score:300,health:0,ammo:40});
+ assert.equal(spec.stageSpecs[0].npcQuest.choices.length,2);
+ assert.equal(spec.stageSpecs[0].npcQuest.walk,true);
+ assert.match(StageSpec.report(spec),/Escolhas: 2/);
+ const identical=StageSpec.compile({title:'Vila das Colinas',genre:'arena',dimension:'3d',
+  stages:['Vila'],stageConfig:[{}]},source);
+ assert.deepEqual(spec.stageConfig,identical.stageConfig);
+});
+test('GF-010 NPC: rejeita escolha parcial, premio excedente e commandos que mudam outra fase',()=>{
+ const base={title:'Base',genre:'arena',dimension:'3d',stages:['A','B'],stageConfig:[{},{}]};
+ const source=[
+  '# Vila','## Fase 1','NPC: Guia no sul','Missão do NPC: ir ao sul -> eliminar inimigos',
+  '## Fase 2','NPC: Curandeira no sul','Missão do NPC: ir ao sul -> sobreviver 5 segundos'
+ ].join('\n');
+ const spec=StageSpec.compile(base,source,
+  'Fase 2: NPC caminha: sim\nFase 2: Opção 1: Defender | ir ao sul -> sobreviver 5 segundos | 50 pontos\n'+
+  'Fase 2: Opção 2: Explorar | ir ao norte -> coletar cristais | 80 pontos');
+ assert.equal(spec.stageConfig[0].npcQuest.walk,undefined);
+ assert.equal(spec.stageConfig[0].npcQuest.choices,undefined);
+ assert.equal(spec.stageConfig[1].npcQuest.walk,true);
+ assert.equal(spec.stageConfig[1].npcQuest.choices.length,2);
+ const invalid=StageSpec.compile({title:'Vila',genre:'arena',dimension:'3d',stages:['A'],stageConfig:[{}]},
+  '## Fase 1\nNPC: Guia no sul\nOpção 1: Opção única | ir ao sul -> eliminar inimigos | 100 pontos');
+ assert.equal(invalid.stageSpecs[0].npcQuest.status,'pendente');
+ assert.equal(invalid.stageConfig[0].npcQuest,undefined);
+ const invalidReward=StageSpec.compile({title:'Vila',genre:'arena',dimension:'3d',stages:['A'],stageConfig:[{}]},
+  '## Fase 1\nNPC: Guia no sul\nOpção 1: Ajudar | ir ao sul -> eliminar inimigos | 1000 pontos\n'+
+  'Opção 2: Fugir | ir ao norte -> sobreviver 5 segundos | 200 pontos');
+ assert.equal(invalidReward.stageSpecs[0].npcQuest.status,'pendente');
+});
+test('GF-010 NPC: contrato e regras impedem falsificar escolha e mantem patrulha limitada',()=>{
+ const base={id:'npc-stage-01',name:'Guia',zone:'south',dialogue:'Escolha',
+  walk:true,steps:[{id:'step-1',kind:'reach',zone:'south',label:'Ir ao sul'},
+   {id:'step-2',kind:'survive',seconds:5,label:'Sobreviver'}],
+  reward:{score:100,health:0,ammo:0},choices:[
+   {id:'choice-1',label:'Defender',steps:[{id:'step-1',kind:'reach',zone:'south',label:'Ir ao sul'},
+    {id:'step-2',kind:'survive',seconds:5,label:'Sobreviver'}],reward:{score:100,health:0,ammo:0}},
+   {id:'choice-2',label:'Explorar',steps:[{id:'step-1',kind:'reach',zone:'north',label:'Ir ao norte'},
+    {id:'step-2',kind:'collect',label:'Colete cristais'}],reward:{score:300,health:20,ammo:40}}
+  ]};
+ assert.ok(R.npcQuestContract(base));
+ assert.equal(R.npcReward(base,{score:0,health:80,ammo:60},999),null);
+ assert.deepEqual(R.npcReward(base,{score:0,health:80,ammo:60},999,'choice-2'),
+  {score:300,health:100,ammo:100});
+ assert.equal(R.npcReward(base,{score:0,health:80,ammo:60},999,'choice-3'),null);
+ assert.equal(R.npcQuestContract({...base,choices:[base.choices[0]]}),null);
+ assert.equal(R.npcQuestContract({...base,choices:[{...base.choices[0],label:'<img>'},base.choices[1]]}),null);
+ assert.equal(R.npcQuestContract({...base,walk:'yes'}),null);
+ const first=R.npcPatrolPosition(base,0,48),second=R.npcPatrolPosition(base,2,48);
+ assert.ok(Math.hypot(first.x-second.x,first.z-second.z)>.5);
+ for(let t=0;t<=50;t+=.5){
+  const p=R.npcPatrolPosition(base,t,32);
+  assert.ok(Math.abs(p.x)<=14.01&&Math.abs(p.z)<=14.01);
+ }
+ assert.equal(R.npcNear({...base,id:'invalid'},{x:first.x,z:first.z},48,2.6,first),false);
+});
+test('GF-010 NPC: tecla 2 altera tempo da missao, recompensa e textos do HUD',()=>{
+ const quest={id:'npc-stage-01',name:'Guia',zone:'south',dialogue:'Escolha sua rota',walk:false,
+  steps:[{id:'step-1',kind:'reach',zone:'south',label:'Chegue ao sul'},
+   {id:'step-2',kind:'survive',seconds:5,label:'Resista 5s'}],
+  reward:{score:120,health:10,ammo:0},choices:[
+   {id:'choice-1',label:'Vila',steps:[{id:'step-1',kind:'reach',zone:'south',label:'Chegue ao sul'},
+    {id:'step-2',kind:'survive',seconds:5,label:'Resista 5s'}],reward:{score:120,health:10,ammo:0}},
+   {id:'choice-2',label:'Forte',steps:[{id:'step-1',kind:'reach',zone:'south',label:'Chegue ao sul'},
+    {id:'step-2',kind:'survive',seconds:7,label:'Resista 7s'}],reward:{score:300,health:0,ammo:40}}
+  ]};
+ const spec={genre:'arena',dimension:'3d',title:'Duplo caminho',stages:['Vila'],
+  stageConfig:[{enemies:1,boss:'no',npcQuest:quest}],features:{bosses:false},
+  worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const b=boot(spec);b.start();b.tick(2);
+ assert.equal(b.telemetry().npc.state,'idle');
+ b.key('keydown','e');b.tick(1);
+ assert.equal(b.telemetry().npc.state,'offered');
+ assert.equal(b.telemetry().npc.choices.length,2);
+ assert.equal(b.telemetry().missionReady,false);
+ assert.ok(b.uiButtons.some(x=>x['aria-label']==='Escolher missão 2'&&!x.hidden));
+ b.key('keydown','2');b.tick(2);
+ assert.equal(b.telemetry().npc.choice,'choice-2');
+ assert.equal(b.telemetry().npc.state,'active');
+ assert.equal(b.telemetry().missionStepIndex,1);
+ assert.match(b.elements.mission.textContent,/7s/);
+ b.tick(317);
+ assert.equal(b.telemetry().npc.state,'active','ramo 2 deve durar mais que ramo 1');
+ b.tick(130);
+ assert.equal(b.telemetry().npc.state,'completed');
+ assert.equal(b.telemetry().score,300);
+ assert.equal(b.telemetry().ammo,120);
+ b.key('keydown','2');b.key('keydown','e');
+ assert.equal(b.telemetry().score,300,'escolhas não podem pagar novamente');
+ b.restart();b.tick(2);
+ assert.equal(b.telemetry().npc.choice,null);
+ assert.equal(b.telemetry().npc.state,'idle');
+});
+test('GF-010 NPC: botão de toque escolhe opção 1 e NPC caminha com animação sem alterar inimigos',()=>{
+ const quest={id:'npc-stage-01',name:'Batedor',zone:'south',dialogue:'Venha comigo',walk:true,
+  steps:[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},
+   {id:'step-2',kind:'survive',seconds:5,label:'Espere 5s'}],
+  reward:{score:150,health:0,ammo:0},choices:[
+   {id:'choice-1',label:'Ajudar',steps:[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},
+    {id:'step-2',kind:'survive',seconds:5,label:'Espere 5s'}],reward:{score:150,health:0,ammo:0}},
+   {id:'choice-2',label:'Buscar',steps:[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},
+    {id:'step-2',kind:'survive',seconds:8,label:'Espere 8s'}],reward:{score:270,health:0,ammo:0}}
+  ]};
+ const spec={genre:'arena',dimension:'3d',title:'Batedor',stages:['A'],
+  stageConfig:[{enemies:1,boss:'no',npcQuest:quest}],features:{bosses:false},
+  worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const b=boot(spec);b.start();b.tick(1);
+ const first=b.telemetry().npc.position;b.tick(110);
+ const walked=b.telemetry().npc.position;
+ assert.ok(Math.hypot(walked.x-first.x,walked.z-first.z)>.5,'NPC tem que mover realmente no mapa');
+ assert.equal(b.telemetry().enemies,1,'andar não cria inimigos extras');
+ const npcActors=[];b.scene().traverse(x=>{if(x.userData?.gameForgeNPC)npcActors.push(x);});
+ assert.equal(npcActors.length,1);
+ assert.ok(Math.abs(npcActors[0].position.x-walked.x)<1e-5);
+ const talk=b.uiButtons.find(x=>x['aria-label']==='Conversar com personagem próximo');
+ assert.equal(talk.hidden,false);
+ talk.click();
+ assert.equal(b.telemetry().npc.state,'offered');
+ const frozen=b.telemetry().npc.position;b.tick(20);
+ assert.deepEqual(b.telemetry().npc.position,frozen,'NPC congela enquanto opção é apresentada');
+ const btn=b.uiButtons.find(x=>x['aria-label']==='Escolher missão 1');assert.ok(btn);
+ assert.equal(btn.hidden,false);btn.click();
+ assert.equal(b.telemetry().npc.choice,'choice-1');
+ assert.equal(b.telemetry().npc.state,'active');
+ b.tick(330);
+ assert.equal(b.telemetry().npc.state,'completed');
+ assert.equal(b.telemetry().score,150);
+});

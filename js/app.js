@@ -511,7 +511,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         if(!server)throw new Error('Informe uma API HTTPS em “Servidor de IA”. O GitHub Pages não executa o backend.');
         if(!/^https?:\/\//.test(server))throw new Error('URL inválida do servidor (http:// ou https://).');
         if(location.protocol==='https:'&&server.startsWith('http://')&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/.test(server))throw new Error('Use HTTPS para conectar um site HTTPS à API.');
-        const payload={model:$('model').value.trim(),gdd:$('gdd').value,instruction:GameForgeParser.creationInstruction(spec,$('instruction').value),current_files:{},reference_ids:references().map(x=>x.id),read_sources:$('repo-live-sources').checked,deep_plan:$('deep-plan').checked,mode:'create'};
+        const payload={model:$('model').value.trim(),gdd:$('gdd').value.trim()||GameForgeIntent.briefFromCommand($('instruction').value),instruction:GameForgeParser.creationInstruction(spec,$('instruction').value),current_files:{},reference_ids:references().map(x=>x.id),read_sources:$('repo-live-sources').checked,deep_plan:$('deep-plan').checked,mode:'create'};
         log('[Com IA] Solicitando código ao servidor: '+server);
         if(new Blob([$('gdd').value]).size>35000)log('[GDD extenso] O backend vai ler todas as partes com IA antes de planejar. Isso pode exigir várias chamadas e gerar custos da API.');
         const headers={'Content-Type':'application/json'};if($('api-token').value)headers['X-GameForge-Token']=$('api-token').value;

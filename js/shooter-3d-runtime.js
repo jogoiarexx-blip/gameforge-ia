@@ -15,6 +15,18 @@ function gameForgeShooter3DBoot(){
  const size=R.clamp(Number(opts.size)||48,32,88),stages=(spec.stages?.length?spec.stages:['Fase 1']).slice(0,30);
  const stageConfigs=Array.isArray(spec.stageConfig)?spec.stageConfig:[];
  const configAt=i=>stageConfigs[i]&&typeof stageConfigs[i]==='object'?stageConfigs[i]:{};
+ // Campanhas lineares salvam somente no início da próxima fase. O modo
+ // de rotas continua com seu checkpoint próprio, sem migrar saves antigos.
+ const campaignSave=!branchConfig&&stages.length>1&&
+  typeof GameForgeUrbanSave!=='undefined'&&typeof GameForgeShooterCampaignSave!=='undefined'
+   ?GameForgeUrbanSave.create(()=>window.localStorage,GameForgeShooterCampaignSave.key(spec),
+       raw=>GameForgeShooterCampaignSave.validate(spec,raw)):null;
+ let campaignSaveStatus=campaignSave?.read()?'available':'new';
+ function saveCampaignCheckpoint(){
+  if(!campaignSave)return;
+  const data=GameForgeShooterCampaignSave.make(spec,{stage,health,weapon,kills,score});
+  campaignSaveStatus=data&&campaignSave.write(data)?'saved':'unavailable';
+ }
  const availableRoutes=()=>BR?BR.options(branchConfig,kills>=10):[];
  function saveRouteCheckpoint(){
   if(!branchSave)return;
@@ -430,8 +442,8 @@ function gameForgeShooter3DBoot(){
    if(stageTransition>0){
     stageTransition-=dt;
     if(stageTransition<=0){
-     if(stage+1===stages.length){state='victory';$('overlay-title').textContent='Campanha concluída!';$('overlay-sub').textContent='Pontos: '+score+' · '+stages.length+' fases.';$('start').textContent='Jogar novamente';$('overlay').classList.remove('hidden');}
-     else{stage++;health=Math.min(100,health+20);chosenRoute=null;claimedEvents=new Set();routeTriggered=new Set();if(BR)showRouteChoice();else setUpStage();}
+     if(stage+1===stages.length){state='victory';campaignSave?.remove();branchSave?.remove();campaignSaveStatus='complete';$('overlay-title').textContent='Campanha concluída!';$('overlay-sub').textContent='Pontos: '+score+' · '+stages.length+' fases.';$('start').textContent='Jogar novamente';$('overlay').classList.remove('hidden');}
+     else{stage++;health=Math.min(100,health+20);chosenRoute=null;claimedEvents=new Set();routeTriggered=new Set();if(BR)showRouteChoice();else{setUpStage();saveCampaignCheckpoint();}}
     }
    }else updateStage(dt);
    updateHud();
@@ -439,9 +451,11 @@ function gameForgeShooter3DBoot(){
   if(noticeTime>0){noticeTime-=dt;if(noticeTime<=0)$('message').style.opacity='0';}
   if(scene&&(!software||now-lastDraw>=1000/30)){renderer.render(scene,camera);lastDraw=now;}
  }
- function start(){
-  if(state==='route-choice')return;
-  if(state==='play'&&paused){togglePause();return;}
+ function start(fresh=false){
+  if(state==='route-choice'&&!fresh)return;
+  if(!fresh&&state==='play'&&paused){togglePause();return;}
+  const restored=!fresh&&(state==='menu'||state==='defeat')?campaignSave?.read():null;
+  if(fresh){campaignSave?.remove();campaignSaveStatus='new';}
   stage=0;health=100;score=0;weapon=1;kills=0;clock=0;paused=false;chosenRoute=null;
   claimedEvents=new Set();routeTriggered=new Set();release();
   if(BR){
@@ -454,7 +468,11 @@ function gameForgeShooter3DBoot(){
    }else branchSave.remove();
    if(chosenRoute){state='play';setUpStage();$('overlay').classList.add('hidden');}
    else showRouteChoice();
-  }else{state='play';setUpStage();$('overlay').classList.add('hidden');}
+  }else{
+   if(restored){stage=restored.stage;health=restored.health;score=restored.score;weapon=restored.weapon;kills=restored.kills;campaignSaveStatus='recovered';}
+   state='play';setUpStage();$('overlay').classList.add('hidden');
+   if(restored)notice('Checkpoint recuperado · Fase '+(stage+1)+'/'+stages.length,3);
+  }
   $('pause').textContent='Pausar';canvas.focus();
  }
  function togglePause(){
@@ -468,6 +486,7 @@ function gameForgeShooter3DBoot(){
   return {dimension:'3d',genre:'shooter',state,paused,frames,stage:stage+1,stages:stages.length,clock,health,score,
     enemies:enemies.length,playerBullets:shots.length,enemyBullets:hostileShots.length,powerups:drops.length,
     wave,waveMax,bossSpawned,bossDefeated,bossPhase,bossHp:enemies.find(e=>e.boss)?.hp??0,weapon,kills,
+    campaignCheckpoint:campaignSave?.read()?.stage??null,campaignSaveStatus,campaignSaveKey:campaignSave?.key??null,
     route:chosenRoute?.id||null,routeName:chosenRoute?.name||null,routeChoices:BR?availableRoutes().map(r=>r.id):[],routeCheckpoint:!!branchSave?.read(),
     routeScene:chosenRoute?.scene?.id||null,routeDecorCount,routeBackground:routeBg,
     routePickups:drops.filter(d=>d.kind==='route').map(d=>({x:d.x,z:d.z,eventId:d.eventId})),
@@ -482,7 +501,7 @@ function gameForgeShooter3DBoot(){
  if(importErrors.length)$('overlay-sub').textContent+=' GLB incompatível: '+importErrors[0].slice(0,140);
  if(software)$('overlay-sub').textContent+=' · Modo de compatibilidade CPU ativado.';
  $('start').addEventListener('click',()=>{if(paused)togglePause();else start();});
- $('restart').addEventListener('click',start);$('pause').addEventListener('click',togglePause);
+ $('restart').addEventListener('click',()=>start(true));$('pause').addEventListener('click',togglePause);
  addEventListener('keydown',e=>{
   const k=e.key.length===1?e.key.toLowerCase():e.key;
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','w','a','s','d'].includes(k))e.preventDefault();

@@ -17,7 +17,7 @@ function three(){
  vm.runInContext(context.GameForgeThreeSource,context);
  return context.THREE;
 }
-function boot(overrides={},testBoss=false){
+function boot(overrides={},testBoss=false,sharedStorage=null){
  const handlers={},elements={},callbacks=[];let now=0,rendered=null,disposals=0;
  const item=id=>elements[id]||(elements[id]={textContent:'',style:{},classList:{add(){},remove(){}},dataset:{},children:[],events:{},
   addEventListener(type,fn){this.events[type]=fn;this[type]=fn;},click(){this.events.click?.({preventDefault(){}});},
@@ -38,7 +38,8 @@ function boot(overrides={},testBoss=false){
   gameForgeWorldRules:worldRules,gameForgeSoftwareRenderer:null,
   GameForgeStageBranches:require('../js/stage-branches.js')(),
   GameForgeUrbanSave:require('../js/urban-save.js')(),
-  localStorage:{data:new Map(),getItem(k){return this.data.get(k)||null;},setItem(k,v){this.data.set(k,String(v));},removeItem(k){this.data.delete(k);}},
+  GameForgeShooterCampaignSave:require('../js/shooter-campaign-save.js')(),
+  localStorage:sharedStorage||{data:new Map(),getItem(k){return this.data.get(k)||null;},setItem(k,v){this.data.set(k,String(v));},removeItem(k){this.data.delete(k);}},
   window:null,globalThis:null};
  env.window=env;env.globalThis=env;
  // Sonda SOMENTE no VM dos testes: nenhum hook de trapaça entra nos exports.
@@ -249,4 +250,95 @@ test('GF-TRAIN-05: disparos reais derrotam chefe, pagam recompensa única e conc
   'prêmio de 900 + conclusão de 500; um power-up opcional pode dar +90');
  game.tick(90);
  assert.equal(game.telemetry().score,wonScore,'estado de vitória não duplica prêmios');
+});
+
+
+test('GF-TRAIN-06: campanha linear de 3 chefes, checkpoint real, reload, derrota e zeramento',()=>{
+ const spec={title:'Campanha completa treinamento seis',
+  stages:['Guardião do Vale','Guardião das Nuvens','Guardião Final'],
+  stageConfig:[{waves:2,boss:'yes'},{waves:2,boss:'yes'},{waves:2,boss:'yes'}],
+  tuning:{difficulty:1,enemyMultiplier:1,bossMultiplier:.25,playerSpeedMultiplier:1,fireRateMultiplier:3}};
+ const storage={data:new Map(),getItem(k){return this.data.get(k)||null;},
+  setItem(k,v){this.data.set(k,String(v));},removeItem(k){this.data.delete(k);}};
+ const bossFight=game=>{
+  const stage=game.telemetry().stage;
+  const health=game.env.__gfBossProbe.setup();
+  assert.ok(health>=1&&health<=11,'chefes de fases avançadas têm resistência crescente');
+  game.key('keydown',' ');
+  let tries=0;
+  while(!game.telemetry().bossDefeated&&tries++<35){
+   game.env.__gfBossProbe.center();
+   game.tick(12);
+  }
+  game.key('keyup',' ');
+  assert.equal(game.telemetry().state,'play','chefe não pode encerrar o jogo antes da transição');
+  assert.equal(game.telemetry().bossDefeated,true,'cada chefe deve cair com disparos reais');
+  assert.equal(game.telemetry().stage,stage,'não muda fase antes da animação');
+  game.tick(195);
+ };
+ const first=boot(spec,true,storage);
+ first.item('start').click();first.tick(2);
+ assert.equal(first.telemetry().campaignCheckpoint,null,'nenhum save antes da primeira vitória');
+ bossFight(first);
+ assert.equal(first.telemetry().stage,2,'a vitória real leva à segunda fase');
+ assert.equal(first.telemetry().campaignSaveStatus,'saved');
+ const key=first.telemetry().campaignSaveKey,checkpoint=JSON.parse(storage.getItem(key));
+ assert.equal(checkpoint.stage,1,'checkpoint começa no início da próxima fase, não no chefe abatido');
+ assert.ok(checkpoint.score>=1400&&checkpoint.score<=1490);
+ assert.equal(checkpoint.version,1);
+ const savedScore=first.telemetry().score;
+ // Sessão completamente nova: fechar e reabrir jogo deve restaurar progresso.
+ const restored=boot(spec,true,storage);
+ assert.equal(restored.telemetry().campaignCheckpoint,1);
+ restored.item('start').click();restored.tick(2);
+ assert.equal(restored.telemetry().stage,2);
+ assert.equal(restored.telemetry().score,savedScore,'restaurar não duplica recompensa anterior');
+ assert.equal(restored.telemetry().campaignSaveStatus,'recovered');
+ // Falhar no próximo chefe não apaga checkpoint nem premia vitória.
+ restored.env.__gfBossProbe.setup();
+ restored.env.__gfBossProbe.escape();restored.tick(2);
+ assert.equal(restored.telemetry().state,'defeat');
+ assert.equal(JSON.parse(storage.getItem(key)).stage,1);
+ restored.item('start').click();restored.tick(2);
+ assert.equal(restored.telemetry().stage,2,'tentar novamente recomeça no checkpoint');
+ assert.equal(restored.telemetry().score,savedScore);
+ bossFight(restored);
+ assert.equal(restored.telemetry().stage,3);
+ assert.equal(JSON.parse(storage.getItem(key)).stage,2);
+ const secondScore=restored.telemetry().score;
+ const last=boot(spec,true,storage);
+ last.item('start').click();last.tick(2);
+ assert.equal(last.telemetry().stage,3);
+ assert.equal(last.telemetry().score,secondScore);
+ bossFight(last);
+ assert.equal(last.telemetry().state,'victory','a campanha de três chefes termina com vitória');
+ assert.equal(last.telemetry().stage,3);
+ assert.equal(last.telemetry().campaignSaveStatus,'complete');
+ assert.equal(storage.getItem(key),null,'campanha finalizada limpa o save para não reiniciar no fim');
+ assert.equal(storage.getItem(key+':backup'),null,'limpar backup evita restaurar um save antigo');
+ const fresh=boot(spec,true,storage);
+ fresh.item('start').click();fresh.tick(2);
+ assert.equal(fresh.telemetry().stage,1,'campanha concluída reinicia da fase inicial');
+ assert.equal(fresh.telemetry().score,0);
+});
+
+test('GF-TRAIN-06: botão Reiniciar apaga checkpoint sem deixar backup restaurável',()=>{
+ const spec={title:'Novo jogo de teste',stages:['Fase A','Fase B'],
+  stageConfig:[{waves:2,boss:'no'},{waves:2,boss:'yes'}],shooterOptions:{boss:true}};
+ const storage={data:new Map(),getItem(k){return this.data.get(k)||null;},
+  setItem(k,v){this.data.set(k,String(v));},removeItem(k){this.data.delete(k);}};
+ const game=boot(spec,false,storage);
+ const id=game.telemetry().campaignSaveKey;
+ const make=require('../js/shooter-campaign-save.js')().make;
+ const checkpoint=make(game.env.GAME_SPEC,{stage:1,health:78,weapon:2,kills:5,score:1400});
+ assert.ok(checkpoint);
+ storage.setItem(id,JSON.stringify(checkpoint));
+ game.item('start').click();game.tick(2);
+ assert.equal(game.telemetry().stage,2);
+ assert.equal(game.telemetry().score,1400);
+ game.item('restart').click();game.tick(2);
+ assert.equal(game.telemetry().stage,1);
+ assert.equal(game.telemetry().score,0);
+ assert.equal(storage.getItem(id),null);
+ assert.equal(storage.getItem(id+':backup'),null);
 });

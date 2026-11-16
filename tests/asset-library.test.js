@@ -93,3 +93,23 @@ test('exportacao integra dois modelos e guarda o manifesto no backup JSON sem bi
  assert.equal(project.files['ASSET_LIBRARY.json'],files['ASSET_LIBRARY.json']);
  assert.ok(!Object.keys(project.files).some(x=>x.startsWith('assets/')));
 });
+
+test('GF-005: GLB com SHA-256 mantém integridade mesmo quando ZIP é recriado com CRC válido',async()=>{
+ const crypto=require('node:crypto');
+ if(!globalThis.crypto?.subtle)Object.defineProperty(globalThis,'crypto',{value:crypto.webcrypto,configurable:true});
+ const original=makeGlbHeader(256);for(let i=12;i<original.length;i++)original[i]=(i*7)%256;
+ const hash=await library.sha256(original);
+ assert.equal(hash,crypto.createHash('sha256').update(original).digest('hex'));
+ const manifest=library.append(null,{...asset('sha256asset01',original.length),sha256:hash});
+ assert.equal(manifest.assets[0].sha256,hash);
+ assert.deepEqual(await library.verify(original,hash.toUpperCase()),original);
+ const tampered=original.slice();tampered[45]^=3;
+ assert.throws(()=>library.parse({version:1,assets:[{...manifest.assets[0],sha256:'!'.repeat(64)}]}),/SHA-256/);
+ await assert.rejects(library.verify(tampered,hash),/Integridade/);
+ // O checksum CRC32 do ZIP protege a transferência, mas não comprova a identidade
+ // do modelo esperado. O manifesto SHA-256 detecta até substituição bem-formada.
+ const rebuilt=ZIP.unzipFiles(new Uint8Array(await ZIP.zipFiles({'assets/sha256asset01.glb':tampered}).arrayBuffer()));
+ await assert.rejects(library.verify(rebuilt['assets/sha256asset01.glb'],hash),/Integridade/);
+ const legacy=library.parse({version:1,assets:[asset('legacyasset01',128)]});
+ assert.equal(legacy.assets[0].sha256,undefined,'backup legado precisa continuar válido');
+});

@@ -67,8 +67,8 @@
   }
   function detectGenre(text) { return detectGenreInfo(text).genre; }
   function unique(items) { return [...new Set(items.map(x => x.trim()).filter(Boolean))]; }
-  const labels={'urban-action':'Ação urbana 3D em terceira pessoa (motor planejado)',arena:'Aventura / ação',shooter:'Nave / shoot’em up vertical',racing:'Corrida',platform:'Plataforma',rpg:'RPG de ação',fps:'FPS / primeira pessoa','tower-defense':'Defesa de torres (caminhos)','lane-defense':'Defesa por linhas / Jardim','block-td':'Defesa de torres em blocos'};
-  const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','shooter','rpg','racing','platform']};
+  const labels={'urban-action':'Ação urbana 3D — bairro jogável (protótipo)',arena:'Aventura / ação',shooter:'Nave / shoot’em up vertical',racing:'Corrida',platform:'Plataforma',rpg:'RPG de ação',fps:'FPS / primeira pessoa','tower-defense':'Defesa de torres (caminhos)','lane-defense':'Defesa por linhas / Jardim','block-td':'Defesa de torres em blocos'};
+  const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','shooter','rpg','racing','platform','urban-action']};
   // Catálogo declarativo: pedido no GDD não equivale a mecânica implementada.
   const mechanicCatalog = Object.freeze({
     combat: { label:'Combate', pattern:/\b(combate|atacar|ataque|luta|espada|tiro|inimigos?|boss|chefe)\b/, supported:['arena','shooter','rpg','fps'] },
@@ -108,7 +108,7 @@
       runnerUp:0,ambiguous:false,sourceGame:null
     }:sourceInference;
     const explicitGenre=options.genre&&options.genre!=='auto'?options.genre:null;
-    let genre=explicitGenre||requestedGenre||(urbanProfile?.identified?'urban-action':detectGenre(combined));
+    let genre=explicitGenre||(urbanProfile?.identified?'urban-action':requestedGenre||detectGenre(combined));
     const recentDimension=/\b(?:3d|three[.]?js|tres dimensoes|terceira dimensao)\b/.test(direct)?'3d':
       /\b(?:2d|duas dimensoes|canvas)\b/.test(direct)?'2d':null;
     const semanticIntro=normalize(source.trim()?source.slice(0,2600):extra.slice(0,2600));
@@ -184,6 +184,7 @@
     colorPalettes['lane-defense']={bg:'#274f4e',accent:'#f2d985',ground:'#4d8266',enemy:'#c58f80'};
     colorPalettes['block-td']={bg:'#152f42',accent:'#9fdfc8',ground:'#376251',enemy:'#daa27a'};
     colorPalettes.fps=colorPalettes.arena;
+    colorPalettes['urban-action']={bg:'#263a46',accent:'#f5ba64',ground:'#55636a',enemy:'#ad5e52'};
     const shooterTheme = /dragon|dragao|drag[oõ]es|fogo|asas|harpia|reino|magia|medieval/.test(norm) ? 'dragon' : /neon|cyber|cidade futurista|sintetico|synthwave/.test(norm) ? 'neon' : 'space';
     const shooterOptions = { theme: shooterTheme, autofire: /tiro automatico|auto.?fire|disparo automatico/.test(norm), waves: /onda|wave|formac|esquadrao|enxame|ataque em v|zigzag|escolta/.test(norm), boss: genre === 'shooter' || features.bosses, powerups: genre === 'shooter', parallax: true };
     const compiled={
@@ -199,8 +200,8 @@
       sourceLength: source.length, sectionCount: headings.length, sectionsIndexed: headings.length, instructions: extra,
       colors: colorPalettes[genre],
       sourceConflict,genreInference,genreOverrideWarning,referenceGame:sourceCase,
-      ...(genre==='urban-action'?{urbanProfile,engineAvailability:{status:'planned',
-        reason:'Motor urbano 3D em terceira pessoa não está implementado; exporte primeiro o contrato e o plano do vertical slice.'}}:{}),
+      ...(genre==='urban-action'?{urbanProfile,engineAvailability:{status:'prototype',
+        reason:'URB-01 é um primeiro bairro 3D jogável: combate, missão e captura simples. Veículos dirigíveis, polícia, interiores, campanha e império completo ainda não existem.'}}:{}),
       detected: [`Gênero: ${labels[genre]}`,`Dimensão: ${dimension.toUpperCase()}`,
         `${stages.length} fase(s) no protótipo`, `${headings.length} capítulos lidos`, `${enemyNames.length} nome(s) de inimigos encontrados`,
         ...Object.keys(features).filter(k => features[k]).map(k => ({inventory:'Inventário',enemies:'Inimigos',bosses:'Chefes',quests:'Objetivos',checkpoints:'Checkpoints',upgrades:'Melhorias',mobile:'Controles mobile',timer:'Cronômetro',audio:'Áudio previsto'})[k])],
@@ -220,27 +221,34 @@
       ]
     };
     if(genre==='urban-action'){
-      // Sem motor executável, não chamar o compilador dos outros gêneros:
-      // suas configurações induziriam falsa impressão de implementação.
-      const pending=urbanProfile.requirements.map(req=>({
-        id:req.id,description:req.name,where:'Motor urbano 3D',
-        detail:req.origin.line?req.origin.document+' linha '+req.origin.line:'A construir'
-      }));
-      const counts={implementada:0,configurada:0,pendente:pending.length,incompativel:0};
+      // O GDD integral é preservado, mas URB-01 só possui UMA missão jogável.
+      compiled.stages=['Bairro 1 — Guarda e Armazém'];
+      compiled.campaign={maxStages:1,detectedStages:allLevels.length,
+        omittedStages:Math.max(0,allLevels.length-1),prototype:true};
+      const slice=urbanProfile.requirements.filter(req=>req.status==='partial');
+      const remaining=urbanProfile.requirements.filter(req=>req.status!=='partial');
+      const entry=req=>({id:req.id,description:req.name,where:'Bairro protótipo URB-01',
+        detail:req.origin.line?req.origin.document+' linha '+req.origin.line:'A desenvolver'});
+      const applied=slice.map(req=>({...entry(req),description:req.name+' (implementação inicial simplificada)'}));
+      const pending=remaining.map(entry);
+      const counts={implementada:0,configurada:applied.length,pendente:pending.length,incompativel:0};
       compiled.implementation={
-        source:'GDD',applied:[],pending,requirements:pending,
+        source:'GDD',applied,pending,requirements:[...applied,...pending],
         warnings:[compiled.engineAvailability.reason],
-        summary:'0 configurações aplicadas; '+pending.length+' requisitos para implementar no motor urbano',
-        audit:{version:1,engine:'urban-action-3d',items:pending.map((item,i)=>({
-          id:item.id,capability:item.id,status:'pendente',description:item.description,
-          where:item.where,origin:urbanProfile.requirements[i].origin,
-          contract:null,test:null,reason:'Motor urbano 3D ainda não implementado.'
-        })),counts,
-        summary:'implementada: 0 · configurada: 0 · pendente: '+pending.length+' · incompatível: 0',
-        note:'Este é um plano de produção; nenhum item está implementado pelo GameForge.'}
+        summary:applied.length+' sistemas parciais de URB-01; '+pending.length+' sistemas ainda planejados',
+        audit:{version:1,engine:'urban-action-3d',
+          items:urbanProfile.requirements.map(req=>({
+            id:req.id,capability:req.id,status:req.status==='partial'?'configurada':'pendente',
+            description:req.name,where:'URB-01',
+            origin:req.origin,contract:req.status==='partial'?'js/urban-runtime.js':null,
+            test:req.status==='partial'?'tests/urban-slice.test.js':null,
+            reason:req.status==='partial'?'Versão básica no protótipo, não a mecânica completa do GDD.':'Ainda não programado.'
+          })),
+          counts,summary:'implementada: 0 · configurada: '+applied.length+' · pendente: '+pending.length+' · incompatível: 0',
+          note:'URB-01 é um único bairro com combate e missão simples; não representa as cidades ou a campanha completa.'}
       };
       compiled.limitations.unshift(compiled.engineAvailability.reason);
-      compiled.detected.push('Câmera: terceira pessoa','Motor urbano 3D: somente planejamento');
+      compiled.detected.push('Câmera: terceira pessoa','Motor urbano 3D: vertical slice URB-01 (1 bairro)');
       return compiled;
     }
     return intentCompiler?intentCompiler.compile(compiled,source,extra,options):compiled;

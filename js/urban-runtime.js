@@ -115,6 +115,7 @@ function gameForgeUrban3DBoot(){
  let last=0,acc=0,walkPhase=0,clock=0,attackCooldown=0,invulnerable=0,
      fireCooldown=0,reloadRemaining=0,saveCooldown=0,guardAttack=0,guardPhase=0;
  let saveEnabled=true,saveStatus='novo',cameraOccluded=false;
+ let guardBrain={x:0,z:1.5,homeX:0,homeZ:1.5,mode:'patrol'};
  function readSave(){
   try{
    const raw=window.localStorage?.getItem(saveKey);
@@ -142,6 +143,7 @@ function gameForgeUrban3DBoot(){
   hero.position.set(progress.x,0,progress.z);
   guard.visible=!progress.guardDefeated;
   guard.position.set(0,0,1.5);
+  guardBrain={x:0,z:1.5,homeX:0,homeZ:1.5,mode:'patrol'};
   $('overlay').classList.add('hidden');
   canvas.focus?.();updateHud();save();
  }
@@ -284,14 +286,10 @@ function gameForgeUrban3DBoot(){
   hero.userData.legs[2].rotation.x=-stride*.6;
   hero.userData.legs[3].rotation.x=stride*.6;
   if(!progress.guardDefeated){
-   const distance=Math.hypot(progress.x-guard.position.x,progress.z-guard.position.z);
-   if(distance<8.6&&distance>1.6){
-    const gx=(progress.x-guard.position.x)/distance,gz=(progress.z-guard.position.z)/distance;
-    const moved=R.move({x:guard.position.x,z:guard.position.z},gx*dt*1.4,gz*dt*1.4,blockers,17,.4);
-    guard.position.x=moved.x;guard.position.z=moved.z;
-    guard.rotation.y=-Math.atan2(gx,-gz);
-   }
-   if(distance<2.1&&attackCooldown===0&&invulnerable===0){
+   guardBrain=R.guardStep(guardBrain,{x:progress.x,z:progress.z},dt,blockers);
+   guard.position.x=guardBrain.x;guard.position.z=guardBrain.z;
+   guard.rotation.y=-guardBrain.heading;
+   if(guardBrain.canAttack&&attackCooldown===0&&invulnerable===0){
     progress.health=Math.max(0,progress.health-12);
     attackCooldown=1.15;invulnerable=.4;
     notice('Você sofreu 12 de dano. Afaste-se do guarda!');
@@ -347,6 +345,7 @@ function gameForgeUrban3DBoot(){
   health:progress.health,score:progress.cash,ammo:progress.ammo,
   reserve:progress.reserve,player:{x:progress.x,y:0,z:progress.z,heading:progress.heading},
   enemies:progress.guardDefeated?0:1,enemyHp:progress.guardHp,
+  guardMode:progress.guardDefeated?'defeated':guardBrain.mode,
   mission:{guardDefeated:progress.guardDefeated,captured:progress.captured,
    complete:progress.missionComplete,rewardGranted:progress.rewardGranted},
   colliders:blockers.length,cameraOccluded,saveStatus,saveEnabled,saveKey,

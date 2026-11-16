@@ -29,9 +29,9 @@
     if(espionage&&gunplay){scores.fps+=10;signals.fps.push('espionagem e combate com armas');}
     add('shooter',/\b(navinha|jogos? de naves?|naves? espaciais?|nave de combate|shoot[\s'.-]*em[\s'.-]*up|shmup|space shooter|star fighter|tiro vertical|ataque espacial|combate aereo|combate espacial|scroll vertical|dragon fury|neon sky force)\b/,29,'naves ou shoot’em up');
     add('shooter',/\b(naves?|esquadroes? de naves?|disparos espaciais?|inimigos? aereos?)\b/,5,'combate aéreo');
-    add('racing',/\b(jogo de corrida|simulador de corrida|corrida de carros?|corrida 3d|racing game|pista de corrida|circuito automobilistico)\b/,27,'corrida de veículos');
+    add('racing',/\b(jogo de corrida|simulador de corrida|corrida de (?:carros?|caminh(?:ao|oes)|motos?)|corrida 3d|racing game|pista de corrida|circuito automobilistico)\b/,27,'corrida de veículos');
     add('racing',/\b(voltas no circuito|turbo|tuning|pilotar carros?|disputar corridas?|oponentes na pista)\b/,7,'direção competitiva');
-    add('platform',/\b(jogo de plataforma|plataforma (?:2d|3d)|platformer|side[ .-]?scroll(?:ing)?|pular entre plataformas|saltos entre plataformas)\b/,27,'plataformas como jogabilidade');
+    add('platform',/\b(jogo de plataforma|plataforma (?:2d|3d|com)|platformer|side[ .-]?scroll(?:ing)?|pular entre plataformas|saltos entre plataformas)\b/,27,'plataformas como jogabilidade');
     add('platform',/\b(salto duplo|colecionar moedas|fase lateral com pulos|super mario|donkey kong country)\b/,10,'movimentação de plataforma');
     add('rpg',/\b(rpg|role[ .-]?playing|roguelike|roguelite|jogo de interpretacao)\b/,26,'RPG');
     add('rpg',/\b(arvore de habilidades|classes de personagem|experiencia e niveis|evoluir personagem por xp)\b/,9,'progressão de personagem');
@@ -98,7 +98,7 @@
       if((!options.dimension||options.dimension==='auto')&&!recentDimension&&genre!=='arena'&&styles[other].includes(genre)){
         dimension=other;
       }else{
-        throw Error('O GDD foi identificado como '+(labels[genre]||genre)+', mas ainda não existe motor '+dimension.toUpperCase()+' para esse estilo. Altere a dimensão nas opções ou escolha outro motor manualmente.');
+        throw Error('O GDD foi identificado como '+(labels[genre]||genre)+', mas esse estilo não é compatível com '+dimension.toUpperCase()+': ainda não possui motor '+dimension.toUpperCase()+'. Altere a dimensão nas opções ou escolha outro motor manualmente.');
       }
     }
     const oldGenre=source.trim()?detectGenre(source):null;

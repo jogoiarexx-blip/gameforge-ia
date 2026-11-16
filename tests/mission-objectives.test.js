@@ -50,7 +50,7 @@ test('comando em linguagem natural transforma a fase pedida, preservando as outr
  const output=dev.modify(files,spec,p);
  assert.equal(output.changed,true);
  assert.equal(output.spec.stageConfig[1].mission,'survive');assert.equal(output.spec.stageConfig[1].seconds,45);
- assert.equal(output.spec.stageConfig[0],undefined);
+ assert.deepEqual(output.spec.stageConfig[0]||{}, {},'A primeira fase deve permanecer sem alterações de missão');
  assert.match(output.files['CAMPANHA_EDITOR.md'],/survive/);
  assert.match(output.files['game.js'],/missionReady/);
  const eliminate=dev.modify(output.files,output.spec,dev.plan('Na fase 1, eliminar todos os inimigos',output.spec,output.files));

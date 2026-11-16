@@ -309,3 +309,13 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 
 - Observação de CI após auditoria: run 43777702383 falhou em teste pré-existente de vitória da corrida, que terminou em derrota devido ao tráfego durante a simulação; a falha não apontou sintaxe do catálogo. Ajuste do teste em `tests/runtime-boot-integration.test.js` publicado no commit 0abe7cca7ebb24021b6d8944c16fc11442d5da0e. Resultado do novo CI ainda pendente.
 - Risco pendente: teste de corrida ainda não possui controle determinístico de obstáculos/RNG; evitar considerar a mitigação por direção constante uma correção definitiva.
+
+## Engenharia — etapa 6: simulação 2D de passo fixo (Operação Éden)
+- Diagnóstico: `frame(ms)` avançava a física com dt variável limitado a 33ms; em FPS diferentes, física, colisão e cronômetros podiam divergir.
+- Origem da técnica: `Operacao-eden/src/core/GameLoop.js` (inspiração arquitetural, não cópia literal).
+- Arquivos alterados: `js/runtime-template.js`, `tests/runtime-boot-integration.test.js`, `tests/test_repo_knowledge.js` e este checkpoint.
+- Implementação: SIM_STEP=1/60, acumulador, no máximo cinco updates por frame, clamp de pausa/aba suspensa em 250ms, descarte do backlog e reset do acumulador fora do estado ativo.
+- Testes acrescentados: relógio da simulação comparado em 30/60/120 FPS; limite de passos após salto de 20 segundos; pausa de 20 segundos sem recuperar o tempo.
+- Regressão anterior: CI 43780747779 passou após substituir assert rígido de 29 entradas do catálogo por teste de mínimo e IDs únicos.
+- Resultado da alteração do loop: código publicado; CI 43780779249 estava na fila na consulta inicial, portanto ainda não validado como aprovado.
+- Pendências: confirmar CI e corrigir regressões, testar em navegador/celular, medir frame time e integrar simulação determinística nos outros motores com interfaces adequadas.

@@ -12,7 +12,7 @@ const definitions=Object.freeze([
  {id:'collision',name:'Colisão real no plano XZ e câmera sem atravessar paredes',pattern:/colis(?:ao|oes)|obstaculos?|fisica|paredes?/,phase:'A'},
  {id:'combat',name:'Combate, mira, dano e munição',pattern:/combate|tiroteios?|armas?|municao|recarga/,phase:'B'},
  {id:'enemies',name:'Inimigos com patrulha, percepção e perseguição',pattern:/inimigos?|guardas?|faccoes?|riva(?:is|l)|patrulhas?/,phase:'B'},
- {id:'business',name:'Negócio interativo e renda transacional',pattern:/negocios?|propriedades|estabelecimentos?|renda/,phase:'C'},
+ {id:'business',name:'Negócio interativo e renda transacional',pattern:/negocios?|propriedades|estabelecimentos?|lojas?|renda/,phase:'C'},
  {id:'mission',name:'Missão concluível e recompensa única',pattern:/missoes?|objetivos?|campanha/,phase:'C'},
  {id:'save',name:'Salvamento versionado sem substituir saves legados',pattern:/salvamento|salvar|save|persisten/,phase:'C'},
  {id:'vehicles',name:'Entrada, saída e condução de veículos',pattern:/veiculos?|carros?|dirigir|viaturas?/,phase:'D'},
@@ -41,10 +41,17 @@ function inspect(gdd='',command=''){
  const firstPerson=/\b(?:primeira pessoa|camera em primeira pessoa|first[ .-]?person|fps (?:tatico|shooter|de tiro))\b/.test(first);
  const threeD=[...first.matchAll(/\b(?:3d|three[ .-]?js|tridimensional)\b/g)].some(m=>
    !/\b(?:sem|nao|evitar|fora de escopo|nao usar|proibido)\b.{0,42}$/.test(first.slice(Math.max(0,m.index-45),m.index)));
- const negative=/\b(?:nao quero|sem|evitar|fora de escopo|nao usar)\b.{0,30}\b(?:carros?|veiculos?|policia|negocios?|combate|tiros?|missoes?)\b/;
+ const clauses=all.split(/[;.,\n]/);
  const relevant=['city','business','vehicles','police','territories','mission','combat']
-  .filter(id=>definitions.find(x=>x.id===id).pattern.test(all)&&
-    !all.split(/\n|[.;]/).some(line=>negative.test(line)&&definitions.find(x=>x.id===id).pattern.test(line)&&line.trim().length<85));
+  .filter(id=>clauses.some(clause=>{
+    const pattern=definitions.find(x=>x.id===id).pattern;
+    const match=pattern.exec(clause);
+    if(!match)return false;
+    const prefix=clause.slice(Math.max(0,match.index-45),match.index);
+    // "Sem polícia" não deve contar como sistema policial solicitado;
+    // "sem armas, com carros e polícia" preserva os pedidos posteriores.
+    return !/\b(?:sem|nao quero|nao usar|evitar|fora de escopo|proibid[oa])\b.{0,36}$/.test(prefix);
+  }));
  const drivingOnly=/\b(?:jogo de corrida|racing|corrida de carros|voltas na pista|simulador de corrida)\b/.test(first);
  const shooterOnly=/\b(?:navinha|nave espacial|shoot.?em.?up|shmup)\b/.test(first);
  const espionage=/\b(?:goldeneye|007|espionagem|agente secreto|medal of honor)\b/.test(first);

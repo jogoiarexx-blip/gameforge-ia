@@ -107,3 +107,17 @@ O vertical slice recomendado no documento de conversão é **Porto Velho**, Nova
 - `tests/urban-slice.test.js` cobre transições, perda de visão, retorno à patrulha, ataque proibido através da parede, colisão e passo de simulação.
 - **Limites:** patrulha é local e curta; ainda não há grafo de rotas, campo de visão angular, cobertura tática, comunicação entre guardas, animações GLB ou interiores complexos. Estado momentâneo de guarda não é persistido no save; a progressão da missão continua persistida normalmente. A validação no Chromium do SHA final é necessária antes de marcar a entrega como VALIDADA.
 - **Próximo foco:** melhorar navegação por rotas/cobertura e mira em terceira pessoa, depois expandir objetivos e condições executáveis do Action Model, sem inventar funcionalidades do GDD.
+
+## 9. URB-02 — Navegação dos NPCs por esquinas (16/11/2026)
+
+**Escopo implementado:** guardas do protótipo urbano e das missões 3D geradas por GDD agora usam rotas geométricas para contornar prédios quando o destino está encoberto; o GDD original e as recompensas não são alterados. **Estado de validação:** conferir CI do último SHA antes de marcar esta etapa como VALIDADA.
+
+**Implementação:**
+- `js/urban-rules.js` introduz `routeClear` (segmento contra AABBs infladas pela largura do guarda) e `planGuardRoute` (grafo de visibilidade e menor caminho por cantos livres, dentro de 16,5 unidades por eixo).
+- `guardStep` utiliza um ponto intermediário de cada vez, evitando travessia por paredes. Quando existe linha direta livre, descarta o desvio. Recalcula no máximo após um intervalo de ~0,65 s, ou antes se o modo/destino mudar; não executa planejamento integral a cada frame.
+- `js/urban-runtime.js` e `js/urban-mission-runtime.js` já usam `guardStep` e por isso se beneficiam sem duplicar o planejador. A telemetria `__gameforgeTelemetry()` expõe `guardWaypoints` para QA, sem revelar/armazenar rotas completas do jogador.
+- `tests/urban-slice.test.js` executa desvio de obstáculo real, mais de um prédio, destino inviável, integração temporal a 60 Hz, colisão e cache; `tests/browser-export-matrix.py` verifica telemetria em ambos os jogos exportados.
+
+**Limitações honestas:** não é navmesh de mundo aberto, não há planejamento entre bairros, portas/interiores, tráfego de carros ou obstáculos móveis; o modelo funciona para volumes retangulares simples deste bairro e para até três guardas por missão. O estado de rota é temporário e não é salvo no savegame; o progresso de missão e dinheiro continuam persistidos.
+
+**Próxima melhoria:** combate tático com cobertura e linha de tiro, mira do jogador em terceira pessoa, validações de gameplay visual e benchmark de desempenho em aparelhos reais. GF-001 ainda depende da configuração de GitHub Pages exclusivamente por Actions.

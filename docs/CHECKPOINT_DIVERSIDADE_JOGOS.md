@@ -466,3 +466,22 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - **Validação confirmada:** GitHub Actions **run 43851648160**, commit `1156ec5ad510624f670e07b44597628184208dc7`, **151 testes aprovados / 0 falhas**, benchmark da arena concluído.
 - **Limitação:** validação estrutural automatizada, não capturas visuais nem navegação manual real em Android, iOS ou notebook; essas verificações permanecem pendentes.
 - **Próximo:** QA visual em Chrome e smartphone real, observar foco da navegação fixa, prévia e possíveis rolagens horizontais; ajustar com base no resultado.
+
+## Engenharia — etapa 13: relógio físico unificado dos motores 3D e de naves 2D (16/11/2026)
+
+**Diagnóstico:** `js/three-runtime.js` usava `dt` variável limitado a 35 ms para atualizar movimentos, projéteis, inimigos, física e missões. O motor separado `js/shooter-runtime.js` tinha o mesmo problema. Em telas de 30/60/120 FPS, a simulação podia avançar quantidades diferentes de tempo e ter comportamentos distintos de jogabilidade.
+
+**Arquivos modificados:**
+- `js/three-runtime.js`: `simulate(SIM_DT)` desacoplada da renderização; taxa física de 60 Hz, acumulador de passos, no máximo cinco substeps por quadro e limite de entrada de 250 ms. Pausa e reinício descartam acúmulos. Telemetria `simulationHz` e `simulationSteps`.
+- `js/shooter-runtime.js`: mesma política de passo fixo para naves 2D, limite de backlog, limpeza em pausa/intermissão/reinício e telemetria. Medição de FPS gráfico segue baseada nos intervalos reais de renderização.
+- `tests/three-world.test.js`: harness com intervalos configuráveis; testes para todos os cinco gêneros do motor 3D (arena, FPS, RPG, corrida, plataforma) a 30/60/120 FPS, equivalência de deslocamento, pausa, salto de 20 segundos de uma aba suspensa e reinício.
+- `tests/shooter-fixed-step.test.js` (novo): harness de Canvas/DOM simulado para naves 2D; valida relógio, deslocamento e número de passos nos três FPS, proteção após intervalo de 20 segundos, pausa/retomada e restart.
+- Este checkpoint.
+
+**Publicação:** `775bd09ef1ba8bdb5d229198f29b24ac339c9a99` (runtime 3D), `9daa74688306d1e8bbf8ecd8d5c153ecc0e82ce8` (testes 3D), `c19e1f198db4b6a5b7053ff81b2b478f3b3a6b85` (runtime de naves 2D) e `81f4f171bbbe3dc6d09d2420364b82548d57f138` (testes de naves).
+
+**Execução confirmada:** GitHub Actions **run 43854030736**, job **133253571489**, commit `81f4f171bbbe3dc6d09d2420364b82548d57f138`, **164/164 testes aprovados, zero falhas**; sintaxe JavaScript e benchmark informativo da arena também passaram. A suíte usa Three.js real com renderizador simulado para Node, não substitui teste WebGL real.
+
+**Compatibilidade:** mantidos controles existentes, modos de renderização e serialização do runtime nos arquivos `game.js` exportados. As políticas anti-stall descartam simulação excedente após mais de cinco passos: isso protege o jogo de travamentos, mas significa que o relógio do jogo não precisa avançar o mesmo que tempo real durante lentidão extrema.
+
+**Pendências:** realizar QA manual em Chrome/Android, coletar métricas de frame time e quedas de FPS com WebGL real, validar qualidade visual/câmera em 120 Hz e testar gamepad. Evitar extrapolar resultado automatizado para ganho numérico de FPS.

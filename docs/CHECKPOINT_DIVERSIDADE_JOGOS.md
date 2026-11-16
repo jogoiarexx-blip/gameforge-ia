@@ -687,3 +687,18 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 
 **Para concluir GF-002:** Playwright em navegador real deve abrir todos os HTMLs com scripts defer e sem CDN, validar preview srcdoc, editor, exportação/reimportação, logs, controles e execução offline. Registrar capturas, versão e SHA antes de mudar o estado para VALIDADO. A rota legada de Pages ainda precisa ser desativada administrativamente para concluir GF-001.
 
+
+
+## GF-004 — Contrato verificável de GDD e geração (16/11/2026)
+
+**Estado: EM REVISÃO.** Detalhamento em `docs/GF004_CONTRATO_CAPACIDADES.md`.
+
+**Problema:** o GameForge confundia mudança de parâmetro com mecânica implementada, não apontava linhas do GDD nem rejeitava todas as combinações incompatíveis. Também confundia restrições "sem multiplayer/crafting" com pedidos e podia sobrescrever o temporizador de sobrevivência de 60 segundos com uma linha de rótulo do HUD. A evolução incremental aceitava missões em projetos legados sem a função `R.missionReady()`.
+
+**Implementado:** `js/game-capabilities.js` define capacidades e evidências por motor 2D/3D; `js/intent-compiler.js` gera `implementation.audit` com quatro estados, origem e linha quando localizáveis, respeita exclusões e prioridade do comando mais recente, e preserva o temporizador configurado. `js/generator.js` impede exportar GAME_SPEC incompatível e inclui `CONTRATO_CAPACIDADES.md` e `CAPACIDADES.json`. `js/app.js` exibe estados e evidências no painel de análise, `js/project-backup.js` preserva os novos arquivos, e `js/development-engine.js` bloqueia missões novas em runtimes legados sem lógica de objetivos.
+
+**Testes:** `tests/game-capabilities.test.js` cobre compatibilidade, fonte, HUD/sobrevivência, negativas, loja FPS funcional, backup, documentos extensos e rejeição de configurações inválidas; `tests/intent-evolution.test.js` inclui caso de motor legado sem objetivos. Não equivale a QA visual ou geração arbitrária de IA.
+
+**Progresso/limites:** `implementada` é reservado a módulo conhecido com teste, `configurada` a parâmetros existentes, `pendente` a código novo faltante e `incompatível` a opção não suportada. A origem é marcada "Não localizada" se não houver evidência. Conferir CI do último SHA antes de promover a etapa a VALIDADO. GF-001 ainda depende da escolha administrativa GitHub Actions como origem do Pages.
+
+**Próximo:** GF-005 (persistência, GLB e backup em navegador real) após GF-002; novas mecânicas baseadas no acervo deverão seguir esse contrato.

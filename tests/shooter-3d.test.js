@@ -17,7 +17,7 @@ function three(){
  vm.runInContext(context.GameForgeThreeSource,context);
  return context.THREE;
 }
-function boot(overrides={}){
+function boot(overrides={},testBoss=false){
  const handlers={},elements={},callbacks=[];let now=0,rendered=null,disposals=0;
  const item=id=>elements[id]||(elements[id]={textContent:'',style:{},classList:{add(){},remove(){}},dataset:{},children:[],events:{},
   addEventListener(type,fn){this.events[type]=fn;this[type]=fn;},click(){this.events.click?.({preventDefault(){}});},
@@ -41,7 +41,26 @@ function boot(overrides={}){
   localStorage:{data:new Map(),getItem(k){return this.data.get(k)||null;},setItem(k,v){this.data.set(k,String(v));},removeItem(k){this.data.delete(k);}},
   window:null,globalThis:null};
  env.window=env;env.globalThis=env;
- vm.createContext(env);vm.runInContext('('+engine.toString()+')()',env);
+ // Sonda SOMENTE no VM dos testes: nenhum hook de trapaça entra nos exports.
+ // A sonda prepara um encontro curto; tiros, colisões, prêmios e vitória
+ // continuam usando o runtime real, sem mockar reward() ou updateStage().
+ const injection = "window.__gfBossProbe={"+
+  "setup(){for(const e of enemies)world.remove(e.mesh);enemies=[];wave=waveMax;"+
+  "waveTimer=0;bossSpawned=false;bossDefeated=false;stageTransition=0;health=100;"+
+  "spawnBoss();return enemies.find(e=>e.boss)?.hp;},"+
+  "center(){const e=enemies.find(e=>e.boss);if(e){e.phase=0;e.x=player.x;e.z=player.z-5;}},"+
+  "escape(){const e=enemies.find(e=>e.boss);if(e)e.z=size*.44+1;},"+
+  "collide(){const e=enemies.find(e=>e.boss);if(e){e.x=player.x;e.z=player.z;}},"+
+  "inspect(){return {state,health,score,wave,waveMax,bossSpawned,bossDefeated,"+
+  "bossHp:enemies.find(e=>e.boss)?.hp||0,stageTransition};}"+
+  "};";
+ let engineSource=engine.toString();
+ if(testBoss){
+  const anchor="setUpStage();state='menu';requestAnimationFrame(frame);";
+  assert.ok(engineSource.includes(anchor),'ponto de inserção QA da nave deve existir');
+  engineSource=engineSource.replace(anchor,injection+anchor);
+ }
+ vm.createContext(env);vm.runInContext('('+engineSource+')()',env);
  const tick=(count=1)=>{for(let i=0;i<count;i++){now+=1000/60;const f=callbacks.shift();assert.equal(typeof f,'function');f(now);}};
  const key=(type,name)=>{for(const f of handlers[type]||[])f({key:name,preventDefault(){},repeat:false});};
  return {tick,key,env,item,scene:()=>rendered,telemetry:()=>env.__gameforgeTelemetry(),disposed:()=>disposals};
@@ -177,4 +196,57 @@ test('GF-010 v2 coletar suprimentos confirma ID no checkpoint e não premia nova
  assert.deepEqual(JSON.parse(stored).claimed,[event.id]);
  const cash=after.score;game.tick(70);
  assert.equal(game.telemetry().score,cash,'não é possível ganhar o mesmo bônus repetidamente');
+});
+
+
+test('GF-TRAIN-05: chefe que escapa nunca entrega recompensa nem libera a campanha',()=>{
+ const game=boot({stages:['Confronto final'],stageConfig:[{waves:2,boss:'yes'}]},true);
+ game.item('start').click();game.tick(2);
+ const bossHp=game.env.__gfBossProbe.setup();
+ assert.ok(bossHp>0,'chefe real foi criado');
+ game.env.__gfBossProbe.escape();
+ game.tick(2);
+ const lost=game.telemetry();
+ assert.equal(lost.state,'defeat');
+ assert.equal(lost.bossDefeated,false);
+ assert.equal(lost.health,0);
+ assert.equal(lost.score,0,'escapar não dá bônus de vitória');
+ game.tick(180);
+ assert.equal(game.telemetry().state,'defeat','falha no chefe não desbloqueia vitória tardiamente');
+ assert.equal(game.telemetry().score,0);
+});
+
+test('GF-TRAIN-05: colisão direta do chefe causa derrota em vez de conclusão falsa',()=>{
+ const game=boot({stages:['Batalha final'],stageConfig:[{waves:2,boss:'yes'}]},true);
+ game.item('start').click();game.tick(2);
+ game.env.__gfBossProbe.setup();
+ game.env.__gfBossProbe.collide();
+ game.tick(2);
+ assert.equal(game.telemetry().state,'defeat');
+ assert.equal(game.telemetry().bossDefeated,false);
+ assert.equal(game.telemetry().score,0);
+});
+
+test('GF-TRAIN-05: disparos reais derrotam chefe, pagam recompensa única e concluem a campanha',()=>{
+ const game=boot({stages:['Batalha final'],stageConfig:[{waves:2,boss:'yes'}],
+  tuning:{difficulty:1,enemyMultiplier:1,bossMultiplier:.25,playerSpeedMultiplier:1,fireRateMultiplier:2}},true);
+ game.item('start').click();game.tick(2);
+ const hp=game.env.__gfBossProbe.setup();
+ assert.ok(hp>=1&&hp<=6,'chefe de teste deve ser abatível sem dezenas de segundos');
+ game.key('keydown',' ');
+ let iterations=0;
+ while(!game.telemetry().bossDefeated&&iterations++<30){
+  game.env.__gfBossProbe.center();
+  game.tick(12);
+ }
+ game.key('keyup',' ');
+ assert.equal(game.telemetry().bossDefeated,true,'tiros efetivos reduziram HP do chefe a zero');
+ assert.equal(game.telemetry().score,900,'uma recompensa de chefe de 900 pontos');
+ game.tick(210);
+ assert.equal(game.telemetry().state,'victory','final de fase só após derrotar o chefe');
+ const wonScore=game.telemetry().score;
+ assert.ok(wonScore===1400||wonScore===1490,
+  'prêmio de 900 + conclusão de 500; um power-up opcional pode dar +90');
+ game.tick(90);
+ assert.equal(game.telemetry().score,wonScore,'estado de vitória não duplica prêmios');
 });

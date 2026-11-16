@@ -148,14 +148,14 @@ function parseNpcReward(text){
  return (pts||health||ammo)&&amounts.score<=500&&amounts.health<=45&&amounts.ammo<=80?amounts:null;
 }
 function npcQuest(rows,index){
- let current=null,origin=null,pending=false,removed=false,choices=[];
+ let current=null,origin=null,pending=false,removed=false,choices=[],consequences={};
  const parseLine=t=>t.replace(/^[-*+]\s*/,'')
   .replace(/^(?:(?:na|no|para a|para o)\s+)?(?:fase|missao|etapa|stage|level)\s*\d{1,2}\s*[:,-]?\s*/i,'');
  for(const row of rows){
   const normalized=parseLine(row.normal);
   const raw=parseLine(row.text);
   if(/^(?:sem|remover|retirar|nao quero)\s+(?:o\s+)?npc\b/.test(normalized)){
-   current=null;pending=false;origin=null;removed=true;choices=[];continue;
+   current=null;pending=false;origin=null;removed=true;choices=[];consequences={};continue;
   }
   const npc=/^npc\s*:\s*([\p{L}\p{N}][\p{L}\p{N} \-]{0,37})\s+(?:no|na|ao)\s+(norte|sul|leste|oeste|centro)\s*$/iu.exec(raw);
   if(npc){
@@ -164,11 +164,27 @@ function npcQuest(rows,index){
     zone:ZONE_IDS[normalize(npc[2])],dialogue:'',steps:null,
     reward:{score:0,health:0,ammo:0}};
    origin={document:row.document,line:row.line};
-   pending=false;removed=false;choices=[];continue;
+   pending=false;removed=false;choices=[];consequences={};continue;
   }
   if(!current)continue;
   if(/^npc caminha\s*:\s*(sim|nao)\s*$/.test(normalized)){
    current.walk=/^npc caminha\s*:\s*sim\s*$/.test(normalized);
+   continue;
+  }
+  if(/^missao secundaria do npc\s*:\s*(sim|nao)$/.test(normalized)){
+   current.sideQuest=/:\s*sim$/.test(normalized);continue;
+  }
+  if(/^npc rotina\s*:/.test(normalized)){
+   const routine=/^npc rotina\s*:\s*manha\s+(norte|sul|leste|oeste|centro)\s*,\s*tarde\s+(norte|sul|leste|oeste|centro)\s*,\s*noite\s+(norte|sul|leste|oeste|centro)\s*$/.exec(normalized);
+   if(!routine){pending=true;delete current.routine;}
+   else current.routine={morning:ZONE_IDS[routine[1]],afternoon:ZONE_IDS[routine[2]],night:ZONE_IDS[routine[3]]};
+   continue;
+  }
+  const consequence=/^consequencia\s+opcao\s*([12])\s*:\s*(.+)$/.exec(normalized);
+  if(consequence){
+   const effect=/^(?:apoio|ajuda|suporte)\s+na\s+proxima\s+fase$/.test(consequence[2])?'aid':
+    /^(?:emboscada|reforcos inimigos|inimigos extras)\s+na\s+proxima\s+fase$/.test(consequence[2])?'threat':null;
+   consequences[Number(consequence[1])-1]=effect||'unsupported';
    continue;
   }
   const branch=/^(?:opcao|escolha)\s*([12])\s*:\s*(.+)$/.exec(normalized);
@@ -202,13 +218,14 @@ function npcQuest(rows,index){
  }
  if(!current)return {status:'nao_solicitado',quest:null,origin:null,removed};
  if(choices.length){
-  if(choices.length!==2||!choices[0]||!choices[1])pending=true;
+  if(choices.length!==2||!choices[0]||!choices[1]||
+   Object.values(consequences).some(v=>v==='unsupported'))pending=true;
   else{
-   current.choices=choices;
+   current.choices=choices.map((c,i)=>consequences[i]?{...c,effect:consequences[i]}:c);
    current.steps=choices[0].steps; // Contrato legado mantém formato de steps.
    current.reward=choices[0].reward;
   }
- }
+ }else if(Object.keys(consequences).length)pending=true;
  if(!current.steps||pending)return {status:'pendente',quest:null,origin};
  return {status:'implementado',quest:current,origin};
 }
@@ -304,7 +321,8 @@ function compile(spec,gdd='',command=''){
     npc?.status==='pendente'?'pendente':(c.npcQuest?'implementado':'nao_solicitado')):'nao_verificado',
     ...(combat&&c.npcQuest?{id:c.npcQuest.id,name:c.npcQuest.name,zone:c.npcQuest.zone,
      steps:c.npcQuest.steps,reward:c.npcQuest.reward,
-     walk:c.npcQuest.walk===true,choices:c.npcQuest.choices||[]}:{}),
+     walk:c.npcQuest.walk===true,choices:c.npcQuest.choices||[],
+     sideQuest:c.npcQuest.sideQuest===true,routine:c.npcQuest.routine||null}:{}),
     ...(npc?.origin?{origin:npc.origin}:{})},
    checkpoint:{kind:combat?'between-stages':spec.genre==='platform'&&spec.dimension==='3d'?'platform':'unsupported',
     status:combat&&!spec.combatEconomy?.enabled?'implementado':'nao_verificado'},
@@ -331,7 +349,9 @@ function report(spec){
    '- Missão encadeada: '+s.missionSequence.status+' · '+(s.missionSequence.steps.map(x=>x.label).join(' → ')||'padrão do motor'),
    '- Gatilhos de zona: '+(s.zoneEvents.map(x=>x.type+' em '+x.zone).join(', ')||'nenhum'),
    '- NPC: '+s.npcQuest.status+(s.npcQuest.name?' · '+s.npcQuest.name+' em '+s.npcQuest.zone+
-    ' · Patrulha: '+(s.npcQuest.walk?'sim':'não')+' · Escolhas: '+(s.npcQuest.choices?.length||0):'')+
+    ' · Patrulha: '+(s.npcQuest.walk?'sim':'não')+' · Escolhas: '+(s.npcQuest.choices?.length||0)+
+    ' · Missão secundária: '+(s.npcQuest.sideQuest?'sim':'não')+
+    ' · Rotina: '+(s.npcQuest.routine?'manhã/tarde/noite':'não'):'')+
    (s.npcQuest.reward?' · Recompensa: '+s.npcQuest.reward.score+' pontos, '+s.npcQuest.reward.health+' vida, '+s.npcQuest.reward.ammo+' balas':''),
    '- Inimigos definidos: '+(s.encounters.enemyCount??'procedural do motor')+
    ' · Ondas: '+(s.encounters.waves??'padrão do motor')+' · Chefe: '+

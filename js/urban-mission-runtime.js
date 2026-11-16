@@ -76,7 +76,30 @@ function gameForgeUrbanMissionBoot(){
   }catch(error){actorImportErrors.push(role+': '+String(error?.message||error).slice(0,160));return null;}
  }
  const hero=actor(0x3e5966),heroAnimation=applyGLB('player',hero);
- const guardGroup=new T.Group(),itemGroup=new T.Group();scene.add(guardGroup);scene.add(itemGroup);
+ const guardGroup=new T.Group(),itemGroup=new T.Group(),corpseGroup=new T.Group();
+ scene.add(guardGroup);scene.add(itemGroup);scene.add(corpseGroup);
+ const fallenGuards=[];
+ function clearFallen(){
+  for(const fallen of fallenGuards)fallen.animation?.dispose();
+  fallenGuards.length=0;while(corpseGroup.children.length)corpseGroup.remove(corpseGroup.children[0]);
+ }
+ function keepFallen(guard){
+  guard.alive=false;
+  if(guard.mesh.parent)guard.mesh.parent.remove(guard.mesh);
+  corpseGroup.add(guard.mesh);
+  const animation=guard.animation;guard.animation=null;
+  const hasDeath=!!animation?.map?.death;
+  if(hasDeath)animation.setState('death');
+  fallenGuards.push({mesh:guard.mesh,animation,remaining:hasDeath?Math.min(3,Math.max(.35,animation.duration('death'))):.75,hasDeath});
+ }
+ function updateFallen(dt){
+  for(let i=fallenGuards.length-1;i>=0;i--){
+   const g=fallenGuards[i];g.remaining-=dt;
+   g.animation?.update(dt);
+   if(!g.hasDeath)g.mesh.rotation.z=Math.min(1.2,g.mesh.rotation.z+dt*2.2);
+   if(g.remaining<=0){g.animation?.dispose();corpseGroup.remove(g.mesh);fallenGuards.splice(i,1);}
+  }
+ }
  const marker=new T.Mesh(new T.ConeGeometry(.4,.9,6),material(0xffd36b));scene.add(marker);
  let sim=F.initial(plan),gameState='menu',paused=false,frames=0,simSteps=0,clock=0,walk=0;
  let heading=0,prev=0,acc=0,attackCooldown=0,invuln=0,fireCooldown=0,reloading=0,saveTimer=0,shotNoise=0;
@@ -167,7 +190,7 @@ function gameForgeUrbanMissionBoot(){
   else if(sim.status==='victory')sim=F.initial(plan);
   gameState='play';paused=false;clock=0;prev=0;acc=0;keys.clear();clearTouches();
   attackCooldown=0;invuln=0;fireCooldown=0;reloading=0;shotNoise=0;
-  lastStepId=null;
+  lastStepId=null;clearFallen();
   hero.position.set(sim.position.x,0,sim.position.z);
   syncObjects();hud();
   $('pause').textContent='Pausar';$('start').textContent='Continuar';
@@ -204,9 +227,9 @@ function gameForgeUrbanMissionBoot(){
   const target=targets[0];
   if(target){
    target.hp=Math.max(0,target.hp-25);
-   if(target.hp===0){target.alive=false;target.animation?.setState('death');target.mesh.visible=false;
+   if(target.hp===0){keepFallen(target);
     signal({type:'kill',target:'guard'});notice('Inimigo neutralizado.');}
-   else notice('Guarda atingido.');
+   else{target.animation?.setState('hit');notice('Guarda atingido.');}
   }else notice('Tiro sem alvo na mira.');
   save();
  }
@@ -330,6 +353,9 @@ function gameForgeUrbanMissionBoot(){
    }
    if(steps===5&&simAccumulator>=1/60)simAccumulator=0;
   }else simAccumulator=0;
+  // A simulacao de missoes pode estar suspensa durante a tela de conclusao;
+  // as animacoes curtas dos NPCs mortos continuam somente enquanto nao pausado.
+  if(!paused&&fallenGuards.length)updateFallen(Math.min(.05,delta));
   const eye={x:sim.position.x,y:1.45,z:sim.position.z};
   const desired=R.cameraPosition(eye,{x:sim.position.x+2.6,y:4.6,z:sim.position.z+6.5},blockers);
   camera.position.lerp(new T.Vector3(desired.x,desired.y,desired.z),.16);
@@ -352,6 +378,7 @@ function gameForgeUrbanMissionBoot(){
   gamepadConnected:padState.connected,guardModes:guards.filter(g=>g.alive).map(g=>g.brain.mode),
   actorAnimations:{player:heroAnimation?.state||'static',enemies:guards.filter(g=>g.alive).map(g=>g.animation?.state||'static')},
   actorClipCount:{player:heroAnimation?.clips?.length||0,enemies:guards.filter(g=>g.alive).map(g=>g.animation?.clips?.length||0)},
+  deathAnimations:fallenGuards.length,
   guardWaypoints:guards.filter(g=>g.alive).map(g=>g.brain.navRoute?.length||0),
   mission:{complete:gameState==='victory',step:F.nextStep(plan,sim)?.action||null,
    progress:F.progress(plan,sim).steps,stage:sim.stage+1,rewards:[...sim.rewards]},

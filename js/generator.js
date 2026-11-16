@@ -53,7 +53,7 @@
     return `# Relatório da geração\\n\\n- Título: ${spec.title}\n- Estilo: ${spec.genre}\n- Dimensão: ${spec.dimension||'2d'}\n- Fases: ${spec.stages.join(' / ')}\n- Motor: ${spec.dimension==='3d'?'Three.js r180 local, personagens e ambientes procedurais; uma fase carregada por vez':'Canvas 2D local'}\n- Modelo: ${mechanics[spec.genre]||'Shoot’em up com ondas, melhorias e chefes.'}\n\n${spec.genre==='lane-defense'?'## Recursos do motor por linhas implementados\n\n- Tabuleiro 5x9, coleta manual de recursos, cards com custo e recarga.\n- Ondas reproduzíveis, dano na mesma faixa, proteção de uso único e derrota por segundo vazamento.\n- Até 40 títulos de fases importados. O conteúdo e habilidades próprios de cada fase ainda precisam de programação.\n\n## Fora do motor genérico\n\n- Catálogo completo, chefes roteirizados, minigames, atlas animados, PWA e testes em dispositivos reais não foram criados automaticamente.\n\n':''}## Interpretação da ideia ou GDD\n\n${spec.detected.map(x=>'- '+x).join('\n')}\n\n## Traduzido para o código do jogo\n\n${understood||'- Configuração padrão do motor'}\n\n## Ainda precisa de programação\n\n${stillNeeded||'- Nenhum requisito adicional sinalizado'}\n\n## Limites\n\n${spec.limitations.map(x=>'- '+x).join('\n')}\n\n## Como jogar e publicar\n\nAbra index.html e mantenha todos os arquivos do ZIP juntos. No 3D, engine-3d.js e sua licença acompanham o projeto. O motor de nave 3D possui ondas, chefes, tiros inimigos, power-ups e HUD próprios; o RPG 3D tem progressão básica. O HTML único também inclui a biblioteca; não baixa código de CDN. As regras livres do GDD não são implementadas automaticamente pelo modo sem IA.\n`;
   }
   function generate(spec, gdd) {
-    if(spec?.genre==='urban-action')throw Error('Ação urbana 3D ainda está em planejamento no GameForge. Baixe o contrato urbano e siga o vertical slice; não substituiremos este jogo por arena/FPS.');
+    if(spec?.genre==='urban-action'&&spec.dimension!=='3d')throw Error('URB-01 exige o motor Three.js 3D.');
     const capabilityApi=root.GameForgeCapabilities||(typeof require==='function'?require('./game-capabilities'):null);
     if(capabilityApi){
       const errors=capabilityApi.check(spec);
@@ -65,12 +65,13 @@
     const data=JSON.stringify(spec).replace(/<\//g,'<\\/');
     const expanded=!three&&['rpg','tower-defense'].includes(spec.genre);
     const advanced=!three&&['lane-defense','block-td'].includes(spec.genre);
-    const runtime=three?(spec.genre==='shooter'?root.gameForgeShooter3DBoot:root.gameForgeThreeBoot):advanced?root.gameForgeAdvancedTDBoot:expanded?root.gameForgeExpanded2DBoot:spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
+    const runtime=three?(spec.genre==='urban-action'?root.gameForgeUrban3DBoot:spec.genre==='shooter'?root.gameForgeShooter3DBoot:root.gameForgeThreeBoot):advanced?root.gameForgeAdvancedTDBoot:expanded?root.gameForgeExpanded2DBoot:spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
     if(typeof runtime!=='function')throw Error('Motor '+spec.genre+' '+(spec.dimension||'2d')+' não carregado. Atualize o Studio.');
     if(three&&!root.GameForgeThreeSource)throw Error('Biblioteca 3D local ausente. Atualize o Studio.');
     if(advanced&&typeof root.gameForgeTDRulesFactory!=='function')throw Error('Motor de regras Tower Defense não carregado. Atualize o Studio.');
-    const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n':advanced?'const GameForgeTDRules = ('+root.gameForgeTDRulesFactory.toString()+')();\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
+    const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n'+(spec.genre==='urban-action'?'const GameForgeUrbanRules = ('+root.gameForgeUrbanRulesFactory.toString()+')();\n':''):advanced?'const GameForgeTDRules = ('+root.gameForgeTDRulesFactory.toString()+')();\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
     // Incluído no FPS para permitir loja por comandos futuros sem reconstruir o motor.
+    if(spec.genre==='urban-action'&&typeof root.gameForgeUrbanRulesFactory!=='function')throw Error('Regras urbanas URB-01 não carregadas. Atualize o Studio.');
     const combatFactory=root.gameForgeCombatEconomyFactory||
       (typeof require==='function'?require('./combat-economy'):null);
     if(three&&spec.genre==='fps'&&typeof combatFactory!=='function')
@@ -86,7 +87,18 @@
       '\n- Inimigos por fase: '+(7+i*3)+'\n- Vida do chefe: '+(24+i*14)+'\n').join('\n')+
       '\n## Referências técnicas\n- navinha-arcade: fases e padrões de tiro.\n- Neon-Sky-Force: registros e formações por fase.\n- Dragon-Fury: comportamento de chefes e limites de partículas.\n\nA configuração executável fica no arquivo game.js; este manifesto é documentação, não um arquivo de configurações carregado pelo jogo.\n'
     }:{};
+    const urbanSlice=spec.genre==='urban-action'?{
+      'SLICE_URBAN_3D.md':'# URB-01 — Primeiro bairro jogável em Three.js\n\n'+
+       '**É um protótipo parcial e não a conversão do GDD inteiro.**\n\n'+
+       '- Jogável: personagem 3D com câmera terceira pessoa, ruas e colisões em XZ, pistola/recarga, um guarda, uma porta capturável, uma missão e salvamento local.\n'+
+       '- Controles: WASD/setas mover, espaço atirar, R recarregar, E capturar perto da porta, P pausar; reiniciar começa nova demonstração.\n'+
+       '- Recompensa única de exemplo: $450. Este valor não altera a economia dos GDDs originais.\n'+
+       '- Salve versionado em chave gameforge-urban-v1-<titulo>, separado dos saves do Godfather 2D.\n'+
+       '- Pendente: carros dirigíveis, polícia, guardas com IA avançada, interiores, 18 distritos, 36 negócios, 24 missões, 3 chefes, GLB animado, compatibilidade com campanhas antigas e testes físicos mobile.\n'+
+       '- Código do motor em game.js, sem dependências de rede; Three.js incluído em engine-3d.js.\n'
+    }:{}; 
     return {
+      ...urbanSlice,
       ...shooterManifest,
       ...dependencies,
       'index.html':shell(spec.title,css,code,false,dependencies),

@@ -3,6 +3,11 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const parser=require('../js/parser.js');
 const urban=require('../js/urban-design.js');
+require('../js/world-rules.js');
+require('../js/software-renderer.js');
+require('../js/urban-rules.js');
+require('../js/urban-runtime.js');
+require('../vendor/three-source.js');
 const generator=require('../js/generator.js');
 const fs=require('node:fs');
 const path=require('node:path');
@@ -37,15 +42,21 @@ test('GDD 3D é ação urbana em terceira pessoa e nunca FPS/corrida/arena',()=>
  assert.equal(x.urbanProfile.camera,'third-person');
  assert.equal(x.genreInference.genre,'urban-action');
  assert.equal(x.genreInference.confidence,'alta');
- assert.equal(x.engineAvailability.status,'planned');
- assert.equal(x.implementation.applied.length,0);
- assert.ok(x.implementation.pending.length>=8);
+ assert.equal(x.engineAvailability.status,'prototype');
+ assert.equal(x.implementation.applied.length,8);
+ assert.ok(x.implementation.pending.length>=3);
  assert.equal(x.implementation.audit.counts.implementada,0);
- assert.equal(x.implementation.audit.counts.configurada,0);
+ assert.equal(x.implementation.audit.counts.configurada,8);
  assert.equal(x.implementation.audit.counts.pendente,x.implementation.pending.length);
  assert.ok(x.limitations.some(v=>/motor urbano 3D/i.test(v)));
  assert.deepEqual(x.urbanProfile.contentCounts,{cities:3,districts:18,businesses:36,missions:24,bosses:3});
- assert.throws(()=>generator.generate(x,gdd3d),/Ação urbana 3D ainda está em planejamento/);
+ const files=generator.generate(x,gdd3d);
+ assert.ok(files['game.js'].includes('function gameForgeUrban3DBoot'));
+ assert.ok(files['game.js'].includes('GameForgeUrbanRules'));
+ assert.ok(files['engine-3d.js']);
+ assert.ok(files['SLICE_URBAN_3D.md'].includes('protótipo'));
+ assert.equal(files['GDD_original.md'],gdd3d);
+ assert.equal(x.stages.length,1,'URB-01 entrega somente uma missão, não inventa a campanha');
 });
 
 test('GDD original de Godfather continua sendo 2D, sem conversão forçada',()=>{
@@ -60,7 +71,7 @@ test('pedido de conversão do documento 2D para urbano Three.js preserva o gêne
  const x=parser.parseGdd(gdd2d,command,{dimension:'auto',genre:'auto'});
  assert.equal(x.genre,'urban-action');
  assert.equal(x.dimension,'3d');
- assert.equal(x.urbanProfile.engineStatus,'planned');
+ assert.equal(x.urbanProfile.engineStatus,'prototype');
 });
 
 test('referências a veículos ou cidade não convertem FPS de espionagem em urbano',()=>{
@@ -83,14 +94,14 @@ test('plano expõe origem/linha, limites e não inventa sistemas implementados',
  assert.equal(x.identified,true);
  assert.ok(x.evidence.some(e=>e.document==='GDD'&&e.line===2));
  const combat=x.requirements.find(r=>r.id==='combat');
- assert.equal(combat.status,'planned');
+ assert.equal(combat.status,'partial');
  assert.equal(combat.origin.document,'GDD');
  assert.ok(combat.origin.line>0);
  const s=urban.report(x);
- assert.match(s,/PLANEJAMENTO/);
+ assert.match(s,/VERTICAL SLICE URB-01 JOGÁVEL/);
  assert.match(s,/36/);
  assert.match(s,/vertical slice/i);
- assert.match(s,/não é um jogo executável/i);
+ assert.match(s,/não é a campanha completa/i);
  assert.doesNotMatch(s,/funcionalidade urbana implementada/i);
 });
 

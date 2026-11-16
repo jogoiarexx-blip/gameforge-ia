@@ -1,6 +1,20 @@
 # CHECKPOINT — GameForge Studio | 2026-11-14
 
 
+## GF-028 / URB-02 — Guardas com patrulha, alerta, busca e combate (16/11/2026)
+
+**Estado:** EM REVISÃO — funcionalidade implementada em `main`, esperando confirmação da CI do último commit e testes visuais adicionais. **Não é IA completa de NPC**.
+
+**Antes:** guardas caminhavam diretamente na direção do jogador ao entrar num raio fixo, sem estados persistentes de percepção ou busca e sem visibilidade geométrica para decidir ataques.
+
+**Agora:** `js/urban-rules.js` tem `guardStep` determinístico com patrulha curta, alerta/abordagem, busca da última posição percebida e combate em curto alcance. A visão é bloqueada por paredes; a movimentação respeita volumes urbanos via `move`. `js/urban-runtime.js` e `js/urban-mission-runtime.js` chamam a mesma função no loop fixo, e expõem o estado na telemetria. `tests/urban-slice.test.js` testa transições, bloqueio visual, colisão, `dt=0` e integração em ambos os runtimes.
+
+**Commits centrais:** `23cd9cdf` (regras), `b0f60fd` (URB-01), `d3a49cb` (missões), `ed796f10` (testes). **Ainda não executado:** navegação por caminhos longos, campo de visão angular/visão periférica, coberturas, grupos coordenados, rigs/animações ou saves de estado tático dos guardas. Nenhuma dessas funções deve ser marcada como concluída pelo HUD.
+
+**Compatibilidade:** Action Model e GDDs não alterados; quantidade de guardas e recompensas permanecem iguais. A IA é efêmera em cada missão; progresso, dinheiro e etapas continuam no save versionado.
+
+**Próximo desenvolvimento:** GF-028 URB-02 — navegação/tática/mira e QA visual mobile; GF-004 v3 — condições mensuráveis com execução e benchmark >=100 instruções leigas. GF-001 administrativo ainda não resolvido.
+
 ## GF-028 / URB-02 — Câmera urbana com oclusão (16/11/2026)
 
 **Estado:** EM REVISÃO — implementação enviada a `main`, testes de regressão adicionados; validação automatizada do SHA final a conferir. Escopo estrito: câmera que não atravessa edificações nos **dois** protótipos urbanos 3D, sem declarar IA de guardas ou câmera orbital concluídas.

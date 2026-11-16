@@ -119,6 +119,8 @@ test('interface e gerador exibem planejamento e impedem jogo urbano falso',()=>{
  assert.match(h,/src="\.\/js\/urban-design\.js"/);
  assert.ok(h.indexOf('urban-design.js')<h.indexOf('parser.js'));
  assert.match(h,/id="download-urban-plan"/);
+ assert.match(h,/id="example-urban3d"/);
+ assert.match(app,/urban3d:\{dimension:'3d',genre:'urban-action'/);
  assert.match(app,/download-urban-plan'\)\.addEventListener\('click'/);
  assert.match(app,/GAME_DESIGN_CONTRACT\.json/);
  assert.match(app,/PLANO_URBAN_ACTION\.md/);

@@ -395,13 +395,23 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(projectOperations||qaState.candidate){feedback('Conclua o teste ou a alteração em andamento antes de abrir ou baixar um backup.',true);return false;}
     return true;
   }
-  function downloadProject(){
+  async function downloadProject(){
     if(!projectAvailable())return;
+    projectOperations++;
     try{
       const encoded=GameForgeProject.encode(projectSnapshot());
-      fileBlob(new Blob([encoded],{type:'application/json'}),projectName().replace(/\s+/g,'-')+'.gameforge.json');
-      feedback('Backup completo baixado. Use Abrir backup para continuar com código, tarefas e histórico.');
+      const assets=currentAssetManifest();
+      if(assets.assets.length){
+        const binary=await assetBinaryFiles();
+        const zip=GameForgeZip.zipFiles({'PROJETO.gameforge.json':encoded,...binary});
+        fileBlob(zip,projectName().replace(/\\s+/g,'-')+'.gameforge.zip');
+        feedback('Backup ZIP completo salvo, com os modelos GLB originais. Reabra o ZIP em outro computador.');
+      }else{
+        fileBlob(new Blob([encoded],{type:'application/json'}),projectName().replace(/\\s+/g,'-')+'.gameforge.json');
+        feedback('Backup JSON salvo. Use Abrir backup para continuar seu projeto.');
+      }
     }catch(e){feedback('Backup não gerado: '+e.message,true);}
+    finally{projectOperations--;}
   }
   $('project-backup').addEventListener('click',downloadProject);
   $('project-open').addEventListener('click',()=>{if(projectAvailable())$('project-file').click();});
@@ -409,22 +419,57 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const file=event.target.files?.[0];if(!file)return;
     try{
       if(!projectAvailable())return;
-      if(file.size>20000000)throw Error('Backup acima de 20 MB.');
-      const project=GameForgeProject.decode(await file.text());
+      let project,assetFiles=null;
+      if(file.name.toLowerCase().endsWith('.zip')){
+        if(file.size>190_000_000)throw Error('ZIP acima de 190 MB.');
+        const entries=GameForgeZip.unzipFiles(new Uint8Array(await file.arrayBuffer()));
+        const meta=entries['PROJETO.gameforge.json'];
+        if(!meta)throw Error('ZIP sem PROJETO.gameforge.json. Escolha um ZIP exportado pelo GameForge.');
+        project=GameForgeProject.decode(new TextDecoder('utf-8',{fatal:true}).decode(meta));
+        const manifest=GameForgeAssetLibrary.parse(project.files['ASSET_LIBRARY.json']);
+        assetFiles={};
+        for(const a of manifest.assets){
+          const key='assets/'+a.id+'.glb',binary=entries[key];
+          if(!binary||binary.length!==a.bytes)throw Error('ZIP não contém o modelo original '+a.name+'.');
+          assetFiles[a.id]=GameForgeAssetLibrary.validateGLB(binary);
+        }
+      }else{
+        if(file.size>20_000_000)throw Error('Backup JSON acima de 20 MB.');
+        project=GameForgeProject.decode(await file.text());
+        if(GameForgeAssetLibrary.parse(project.files['ASSET_LIBRARY.json']).assets.length)
+          throw Error('Backup JSON contém referências de GLB, mas não os arquivos. Use o backup .gameforge.zip.');
+      }
       if(!projectAvailable())return;
-      pendingProject=project;
-      $('project-restore-summary').textContent=`${project.name||'Sem nome'} · ${Object.keys(project.files).length} arquivos · ${new Blob([project.gdd]).size.toLocaleString('pt-BR')} bytes de GDD · ${project.history.length} versões para desfazer.`;
+      pendingProject={project,assetFiles};
+      $('project-restore-summary').textContent=`${project.name||'Sem nome'} · ${Object.keys(project.files).length} arquivos · ${new Blob([project.gdd]).size.toLocaleString('pt-BR')} bytes de GDD · ${GameForgeAssetLibrary.parse(project.files['ASSET_LIBRARY.json']).assets.length} assets GLB · ${project.history.length} versões para desfazer.`;
       $('project-restore-dialog').showModal();
     }catch(e){pendingProject=null;feedback('O projeto atual foi preservado. '+e.message,true);}
     finally{event.target.value='';}
   });
   $('project-restore-cancel').addEventListener('click',()=>{$('project-restore-dialog').close();});
   $('project-restore-dialog').addEventListener('close',()=>{pendingProject=null;});
-  $('project-restore-confirm').addEventListener('click',()=>{
+  $('project-restore-confirm').addEventListener('click',async()=>{
     if(!pendingProject||!projectAvailable())return;
-    const project=pendingProject;pendingProject=null;
-    loadProject(project);$('project-restore-dialog').close();saveState();
-    feedback('Projeto restaurado. Continue as melhorias ou desfaça uma versão do histórico.');
+    const candidate=pendingProject;projectOperations++;
+    const stored=[];
+    let nextId=null;
+    try{
+      let project=candidate.project;
+      if(candidate.assetFiles&&Object.keys(candidate.assetFiles).length){
+        nextId=GameForgeAssetLibrary.newId();
+        const manifest=GameForgeAssetLibrary.parse(project.files['ASSET_LIBRARY.json']);
+        for(const a of manifest.assets){
+          await GameForgeAssetLibrary.put(nextId,a.id,candidate.assetFiles[a.id]);
+          stored.push(a.id);
+        }
+        project={...project,assetProjectId:nextId};
+      }
+      pendingProject=null;loadProject(project);$('project-restore-dialog').close();saveState();
+      feedback('Projeto restaurado com código, histórico e modelos GLB. Confirme na prévia.');
+    }catch(e){
+      if(nextId)for(const id of stored)try{await GameForgeAssetLibrary.erase(nextId,id);}catch{}
+      feedback('Restauração cancelada; projeto anterior preservado. '+e.message,true);
+    }finally{projectOperations--;}
   });
   async function generate(){
     if(qaState.candidate){feedback('Aceite ou descarte a correção candidata antes de gerar outro jogo.',true);return;}

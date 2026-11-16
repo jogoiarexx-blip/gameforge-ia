@@ -285,7 +285,8 @@
     const negatives=semantic.constraints.slice(0,12).map(x=>
       '['+x.status+'] '+x.label).join('; ');
     const actionFlow=(spec.actionModel?.missions||[]).slice(0,3).map(m=>m.title+': '+m.steps.map(x=>
-      x.actor+' '+x.action+' '+x.quantity+' '+x.target+'; depende de '+(x.preconditions||[]).join(',')).join(' -> ')).join(' | ');
+      x.actor+' '+x.action+' '+x.quantity+' '+x.target+'; depende de '+(x.preconditions||[]).join(',')+
+      '; origem '+(x.source?.document||'?')+':'+(x.source?.line||'?')).join(' -> ')).join(' | ');
     const actionPending=(spec.actionModel?.issues||[]).slice(0,5).map(x=>x.reason).join('; ');
 
     const sourcePattern=spec.referenceGame?

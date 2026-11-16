@@ -390,3 +390,12 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Não verificado:** execução completa de `npm test` no runner ou conclusão do GitHub Actions do commit final; WebGL real em navegador publicado, desempenho Android, qualidade de modelo Meshy, texturas em exemplos reais, animações esqueléticas, física e colisão de assets. Esses itens **não** estão marcados como concluídos.
 
 **Próximos objetivos:** executar `npm test`/CI e QA visual, conferir texturas; remover limite de 1,2 MB com armazenamento IndexedDB para arquivos binários e ZIP importável; biblioteca de múltiplos assets com licenças e papéis (player, NPC, inimigo, cenário); GLTFLoader completo e sistema de animações por estado; benchmarks de memória e regressões dos motores 2D/3D.
+
+### Validação de CI da etapa 11 — confirmada
+
+- Commit de correção dos testes: `6a1610c04511`.
+- **GitHub Actions run 43848177323: aprovado.** Validação de sintaxe, `npm test` e `npm run bench:arena` concluíram com sucesso em Node 20.
+- Resultado do runner: **137 testes aprovados, 0 falhas, 0 ignorados**.
+- **GitHub Pages run 43848176335: aprovado.** O fluxo de build/deploy finalizou, mas isso não comprova QA de renderização WebGL em navegador de usuário.
+- Houve falhas anteriores introduzidas pelo sandbox do teste GLB, corrigidas antes desta confirmação.
+- Mantidas pendências: QA visual real, celulares, modelos GLB Meshy maiores, rig/animação/colisões.

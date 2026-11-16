@@ -3,26 +3,50 @@
   'use strict';
   const normalize = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const intentCompiler=root.GameForgeIntent||(typeof require==='function'?require('./intent-compiler'):null);
-  function detectGenre(text) {
-    const t = normalize(text);
-    if(/\b(block tower td|block tower defense|blocos? td|blocos? tower|torres? (em|de) blocos|defesa de blocos)\b/.test(t))return 'block-td';
-    if(/(plants?\s*(vs\.?|versus)\s*zomb|plantas?\s*(contra|vs)\s*zumbis?|defesa por linhas|garden defense|defesa do jardim|jardim contra zumbis|tower.?defen[cs]e.{0,35}(por linhas|por faixas|cinco linhas|5x9))/.test(t))return 'lane-defense';
-    if(/\b(tower.?defen[cs]e|defesa de torres)\b/.test(t))return 'tower-defense';
-    if(/\b(fps|first.person|primeira pessoa)\b/.test(t))return 'fps';
-    if(/\b(rpg|role.playing|roguelike|roguelite)\b/.test(t))return 'rpg';
-    const tests = {
-      shooter: [/(navinha|nave(?:s)?\b|shoot.?em.?up|shmup|jogo de nave|space shooter|star fighter|tiro vertical|ataque espacial|combate aereo|scroll vertical|drag[aã]o.*atira|dragon fury|neon sky force)/g, 5],
-      racing: [/(caminh|corrida|racing|road rash|veicul|carro|moto|truck|piloto|velocidade|oficina)/g, 2],
-      platform: [/(plataforma|platformer|pular|salto|side.scroll|sidescroll|super mario|crash bandicoot)/g, 2],
-      arena: [/(terror|horror|zumbi|rpg|shooter|tiro|monstro|sobreviven|combate|inventario|exploracao)/g, 1]
+  // Classificação semântica determinística. Sinais de jogabilidade são mais fortes
+  // do que palavras ocasionais em capítulos longos de um GDD.
+  function detectGenreInfo(text) {
+    const t=normalize(text),intro=t.slice(0,7000);
+    const scores={fps:0,shooter:0,racing:0,platform:0,rpg:0,arena:0,'tower-defense':0,'lane-defense':0,'block-td':0};
+    const signals={fps:[],shooter:[],racing:[],platform:[],rpg:[],arena:[],'tower-defense':[],'lane-defense':[],'block-td':[]};
+    const add=(genre,pattern,weight,label)=>{
+      const first=pattern.test(intro),later=!first&&pattern.test(t);
+      if(first||later){scores[genre]+=first?weight:Math.max(1,Math.round(weight*.55));signals[genre].push(label);}
     };
-    let best = 'arena', score = 0;
-    for (const [type, [regex, factor]] of Object.entries(tests)) {
-      const count = [...t.matchAll(regex)].length * factor;
-      if (count > score) { score = count; best = type; }
+    add('block-td',/\b(block tower td|block tower defense|blocos? td|blocos? tower|torres? (em|de) blocos|defesa de blocos)\b/,28,'defesa de blocos');
+    add('lane-defense',/\b(plants?\s*(?:vs\.?|versus)\s*zomb|plantas?\s*(?:contra|vs)\s*zumbis?|defesa por linhas|garden defense|defesa do jardim|jardim contra zumbis|tower.?defen[cs]e.{0,35}(?:por linhas|por faixas|cinco linhas|5x9))\b/,28,'defesa por linhas');
+    add('tower-defense',/\b(tower.?defen[cs]e|defesa de torres|construir torres para defender)\b/,27,'defesa de torres');
+    add('fps',/\b(first[ .-]?person(?: shooter)?|primeira pessoa|visao pelos olhos|tiro(?:s)? em primeira pessoa|camera em primeira pessoa)\b/,29,'câmera em primeira pessoa');
+    // "60 FPS" é taxa de quadros, nunca evidência de tiro em primeira pessoa.
+    const fpsEvidence=[...t.matchAll(/\bfps\b/g)].some(m=>{
+      const prefix=t.slice(Math.max(0,m.index-18),m.index);
+      return !/\b\d{1,3}\s*$/.test(prefix);
+    });
+    if(fpsEvidence){scores.fps+=/\bfps\b/.test(intro)?25:13;signals.fps.push('FPS como gênero');}
+    add('fps',/\b(golden\s?eye(?:[\s-]*0?0?7?7)?|medalha de honra|medal of honor|agente 007)\b/,12,'referência a FPS de espionagem');
+    const espionage=/\b(espionagem|infiltracao|agente secreto|missao tatica|guardas? armados?)\b/.test(t);
+    const gunplay=/\b(mira|mirar|armas? de fogo|fuzil|pistola|atirar em guardas|municao)\b/.test(t);
+    if(espionage&&gunplay){scores.fps+=10;signals.fps.push('espionagem e combate com armas');}
+    add('shooter',/\b(navinha|jogos? de naves?|naves? espaciais?|nave de combate|shoot[\s'.-]*em[\s'.-]*up|shmup|space shooter|star fighter|tiro vertical|ataque espacial|combate aereo|combate espacial|scroll vertical|dragon fury|neon sky force)\b/,29,'naves ou shoot’em up');
+    add('shooter',/\b(naves?|esquadroes? de naves?|disparos espaciais?|inimigos? aereos?)\b/,5,'combate aéreo');
+    add('racing',/\b(jogo de corrida|simulador de corrida|corrida de carros?|corrida 3d|racing game|pista de corrida|circuito automobilistico)\b/,27,'corrida de veículos');
+    add('racing',/\b(voltas no circuito|turbo|tuning|pilotar carros?|disputar corridas?|oponentes na pista)\b/,7,'direção competitiva');
+    add('platform',/\b(jogo de plataforma|plataforma (?:2d|3d)|platformer|side[ .-]?scroll(?:ing)?|pular entre plataformas|saltos entre plataformas)\b/,27,'plataformas como jogabilidade');
+    add('platform',/\b(salto duplo|colecionar moedas|fase lateral com pulos|super mario|donkey kong country)\b/,10,'movimentação de plataforma');
+    add('rpg',/\b(rpg|role[ .-]?playing|roguelike|roguelite|jogo de interpretacao)\b/,26,'RPG');
+    add('rpg',/\b(arvore de habilidades|classes de personagem|experiencia e niveis|evoluir personagem por xp)\b/,9,'progressão de personagem');
+    add('arena',/\b(survival horror|jogo de arena|arena de combate|terror de sobrevivencia)\b/,22,'ação e sobrevivência');
+    add('arena',/\b(jogo de aventura|combate e exploracao|aventura em terceira pessoa)\b/,8,'aventura de ação');
+    // Pistas contextuais: "aeronave" não satisfaz "nave"; "caminhada"
+    // e "plataforma de salto" não caracterizam corrida ou platformer.
+    let genre='arena',best=0;
+    for(const [id,value] of Object.entries(scores)){
+      if(value>best){best=value;genre=id;}
     }
-    return best;
+    const strong=best>=20;
+    return {genre,confidence:strong?'alta':best>=8?'media':'baixa',signals:signals[genre],score:best};
   }
+  function detectGenre(text) { return detectGenreInfo(text).genre; }
   function unique(items) { return [...new Set(items.map(x => x.trim()).filter(Boolean))]; }
   const labels={arena:'Aventura / ação',shooter:'Nave / shoot’em up vertical',racing:'Corrida',platform:'Plataforma',rpg:'RPG de ação',fps:'FPS / primeira pessoa','tower-defense':'Defesa de torres (caminhos)','lane-defense':'Defesa por linhas / Jardim','block-td':'Defesa de torres em blocos'};
   const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','shooter','rpg','racing','platform']};
@@ -60,7 +84,11 @@
     const direct=normalize(extra);
     const createsNew=/\b(crie|cria|criar|quero|faca|fazer|gere|gerar|desenvolva|novo|transforme|jogo|game)\b.{0,110}\b(navinha|nave espacial|jogo de nave|shoot.?em.?up|shmup|rpg|fps|primeira pessoa|corrida|carro|plataforma|platformer|tower defense|defesa de torres|aventura)\b/.test(direct);
     const requestedGenre=createsNew?detectGenre(direct):null;
-    let genre=options.genre&&options.genre!=='auto'?options.genre:requestedGenre||detectGenre(combined);
+    const genreInference=detectGenreInfo(source.trim()?source:combined);
+    const explicitGenre=options.genre&&options.genre!=='auto'?options.genre:null;
+    let genre=explicitGenre||requestedGenre||detectGenre(combined);
+    const genreOverrideWarning=explicitGenre&&genreInference.confidence==='alta'&&genreInference.genre!==explicitGenre
+      ?'O GDD indica '+(labels[genreInference.genre]||genreInference.genre)+', mas está selecionado manualmente '+(labels[explicitGenre]||explicitGenre)+'. Selecione "Detectar pelo GDD" para usar a identificação automática.':null;
     if(!styles[dimension])throw Error('Dimensão não compatível.');
     if(!styles[dimension].includes(genre)){
       if(options.dimension===dimension||options.genre&&options.genre!=='auto')throw Error('O estilo '+(labels[genre]||genre)+' ainda não possui motor '+dimension.toUpperCase()+'. Escolha 2D ou um estilo compatível nas opções.');
@@ -123,12 +151,13 @@
       summary: headings.slice(0, 14), enemyNames, features, world,
       sourceLength: source.length, sectionCount: headings.length, sectionsIndexed: headings.length, instructions: extra,
       colors: colorPalettes[genre],
-      sourceConflict,
+      sourceConflict,genreInference,genreOverrideWarning,
       detected: [`Gênero: ${labels[genre]}`,`Dimensão: ${dimension.toUpperCase()}`,
         `${stages.length} fase(s) no protótipo`, `${headings.length} capítulos lidos`, `${enemyNames.length} nome(s) de inimigos encontrados`,
         ...Object.keys(features).filter(k => features[k]).map(k => ({inventory:'Inventário',enemies:'Inimigos',bosses:'Chefes',quests:'Objetivos',checkpoints:'Checkpoints',upgrades:'Melhorias',mobile:'Controles mobile',timer:'Cronômetro',audio:'Áudio previsto'})[k])],
       limitations: [
         ...(sourceConflict?[sourceConflict]:[]),
+        ...(genreOverrideWarning?[genreOverrideWarning]:[]),
         ...(mechanics.pending.length?['Mecânicas solicitadas sem implementação garantida neste motor: '+mechanics.pending.map(id=>mechanics.labels[id]).join(', ')+'. Necessitam desenvolvimento adicional.']:[]),
         ...(allLevels.length>stageLimit?[`O GDD contém ${allLevels.length} fases; este motor utiliza as primeiras ${stageLimit}. O documento original permanece completo.`]:[]),
         ...(dimension==='3d'?['O motor 3D usa cenários e personagens low poly procedurais com Three.js local; requer WebGL2. GLBs detalhados, animações importadas e campanha escrita livremente ainda exigem trabalho adicional.']:[]),
@@ -154,6 +183,6 @@
     if(value.length>10000)throw Error('Configuração e instrução de IA ultrapassam 10.000 caracteres. Reduza a instrução adicional.');
     return value;
   }
-  root.GameForgeParser = { parseGdd, detectGenre, labels, styles, creationInstruction, mechanicCatalog, planMechanics };
+  root.GameForgeParser = { parseGdd, detectGenre, detectGenreInfo, labels, styles, creationInstruction, mechanicCatalog, planMechanics };
   if (typeof module !== 'undefined') module.exports = root.GameForgeParser;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

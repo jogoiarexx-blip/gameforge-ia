@@ -55,10 +55,8 @@ test('exportacao com JS invalido e recusada pelo mesmo parser de sintaxe que rod
 
 test('o preflight real recusa exportação com código quebrado e dependências ausentes',()=>{
  const good={'index.html':'<script src="game.js"></script>',
-   'game.js':'const GAME_SPEC = {"genre":"arena"};\\nfunction boot(){}',
+   'game.js':'const GAME_SPEC = {"genre":"arena"};\nfunction boot(){}',
    'style.css':'body{}'};
- // Use quebras reais como no export; scripts inválidos devem bloquear a CI.
- good['game.js']=good['game.js'].replace('\\\\n','\\n');
  assert.doesNotThrow(()=>validateFiles(good,'2d','arena'));
  assert.throws(()=>validateFiles({...good,'game.js':'const x = ;'},'2d','arena'),SyntaxError);
  assert.throws(()=>validateFiles({...good,'index.html':'<script src="https://evil.example/payload.js"></script>'},'2d','arena'),/Script remoto/);

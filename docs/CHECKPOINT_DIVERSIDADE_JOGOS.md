@@ -521,3 +521,22 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Validação confirmada:** GitHub Actions **run 43856289351**, job **133261273486**, commit `08dc771d4a700a6799842a6ac76b2a8c45d9aea1`: **171 testes aprovados / zero falhas**. Sintaxe JavaScript e benchmark informativo da arena também passaram. A suite cobre outros motores e exportação sem CDN.
 
 **Limitações e pendências:** esta atualização anima personagens gerados proceduralmente, não transfere rig/animações automaticamente de GLBs importados; personagens GLB continuam exigindo um pipeline de `AnimationMixer`, mapeamento de estados e adequação de esqueleto. Separação de inimigos é local e usa até O(E²) com limite atual de inimigos; medir custo antes de elevar os limites. Não há perfil de FPS nem verificação visual em WebGL real/Android. Próximas etapas: QA visual, controle de animações de assets externos, esquiva/melhoria de comportamento dos inimigos, reforçar estados de gameplay e testes em dispositivo.
+
+## Engenharia — etapa 15: classificação automática do gênero pelo GDD (16/11/2026)
+
+**Problema relatado:** o GoldenEye 077 aparecia como jogo de nave. Foi consultado o GDD completo `jogoiarexx-blip/goldeneye-077/GOLDENEYE_007_REMASTER_GDD_COMPLETO_v1_0.md` (cerca de 71,6 mil caracteres). O documento descreve explicitamente `FPS tático de espionagem`, câmera em primeira pessoa, mira, guardas, armas e missões. Menções ocasionais a aeronaves, corrida a pé, pular cinematics e plataformas de cenário não definem o gênero principal.
+
+**Causas localizadas:**
+- `js/parser.js` usava ocorrências de palavras com pesos por frequência e não distinguia sinais de gênero de itens ocasionais; `nave` podia ser capturada dentro de `aeronave`. `caminhada`, `pular` e `plataforma` eram contados como corrida/platformer.
+- `js/app.js` restaurava configurações de `game-style`/`game-dimension` de projeto anterior, e o evento de importação de outro GDD não limpava as escolhas. O comando complementar antigo também permanecia.
+- A dimensão era determinada antes de classificar o gênero e podia escolher 2D para um FPS descrito apenas por título e jogabilidade, provocando fallback silencioso para arena.
+
+**Correções publicadas:**
+- `js/parser.js`: substituição do classificador de contagem por sinais contextualizados/ponderados (`detectGenreInfo`) de câmera, mecânica e estilo, sem confundir taxa de quadros `60 FPS` com o gênero FPS. Busca no início e no restante do GDD; expõe gênero inferido, sinais e confiança. Mantém suporte a RPG, plataformas, corrida, nave 2D/3D e três modos de Tower Defense. Detecta FPS 3D pela jogabilidade mesmo sem a palavra `3D`. Impede trocar silenciosamente um motor incompatível por arena; apresenta erro de compatibilidade.
+- `js/app.js`: ao importar um novo arquivo .md/.markdown, substituí-lo inteiro por colagem extensa ou criar um GDD novo por comando, a dimensão e o gênero retornam a `Detectar pelo GDD` e o comando de projeto antigo é limpo; preferências manuais posteriores continuam disponíveis, com aviso explícito quando discordam do documento. Não usa o `GAME_SPEC` de um jogo gerado anteriormente quando o documento ativo é diferente. O diagnóstico mostra gênero inferido, confiança e sinais.
+- `tests/gdd-genre-detection.test.js` (novo): nove testes de FPS GoldenEye com elementos secundários conflitantes, título/espionagem sem `3D`, navinha 2D e 3D com requisito de 60 FPS, falso positivo `aeronave`, plataforma/corrida, override manual e reinício de detecção na importação.
+- Ajustes menores de compatibilidade com regressões existentes de plataforma/corrida e mensagens de motor 3D incompatível foram feitos para que os testes antigos continuem relevantes.
+
+**Validação confirmada:** GitHub Actions **run 43858628707**, job **133269301989**, commit `20a74282a336d8178174c71979cea65c5107ce45`: **196/196 testes aprovados, zero falhas**, sintaxe JavaScript e benchmark da arena aprovados. Os testes do GoldenEye usam uma versão resumida representativa do GDD; o documento completo de 71,6 mil caracteres foi inspecionado via GitHub, sem afirmar que cada uma de suas linhas foi executada como teste unitário.
+
+**Limites:** identificar corretamente FPS 3D seleciona o runtime apropriado, mas não implementa automaticamente toda a espionagem, IA, cutscenes e missões específicas do GDD no gerador offline. Escolhas manuais explícitas ainda prevalecem, acompanhadas de alerta. Falta teste em navegador real/Android e avaliação com um catálogo maior de GDDs para medir confusão entre gêneros, inclusive pedidos híbridos.

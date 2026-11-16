@@ -32,22 +32,28 @@ function gameForgeBoot() {
   function rectanglesOverlap(a,b){
     return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
   }
-  // Índice espacial por quadro: células de 64px, consulta dos 9 vizinhos.
-  // Mantém a ordem original dos projéteis para preservar prioridade de acerto.
+  // Grade espacial para projéteis: raio da consulta inclui a hitbox dos dois lados.
+  // Consulta dinâmica evita perder impactos com chefes ou projéteis ampliados.
+  // Ordenar pelos índices preserva a prioridade de colisão do motor original.
   function buildBulletGrid(items,cellSize=64){
     const buckets=new Map();
+    let maxRadius=0;
     for(let i=0;i<items.length;i++){
       const b=items[i],cx=Math.floor(b.x/cellSize),cy=Math.floor(b.y/cellSize);
       const key=cx+','+cy;
       if(!buckets.has(key))buckets.set(key,[]);
       buckets.get(key).push(i);
+      maxRadius=Math.max(maxRadius,Number.isFinite(b.r)?Math.max(0,b.r):0);
     }
-    return {buckets,cellSize,items};
+    return {buckets,cellSize,items,maxRadius};
   }
-  function nearbyBullets(grid,x,y){
-    const cx=Math.floor(x/grid.cellSize),cy=Math.floor(y/grid.cellSize),indexes=[];
-    for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++){
-      const list=grid.buckets.get((cx+ox)+','+(cy+oy));
+  function nearbyBullets(grid,x,y,hitRadius=grid.cellSize){
+    const range=Math.max(0,hitRadius)+grid.maxRadius;
+    const minX=Math.floor((x-range)/grid.cellSize),maxX=Math.floor((x+range)/grid.cellSize);
+    const minY=Math.floor((y-range)/grid.cellSize),maxY=Math.floor((y+range)/grid.cellSize);
+    const indexes=[];
+    for(let cx=minX;cx<=maxX;cx++)for(let cy=minY;cy<=maxY;cy++){
+      const list=grid.buckets.get(cx+','+cy);
       if(list)indexes.push(...list);
     }
     indexes.sort((a,b)=>a-b);
@@ -131,7 +137,7 @@ function gameForgeBoot() {
     for(const e of enemies){
       const a=Math.atan2(player.y-e.y,player.x-e.x);e.x+=Math.cos(a)*e.speed*dt;e.y+=Math.sin(a)*e.speed*dt;
       if(circlesOverlap(e,player))damage(e.boss?18:10);
-      for(const b of nearbyBullets(bulletGrid,e.x,e.y))if(!b.dead && circlesOverlap(b,e)){b.dead=true;e.hp--;if(e.hp<=0){e.dead=true;score+=e.boss?250:50;xp+=1; if(Math.random()<.24)drops.push({x:e.x,y:e.y,r:10,kind:Math.random()<.25?'heal':'ammo'});for(let i=0;i<Math.max(2,Math.round(9*tuning.particlesMultiplier))&&particles.length<150;i++)particles.push({x:e.x,y:e.y,vx:rand(-120,120),vy:rand(-120,120),ttl:.5});}break;}
+      for(const b of nearbyBullets(bulletGrid,e.x,e.y,e.r))if(!b.dead && circlesOverlap(b,e)){b.dead=true;e.hp--;if(e.hp<=0){e.dead=true;score+=e.boss?250:50;xp+=1; if(Math.random()<.24)drops.push({x:e.x,y:e.y,r:10,kind:Math.random()<.25?'heal':'ammo'});for(let i=0;i<Math.max(2,Math.round(9*tuning.particlesMultiplier))&&particles.length<150;i++)particles.push({x:e.x,y:e.y,vx:rand(-120,120),vy:rand(-120,120),ttl:.5});}break;}
     }
     bullets=bullets.filter(b=>!b.dead);enemies=enemies.filter(e=>!e.dead);
     if(enemies.length===0)nextStage();

@@ -4,9 +4,14 @@
   const normalize = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const intentCompiler=root.GameForgeIntent||(typeof require==='function'?require('./intent-compiler'):null);
   const sourceCorpus=root.GameForgeGameCorpus||(typeof require==='function'?require('./game-corpus'):null);
+  const urbanDesign=root.GameForgeUrbanDesign||(typeof require==='function'?require('./urban-design'):null);
   // Classificação semântica determinística. Sinais de jogabilidade são mais fortes
   // do que palavras ocasionais em capítulos longos de um GDD.
   function detectGenreInfo(text) {
+    const urban=urbanDesign?.inspect(text);
+    if(urban?.identified)return {genre:'urban-action',confidence:urban.confidence,
+      signals:urban.evidence.map(item=>item.description),score:90,runnerUp:0,
+      ambiguous:false,sourceGame:null};
     const t=normalize(text),intro=t.slice(0,7000);
     const scores={fps:0,shooter:0,racing:0,platform:0,rpg:0,arena:0,'tower-defense':0,'lane-defense':0,'block-td':0};
     const signals={fps:[],shooter:[],racing:[],platform:[],rpg:[],arena:[],'tower-defense':[],'lane-defense':[],'block-td':[]};
@@ -62,7 +67,7 @@
   }
   function detectGenre(text) { return detectGenreInfo(text).genre; }
   function unique(items) { return [...new Set(items.map(x => x.trim()).filter(Boolean))]; }
-  const labels={arena:'Aventura / ação',shooter:'Nave / shoot’em up vertical',racing:'Corrida',platform:'Plataforma',rpg:'RPG de ação',fps:'FPS / primeira pessoa','tower-defense':'Defesa de torres (caminhos)','lane-defense':'Defesa por linhas / Jardim','block-td':'Defesa de torres em blocos'};
+  const labels={'urban-action':'Ação urbana 3D em terceira pessoa (motor planejado)',arena:'Aventura / ação',shooter:'Nave / shoot’em up vertical',racing:'Corrida',platform:'Plataforma',rpg:'RPG de ação',fps:'FPS / primeira pessoa','tower-defense':'Defesa de torres (caminhos)','lane-defense':'Defesa por linhas / Jardim','block-td':'Defesa de torres em blocos'};
   const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','shooter','rpg','racing','platform']};
   // Catálogo declarativo: pedido no GDD não equivale a mecânica implementada.
   const mechanicCatalog = Object.freeze({
@@ -95,9 +100,15 @@
     const direct=normalize(extra);
     const createsNew=/\b(crie|cria|criar|quero|faca|fazer|gere|gerar|desenvolva|novo|transforme|jogo|game)\b.{0,110}\b(navinha|nave espacial|jogo de nave|shoot.?em.?up|shmup|rpg|fps|primeira pessoa|corrida|carro|plataforma|platformer|tower defense|defesa de torres|aventura)\b/.test(direct);
     const requestedGenre=createsNew?detectGenre(direct):null;
-    const genreInference=detectGenreInfo(source.trim()?source:combined);
+    const urbanProfile=urbanDesign?.inspect(source,extra)||null;
+    const sourceInference=detectGenreInfo(source.trim()?source:combined);
+    const genreInference=urbanProfile?.identified?{
+      genre:'urban-action',confidence:urbanProfile.confidence,
+      signals:urbanProfile.evidence.map(item=>item.description),score:90,
+      runnerUp:0,ambiguous:false,sourceGame:null
+    }:sourceInference;
     const explicitGenre=options.genre&&options.genre!=='auto'?options.genre:null;
-    let genre=explicitGenre||requestedGenre||detectGenre(combined);
+    let genre=explicitGenre||requestedGenre||(urbanProfile?.identified?'urban-action':detectGenre(combined));
     const recentDimension=/\b(?:3d|three[.]?js|tres dimensoes|terceira dimensao)\b/.test(direct)?'3d':
       /\b(?:2d|duas dimensoes|canvas)\b/.test(direct)?'2d':null;
     const semanticIntro=normalize(source.trim()?source.slice(0,2600):extra.slice(0,2600));
@@ -109,13 +120,15 @@
     const declared2d=/\b(?:canvas|lateral|jogo|genero|defesa|plataforma|tower defense|visao superior)\b.{0,24}\b2d\b|\b2d\b.{0,38}\b(?:canvas|navegador|lateral|jogo|grade|linhas|top.down)/.test(semanticIntro);
     const declared3d=/\b(?:aventura|jogo|fps|corrida|camera|mundo|experiencia)\b.{0,25}\b3d\b/.test(semanticIntro)&&positive3d;
     const inferred3d=positive3d;
-    const autoDimension=declared2d&&!declared3d?'2d':declared3d?'3d':genre==='fps'?'3d':
+    const autoDimension=genre==='urban-action'?'3d':declared2d&&!declared3d?'2d':declared3d?'3d':genre==='fps'?'3d':
       sourceCorpus?.match(source.trim()?source:extra)?.dimension|| (inferred3d?'3d':'2d');
     let dimension=options.dimension&&options.dimension!=='auto'?options.dimension:recentDimension||autoDimension;
     const genreOverrideWarning=explicitGenre&&genreInference.confidence==='alta'&&genreInference.genre!==explicitGenre
       ?'O GDD indica '+(labels[genreInference.genre]||genreInference.genre)+', mas está selecionado manualmente '+(labels[explicitGenre]||explicitGenre)+'. Selecione "Detectar pelo GDD" para usar a identificação automática.':null;
     if(!styles[dimension])throw Error('Dimensão não compatível.');
-    if(!styles[dimension].includes(genre)){
+    if(genre==='urban-action'&&dimension!=='3d')
+      throw Error('Ação urbana em terceira pessoa exige dimensão 3D; selecione Detectar pelo GDD ou 3D.');
+    if(genre!=='urban-action'&&!styles[dimension].includes(genre)){
       const other=dimension==='3d'?'2d':'3d';
       // Quando a dimensão não foi especificada, usar o motor compatível
       // em vez de trocar silenciosamente o gênero identificado por "arena".
@@ -186,6 +199,8 @@
       sourceLength: source.length, sectionCount: headings.length, sectionsIndexed: headings.length, instructions: extra,
       colors: colorPalettes[genre],
       sourceConflict,genreInference,genreOverrideWarning,referenceGame:sourceCase,
+      ...(genre==='urban-action'?{urbanProfile,engineAvailability:{status:'planned',
+        reason:'Motor urbano 3D em terceira pessoa não está implementado; exporte primeiro o contrato e o plano do vertical slice.'}}:{}),
       detected: [`Gênero: ${labels[genre]}`,`Dimensão: ${dimension.toUpperCase()}`,
         `${stages.length} fase(s) no protótipo`, `${headings.length} capítulos lidos`, `${enemyNames.length} nome(s) de inimigos encontrados`,
         ...Object.keys(features).filter(k => features[k]).map(k => ({inventory:'Inventário',enemies:'Inimigos',bosses:'Chefes',quests:'Objetivos',checkpoints:'Checkpoints',upgrades:'Melhorias',mobile:'Controles mobile',timer:'Cronômetro',audio:'Áudio previsto'})[k])],
@@ -204,6 +219,30 @@
         'Imagens, áudios e fases específicas mencionadas no GDD não são criados automaticamente neste modo.'
       ]
     };
+    if(genre==='urban-action'){
+      // Sem motor executável, não chamar o compilador dos outros gêneros:
+      // suas configurações induziriam falsa impressão de implementação.
+      const pending=urbanProfile.requirements.map(req=>({
+        id:req.id,description:req.name,where:'Motor urbano 3D',
+        detail:req.origin.line?req.origin.document+' linha '+req.origin.line:'A construir'
+      }));
+      const counts={implementada:0,configurada:0,pendente:pending.length,incompativel:0};
+      compiled.implementation={
+        source:'GDD',applied:[],pending,requirements:pending,
+        warnings:[compiled.engineAvailability.reason],
+        summary:'0 configurações aplicadas; '+pending.length+' requisitos para implementar no motor urbano',
+        audit:{version:1,engine:'urban-action-3d',items:pending.map((item,i)=>({
+          id:item.id,capability:item.id,status:'pendente',description:item.description,
+          where:item.where,origin:urbanProfile.requirements[i].origin,
+          contract:null,test:null,reason:'Motor urbano 3D ainda não implementado.'
+        })),counts,
+        summary:'implementada: 0 · configurada: 0 · pendente: '+pending.length+' · incompatível: 0',
+        note:'Este é um plano de produção; nenhum item está implementado pelo GameForge.'}
+      };
+      compiled.limitations.unshift(compiled.engineAvailability.reason);
+      compiled.detected.push('Câmera: terceira pessoa','Motor urbano 3D: somente planejamento');
+      return compiled;
+    }
     return intentCompiler?intentCompiler.compile(compiled,source,extra,options):compiled;
   }
   function creationInstruction(spec,instruction=''){

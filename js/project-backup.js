@@ -1,7 +1,7 @@
 /* Backups portáteis do Studio. Validação de dados sem executar código. */
 (function(root){
 'use strict';
-const allowedFiles=['index.html','style.css','game.js','engine-3d.js','THREE-LICENSE.txt','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json','CAMPANHA_EDITOR.md','ASSET_CENARIO.b64','ASSET_CENARIO.json','ASSET_LIBRARY.json','COMANDO_ORIGINAL.md','PLANO_INTERPRETACAO.md','CONTRATO_CAPACIDADES.md','CAPACIDADES.json','SLICE_URBAN_3D.md'];
+const allowedFiles=['index.html','style.css','game.js','engine-3d.js','THREE-LICENSE.txt','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json','CAMPANHA_EDITOR.md','ASSET_CENARIO.b64','ASSET_CENARIO.json','ASSET_LIBRARY.json','COMANDO_ORIGINAL.md','PLANO_INTERPRETACAO.md','CONTRATO_CAPACIDADES.md','CAPACIDADES.json','PLANO_REQUISITOS.md','SLICE_URBAN_3D.md'];
 const states=['pendente','em andamento','aguardando revisão','validada','bloqueada'];
 const bytes=s=>new TextEncoder().encode(s).length;
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);

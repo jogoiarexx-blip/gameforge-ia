@@ -736,14 +736,14 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   function restoreSceneAssetControls(){
     let settings={x:5,z:5,scale:1};
     try{if(state.files['ASSET_CENARIO.json'])settings={...settings,...JSON.parse(state.files['ASSET_CENARIO.json'])};}catch{}
-    for(const k of ['x','z','scale'])$('scene-asset-'+k).value=Number.isFinite(Number(settings[k]))?settings[k]:settings[k]==='scale'?1:5;
+    for(const k of ['x','z','scale'])$('scene-asset-'+k).value=Number.isFinite(Number(settings[k]))?settings[k]:k==='scale'?1:5;
     $('scene-asset-status').textContent=state.files['ASSET_CENARIO.b64']?'Objeto GLB salvo no projeto. Prévia e exportação usam o modelo.':'Nenhum modelo adicionado.';
   }
   $('scene-asset-file').addEventListener('change',async e=>{
     const file=e.target.files?.[0];if(!file)return;
     try{
       if(!state.files['engine-3d.js'])throw Error('Crie primeiro um jogo 3D no modo Sem IA.');
-      if(!/\\.glb$/i.test(file.name))throw Error('Use um arquivo .glb com recursos embutidos.');
+      if(!file.name.toLowerCase().endsWith('.glb'))throw Error('Use um arquivo .glb com recursos embutidos.');
       if(file.size>1_200_000)throw Error('Limite inicial: GLB com até 1,2 MB. Otimize o modelo antes da importação.');
       const report=await GameForgeModelInspector.readFile(file);
       if(report.meshes<1)throw Error('Modelo sem malhas.');

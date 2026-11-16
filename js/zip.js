@@ -12,7 +12,7 @@
     for(const [name,src] of Object.entries(files)){
       if(!name||name.includes('..')||name.startsWith('/')||name.includes('\\'))throw new Error('Nome de arquivo inseguro');
       const filename=enc.encode(name),data=src instanceof Uint8Array?src:enc.encode(String(src));
-      if(filename.length>65535||data.length>30_000_000)throw new Error('Arquivo muito grande');
+      if(filename.length>65535||data.length>(name==='index.html'?85_000_000:30_000_000))throw new Error('Arquivo muito grande');
       const crc=crc32(data),size=data.length;
       const lh=new Uint8Array([80,75,3,4,...u16(20),...u16(0x800),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(size),...u32(size),...u16(filename.length),...u16(0)]);
       local.push(lh,filename,data);
@@ -27,7 +27,7 @@
   }
   function unzipFiles(source){
     const bytes=source instanceof Uint8Array?source:new Uint8Array(source);
-    if(bytes.length>110_000_000)throw Error('ZIP acima do limite de 110 MB.');
+    if(bytes.length>190_000_000)throw Error('ZIP acima do limite de 190 MB.');
     const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),files={},decode=new TextDecoder('utf-8',{fatal:true});
     let offset=0,count=0,total=0;
     const safe=(name)=>name&&name.length<220&&!name.includes('..')&&!name.startsWith('/')&&!name.includes('\\\\')&&!name.includes('//');
@@ -41,7 +41,7 @@
       const packed=view.getUint32(offset+18,true),size=view.getUint32(offset+22,true);
       const nameLen=view.getUint16(offset+26,true),extra=view.getUint16(offset+28,true);
       if(flags&9||method!==0||packed!==size)throw Error('Apenas ZIPs sem compressao, criptografia ou descritor sao aceitos.');
-      if(!nameLen||size>30_000_000||total+size>100_000_000)throw Error('Arquivo ZIP excede os limites.');
+      if(!nameLen||size>85_000_000||total+size>175_000_000)throw Error('Arquivo ZIP excede os limites.');
       const start=offset+30+nameLen+extra,end=start+size;
       if(start>bytes.length||end>bytes.length)throw Error('Arquivo ZIP truncado.');
       const name=decode.decode(bytes.subarray(offset+30,offset+30+nameLen));

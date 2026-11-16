@@ -81,6 +81,8 @@ def run():
                         "window.__gameforgeTelemetry().paused === true", timeout=5000
                     )
                     if label == '3d-urban-action':
+                        assert isinstance(active.get('guardWaypoints'), int), 'Motor urbano deve expor a rota do guarda'
+                        assert active['guardWaypoints'] >= 0
                         # Missão jogada em Chromium: combate -> armazém -> recompensa -> reload.
                         page.locator('#restart').click()
                         page.wait_for_function("window.__gameforgeTelemetry().state === 'play'")
@@ -292,6 +294,7 @@ def run():
                     game_page.wait_for_function("typeof window.__gameforgeTelemetry === 'function'",timeout=18000)
                     game_page.locator('#start').click()
                     assert game_page.evaluate('window.__gameforgeTelemetry().stages') == 2
+                    assert isinstance(game_page.evaluate('window.__gameforgeTelemetry().guardWaypoints'), list), 'Missões urbanas devem expor rotas por guarda'
                     assert game_page.evaluate('window.__gameforgeTelemetry().mission.step') == 'collect'
                     game_page.keyboard.down('w')
                     game_page.wait_for_function(

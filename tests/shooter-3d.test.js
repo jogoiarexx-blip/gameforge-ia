@@ -263,7 +263,7 @@ test('GF-TRAIN-06: campanha linear de 3 chefes, checkpoint real, reload, derrota
  const bossFight=game=>{
   const stage=game.telemetry().stage;
   const health=game.env.__gfBossProbe.setup();
-  assert.ok(health>=1&&health<=6,'chefe isolado deve existir');
+  assert.ok(health>=1&&health<=11,'chefes de fases avançadas têm resistência crescente');
   game.key('keydown',' ');
   let tries=0;
   while(!game.telemetry().bossDefeated&&tries++<35){
@@ -327,11 +327,12 @@ test('GF-TRAIN-06: botão Reiniciar apaga checkpoint sem deixar backup restaurá
   stageConfig:[{waves:2,boss:'no'},{waves:2,boss:'yes'}],shooterOptions:{boss:true}};
  const storage={data:new Map(),getItem(k){return this.data.get(k)||null;},
   setItem(k,v){this.data.set(k,String(v));},removeItem(k){this.data.delete(k);}};
- const id=require('../js/shooter-campaign-save.js')().key(spec);
- const make=require('../js/shooter-campaign-save.js')().make;
- const checkpoint=make(spec,{stage:1,health:78,weapon:2,kills:5,score:1400});
- storage.setItem(id,JSON.stringify(checkpoint));
  const game=boot(spec,false,storage);
+ const id=game.telemetry().campaignSaveKey;
+ const make=require('../js/shooter-campaign-save.js')().make;
+ const checkpoint=make(game.env.GAME_SPEC,{stage:1,health:78,weapon:2,kills:5,score:1400});
+ assert.ok(checkpoint);
+ storage.setItem(id,JSON.stringify(checkpoint));
  game.item('start').click();game.tick(2);
  assert.equal(game.telemetry().stage,2);
  assert.equal(game.telemetry().score,1400);

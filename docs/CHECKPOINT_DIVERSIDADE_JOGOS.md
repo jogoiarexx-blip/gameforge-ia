@@ -830,3 +830,14 @@ O teste novo confirmou, em perfis isolados: criação só por comando, edição 
 **Limites explícitos:** o IR não cria código arbitrário nem IA de inimigos. Sem motor compatível para FPS sem armas, fazenda ou navegação, a geração é bloqueada e a capacidade é reportada como ausente; um motor futuro deverá realmente implementar essas mecânicas. URB-01 continua com apenas um bairro, uma missão e sistemas parciais.
 
 **Próxima tarefa:** benchmark >=100 pedidos infantis/curtos com campos ação/objeto/condição/quantidade e controle por fase, depois `UrbanLevelSpec` para gerar dois bairros/missões distintos, preservando o protótipo URB-01 e a CI. GF-001 administrativo é requisito paralelo.
+
+
+### GF-003/004 — Design IR v1, validação concluída em Chromium
+
+**VALIDADO no escopo da v1 no commit `b80b8088de42dcf995fd73018d82888026cf2222`**. GitHub Actions [43892035587](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43892035587): **270/270 testes Node, zero falhas**, **16 variantes de exportação seguras**, **17 cenários Chromium aprovados** (15 jogos, Studio e vertical slice urbano), e **continuidade GF-005 concluída** (backup, edição, undo, GLB SHA-256, quota e rollback). A suíte de 16 pedidos curtos e as regressões dos três erros urbanos foram incluídas em `tests/design-ir.test.js`.
+
+**Bug de integração Chromium resolvido:** o teste de continuidade aguardava texto específico de QA antes de desfazer, mas o diagnóstico 3D ainda estava executando e podia sobrescrever mensagens posteriores. O teste final aguarda o **resultado terminal do QA** e confirma também alteração persistida no editor e no localStorage. A execução final foi verde. Isso não substitui QA de longa duração em Android/iOS reais.
+
+**Limites:** não confundir classificação correta, lista de mecânicas e bloqueio de incompatibilidades com geração automática de IA de inimigos, veículos, stealth, história ou GLB animado. URB-01 continua protótipo com um bairro. GF-001 continua pendente de migrar a fonte administrativa do Pages para **GitHub Actions**; o workflow antigo por branch segue registrado.
+
+**Próximo ID de desenvolvimento:** GF-004 v2 (IR com ações, objetos, quantidades e condições / avaliação >=100 briefs), seguido de GF-028/URB-02 para produzir missões diferentes a partir do GDD. A CI de commits **posteriores** deve ser confirmada separadamente.

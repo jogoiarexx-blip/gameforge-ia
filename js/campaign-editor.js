@@ -4,7 +4,7 @@
 const pattern=/\bconst GAME_SPEC = (\{[^\n]*\});/;
 const themes=['auto','forest','desert','neon','ruins'];
 const missions=['default','eliminate','collect','survive'];
-const combatMission=spec=>spec?.dimension==='3d'&&['arena','fps'].includes(spec.genre);
+const combatMission=spec=>spec?.dimension==='3d'&&['arena','fps','rpg'].includes(spec.genre);
 const hasMissionRuntime=files=>String(files?.['game.js']||'').includes('R.missionReady(');
 function inspect(files){
  const match=String(files?.['game.js']||'').match(pattern);
@@ -13,6 +13,7 @@ function inspect(files){
 }
 function maxEnemies(spec){
  if(['tower-defense','lane-defense','block-td'].includes(spec.genre)||(spec.dimension==='3d'&&spec.genre==='platform'))return 0;
+ if(spec.genre==='shooter'&&spec.dimension==='3d')return 0;
  if(spec.genre==='shooter')return 80;
  if(spec.dimension==='3d')return spec.genre==='racing'?12:24;
  return ({rpg:36,platform:45,racing:60})[spec.genre]||48;
@@ -23,7 +24,7 @@ function option(spec,index){
  return {enemies:Number.isInteger(o.enemies)&&o.enemies>0?Math.min(maxEnemies(spec),o.enemies):0,
   boss:['yes','no'].includes(o.boss)?o.boss:'auto',
   objective:typeof o.objective==='string'?o.objective.slice(0,140):'',
-  waves:Number.isInteger(o.waves)&&o.waves>=1?Math.min(12,o.waves):0,
+  waves:Number.isInteger(o.waves)&&o.waves>=1?Math.min(spec.genre==='shooter'&&spec.dimension==='3d'?6:12,o.waves):0,
   laps:Number.isInteger(o.laps)&&o.laps>=1?Math.min(8,o.laps):0,
   theme:themes.includes(o.theme)?o.theme:'auto',
   mission:missions.includes(o.mission)?o.mission:'default',
@@ -39,7 +40,7 @@ function edit(files,index,input){
   enemies:integer(raw.enemies,maxEnemies(spec)),
   boss:['yes','no'].includes(raw.boss)?raw.boss:'auto',
   objective:String(raw.objective||'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,140),
-  waves:integer(raw.waves,12),laps:integer(raw.laps,8),
+  waves:integer(raw.waves,spec.genre==='shooter'&&spec.dimension==='3d'?6:12),laps:integer(raw.laps,8),
   theme:themes.includes(raw.theme)?raw.theme:'auto',
   mission:missions.includes(raw.mission)?raw.mission:'default',
   seconds:integer(raw.seconds,180)||45
@@ -47,7 +48,7 @@ function edit(files,index,input){
  o.seconds=Math.max(5,o.seconds);
  if(maxEnemies(spec)===0)o.enemies=0;
  if(!['arena','fps','shooter','rpg'].includes(spec.genre))o.boss='auto';
- if(!['tower-defense','lane-defense','block-td'].includes(spec.genre))o.waves=0;
+ if(!['tower-defense','lane-defense','block-td'].includes(spec.genre)&&!(spec.genre==='shooter'&&spec.dimension==='3d'))o.waves=0;
  if(spec.genre!=='racing'||spec.dimension!=='3d')o.laps=0;
  if(spec.dimension!=='3d')o.theme='auto';
  if(!combatMission(spec)){o.mission='default';o.seconds=45;}
@@ -63,7 +64,7 @@ function edit(files,index,input){
  return {changed:true,spec,files:{...files,'game.js':updated,'CAMPANHA_EDITOR.md':report(spec)}};
 }
 function report(spec){
- const lines=['# Configuração de campanha por fase','','As configurações executáveis estão em GAME_SPEC.stageConfig no game.js. Os modos eliminar, coletar e sobreviver implementam condições reais nas aventuras 3D/FPS geradas com motor v0.14. O texto livre do objetivo é somente exibido no HUD.','','| Fase | Inimigos | Chefe | Ondas | Voltas | Tema 3D | Missão | Duração (s) | Texto do HUD |','|---|---:|---|---:|---:|---|---|---:|---|'];
+ const lines=['# Configuração de campanha por fase','','As configurações executáveis estão em GAME_SPEC.stageConfig no game.js. Os modos eliminar, coletar e sobreviver implementam condições reais em arena/FPS/RPG 3D. Ondas da navinha 3D configuram o surgimento de inimigos. O texto livre do objetivo é somente exibido no HUD.','','| Fase | Inimigos | Chefe | Ondas | Voltas | Tema 3D | Missão | Duração (s) | Texto do HUD |','|---|---:|---|---:|---:|---|---|---:|---|'];
  spec.stages.forEach((title,i)=>{const o=option(spec,i);const safe=x=>String(x).replace(/\|/g,'/').replace(/[\r\n]/g,' ');lines.push('| '+(i+1)+' — '+safe(title)+' | '+(o.enemies||'auto')+' | '+o.boss+' | '+(o.waves||'auto')+' | '+(o.laps||'auto')+' | '+o.theme+' | '+o.mission+' | '+(o.mission==='survive'?o.seconds:'—')+' | '+safe(o.objective||'Padrão do motor')+' |');});
  return lines.join('\n')+'\n';
 }

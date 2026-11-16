@@ -399,3 +399,17 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - **GitHub Pages run 43848176335: aprovado.** O fluxo de build/deploy finalizou, mas isso não comprova QA de renderização WebGL em navegador de usuário.
 - Houve falhas anteriores introduzidas pelo sandbox do teste GLB, corrigidas antes desta confirmação.
 - Mantidas pendências: QA visual real, celulares, modelos GLB Meshy maiores, rig/animação/colisões.
+
+## Interface — etapa 11: fluxo de criação limpo e prévia central (16/11/2026)
+- **Pedido:** tornar o layout do GameForge mais fácil de entender, limpo, centralizado e sem textos/ferramentas em excesso na tela inicial.
+- **Problema identificado:** três colunas apertadas; GDD, modelos, motor, roadmap, editor de fases, QA e ferramentas de engenharia estavam expostos simultaneamente, fazendo a prévia ficar abaixo da dobra.
+- **Arquivos de interface modificados:** `index.html` e `css/app.css`.
+- **Navegação principal:** três passos visíveis: (1) ideia ou GDD, (2) criar jogo, (3) prévia jogável; títulos e rótulos reduzidos; prévia reposicionada antes das ferramentas avançadas.
+- **Reorganização sem remoção de funcionalidade:** seções com detalhes nativos `<details>/<summary>`, fechadas inicialmente, para backup, editor RPG, estilos e gráficos, modelos de jogo, biblioteca de técnicas, roadmap, editor por fase, evolução, QA, ferramentas de engenharia, GLB e log. IDs de controles originais preservados.
+- **Layout:** grade de desktop centralizada em largura máxima, painéis com bordas suaves e espaços definidos, barra superior fixa e áreas laterais roláveis; em notebooks duas colunas com painel de código abaixo, e em telas menores um fluxo vertical. Área central com preview ampliada e bem destacada.
+- **Acessibilidade:** resumos navegáveis com teclado, foco visível, detalhes acessíveis e sem `open` inicial; rótulos claros. Código fonte e ações de exportação continuam expostos.
+- **Cobertura automatizada:** novo `tests/studio-layout-focus.test.js` testa unicidade dos IDs, manutenção dos controles, componentes recolhíveis e ordem do fluxo principal; 4 testes da interface aprovados.
+- **CI verificada:** GitHub Actions run `43848177323` (commit `6a1610c0451127022a153883ed3bfac8cb36db7d`) passou com **137/137 testes** e benchmark da arena executado. Falha anterior no sandbox de GLB (AbortController ausente) corrigida em `tests/glb-import.test.js`, sem alterar o runtime GLB.
+- **Ajuste editorial posterior:** removida descrição longa e contagem estática de 29 referências na biblioteca; commit `8a968ed21a89307f52b75cb5a039b12cadf34184`. Esse commit exige confirmação própria da CI.
+- **Não realizado:** inspeção visual real da tela em navegador/celular (capturas e teste com usuário), métricas de usabilidade e verificação manual de todos os acordeões. Não declarar QA visual concluído sem teste real.
+- **Próxima etapa:** QA visual em 375px/768px/1366px, conferir overflow e prévia real com jogos gerados, melhorar descida para área de edição com acessibilidade e corrigir qualquer regressão observada.

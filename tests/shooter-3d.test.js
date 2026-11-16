@@ -99,9 +99,9 @@ test('GF-017 lote de estrelas reduz dezenas de meshes a uma chamada de desenho',
  b.scene().traverse(o=>{if(o.isInstancedMesh)latest.push(o);});
  assert.equal(latest.length,1);
  assert.equal(b.telemetry().starDrawBatches,1);
- const initial=latest[0].instanceMatrix.array;
+ const initial=Array.from(latest[0].instanceMatrix.array.slice(12,16));
  b.tick(8);
- const moved=latest[0].instanceMatrix.array;
- assert.notDeepEqual(Array.from(initial.slice(12,16)),Array.from(moved.slice(12,16)), 'estrelas instanciadas devem se mover');
+ const moved=Array.from(latest[0].instanceMatrix.array.slice(12,16));
+ assert.notDeepEqual(initial,moved,'estrelas instanciadas devem se mover');
  assert.ok(b.disposed()>0,'reinicio descarta geometria da fase anterior');
 });

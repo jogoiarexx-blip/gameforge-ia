@@ -2,11 +2,54 @@
 function gameForgeShooter3DBoot(){
  'use strict';
  const T=THREE, R=gameForgeWorldRules(),spec=GAME_SPEC;
+ const branchConfig=spec.stageBranches?.enabled===true?spec.stageBranches:null;
+ const BR=branchConfig?GameForgeStageBranches:null;
+ const branchKey='gameforge-shooter-branches-v1-'+String(spec.title||'jogo').toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').slice(0,52);
+ const branchSave=branchConfig?GameForgeUrbanSave.create(
+  ()=>window.localStorage,branchKey,data=>BR.validateCheckpoint(branchConfig,data,spec.stages?.length||3)):null;
+ let chosenRoute=null,routePanel=null,branchRestored=false;
  const $=id=>document.getElementById(id),canvas=$('game');
  const opts={size:48,quality:'auto',seed:12345,theme:'neon',...spec.worldOptions};
  const size=R.clamp(Number(opts.size)||48,32,88),stages=(spec.stages?.length?spec.stages:['Fase 1']).slice(0,30);
  const stageConfigs=Array.isArray(spec.stageConfig)?spec.stageConfig:[];
  const configAt=i=>stageConfigs[i]&&typeof stageConfigs[i]==='object'?stageConfigs[i]:{};
+ const availableRoutes=()=>BR?BR.options(branchConfig,kills>=10):[];
+ function saveRouteCheckpoint(){
+  if(!branchSave||!chosenRoute)return;
+  branchSave.write({version:1,stage,route:chosenRoute.id,score,health,weapon,kills});
+ }
+ function showRouteChoice(){
+  if(!BR)return;
+  state='route-choice';paused=false;release();
+  $('overlay-title').textContent='Escolha seu caminho · Fase '+(stage+1);
+  $('overlay-sub').textContent='Cada caminho altera quantidade e velocidade dos inimigos, além do bônus de conclusão. Um segredo pode ser desbloqueado após 10 eliminações.';
+  $('start').style.display='none';
+  $('overlay').classList.remove('hidden');
+  if(!routePanel){
+   routePanel=document.createElement('div');
+   routePanel.setAttribute('aria-label','Escolha de rota da fase');
+   routePanel.style.cssText='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px';
+   $('overlay').appendChild(routePanel);
+  }
+  routePanel.textContent='';
+  for(const [index,route] of availableRoutes().entries()){
+   const b=document.createElement('button');b.type='button';
+   b.textContent=(index+1)+' · '+route.name+' · bônus '+route.reward;
+   b.addEventListener('click',()=>selectRoute(route.id));
+   routePanel.appendChild(b);
+  }
+ }
+ function selectRoute(id){
+  if(!BR||state!=='route-choice')return false;
+  const route=BR.choose(branchConfig,id,kills>=10);
+  if(!route)return false;
+  chosenRoute=route;branchRestored=false;
+  $('start').style.display='';routePanel.style.display='none';
+  state='play';paused=false;release();setUpStage();
+  $('overlay').classList.add('hidden');
+  canvas.focus();saveRouteCheckpoint();return true;
+ }
  const tuning={difficulty:1,enemyMultiplier:1,bossMultiplier:1,playerSpeedMultiplier:1,fireRateMultiplier:1,...spec.tuning};
  for(const k of Object.keys(tuning))tuning[k]=R.clamp(Number(tuning[k])||1,.25,4);
  let renderer,software=false;
@@ -132,12 +175,13 @@ function gameForgeShooter3DBoot(){
   const x=boss?0:R.clamp((i-center)*3.1,-size*.37,size*.37);
   const z=boss?-size*.25:-size*.39-(i%3)*1.25;
   const mesh=starfighter('enemy',boss);mesh.position.set(x,.2,z);
-  const hp=boss?Math.ceil((20+stage*7)*tuning.bossMultiplier):Math.ceil((2+stage*.5+wave*.34)*Math.sqrt(tuning.difficulty));
-  enemies.push({mesh,x,z,hp,maxHp:hp,boss,phase:i*.9,shotTimer:boss?.8:1.25+(i%4)*.48,speed:boss?1.3:(2.5+stage*.28)*tuning.difficulty});
+  const hp=boss?Math.ceil((20+stage*7)*tuning.bossMultiplier*(chosenRoute?.enemyMultiplier||1)):
+   Math.ceil((2+stage*.5+wave*.34)*Math.sqrt(tuning.difficulty)*(chosenRoute?.enemyMultiplier||1));
+  enemies.push({mesh,x,z,hp,maxHp:hp,boss,phase:i*.9,shotTimer:boss?.8:1.25+(i%4)*.48,speed:(boss?1.3:(2.5+stage*.28)*tuning.difficulty)*(chosenRoute?.enemySpeed||1)});
  }
  function spawnWave(){
   wave++;
-  const count=R.clamp(Math.round((4+wave+stage*1.1)*tuning.enemyMultiplier),3,14);
+  const count=R.clamp(Math.round((4+wave+stage*1.1)*tuning.enemyMultiplier*(chosenRoute?.enemyMultiplier||1)),3,14);
   for(let i=0;i<count;i++)spawnEnemy(i,count);
   notice('Onda '+wave+'/'+waveMax+' · '+count+' inimigos',2);
  }
@@ -266,7 +310,7 @@ function gameForgeShooter3DBoot(){
     waveTimer=0;
     if(wave<waveMax)spawnWave();
     else if(!bossSpawned&&configAt(stage).boss!=='no'&&spec.shooterOptions?.boss!==false)spawnBoss();
-    else{stageTransition=1.6;score+=500;notice('Fase concluída! Próxima missão…',1.6);}
+    else{stageTransition=1.6;score+=500+(chosenRoute?.reward||0);notice('Fase concluída! '+(chosenRoute?.name||'Próxima missão')+' · bônus '+(chosenRoute?.reward||0),1.6);}
    }
   }else waveTimer=0;
  }
@@ -292,7 +336,7 @@ function gameForgeShooter3DBoot(){
     stageTransition-=dt;
     if(stageTransition<=0){
      if(stage+1===stages.length){state='victory';$('overlay-title').textContent='Campanha concluída!';$('overlay-sub').textContent='Pontos: '+score+' · '+stages.length+' fases.';$('start').textContent='Jogar novamente';$('overlay').classList.remove('hidden');}
-     else{stage++;health=Math.min(100,health+20);setUpStage();}
+     else{stage++;health=Math.min(100,health+20);chosenRoute=null;if(BR)showRouteChoice();else setUpStage();}
     }
    }else updateStage(dt);
    updateHud();
@@ -301,8 +345,20 @@ function gameForgeShooter3DBoot(){
   if(scene&&(!software||now-lastDraw>=1000/30)){renderer.render(scene,camera);lastDraw=now;}
  }
  function start(){
-  stage=0;health=100;score=0;weapon=1;kills=0;clock=0;paused=false;state='play';release();setUpStage();
-  $('overlay').classList.add('hidden');$('pause').textContent='Pausar';canvas.focus();
+  if(state==='route-choice')return;
+  if(state==='play'&&paused){togglePause();return;}
+  stage=0;health=100;score=0;weapon=1;kills=0;clock=0;paused=false;chosenRoute=null;release();
+  if(BR){
+   const loaded=branchSave.read();
+   if(loaded&&state==='menu'){
+    stage=loaded.stage;health=loaded.health;score=loaded.score;weapon=loaded.weapon;kills=loaded.kills;
+    chosenRoute=BR.choose(branchConfig,loaded.route,kills>=10);
+    branchRestored=!!chosenRoute;
+   }else branchSave.remove();
+   if(chosenRoute){state='play';setUpStage();$('overlay').classList.add('hidden');}
+   else showRouteChoice();
+  }else{state='play';setUpStage();$('overlay').classList.add('hidden');}
+  $('pause').textContent='Pausar';canvas.focus();
  }
  function togglePause(){
   if(state!=='play')return;
@@ -315,12 +371,13 @@ function gameForgeShooter3DBoot(){
   return {dimension:'3d',genre:'shooter',state,paused,frames,stage:stage+1,stages:stages.length,clock,health,score,
     enemies:enemies.length,playerBullets:shots.length,enemyBullets:hostileShots.length,powerups:drops.length,
     wave,waveMax,bossSpawned,bossPhase,weapon,kills,
+    route:chosenRoute?.id||null,routeName:chosenRoute?.name||null,routeChoices:BR?availableRoutes().map(r=>r.id):[],routeCheckpoint:!!branchSave?.read(),
     starCount:stars.length,starDrawBatches:starField?1:stars.length,
     render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},
     player:{x:player.x*100,y:player.z*100,z:0,angle:0,screenX:(playerPosition.x*.5+.5)*canvas.width,screenY:(-.5*playerPosition.y+.5)*canvas.height,radius:24}};
  };
  window.__gameforgeTelemetry=telemetry;
- $('control-help').textContent='WASD / setas: pilotar · Espaço/clique: disparar · P: pausa';
+ $('control-help').textContent='WASD / setas: pilotar · Espaço/clique: disparar · P: pausa'+(BR?' · 1/2/3: escolher caminho':'');
  $('overlay-sub').textContent='Combata ondas de naves 3D, supere chefes em três fases e recolha melhorias para armas e energia.';
  if(importErrors.length)$('overlay-sub').textContent+=' GLB incompatível: '+importErrors[0].slice(0,140);
  if(software)$('overlay-sub').textContent+=' · Modo de compatibilidade CPU ativado.';
@@ -343,6 +400,13 @@ function gameForgeShooter3DBoot(){
   const k=button.dataset.control;
   button.addEventListener('pointerdown',e=>{e.preventDefault();touch[k]=true;button.setPointerCapture?.(e.pointerId);});
   for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,()=>touch[k]=false);
+ });
+ if(BR)addEventListener('keydown',event=>{
+  if(state!=='route-choice'||event.repeat)return;
+  const i=Number(event.key)-1,choices=availableRoutes();
+  if(Number.isInteger(i)&&i>=0&&i<choices.length){
+   event.preventDefault?.();selectRoute(choices[i].id);
+  }
  });
  addEventListener('resize',resize);
  setUpStage();state='menu';requestAnimationFrame(frame);

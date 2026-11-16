@@ -14,12 +14,12 @@ function gameForgeCombatEconomyFactory(){
   const maximum=250,capacity=20;
   let credits=clamp(config.startingCredits,0,9999,90);
   let reserve=clamp(config.startingReserve,0,maximum,60);
-  let level=1,earned=0,spent=0,purchases=0;
+  let level=1,earned=0,spent=0,purchases=0,emergencyGrants=0,lastEmergency=-20;
   const history=[];
   const cost=kind=>kind==='upgrade'?prices.upgrade*level:prices[kind];
   function state(){return {credits,reserve,level,earned,spent,purchases,capacity,maxReserve:maximum,
    prices:{ammo:cost('ammo'),heal:cost('heal'),upgrade:cost('upgrade')},
-   damage:level,history:history.slice()};}
+   damage:level,emergencyGrants,history:history.slice()};}
   function earn(boss=false){
    const n=boss?90:20;
    credits=Math.min(99999,credits+n);earned+=n;
@@ -30,6 +30,14 @@ function gameForgeCombatEconomyFactory(){
    const used=Math.min(reserve,count);
    reserve-=used;
    return used;
+  }
+  function requestEmergencyAmmo(elapsed,magazine){
+   const time=Number(elapsed);
+   if(!Number.isFinite(time)||time<0||!Number.isFinite(Number(magazine)))return 0;
+   if(magazine>0||reserve>0||credits>=prices.ammo||time-lastEmergency<20)return 0;
+   // Protecao contra softlock: seis balas a cada 20 segundos se nao houver recursos.
+   lastEmergency=time;reserve=6;emergencyGrants++;
+   return 6;
   }
   function purchase(kind,currentHealth){
    if(!['ammo','heal','upgrade'].includes(kind))return {ok:false,message:'Item desconhecido.',health:currentHealth};
@@ -49,7 +57,7 @@ function gameForgeCombatEconomyFactory(){
    if(history.length>12)history.shift();
    return {ok:true,message:label+' comprado por '+price+' créditos.',health,...state()};
   }
-  return {state,earn,useReserve,purchase};
+  return {state,earn,useReserve,purchase,requestEmergencyAmmo};
  }
  return {create};
 }

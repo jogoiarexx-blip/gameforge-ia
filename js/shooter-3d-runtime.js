@@ -64,7 +64,7 @@ function gameForgeShooter3DBoot(){
  let pixelRatio=software?.8:Math.min(window.devicePixelRatio||1,opts.quality==='low'?1:opts.quality==='high'?1.65:1.25);
  let scene,world,camera,geometries=[],materials=[],geos={},mats={},ship,stage=0;
  let health=100,score=0,weapon=1,kills=0,state='menu',paused=false,invulnerable=0,fireDelay=0;
- let wave=0,waveMax=3,waveTimer=0,bossSpawned=false,bossPhase=1,stageTransition=0;
+ let wave=0,waveMax=3,waveTimer=0,bossSpawned=false,bossDefeated=false,bossPhase=1,stageTransition=0;
  let enemies=[],shots=[],hostileShots=[],drops=[],stars=[],starField=null,starTransform=null;
  let clock=0,stageClock=0,frames=0,last=0,lastDraw=-1e6,noticeTime=0;
  let player={x:0,y:0,z:size*.27,speed:0},pendingPointer=false;
@@ -119,7 +119,7 @@ function gameForgeShooter3DBoot(){
  function setUpStage(){
   const custom=configAt(stage);
   disposeStage();geometries=[];materials=[];enemies=[];shots=[];hostileShots=[];drops=[];stars=[];
-  wave=0;waveTimer=0;bossSpawned=false;bossPhase=1;stageTransition=0;stageClock=0;invulnerable=0;fireDelay=0;
+  wave=0;waveTimer=0;bossSpawned=false;bossDefeated=false;bossPhase=1;stageTransition=0;stageClock=0;invulnerable=0;fireDelay=0;
   player={x:0,y:0,z:size*.27,speed:0};
   scene=new T.Scene();
   const selectedTheme=['forest','desert','neon','ruins'].includes(custom.theme)?custom.theme:opts.theme;
@@ -268,6 +268,10 @@ function gameForgeShooter3DBoot(){
   if(health<=0){state='defeat';$('overlay-title').textContent='Sua nave foi destruída';$('overlay-sub').textContent='Pontos: '+score+' · Tente novamente.';$('start').textContent='Recomeçar';$('overlay').classList.remove('hidden');}
  }
  function reward(enemy){
+  if(enemy.boss){
+   if(bossDefeated)return; // Recompensa de chefe é única mesmo com múltiplos acertos no quadro.
+   bossDefeated=true;
+  }
   score+=enemy.boss?900:75;kills++;
   if(enemy.boss||kills%4===0){
    const mesh=makeMesh(geos.power,mats.power,world,enemy.x,.78,enemy.z);
@@ -302,6 +306,13 @@ function gameForgeShooter3DBoot(){
   }
   hostileShots=hostileShots.filter(b=>{if(b.dead)world.remove(b.mesh);return !b.dead;});
  }
+ function failBossEncounter(why){
+  if(state!=='play')return;
+  state='defeat';health=0;paused=false;release();
+  $('overlay-title').textContent='Chefe não derrotado';
+  $('overlay-sub').textContent=why==='escape'?'O chefe atravessou sua defesa. A fase não foi concluída.':'O chefe colidiu com a nave. Tente novamente.';
+  $('start').textContent='Tentar novamente';$('overlay').classList.remove('hidden');
+ }
  function updateEnemies(dt){
   for(const e of enemies){
    e.phase+=dt;
@@ -314,9 +325,15 @@ function gameForgeShooter3DBoot(){
    e.mesh.position.set(e.x,.23+Math.sin(e.phase*3)*.09,e.z);
    e.mesh.rotation.z=Math.sin(e.phase*2.1)*.1;
    if(e.z>size*.44){
-    e.hp=0;world.remove(e.mesh);damage(e.boss?22:14);continue;
+    e.hp=0;world.remove(e.mesh);
+    if(e.boss)failBossEncounter('escape');else damage(14);
+    continue;
    }
-   if(Math.abs(player.x-e.x)<(e.boss?1.6:.85)&&Math.abs(player.z-e.z)<(e.boss?1.5:.8)){e.hp=0;world.remove(e.mesh);damage(e.boss?24:18);}
+   if(Math.abs(player.x-e.x)<(e.boss?1.6:.85)&&Math.abs(player.z-e.z)<(e.boss?1.5:.8)){
+    e.hp=0;world.remove(e.mesh);
+    if(e.boss)failBossEncounter('collision');else damage(18);
+    continue;
+   }
    e.shotTimer-=dt;
    if(e.shotTimer<=0){
     e.shotTimer=e.boss?(.95-(bossPhase-1)*.16):(1.7+(e.phase%3)*.3);
@@ -365,7 +382,11 @@ function gameForgeShooter3DBoot(){
   ship.visible=invulnerable<=0||Math.floor(invulnerable*14)%2===0;
   if(down(' ','Enter','fire')||pendingPointer)playerShoot();
   runRouteEvents();
-  updateEnemies(dt);updateProjectiles(dt);updateDrops(dt);
+  updateEnemies(dt);
+  if(state!=='play')return; // Chefe que escapou/colidiu jamais pode concluir a fase.
+  updateProjectiles(dt);
+  if(state!=='play')return;
+  updateDrops(dt);
   if(starField){
    for(let i=0;i<stars.length;i++){
     const s=stars[i];s.z+=dt*s.speed*2.5;
@@ -383,6 +404,7 @@ function gameForgeShooter3DBoot(){
     waveTimer=0;
     if(wave<waveMax)spawnWave();
     else if(!bossSpawned&&configAt(stage).boss!=='no'&&spec.shooterOptions?.boss!==false)spawnBoss();
+    else if(bossSpawned&&!bossDefeated)failBossEncounter('escape');
     else{stageTransition=1.6;score+=500+(chosenRoute?.reward||0);notice('Fase concluída! '+(chosenRoute?.name||'Próxima missão')+' · bônus '+(chosenRoute?.reward||0),1.6);}
    }
   }else waveTimer=0;
@@ -445,7 +467,7 @@ function gameForgeShooter3DBoot(){
   playerPosition.set(player.x,.8,player.z);playerPosition.project(camera);
   return {dimension:'3d',genre:'shooter',state,paused,frames,stage:stage+1,stages:stages.length,clock,health,score,
     enemies:enemies.length,playerBullets:shots.length,enemyBullets:hostileShots.length,powerups:drops.length,
-    wave,waveMax,bossSpawned,bossPhase,weapon,kills,
+    wave,waveMax,bossSpawned,bossDefeated,bossPhase,bossHp:enemies.find(e=>e.boss)?.hp??0,weapon,kills,
     route:chosenRoute?.id||null,routeName:chosenRoute?.name||null,routeChoices:BR?availableRoutes().map(r=>r.id):[],routeCheckpoint:!!branchSave?.read(),
     routeScene:chosenRoute?.scene?.id||null,routeDecorCount,routeBackground:routeBg,
     routePickups:drops.filter(d=>d.kind==='route').map(d=>({x:d.x,z:d.z,eventId:d.eventId})),

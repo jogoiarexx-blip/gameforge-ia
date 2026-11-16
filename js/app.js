@@ -167,7 +167,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     state.spec=generatedGdd===md?GameForgeProject.activeSpec(state.files,spec):spec;
     const urbanOnly=spec.genre==='urban-action';
     $('download-urban-plan').classList.toggle('hidden',!urbanOnly);
-    $('generate').disabled=(urbanOnly&&spec.engineAvailability?.status==='planned')||!!spec.designIR?.blocked?.length;
+    $('generate').disabled=(urbanOnly&&['planned','blocked'].includes(spec.engineAvailability?.status))||!!spec.designIR?.blocked?.length;
     renderReferences();
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');
     const plan=spec.implementation||{applied:[],pending:[],warnings:[]};

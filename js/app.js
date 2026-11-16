@@ -940,6 +940,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       try{placement={...placement,...JSON.parse(state.files['ASSET_CENARIO.json']||'{}')};}catch{}
     }
     for(const key of ['x','z','scale'])$('scene-asset-'+key).value=placement[key];
+    $('scene-asset-role').value=chosen?.role||'scene';
     const total=manifest.assets.reduce((n,a)=>n+a.bytes,0);
     $('scene-asset-list').textContent=manifest.assets.length+' de 4 modelos · '+(total/1048576).toFixed(1)+' de 50 MB' +(legacy?' · um GLB antigo adicional':'');
     $('scene-asset-status').textContent=manifest.assets.length||legacy?'Modelos disponíveis no projeto. Ajuste um objeto e execute a prévia.':'Nenhum modelo adicionado.';
@@ -965,7 +966,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         const data=GameForgeAssetLibrary.validateGLB(new Uint8Array(await file.arrayBuffer()));
         GameForgeGLB.decode(null,data); // valida geometria, hierarquia e texturas antes de salvar
         const id=GameForgeAssetLibrary.newId();
-        const item={id,name:file.name,bytes:data.length,sha256:await GameForgeAssetLibrary.sha256(data),role:'scene',placement:assetPlacement()};
+        const item={id,name:file.name,bytes:data.length,sha256:await GameForgeAssetLibrary.sha256(data),role:$('scene-asset-role').value,placement:assetPlacement()};
         const next=GameForgeAssetLibrary.append(current,item);
         await GameForgeAssetLibrary.put(assetProjectId,id,data);
         state.files['ASSET_LIBRARY.json']=JSON.stringify(next);
@@ -982,12 +983,12 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       feedback(err.message,true);
     }finally{projectOperations--;input.value='';}
   });
-  for(const key of ['x','z','scale'])$('scene-asset-'+key).addEventListener('change',()=>{
+  for(const key of ['x','z','scale','role'])$('scene-asset-'+key).addEventListener('change',()=>{
     const id=$('scene-asset-select').value;
     if(!id)return;
     try{
       if(id==='legacy')state.files['ASSET_CENARIO.json']=JSON.stringify(assetPlacement());
-      else state.files['ASSET_LIBRARY.json']=JSON.stringify(GameForgeAssetLibrary.update(currentAssetManifest(),id,assetPlacement()));
+      else state.files['ASSET_LIBRARY.json']=JSON.stringify(GameForgeAssetLibrary.update(currentAssetManifest(),id,{...assetPlacement(),role:$('scene-asset-role').value}));
       qaState.last=null;qaState.baseline=null;runPreview();saveState();
       $('scene-asset-status').textContent='Posicao/escala salvas no modelo selecionado.';
     }catch(err){feedback('Nao foi possivel alterar o modelo: '+err.message,true);}

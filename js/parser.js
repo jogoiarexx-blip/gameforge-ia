@@ -22,7 +22,7 @@
       if(first||later){scores[genre]+=first?weight:Math.max(1,Math.round(weight*.55));signals[genre].push(label);}
     };
     add('block-td',/\b(block tower td|block tower defense|blocos? td|blocos? tower|torres? (em|de) blocos|defesa de blocos)\b/,28,'defesa de blocos');
-    add('lane-defense',/\b(plants?\s*(?:vs\.?|versus)\s*zomb|plantas?\s*(?:contra|vs)\s*zumbis?|defesa por linhas|garden defense|defesa do jardim|jardim contra zumbis|tower.?defen[cs]e.{0,35}(?:por linhas|por faixas|cinco linhas|5x9))\b/,28,'defesa por linhas');
+    add('lane-defense',/\b(plants?\s*(?:vs\.?|versus)\s*zomb(?:ies|is|s)?|plantas?\s*(?:contra|vs)\s*zumbis?|defesa por linhas|garden defense|defesa do jardim|jardim contra zumbis|tower.?defen[cs]e.{0,35}(?:por linhas|por faixas|cinco linhas|5x9))\b/,28,'defesa por linhas');
     add('tower-defense',/\b(tower.?defen[cs]e|defesa de torres|construir torres para defender)\b/,27,'defesa de torres');
     add('fps',/\b(first[ .-]?person(?: shooter)?|primeira pessoa|visao pelos olhos|tiro(?:s)? em primeira pessoa|camera em primeira pessoa)\b/,29,'câmera em primeira pessoa');
     // "60 FPS" é taxa de quadros, nunca evidência de tiro em primeira pessoa.

@@ -59,6 +59,8 @@
 | **GF-020** | Preview iframe, exportação de HTML/ZIP, comunicação de QA, servidor opcional e entradas de projeto. | Revisão de segurança: CSP, mensagens `postMessage`, URLs e tokens, importações ZIP/GLB, limites de arquivos, scripts editáveis e isolamento do backend. | Checklist adversarial e testes negativos; segredo não entra no export/backup/logs; aceitar candidatos só após revisão. | PENDENTE |
 | **GF-021** | `repository-knowledge.js` referencia projetos; reutilização de código/arte não é sempre licenciada. | Catálogo de **licenças, origem, compatibilidade e atribuições** antes de copiar dependências/assets; distinguir inspiração técnica de reutilização literal. | Todo pacote de código/asset incorporado possui procedência e licença documentadas; conteúdo comercial sem permissão é excluído. | PENDENTE |
 
+| **GF-028** | GDD original Godfather 2D, conversão Three.js 3D e skill Urban Action anexados pelo usuário. `urban-action` não era um gênero reconhecido, levando a fallback de `arena`/FPS. | `js/urban-design.js` extrai gênero `urban-action` 3D, câmera third-person, evidências e requisitos com linha; Studio exporta contrato + GDD integral + plano, `generator.js` recusa motor inexistente. Próxima evolução é o vertical slice URB-01 com bairro, câmera, combate, negócio, missão e save. | Reconhecer corretamente GDD original 2D vs alvo 3D, não alterar os 14 motores; testar o ZIP do plano em Chromium, sem inventar jogabilidade. Motor URB-01 só será VALIDADO após gameplay real no browser. | EM EXECUÇÃO — interpretação implementada; runtime urbano pendente |
+
 ## 5. P2 — Expansões controladas (não antecipar antes das bases)
 
 | ID | Área | Proposta | Aceite | Estado |
@@ -90,3 +92,5 @@
 - **GF-001 em revisão:** validação/rota GitHub Actions implementadas e testes negativos adicionados; **faltam migrar a fonte do Pages e confirmar proteção sem caminho alternativo**. Detalhes em [PUBLICACAO_VERIFICADA.md](./PUBLICACAO_VERIFICADA.md).
 - **Após GF-001:** GF-002 (matriz export/boot), GF-003 (corpus de GDDs), GF-004 (contrato de implementação) e GF-005 (backup e QA de navegador).
 - **Nota de auditoria:** o incidente de exportação observado foi resolvido em `5130453` com a CI verde, mas a possibilidade de publicar com CI falhando permaneceu demonstrada. Este plano é backlog, não promessa de recursos implementados.
+
+- **GF-028 — GDD urbano 3D:** skill técnica incorporada em [GAMEFORGE_URBAN_ACTION_THREEJS.md](./GAMEFORGE_URBAN_ACTION_THREEJS.md); manter URB-01 como primeira entrega jogável, sem tratar classificação do GDD como motor concluído. Os números do Godfather 3D são alvo daquele projeto, não defaults para novos jogos.

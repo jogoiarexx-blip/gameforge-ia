@@ -32,7 +32,7 @@ function gameForgeShooter3DBoot(){
    routePanel.style.cssText='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px';
    $('overlay').appendChild(routePanel);
   }
-  routePanel.textContent='';
+  routePanel.style.display='flex';routePanel.textContent='';
   for(const [index,route] of availableRoutes().entries()){
    const b=document.createElement('button');b.type='button';
    b.textContent=(index+1)+' · '+route.name+' · bônus '+route.reward;

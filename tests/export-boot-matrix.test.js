@@ -9,7 +9,7 @@ const parser=require('../js/parser.js');
 for(const moduleName of [
  'runtime-template','shooter-runtime','world-rules','software-renderer','three-runtime',
  'shooter-3d-runtime','strategy-rules','expanded-2d-runtime',
- 'advanced-td-rules','advanced-td-runtime','combat-economy','urban-rules','urban-runtime'
+ 'advanced-td-rules','advanced-td-runtime','combat-economy','urban-rules','urban-runtime','urban-mission-flow','urban-mission-runtime','mission-semantics'
 ])require('../js/'+moduleName+'.js');
 require('../vendor/three-source.js');
 const generator=require('../js/generator.js');

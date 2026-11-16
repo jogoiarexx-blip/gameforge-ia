@@ -169,9 +169,20 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');
     const plan=spec.implementation||{applied:[],pending:[],warnings:[]};
     const section=(items,limit)=>items.slice(0,limit).map(x=>'<li>'+esc(x.description)+' <small>('+esc(x.where)+')</small></li>').join('');
+    const audit=plan.audit||{counts:{implementada:0,configurada:0,pendente:0,incompativel:0},items:[]};
+    const auditNames={implementada:'Implementada',configurada:'Configurada',pendente:'Pendente',incompativel:'Incompatível'};
+    const auditRows=audit.items.slice(0,35).map(item=>{
+      const source=item.origin?.document||'Não localizada';
+      const line=item.origin?.line?':'+item.origin.line:'';
+      const technical=item.contract?' · '+item.contract:'';
+      return '<li><b>'+esc(auditNames[item.status]||item.status)+'</b> — '+esc(item.description)+
+        '<small> · '+esc(source+line+technical)+'</small></li>';
+    }).join('');
+    const auditSummary=Object.entries(auditNames).map(([key,name])=>name+': '+(audit.counts[key]||0)).join(' · ');
     const sourceLabel=md?'Documento: '+spec.sourceLength.toLocaleString('pt-BR')+' caracteres e '+spec.sectionCount+' títulos':'Comando direto, sem GDD obrigatório';
     $('analysis').innerHTML=`<strong>${esc(spec.title)}</strong><div class="tags">${tags}</div><div class="muted">Fases: ${spec.stages.map(esc).join(' • ')}</div><p class="muted">${esc(sourceLabel)}. ${plan.applied.length} configurações compiladas; ${plan.pending.length} requisitos adicionais pendentes.</p>`+
       `<details><summary>Entendimento do pedido: ${plan.applied.length} aplicado(s) / ${plan.pending.length} pendente(s)</summary><p>Configurações adicionadas ao código:</p><ul>${section(plan.applied,25)||'<li>Motor padrão do gênero selecionado.</li>'}</ul><p>O que ainda não foi programado:</p><ul>${section(plan.pending,15)||'<li>Nenhum pedido adicional reconhecido como pendente.</li>'}</ul></details>`+
+      `<details><summary>Contrato de capacidades — ${esc(auditSummary)}</summary><ul>${auditRows||'<li>Nenhuma regra adicional reconhecida.</li>'}</ul><p>Configurações usam o motor existente. Mecânicas novas continuam pendentes até haver código e testes.</p></details>`+
       `<p class="muted">Modo Sem IA: somente configurações e mecânicas suportadas são executadas. Regras inéditas requerem desenvolvimento específico.</p>`;
     for(const message of [spec.sourceConflict,spec.genreOverrideWarning].filter(Boolean)){
       const warning=document.createElement('p');

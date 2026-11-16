@@ -3,7 +3,7 @@
 'use strict';
 function decodeGLB(T, source) {
   const bytes = typeof source==='string' ? Uint8Array.from(atob(source),c=>c.charCodeAt(0)) : source;
-  if (!(bytes instanceof Uint8Array) || bytes.byteLength<20 || bytes.byteLength>1_200_000) throw Error('GLB ausente ou acima de 1,2 MB neste estágio.');
+  if (!(bytes instanceof Uint8Array) || bytes.byteLength<20 || bytes.byteLength>25*1024*1024) throw Error('GLB ausente ou acima de 25 MB neste motor.');
   const dv=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
   if(dv.getUint32(0,true)!==0x46546c67 || dv.getUint32(4,true)!==2 || dv.getUint32(8,true)!==bytes.length) throw Error('Cabeçalho GLB inválido.');
   let offset=12, json=null, bin=null;
@@ -61,8 +61,14 @@ function decodeGLB(T, source) {
       if(img.bufferView!==undefined){
         const bv=views[img.bufferView],mime=img.mimeType;
         if(!bv||bv.buffer!==0||!['image/png','image/jpeg','image/webp'].includes(mime)||bv.byteOffset+bv.byteLength>bin.length)throw Error('Imagem embutida inválida.');
-        let binary='';for(const b of bin.subarray(bv.byteOffset||0,(bv.byteOffset||0)+bv.byteLength))binary+=String.fromCharCode(b);
-        uri='data:'+mime+';base64,'+btoa(binary);
+        const imageBytes=bin.subarray(bv.byteOffset||0,(bv.byteOffset||0)+bv.byteLength);
+        const chunks=[];
+        for(let off=0;off<imageBytes.length;off+=24576){
+          const segment=imageBytes.subarray(off,off+24576);
+          let binary='';for(let n=0;n<segment.length;n++)binary+=String.fromCharCode(segment[n]);
+          chunks.push(btoa(binary));
+        }
+        uri='data:'+mime+';base64,'+chunks.join('');
       }
       if(typeof uri!=='string'||!/^data:image\/(png|jpeg|webp);base64,/i.test(uri))throw Error('Textura externa não permitida no GLB offline.');
       if(typeof T.TextureLoader==='function'){

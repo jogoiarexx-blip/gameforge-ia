@@ -127,10 +127,11 @@ test('simulação FPS usa loja real com pausa, compras via teclado, recarga fini
  assert.equal(env.__gameforgeTelemetry().combatEconomy.credits,60);
  key('b');assert.equal(env.__gameforgeTelemetry().paused,false);
  key(' ');tick(15);release(' ');
- assert.ok(env.__gameforgeTelemetry().combatEconomy.magazine<20);
+ const beforeReload=env.__gameforgeTelemetry().combatEconomy.magazine;
+ assert.ok(beforeReload<20);
  key('r');tick(75);
  assert.equal(env.__gameforgeTelemetry().combatEconomy.magazine,20);
- assert.equal(env.__gameforgeTelemetry().combatEconomy.reserve,75);
+ assert.equal(env.__gameforgeTelemetry().combatEconomy.reserve,100-(20-beforeReload));
  element('restart').click();tick(2);
  assert.equal(env.__gameforgeTelemetry().combatEconomy.credits,90);
  assert.equal(env.__gameforgeTelemetry().combatEconomy.reserve,60);

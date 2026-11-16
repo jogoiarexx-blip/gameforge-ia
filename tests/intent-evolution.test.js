@@ -2,7 +2,9 @@ const {test}=require('node:test');const assert=require('node:assert/strict');
 const Parser=require('../js/parser'),Compiler=require('../js/intent-compiler'),Dev=require('../js/development-engine'),Campaign=require('../js/campaign-editor');
 function project(genre='shooter',dimension='3d'){
  const spec=Parser.parseGdd('# Game\n## Fase 1\n## Fase 2\n## Fase 3','',{genre,dimension});
- return {spec,files:{'game.js':'const GAME_SPEC = '+JSON.stringify(spec)+';\n// motor preservado','style.css':'body{}'}};
+ const runtime=(dimension==='3d'&&['arena','fps','rpg'].includes(genre))
+  ?'\n'+require('../js/three-runtime').toString()+'\n':'\n';
+ return {spec,files:{'game.js':'const GAME_SPEC = '+JSON.stringify(spec)+';'+runtime+'// motor preservado','style.css':'body{}'}};
 }
 function evolve(genre,dim,instruction){
  const {spec,files}=project(genre,dim);
@@ -52,4 +54,12 @@ test('GDD grande mantém relatórios em tamanho limitado',()=>{
  const spec=Parser.parseGdd(source,'',{genre:'arena',dimension:'3d'});
  assert.equal(spec.stageConfig[0].enemies,5);
  assert.ok(JSON.stringify(spec).length<55000);
+});
+
+test('runtime 3D legado sem missionReady não finge aplicar sobrevivência descrita no GDD',()=>{
+ const spec=Parser.parseGdd('# Legado\n## Fase 1','',{genre:'rpg',dimension:'3d'});
+ const files={'game.js':'const GAME_SPEC = '+JSON.stringify(spec)+';\n// motor legado sem objetivos','style.css':'body{}'};
+ const plan=Dev.plan('Na fase 1, sobreviver por 90 segundos.',spec,files);
+ assert.ok(plan.pending.some(x=>/não contém o runtime de objetivos/.test(x)));
+ assert.equal(Dev.modify(files,spec,plan).changed,false);
 });

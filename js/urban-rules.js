@@ -157,11 +157,14 @@ function gameForgeUrbanRulesFactory(){
   const homeZ=Number.isFinite(guard.homeZ)?guard.homeZ:guard.z;
   const distance=Math.hypot(player.x-guard.x,player.z-guard.z);
   const seesPlayer=distance<8.6&&clearShot(guard,player,solids);
-  const memory=seesPlayer?2.4:Math.max(0,(guard.memory||0)-delta);
+  // Passos e disparos proximo de um predio permitem investigar sem visao:
+  // ouviu -> busca por caminho; ataque ainda exige linha visual real.
+  const hearsPlayer=!seesPlayer&&player.noise===true&&distance<6.5;
+  const memory=seesPlayer?2.4:hearsPlayer?4.5:Math.max(0,(guard.memory||0)-delta);
   const mode=seesPlayer?(distance<=2.05?'combat':'alert'):memory>0?'search':'patrol';
   const patrolClock=(guard.patrolClock||0)+delta;
-  const lastSeenX=seesPlayer?player.x:Number.isFinite(guard.lastSeenX)?guard.lastSeenX:homeX;
-  const lastSeenZ=seesPlayer?player.z:Number.isFinite(guard.lastSeenZ)?guard.lastSeenZ:homeZ;
+  const lastSeenX=seesPlayer||hearsPlayer?player.x:Number.isFinite(guard.lastSeenX)?guard.lastSeenX:homeX;
+  const lastSeenZ=seesPlayer||hearsPlayer?player.z:Number.isFinite(guard.lastSeenZ)?guard.lastSeenZ:homeZ;
   const goal=mode==='patrol'?{x:homeX+Math.sin(patrolClock*.7)*1.6,z:homeZ}:
    mode==='search'?{x:lastSeenX,z:lastSeenZ}:{x:player.x,z:player.z};
   let x=guard.x,z=guard.z,heading=guard.heading||0;
@@ -196,7 +199,7 @@ function gameForgeUrbanRulesFactory(){
   }
   return {x,z,homeX,homeZ,heading,mode,patrolClock,lastSeenX,lastSeenZ,memory,
    navRoute,navCooldown,navGoalX:goal.x,navGoalZ:goal.z,navMode:mode,
-   seesPlayer,canAttack:mode==='combat'&&seesPlayer};
+   seesPlayer,hearsPlayer,canAttack:mode==='combat'&&seesPlayer};
  }
  function capture(state,nearBusiness){
   if(!nearBusiness||!state.guardDefeated||state.captured)

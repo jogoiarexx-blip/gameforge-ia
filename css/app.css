@@ -118,3 +118,168 @@
 .stage-actions{display:flex;gap:8px;flex-wrap:wrap}
 .stage-actions button{flex:1 1 170px}
 @media(max-width:650px){.stage-editor{padding:9px}.stage-grid{grid-template-columns:1fr}}
+
+
+/* v0.17 — foco no fluxo principal. Ferramentas antigas preservadas em detalhes nativos. */
+:root{
+  --bg:#0a1120;--panel:#111c2c;--panel-alt:#0e1828;--edge:#29394e;
+  --text:#f0f5fa;--muted:#a0b2c6;--mint:#72e3bc;--blue:#97b7ff;
+  --r:16px;
+}
+body{background:radial-gradient(ellipse at 50% 0%,#17263b 0%,#0a1120 54%) fixed}
+.top{
+  position:sticky;top:0;z-index:20;height:70px;
+  padding:12px max(22px,calc((100vw - 1600px)/2));
+  background:rgba(12,21,35,.97);border-bottom:1px solid #26374b;
+  backdrop-filter:blur(12px);
+}
+.top-actions{gap:12px}
+.studio{
+  height:auto;min-height:calc(100vh - 70px);max-width:1640px;
+  margin:0 auto;padding:18px 20px 40px;
+  display:grid;grid-template-columns:minmax(270px,310px) minmax(0,1fr) minmax(270px,300px);
+  gap:16px;align-items:start;
+}
+.panel{
+  background:var(--panel);border:1px solid var(--edge)!important;
+  border-radius:16px;overflow:hidden;min-height:0;
+  box-shadow:0 16px 40px rgba(0,0,0,.13);
+}
+.left-panel,.right-panel{
+  position:sticky;top:86px;max-height:calc(100dvh - 104px);
+}
+.panel-head{padding:21px 22px 17px;border-bottom:1px solid #25344a}
+.panel-head.slim{padding:21px 20px 16px}
+.panel-head h1{font-size:22px;font-weight:800;line-height:1.18;margin:8px 0}
+.panel-head h2{font-size:18px;font-weight:800;margin:8px 0 6px}
+.panel-head p{font-size:12px;line-height:1.55;max-width:48ch}
+.eyebrow{font-size:10px;letter-spacing:.09em;color:#93e6c9;font-weight:750}
+.panel-scroll{max-height:none;padding:19px;overflow-y:auto}
+.left-panel .panel-scroll{display:flex;flex-direction:column;gap:0}
+.left-panel .panel-scroll>label[for="project-name"]{order:1}
+.left-panel .panel-scroll>#project-name{order:2;margin-bottom:18px}
+.left-panel .panel-scroll>.label-row{order:3}
+.left-panel .panel-scroll>.file-pick{order:4}
+.left-panel .panel-scroll>#gdd{order:5}
+.left-panel .panel-scroll>.mini-head{order:6}
+.left-panel .panel-scroll>#analysis{order:7;margin-bottom:14px}
+.left-panel .panel-scroll>.engine-disclosure{order:8}
+.left-panel .panel-scroll>.examples-disclosure{order:9}
+.left-panel .panel-scroll>.backup-disclosure{order:10}
+.left-panel .panel-scroll>.rpg-disclosure{order:11}
+.left-panel .panel-scroll>.knowledge-disclosure{order:12}
+.gdd-editor{
+  width:100%;height:310px;min-height:230px;max-height:55vh;
+  line-height:1.55;font-size:12px;border-radius:11px;
+  background:#0b1626;border-color:#3a4b62;
+}
+.file-pick .file-btn{border-radius:9px;background:#14263a}
+.label-row{gap:8px;align-items:baseline}
+.label-row label{font-size:13px}
+.label-row .tiny{font-size:10px;white-space:nowrap}
+.analysis{padding:12px;border-radius:10px;line-height:1.55;max-height:210px;overflow:auto}
+.center-panel{min-width:0}
+.center-panel .toolbar{padding:20px 24px 12px;border-bottom:0}
+.center-panel .toolbar h2{font-size:20px}
+.center-panel .setup{padding:10px 24px 17px;border-bottom:1px solid var(--edge)}
+.center-panel .mode-row{margin-bottom:16px}
+.center-panel .mode{padding:13px 14px;border-radius:11px;align-items:center}
+.center-panel .mode strong{font-size:13px}
+.center-panel .mode small{font-size:11px}
+.center-panel .setup>label[for="instruction"]{margin-bottom:7px}
+.label-optional{color:#91a7bb;font-weight:400;font-size:11px}
+.center-panel #instruction{min-height:76px;resize:vertical;font-size:13px}
+.center-panel .actions{margin-top:12px}
+.center-panel .actions>.primary{min-width:175px;font-size:13px}
+.center-panel #feedback{margin-top:10px;line-height:1.45;max-width:70ch}
+.primary,.outline{border-radius:10px;transition:background .16s,border-color .16s,transform .1s}
+.primary{background:var(--mint);border-color:var(--mint);color:#09251f}
+.primary:hover{background:#a1f5da}
+.center-panel .preview-head{padding:18px 24px 12px}
+.center-panel .preview-head h3{font-size:17px}
+.center-panel .preview-box{
+  flex:0 0 auto;aspect-ratio:auto;height:clamp(340px,38vw,535px);min-height:340px;
+  margin:0 24px 18px;border:1px solid #405671;
+  box-shadow:0 12px 24px #0003;border-radius:13px;
+}
+.center-panel .preview-box iframe{height:100%;min-height:0;width:100%}
+.preview-empty{background:radial-gradient(ellipse at 50% 30%,#203752,#0b1728 73%)}
+.preview-empty h3{font-size:19px}
+.preview-empty p{max-width:40ch;font-size:13px}
+.right-panel .right-content{padding:16px;overflow-y:auto}
+.right-panel .files{max-height:190px;min-height:80px}
+.right-panel .code{min-height:255px;height:32vh;flex:0 0 auto}
+.right-panel .right-bottom{margin-top:14px}
+.right-panel .right-bottom .primary{width:100%}
+.studio-disclosure{
+  min-width:0;margin:0 0 9px;border:1px solid #2b4056;
+  border-radius:10px;background:rgba(15,29,46,.55);
+}
+.studio-disclosure>summary{
+  display:flex;gap:12px;align-items:center;justify-content:space-between;
+  cursor:pointer;list-style:none;color:#c8daea;
+  font-size:12px;font-weight:700;line-height:1.45;
+  padding:12px 14px;
+  user-select:none;
+}
+.studio-disclosure>summary::-webkit-details-marker{display:none}
+.studio-disclosure>summary:hover{background:#1a3045;color:#f0fbff}
+.studio-disclosure>summary:focus-visible{outline:2px solid var(--mint);outline-offset:-2px;border-radius:9px}
+.studio-disclosure[open]>summary{border-bottom:1px solid #31485e;color:#e4f6f0}
+.disclosure-marker{
+  display:inline-grid;place-items:center;flex:0 0 22px;
+  width:22px;height:22px;border:1px solid #3a5067;border-radius:7px;
+  font-size:16px;font-weight:400;line-height:1;color:#a4c0d2;
+}
+.studio-disclosure[open]>summary .disclosure-marker{transform:rotate(45deg)}
+.studio-disclosure>.project-backups,
+.studio-disclosure>.engine-settings,
+.studio-disclosure>.repo-learning,
+.studio-disclosure>.roadmap-panel,
+.studio-disclosure>.stage-editor,
+.studio-disclosure>.dev-cycle,
+.studio-disclosure>.asset-inspector,
+.studio-disclosure>.shooter-examples{
+  margin:12px;background:#132236;border:1px solid #344a60;border-radius:9px;
+}
+.studio-disclosure>.project-backups{margin-bottom:12px}
+.studio-disclosure>.qa-workbench,
+.studio-disclosure>.eng-workbench{margin:0;border:0;max-height:none;padding:14px;overflow:visible;background:transparent}
+.studio-disclosure>.log{margin:12px;max-height:150px}
+.center-panel>.studio-disclosure{margin:5px 24px 12px}
+.tools-collection>summary{font-size:13px}
+.tools-collection>.studio-disclosure{margin:10px 12px}
+.tools-collection>.studio-disclosure:last-child{margin-bottom:12px}
+.right-content>.studio-disclosure{margin:10px 0 0}
+.right-content>.studio-disclosure>.asset-inspector{margin:11px}
+@media(max-width:1250px){
+  .studio{grid-template-columns:minmax(270px,305px) minmax(0,1fr)}
+  .right-panel{grid-column:1/-1;position:static;max-height:none;min-height:0}
+  .right-panel .right-content{max-height:none}
+  .right-panel .code{height:280px;min-height:220px}
+}
+@media(max-width:780px){
+  .top{padding:10px 14px;height:auto;min-height:65px}
+  .brand{font-size:13px;letter-spacing:.05em}
+  .top-actions{gap:7px}
+  .top-actions .chip,.top-actions .subtle-link{display:none}
+  .studio{display:flex;flex-direction:column;gap:12px;padding:12px}
+  .panel{width:100%;position:static;max-height:none;min-height:0}
+  .panel-scroll,.right-panel .right-content{max-height:none;overflow:visible}
+  .center-panel .toolbar{padding:17px 17px 8px}
+  .center-panel .setup{padding:9px 17px 17px}
+  .center-panel .preview-head{padding:15px 16px 11px}
+  .center-panel .preview-box{margin:0 15px 16px;height:clamp(280px,55vh,460px);min-height:280px}
+  .center-panel>.studio-disclosure{margin:7px 15px 12px}
+  .center-panel .actions{flex-direction:row;flex-wrap:wrap}
+  .center-panel .actions>*{flex:1 1 155px}
+  .right-panel .right-content{display:flex;flex-direction:column}
+  .right-panel .code{height:260px}
+}
+@media(max-width:450px){
+  .center-panel .mode-row{grid-template-columns:1fr 1fr;gap:7px}
+  .center-panel .mode{padding:10px 8px}
+  .center-panel .mode small{font-size:10px}
+  .center-panel .preview-box{height:310px;min-height:310px}
+  .studio-disclosure>summary{padding:11px 12px}
+}

@@ -4,7 +4,21 @@
  */
 (function(root){
 'use strict';
-const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+// Normalizações conservadoras para comandos leigos; o GDD original nunca é alterado.
+// Não transformamos palavras genéricas (ex. "carro") em gêneros sem evidência.
+const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+ .replace(/\b([23])\s+d\b/g,'$1d')
+ .replace(/\b(?:qro|keru)\b/g,'quero')
+ .replace(/\bn\s+(?=quero|usar|ter|colocar|coloca|pode|precisa)\b/g,'nao ')
+ .replace(/\b(?:navezinha|navezinha|navina)\b/g,'navinha')
+ .replace(/\b(?:platafoma|platafomra)\b/g,'plataforma')
+ .replace(/\b(?:corrda|corida)\b/g,'corrida')
+ .replace(/\b(?:primera|prmeira)\s+pessoa\b/g,'primeira pessoa')
+ .replace(/\b(?:inimigu|inimigus)\b/g,'inimigos')
+ .replace(/\b(?:shefe|xefe)\b/g,'chefe')
+ .replace(/\btreis\b/g,'tres')
+ .replace(/\btorre\s+defen[cs]e\b/g,'tower defense')
+ .replace(/\bdefesa\s+por\s+linha\b/g,'defesa por linhas');
 const capabilities=root.GameForgeCapabilities||(typeof require==='function'?require('./game-capabilities'):null);
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const words={um:1,uma:1,dois:2,duas:2,tres:3,quatro:4,cinco:5,seis:6,sete:7,oito:8,nove:9,dez:10,quinze:15,vinte:20,trinta:30};

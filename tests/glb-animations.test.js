@@ -119,4 +119,6 @@ test('GF-015 v2 morte urbana persiste em grupo independente após objetivo e nã
  assert.match(source,/deathAnimations:fallenGuards\.length/);
  assert.match(source,/for\(const g of guards\)g\.animation\?\.dispose/);
  assert.match(source,/clearFallen\(\)/);
+ assert.match(source,/deathOverlayPending=fallenGuards\.length>0/);
+ assert.match(source,/if\(deathOverlayPending&&!fallenGuards\.length\)/);
 });

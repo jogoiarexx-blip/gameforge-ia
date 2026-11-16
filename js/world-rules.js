@@ -9,6 +9,34 @@ function gameForgeWorldRules(){
   for(let i=0;i<steps;i++){const nx=clamp(x+dx/steps,-size/2+r,size/2-r);if(!blocked(nx,z))x=nx;const nz=clamp(z+dz/steps,-size/2+r,size/2-r);if(!blocked(x,nz))z=nz;}
   return {x,z};
  }
+ // Direção de perseguição com separação local: evita inimigos empilhados no mesmo ponto.
+ // Sem estado e sem RNG; IDs estáveis resolvem pares perfeitamente sobrepostos.
+ function crowdDirection(actor,target,actors,spacing=1.15){
+  const dx=target.x-actor.x,dz=target.z-actor.z,goalLength=Math.hypot(dx,dz);
+  let x=goalLength>1e-8?dx/goalLength:0,z=goalLength>1e-8?dz/goalLength:0;
+  let avoidX=0,avoidZ=0;
+  for(let i=0;i<actors.length;i++){
+   const other=actors[i];
+   if(other===actor||other.hp<=0)continue;
+   const minDistance=spacing*(actor.boss?1.25:1)+(other.boss?.55:0);
+   const px=actor.x-other.x,pz=actor.z-other.z;
+   const distSq=px*px+pz*pz;
+   if(distSq>=minDistance*minDistance)continue;
+   if(distSq<1e-10){
+    const ownId=Number.isInteger(actor.id)?actor.id:actors.indexOf(actor);
+    const otherId=Number.isInteger(other.id)?other.id:i;
+    const sign=ownId===otherId?0:ownId<otherId?-1:1;
+    avoidX+=sign;avoidZ+=sign*.5;
+   }else{
+    const dist=Math.sqrt(distSq),weight=(minDistance-dist)/minDistance;
+    avoidX+=px/dist*weight;
+    avoidZ+=pz/dist*weight;
+   }
+  }
+  x+=avoidX*1.65;z+=avoidZ*1.65;
+  const length=Math.hypot(x,z);
+  return length>1e-8?{x:x/length,z:z/length}:{x:0,z:0};
+ }
  function platformRoute(seed,stage,size){
   const random=rng((seed||12345)+stage*997),route=[];let y=0,z=0;
   for(let i=0;i<Math.round(clamp(Number(size)||48,32,88)/4)+Math.min(6,Math.floor(stage/5));i++){
@@ -34,7 +62,7 @@ function gameForgeWorldRules(){
   if(mode==='survive')return Number.isFinite(s.elapsed)&&s.elapsed>=clamp(Number(s.seconds)||45,5,180);
   return goalReady('arena',s);
  }
- return {clamp,rng,moveCircle,platformRoute,raceProgress,trackRibbon,goalReady,missionReady};
+ return {clamp,rng,moveCircle,crowdDirection,platformRoute,raceProgress,trackRibbon,goalReady,missionReady};
 }
 if(typeof module!=='undefined')module.exports=gameForgeWorldRules;
 if(typeof globalThis!=='undefined')globalThis.gameForgeWorldRules=gameForgeWorldRules;

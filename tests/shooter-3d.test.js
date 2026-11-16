@@ -111,3 +111,24 @@ test('GF-017 lote de estrelas reduz dezenas de meshes a uma chamada de desenho',
  assert.notDeepEqual(initial,moved,'estrelas instanciadas devem se mover');
  assert.ok(b.disposed()>0,'reinicio descarta geometria da fase anterior');
 });
+
+test('GF-010 caminhos alternativos geram encontros e checkpoints diferentes no shooter 3D real',()=>{
+ const spec={title:'Caminhos testaveis',stageBranches:require('../js/stage-branches.js')().parse('3 caminhos alternativos e passagem secreta')};
+ const game=boot(spec);
+ game.tick(2);
+ game.item('start').click();
+ assert.equal(game.telemetry().state,'route-choice');
+ assert.deepEqual(Array.from(game.telemetry().routeChoices),['high','middle','low']);
+ game.key('keydown','3');
+ assert.equal(game.telemetry().state,'play');
+ assert.equal(game.telemetry().route,'low');
+ const hard=game.telemetry().enemies;
+ assert.ok(hard>=6,'rota dificil deve aumentar a primeira onda');
+ assert.equal(game.telemetry().routeCheckpoint,true);
+ game.item('restart').click();
+ assert.equal(game.telemetry().state,'route-choice');
+ game.key('keydown','1');
+ assert.equal(game.telemetry().route,'high');
+ assert.ok(game.telemetry().enemies<hard,'rota superior muda quantidade real de inimigos');
+ assert.equal(game.telemetry().routeName,'Caminho superior');
+});

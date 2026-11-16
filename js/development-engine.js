@@ -5,6 +5,24 @@
 const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const specPattern=/\bconst GAME_SPEC = (\{[^\n]*\});/;
+const intent=root.GameForgeIntent||(typeof require==='function'?require('./intent-compiler'):null);
+const directIds=new Set(['stage-count','waves','enemies','laps','boss-only-last','boss-last','boss-all','boss-off','boss-stage','mission','theme-stage','objective-label']);
+function directInterpretation(instruction,files){
+ if(!intent||!files?.['game.js'])return {tasks:[],pending:[]};
+ const match=files['game.js'].match(specPattern);
+ if(!match)return {tasks:[],pending:[]};
+ let old;try{old=JSON.parse(match[1]);}catch{return {tasks:[],pending:[]};}
+ const updated=intent.compile(JSON.parse(JSON.stringify(old)),'',instruction);
+ const differences=JSON.stringify(old.stages)!==JSON.stringify(updated.stages)||
+   JSON.stringify(old.stageConfig||[])!==JSON.stringify(updated.stageConfig||[]);
+ const tasks=differences?updated.implementation.applied.filter(item=>directIds.has(item.id)).map(item=>({
+   id:item.id,number:0,title:item.description,rationale:'Comando interpretado: '+item.where,checks:[
+     'GAME_SPEC.stages / GAME_SPEC.stageConfig atualizados',
+     'Motor reconhece esta configuração no jogo gerado',
+     'Prévia e regressões devem ser verificadas'
+   ],possible:true,direct:true})):[];
+ return {tasks,pending:updated.implementation.pending.map(item=>item.description)};
+}
 const actions={
   difficulty:{title:'Ajustar dificuldade',checks:['Inimigos mais resistentes ou mais leves','Fases ainda completáveis']},
   enemies:{title:'Ajustar número de inimigos',checks:['Limite de inimigos respeitado','Ondas avançam corretamente']},
@@ -65,11 +83,15 @@ function plan(instruction,spec,files){
   const changes=analyze(text,spec);
   const supported=Boolean(files?.['game.js']&&specPattern.test(files['game.js']));
   const supportedActions=spec?.dimension==='3d'?(spec.genre==='platform'?['speed','world','quality','theme','stage']:spec.genre==='racing'?['speed','enemies','world','quality','theme','stage']:['difficulty','enemies','boss','speed','fire','world','quality','theme','stage','mission']):['tower-defense','lane-defense','block-td'].includes(spec?.genre)?['difficulty','enemies','boss','fire','stage']:spec?.genre==='platform'?['speed','enemies','stage']:spec?.genre==='racing'?['speed','enemies','difficulty','stage']:Object.keys(actions);
-  const tasks=changes.map((a,i)=>({number:i+1,title:a.title,rationale:a.why,checks:a.checks,possible:supported&&supportedActions.includes(a.id)&&(a.id!=='theme'||spec?.genre==='shooter'||(spec?.dimension==='3d'&&['forest','desert','neon','ruins'].includes(a.value)))&&(a.id!=='mission'||(spec?.dimension==='3d'&&['arena','fps'].includes(spec.genre)&&a.value.index>=0&&a.value.index<spec.stages.length&&files['game.js'].includes('R.missionReady(')))}));
-  const unknown=text.length>0&&changes.length===0;
+  const direct=supported?directInterpretation(text,files):{tasks:[],pending:[]};
+  const directUsesMission=direct.tasks.some(x=>x.id==='mission');
+  const tasks=changes.filter(a=>!(a.id==='mission'&&directUsesMission)).map((a,i)=>({number:i+1,title:a.title,rationale:a.why,checks:a.checks,possible:supported&&supportedActions.includes(a.id)&&(a.id!=='theme'||spec?.genre==='shooter'||(spec?.dimension==='3d'&&['forest','desert','neon','ruins'].includes(a.value)))&&(a.id!=='mission'||(spec?.dimension==='3d'&&['arena','fps','rpg'].includes(spec.genre)&&a.value.index>=0&&a.value.index<spec.stages.length&&files['game.js'].includes('R.missionReady(')))}));
+  for(const row of direct.tasks){row.number=tasks.length+1;tasks.push(row);}
+
+  const unknown=text.length>0&&changes.length===0&&direct.tasks.length===0&&direct.pending.length===0;
   const unsupported=tasks.filter(t=>!t.possible).map(t=>t.title+(t.title==='Programar objetivo da fase'?' — informe "fase N" de um jogo ação/FPS 3D gerado no motor v0.14':' — regra não implementada neste motor'));
   return {title:'Plano incremental de desenvolvimento',instruction:text,reason:'Preservar arquivos atuais e editar apenas as configurações controladas do motor',
-    tasks, pending:[...(unknown?['Pedido livre não coberto por regras: exige IA ou programação manual']:[]),...unsupported],
+    tasks, pending:[...(unknown?['Pedido livre não coberto por regras: exige IA ou programação manual']:[]),...unsupported,...direct.pending],
     tests:['Verificar sintaxe JS','Iniciar prévia','Executar QA de movimentação e controles','Comparar com versão anterior'],
     supported:supported&&tasks.some(t=>t.possible)};
 }
@@ -106,6 +128,19 @@ function modify(files,spec,planResult){
     if(JSON.stringify(next)!==before||['difficulty','enemies','boss','speed','fire','particles'].includes(action.id))applied.push(action.title);
   }
   next.tuning=tuning;
+  if(planResult.tasks.some(task=>task.direct&&task.possible)&&intent){
+    const candidate=intent.compile(JSON.parse(JSON.stringify(next)),'',planResult.instruction);
+    const changedStages=JSON.stringify(candidate.stages)!==JSON.stringify(next.stages);
+    const changedConfig=JSON.stringify(candidate.stageConfig)!==JSON.stringify(next.stageConfig);
+    if(changedStages)next.stages=candidate.stages;
+    if(changedConfig)next.stageConfig=candidate.stageConfig;
+    if(changedStages||changedConfig){
+      next.implementation=candidate.implementation;
+      for(const row of planResult.tasks.filter(task=>task.direct&&task.possible)){
+        if(!applied.includes(row.title))applied.push(row.title);
+      }
+    }
+  }
   if(JSON.stringify(old)===JSON.stringify(next))return {changed:false,files:{...files},applied:[],pending};
   const updated=files['game.js'].replace(specPattern,`const GAME_SPEC = ${JSON.stringify(next).replace(/<\//g,'<\\/')};`);
   const out={...files,'game.js':updated};

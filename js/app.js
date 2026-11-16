@@ -167,7 +167,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     state.spec=generatedGdd===md?GameForgeProject.activeSpec(state.files,spec):spec;
     const urbanOnly=spec.genre==='urban-action';
     $('download-urban-plan').classList.toggle('hidden',!urbanOnly);
-    $('generate').disabled=urbanOnly;
+    $('generate').disabled=urbanOnly&&spec.engineAvailability?.status==='planned';
     renderReferences();
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');
     const plan=spec.implementation||{applied:[],pending:[],warnings:[]};
@@ -544,7 +544,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(qaState.candidate){feedback('Aceite ou descarte a correção candidata antes de gerar outro jogo.',true);return;}
     const spec=analyze();if(!spec)return;
     if(spec.engineAvailability?.status==='planned'){
-      feedback('O GDD exige um motor urbano 3D ainda não implementado. Baixe o contrato e o plano do vertical slice; não será gerado um jogo errado.',true);
+      feedback('Este motor ainda não foi implementado; baixe o contrato urbano.',true);
       return;
     }
     const mode=state.mode;

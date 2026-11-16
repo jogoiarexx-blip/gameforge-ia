@@ -7,6 +7,7 @@
   <title>GameForge Studio — Crie, teste e melhore seus jogos</title>
   <meta name="description" content="Leia um GDD em Markdown e gere protótipos de jogos no navegador, com ou sem inteligência artificial.">
   <link rel="stylesheet" href="./css/app.css">
+  <link rel="stylesheet" href="./css/visual-composer.css">
 </head>
 <body>
   <header class="top">
@@ -108,6 +109,33 @@ Derrote o chefe.
         <label for="instruction">O que você quer no jogo? <span class="label-optional">(opcional)</span></label>
         <textarea id="instruction" rows="3" placeholder="Ex.: Crie um chefe na última fase, melhore a dificuldade e adicione inventário e ataques especiais."></textarea>
         <button id="idea-to-gdd" type="button" class="small outline">Usar esta ideia como novo GDD</button>
+
+        <details class="visual-composer" id="visual-composer">
+          <summary>🧩 Montar meu jogo por escolhas (sem escrever código)</summary>
+          <div class="visual-composer-body">
+            <p class="hint">Escolha as peças do jogo. O GameForge vai montar o pedido e mostrar o que o motor realmente entende. Nenhuma escolha apaga seu GDD.</p>
+            <div class="visual-composer-grid">
+              <label for="vc-mode">Estilo do jogo<select id="vc-mode"><option value="2d:platform">Plataforma 2D</option></select></label>
+              <label for="vc-phases">Quantidade de fases<input id="vc-phases" type="number" min="1" max="30" step="1" value="5"></label>
+              <label for="vc-difficulty">Dificuldade<select id="vc-difficulty"><option value="facil">Fácil</option><option value="normal" selected>Normal</option><option value="dificil">Difícil</option></select></label>
+            </div>
+            <fieldset class="visual-composer-features"><legend>Sistemas que eu quero</legend>
+              <label><input type="checkbox" data-vc-feature value="boss" checked> Chefe na última fase</label>
+              <label><input type="checkbox" data-vc-feature value="waves"> Ondas de inimigos</label>
+              <label><input type="checkbox" data-vc-feature value="checkpoints"> Checkpoints e salvamento</label>
+              <label><input type="checkbox" data-vc-feature value="mobile" checked> Controles para celular</label>
+              <label><input type="checkbox" data-vc-feature value="store"> Loja de munição</label>
+              <label><input type="checkbox" data-vc-feature value="skills"> Árvore de habilidades</label>
+              <label><input type="checkbox" data-vc-feature value="interiors"> Prédios com interiores</label>
+              <label><input type="checkbox" data-vc-feature value="glb"> Personagens GLB animados</label>
+            </fieldset>
+            <div class="visual-composer-actions"><button type="button" class="small outline" id="vc-check">Conferir compatibilidade</button><button type="button" class="small primary" id="vc-apply">Adicionar ao meu pedido</button></div>
+            <label for="vc-command">Pedido que será acrescentado</label>
+            <textarea id="vc-command" readonly placeholder="Clique em Conferir compatibilidade para ver o pedido."></textarea>
+            <div class="visual-composer-result" id="vc-result" role="status" aria-live="polite">Escolha os recursos e clique em Conferir compatibilidade.</div>
+          </div>
+        </details>
+
         <div class="actions"><button id="generate" class="primary">▶ Criar jogo</button><button id="rerun" class="outline" disabled>↻ Executar prévia</button></div>
         
         
@@ -263,6 +291,7 @@ Derrote o chefe.
   <script src="./js/project-backup.js"></script>
   <script src="./js/campaign-editor.js"></script>
   <script src="./js/app.js"></script>
+  <script src="./js/visual-composer.js"></script>
   <script src="./js/engineering-workbench.js"></script>
 </body>
 </html>

@@ -357,3 +357,22 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 
 - **Como repetir:** `npm test` e `npm run bench:arena`; CI executa ambos. Benchmark informativo: mede somente busca e interseção com cenas sintéticas, **não representa FPS real**, impacto de render, dano ou hardware móvel; tempos variam entre execuções.
 - **Limites/pendências:** testar ponta a ponta em navegador e no celular; analisar custo de memória e GC em sessões prolongadas; só ampliar a outros motores conforme necessidade e benchmark independente.
+
+## Engenharia — etapa 10: reutilização de buffers e pressão de GC da arena (16/11/2026)
+- **Base confirmada:** GitHub Actions runs 43843485927 e 43843484715 aprovados no commit `71ff2b974ac7f92436102e9dd7082c61f1636691`.
+- **Mudança funcional:** `js/runtime-template.js` agora reutiliza a grade espacial entre quadros, recicla arrays de buckets por pool e executa `nearbyBulletIndexes()` com um único buffer de índices temporário. O loop de combate acessa `bullets[bulletIndex]` sem criar um array de objetos por inimigo. `nearbyBullets()` permanece para compatibilidade de ferramentas, retornando cópia independente.
+- **Segurança e equivalência:** `tests/arena-spatial-grid.test.js` cobre limpeza de células antigas, identidade do buffer, consulta sem resíduos e 1.400 quadros com pool limitado. `tests/arena-spatial-equivalence.test.js` agora percorre o **mesmo caminho por índices usado na arena**, reusando grid entre frames, comparando com busca linear em 120 cenas/5 quadros.
+- **Benchmark atualizado:** `tools/bench-arena-spatial.cjs` mede três métodos (`brute`, `compat` e `reused`), incluindo custo de criação/reutilização de grade. CI executa com `npm run bench:arena`.
+- **Validação confirmada:** GitHub Actions run 43844682631, job 133221782852, commit `cd73ec42d568a776e00ddef80ab91b120fe9d1ff`: **128 testes aprovados, zero falhas**, microbenchmark aprovado.
+- **Medição observada em Node v20.20.2, CI:** valores informativos, não FPS do jogo:
+
+| Inimigos / projéteis | Linear | Grade compat | Grade reutilizada | Ganho da reutilizada vs compat |
+|---|---:|---:|---:|---:|
+| 12 / 30 | 6,64 ms | 3,71 ms | 3,82 ms | 0,97× |
+| 50 / 200 | 135,88 ms | 16,31 ms | 16,24 ms | 1,00× |
+| 140 / 650 | 764,40 ms | 60,02 ms | 59,53 ms | 1,01× |
+| 280 / 1.300 | 1.890,86 ms | 138,46 ms | 136,36 ms | 1,02× |
+
+- **Interpretação:** o ganho de CPU **adicional** da reutilização em relação à grade anterior é pequeno ou nulo neste microbenchmark, embora elimine a alocação de arrays por inimigo no caminho de produção. Não foi medida redução de GC ou heap em navegador; não anunciar melhora de FPS.
+- **Limites:** grade ainda cria strings de chaves de célula; pool mantém buffers até o maior pico de ocupação; medir heap/GC em sessão real e mobile. Não foi realizado QA em navegador ou celular nesta etapa.
+- **Próxima prioridade:** perfil de memória e pausa de GC com ferramentas de navegador; revisar movimentação de inimigos e culling, expandindo para outros motores somente com benchmark apropriado.

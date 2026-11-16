@@ -3,6 +3,7 @@
   'use strict';
   const normalize = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const intentCompiler=root.GameForgeIntent||(typeof require==='function'?require('./intent-compiler'):null);
+  const sourceCorpus=root.GameForgeGameCorpus||(typeof require==='function'?require('./game-corpus'):null);
   // Classificação semântica determinística. Sinais de jogabilidade são mais fortes
   // do que palavras ocasionais em capítulos longos de um GDD.
   function detectGenreInfo(text) {
@@ -18,11 +19,8 @@
     add('tower-defense',/\b(tower.?defen[cs]e|defesa de torres|construir torres para defender)\b/,27,'defesa de torres');
     add('fps',/\b(first[ .-]?person(?: shooter)?|primeira pessoa|visao pelos olhos|tiro(?:s)? em primeira pessoa|camera em primeira pessoa)\b/,29,'câmera em primeira pessoa');
     // "60 FPS" é taxa de quadros, nunca evidência de tiro em primeira pessoa.
-    const fpsEvidence=[...t.matchAll(/\bfps\b/g)].some(m=>{
-      const prefix=t.slice(Math.max(0,m.index-18),m.index);
-      return !/\b\d{1,3}\s*$/.test(prefix);
-    });
-    if(fpsEvidence){scores.fps+=/\bfps\b/.test(intro)?25:13;signals.fps.push('FPS como gênero');}
+    const fpsEvidence=/\b(?:jogo|genero|estilo|campanha|combate|experiencia)\s+(?:de\s+)?fps\b|\bfps\s+(?:tatico|de espionagem|militar|de acao|shooter|em primeira pessoa|3d)\b|\b(?:primeira pessoa|first.person)\s+fps\b/.test(t);
+    if(fpsEvidence){scores.fps+=/\bfps\b/.test(intro)?25:13;signals.fps.push('FPS como gênero, não como taxa de quadros');}
     add('fps',/\b(golden\s?eye(?:[\s-]*0?0?7?7)?|medalha de honra|medal of honor|agente 007)\b/,12,'referência a FPS de espionagem');
     const espionage=/\b(espionagem|infiltracao|agente secreto|missao tatica|guardas? armados?)\b/.test(t);
     const gunplay=/\b(mira|mirar|armas? de fogo|fuzil|pistola|atirar em guardas|municao)\b/.test(t);
@@ -37,14 +35,30 @@
     add('rpg',/\b(arvore de habilidades|classes de personagem|experiencia e niveis|evoluir personagem por xp)\b/,9,'progressão de personagem');
     add('arena',/\b(survival horror|jogo de arena|arena de combate|terror de sobrevivencia)\b/,22,'ação e sobrevivência');
     add('arena',/\b(jogo de aventura|combate e exploracao|aventura em terceira pessoa)\b/,8,'aventura de ação');
+    // Padrões realmente observados nos GDDs/arquivos do proprietário.
+    // Câmera superior/oblíqua e combate urbano não significam FPS.
+    add('arena',/\b(visao superior|camera superior|camera de cima|visao isometrica|perspectiva obliqua|top.down)\b/,29,'jogabilidade em visão superior/oblíqua');
+    add('racing',/\b(jogo 3d de carreira de caminhoneiro|direcao arcade|dirigir caminhoes?|corridas? arcade|fretes? (?:e|com) corridas?|contrarrel[oó]gio)\b/,26,'direção arcade, fretes ou corridas');
+    add('racing',/\b(caminhoes?|caminhoneiros?|frota|garagem)\b.{0,95}\b(fretes?|entregas?|estradas?|direcao|corridas?)\b/,12,'frota e entregas rodoviárias');
+    add('platform',/\b(metroidvania|folclorevania|castlevania|plataformas? laterais?|exploracao lateral com saltos)\b/,31,'plataforma ou metroidvania');
+    add('platform',/\b(pular|saltar)\b.{0,65}\b(dash|ataque|inimigos?|plataformas?)\b/,8,'saltos com combate');
+    add('arena',/\b(aventura 3d de voo|aventura de voo|montaria de dragoes?|voar com dragoes?|exploracao com dragoes?)\b/,34,'aventura e voo com dragões');
+    const known=sourceCorpus?.match(t);
+    if(known){scores[known.genre]+=38;signals[known.genre].push('repositório reconhecido: '+known.repository);}
+
     // Pistas contextuais: "aeronave" não satisfaz "nave"; "caminhada"
     // e "plataforma de salto" não caracterizam corrida ou platformer.
     let genre='arena',best=0;
     for(const [id,value] of Object.entries(scores)){
       if(value>best){best=value;genre=id;}
     }
-    const strong=best>=20;
-    return {genre,confidence:strong?'alta':best>=8?'media':'baixa',signals:signals[genre],score:best};
+    const runnerUp=Math.max(0,...Object.entries(scores).filter(([id])=>id!==genre).map(([,value])=>value));
+    // Em documentos híbridos, a diferença pequena deve ser explicada em vez de
+    // apresentar uma escolha automática com certeza injustificada.
+    const ambiguous=best>=12&&runnerUp>=12&&best-runnerUp<11;
+    const strong=best>=20&&!ambiguous;
+    return {genre,confidence:strong?'alta':best>=8?'media':'baixa',signals:signals[genre],score:best,runnerUp,ambiguous,
+      sourceGame:known?{id:known.id,repository:known.repository,url:known.sourceUrl,lessons:known.lessons,unsupported:known.unsupported}:null};
   }
   function detectGenre(text) { return detectGenreInfo(text).genre; }
   function unique(items) { return [...new Set(items.map(x => x.trim()).filter(Boolean))]; }
@@ -86,8 +100,18 @@
     let genre=explicitGenre||requestedGenre||detectGenre(combined);
     const recentDimension=/\b(?:3d|three[.]?js|tres dimensoes|terceira dimensao)\b/.test(direct)?'3d':
       /\b(?:2d|duas dimensoes|canvas)\b/.test(direct)?'2d':null;
-    const inferred3d=/\b(?:3d|three[.]?js|tres dimensoes|primeira pessoa|first[ .-]?person)\b/.test(norm);
-    let dimension=options.dimension&&options.dimension!=='auto'?options.dimension:recentDimension||(genre==='fps'||inferred3d?'3d':'2d');
+    const semanticIntro=normalize(source.trim()?source.slice(0,2600):extra.slice(0,2600));
+    // O "não usar 3D" de um escopo negativo nunca é uma exigência positiva.
+    const positive3d=[...norm.matchAll(/\b(?:3d|three[.]?js|tres dimensoes|primeira pessoa|first[ .-]?person)\b/g)].some(m=>{
+      const before=norm.slice(Math.max(0,m.index-75),m.index);
+      return !/\b(?:sem|nao|evitar|proibid[ao]|exclui[dr]|fora de escopo|nao transformar|nao usar|nao quero)\b.{0,65}$/.test(before);
+    });
+    const declared2d=/\b(?:canvas|lateral|jogo|genero|defesa|plataforma|tower defense|visao superior)\b.{0,24}\b2d\b|\b2d\b.{0,38}\b(?:canvas|navegador|lateral|jogo|grade|linhas|top.down)/.test(semanticIntro);
+    const declared3d=/\b(?:aventura|jogo|fps|corrida|camera|mundo|experiencia)\b.{0,25}\b3d\b/.test(semanticIntro)&&positive3d;
+    const inferred3d=positive3d;
+    const autoDimension=declared2d&&!declared3d?'2d':declared3d?'3d':genre==='fps'?'3d':
+      sourceCorpus?.match(source.trim()?source:extra)?.dimension|| (inferred3d?'3d':'2d');
+    let dimension=options.dimension&&options.dimension!=='auto'?options.dimension:recentDimension||autoDimension;
     const genreOverrideWarning=explicitGenre&&genreInference.confidence==='alta'&&genreInference.genre!==explicitGenre
       ?'O GDD indica '+(labels[genreInference.genre]||genreInference.genre)+', mas está selecionado manualmente '+(labels[explicitGenre]||explicitGenre)+'. Selecione "Detectar pelo GDD" para usar a identificação automática.':null;
     if(!styles[dimension])throw Error('Dimensão não compatível.');
@@ -101,6 +125,9 @@
         throw Error('O GDD foi identificado como '+(labels[genre]||genre)+', mas esse estilo não é compatível com '+dimension.toUpperCase()+': ainda não possui motor '+dimension.toUpperCase()+'. Altere a dimensão nas opções ou escolha outro motor manualmente.');
       }
     }
+    const sourceCase=genreInference.sourceGame;
+    const detectionWarning=genreInference.ambiguous?
+      'Há sinais fortes de gêneros diferentes no texto. Confira o gênero e a câmera antes de gerar o jogo.':null;
     const oldGenre=source.trim()?detectGenre(source):null;
     const sourceConflict=requestedGenre&&oldGenre&&requestedGenre!==oldGenre
       ?'A ideia recente pede '+labels[requestedGenre]+', mas o GDD carregado descreve '+labels[oldGenre]+'. Os títulos e fases do GDD antigo serão preservados. Para criar outro jogo, use a opção de novo GDD pela ideia.':null;
@@ -158,13 +185,14 @@
       summary: headings.slice(0, 14), enemyNames, features, world,
       sourceLength: source.length, sectionCount: headings.length, sectionsIndexed: headings.length, instructions: extra,
       colors: colorPalettes[genre],
-      sourceConflict,genreInference,genreOverrideWarning,
+      sourceConflict,genreInference,genreOverrideWarning,referenceGame:sourceCase,
       detected: [`Gênero: ${labels[genre]}`,`Dimensão: ${dimension.toUpperCase()}`,
         `${stages.length} fase(s) no protótipo`, `${headings.length} capítulos lidos`, `${enemyNames.length} nome(s) de inimigos encontrados`,
         ...Object.keys(features).filter(k => features[k]).map(k => ({inventory:'Inventário',enemies:'Inimigos',bosses:'Chefes',quests:'Objetivos',checkpoints:'Checkpoints',upgrades:'Melhorias',mobile:'Controles mobile',timer:'Cronômetro',audio:'Áudio previsto'})[k])],
       limitations: [
         ...(sourceConflict?[sourceConflict]:[]),
         ...(genreOverrideWarning?[genreOverrideWarning]:[]),
+        ...(detectionWarning?[detectionWarning]:[]),
         ...(mechanics.pending.length?['Mecânicas solicitadas sem implementação garantida neste motor: '+mechanics.pending.map(id=>mechanics.labels[id]).join(', ')+'. Necessitam desenvolvimento adicional.']:[]),
         ...(allLevels.length>stageLimit?[`O GDD contém ${allLevels.length} fases; este motor utiliza as primeiras ${stageLimit}. O documento original permanece completo.`]:[]),
         ...(dimension==='3d'?['O motor 3D usa cenários e personagens low poly procedurais com Three.js local; requer WebGL2. GLBs detalhados, animações importadas e campanha escrita livremente ainda exigem trabalho adicional.']:[]),

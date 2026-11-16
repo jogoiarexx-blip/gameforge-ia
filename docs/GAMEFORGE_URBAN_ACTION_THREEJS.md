@@ -85,3 +85,14 @@ O vertical slice recomendado no documento de conversão é **Porto Velho**, Nova
 **Não confundir planejamento com gameplay:** só estão disponíveis no motor atual até 3 fases, 3 guardas ou provas, entrega/captura no armazém e eventos de coleta/combate básicos. Dirigir carros, fugir da polícia, invadir interiores, condições numéricas complexas e ramificações continuam pendentes e devem aparecer no relatório. Se as missões explícitas não tiverem nenhuma etapa viável, o gerador bloqueia o fallback genérico.
 
 **Teste final de referência:** [Actions 43896601850](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43896601850), 277 testes Node e 18 cenários Chromium, incluindo jogo com duas missões por GDD. Confirmar CI dos commits seguintes antes de marcar validado.
+
+## 7. URB-02 — câmera anti-oclusão (16/11/2026)
+
+**Código implementado; CI do HEAD precisa ser confirmada antes de marcar VALIDADO.**
+
+- `js/urban-rules.js` implementa `cameraPosition(eye,wanted,solids,radius)`: colisão por interseção de segmento com caixas 3D (AABB), margem de segurança e retorno `occluded`. A checagem leva em conta X/Z, altura e dimensões dos prédios; sem depender do Three.js para testar.
+- `js/urban-runtime.js` e `js/urban-mission-runtime.js` aplicam o cálculo tanto na posição inicial quanto no acompanhamento quadro a quadro, verificando também a posição interpolada para não atravessar uma parede durante a suavização.
+- A telemetria local `__gameforgeTelemetry()` inclui `cameraOccluded` para diagnóstico no Chromium.
+- `tests/urban-slice.test.js` cobre obstáculo, caminho livre, altura, margem e integração estática nos dois runtimes.
+- **Limites:** câmera segue em terceira pessoa com ângulo fixo e só considera os volumes explicitamente fornecidos. Ainda falta câmera orbital, oclusão por objetos móveis, testes de usabilidade em celular real e IA urbana com estados de patrulha/alerta/busca/combate.
+- **Próximo passo URB-02:** guardas com patrulha e estados de percepção; preservar saves existentes, interface touch e orçamento gráfico. GF-001 (fonte do Pages via GitHub Actions) continua como ajuste administrativo independente.

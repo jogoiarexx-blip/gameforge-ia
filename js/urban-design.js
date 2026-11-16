@@ -5,6 +5,7 @@
 (function(root){
 'use strict';
 const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const implementedSlice=new Set(['third-person','city','collision','combat','enemies','business','mission','save']);
 const definitions=Object.freeze([
  {id:'third-person',name:'Câmera e controle em terceira pessoa',pattern:/terceira pessoa|third[ .-]?person|camera (?:de perseguicao|sobre o ombro|por tras)/,phase:'A'},
  {id:'city',name:'Bairro explorável e ruas 3D',pattern:/cidades?|bairros?|ruas?|mapa urbano|mundo aberto/,phase:'A'},
@@ -49,10 +50,10 @@ function inspect(gdd='',command=''){
   if(origin)evidence.push({description,...origin});
  }
  const requirements=definitions.filter(x=>x.pattern.test(all)||['third-person','city','collision','combat','enemies','business','mission','save'].includes(x.id))
-  .map(x=>({id:x.id,name:x.name,phase:x.phase,status:'planned',
+  .map(x=>({id:x.id,name:x.name,phase:x.phase,status:implementedSlice.has(x.id)?'partial':'planned',
     origin:lineMatch(source,x.pattern,'GDD')||lineMatch(instruction,x.pattern,'Comando')||
     {document:'Obrigatório para o vertical slice',line:null,excerpt:''},
-    runtime:'não implementado no motor urban-action 3D'}));
+    runtime:implementedSlice.has(x.id)?'URB-01: versão básica jogável':'Ainda não programado neste motor'}));
  const counts={};
  for(const [key,regex] of Object.entries({
   cities:/\b(\d{1,3})\s+cidades\b/,districts:/\b(\d{1,3})\s+distritos\b/,
@@ -65,29 +66,29 @@ function inspect(gdd='',command=''){
  return {identified,genre:identified?'urban-action':null,dimension:identified?'3d':null,
   camera:identified?'third-person':null,confidence,evidence,requirements,
   contentCounts:counts,recognizedSystems:relevant,
-  engineStatus:'planned',engineMessage:'O motor urban-action 3D ainda não existe. Ação urbana não será transformada silenciosamente em FPS, corrida ou arena.',
+  engineStatus:'prototype',engineMessage:'URB-01 já oferece um bairro 3D jogável com uma missão. Veículos dirigíveis, polícia, interiores, território completo e campanha ainda não são executáveis.',
   nextSlice:'Bairro 3D pequeno com personagem e câmera em terceira pessoa, colisão, um inimigo, um negócio, uma missão, HUD, pausa e save/load.'};
 }
 function report(profile){
  const p=profile||{},rows=p.requirements||[],counts=p.contentCounts||{};
  const origin=record=>record?.line?record.document+' linha '+record.line:record?.document||'não informada';
- return ['# Plano de jogo urbano 3D — GameForge','','**Estado: PLANEJAMENTO. Não é um jogo executável.**',
+ return ['# Plano de jogo urbano 3D — GameForge','','**Estado: VERTICAL SLICE URB-01 JOGÁVEL. Não é a campanha completa do GDD.**',
   '','Gênero: ação urbana 3D · câmera em terceira pessoa · confiança: '+(p.confidence||'baixa'),
   '','## Conteúdo quantitativo presente no GDD','',
   ...Object.entries(counts).map(([k,v])=>'- '+k+': '+v),
   ...(!Object.keys(counts).length?['- Sem quantidades explícitas; não inventar cidades ou missões.']:[]),
   '','## Evidências da interpretação','',
   ...(p.evidence||[]).map(x=>'- '+x.description+' ('+origin(x)+'): '+x.excerpt),
-  '','## Mapa de cobertura — tudo pendente para o motor urbano novo','',
+  '','## Mapa de cobertura — funcionalidades parciais do slice e futuras','',
   '| Fase | Requisito | Origem | Estado |','|---|---|---|---|',
-  ...rows.map(x=>'| '+x.phase+' | '+x.name.replace(/\|/g,'/')+' | '+origin(x.origin)+' | planned |'),
+  ...rows.map(x=>'| '+x.phase+' | '+x.name.replace(/\|/g,'/')+' | '+origin(x.origin)+' | '+x.status+' |'),
   '','## Vertical slice recomendado','',
-  'A. Controlador e câmera em terceira pessoa, pequeno bairro, colisores reais.',
-  'B. Mira/disparos e um inimigo com comportamento verificável.',
-  'C. Um negócio interativo, uma missão com recompensa única e save/load.',
+  'A. Testar o bairro e sua câmera em terceira pessoa com colisores reais (URB-01 básico).',
+  'B. URB-01: tiro por direção, cobertura sólida e um guarda simples; expandir IA e mira.',
+  'C. URB-01: capturar um negócio, missão com recompensa única e save/load local; expandir economia.',
   'D. Expandir veículos, polícia, territórios, interiores e progressão por subsistema.',
   'E. Adicionar GLB animado com validação de rig/clipes e otimizações por dispositivo.',
-  '','**Aceite:** cada sistema precisa de ação no jogo, mudança real no estado, teste automático e teste no navegador.',
+  '','**Aceite:** o protótipo parcial não equivale à conversão de cidades/campanha completa; cada sistema novo exige teste e registro.',
   '**Compatibilidade:** nunca substituir o save do jogo 2D; preservar o GDD original no pacote.',
   '**Direitos:** usar assets e identidade que possam ser redistribuídos; não copiar arte de franquias.',
   ''].join('\n');

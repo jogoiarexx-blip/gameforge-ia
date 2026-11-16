@@ -77,22 +77,29 @@
     const title = (lines.find(x => /^#\s+\S/.test(x)) || '').replace(/^#\s+/, '').trim() || autoTitle;
     const combined = source + '\n' + extra;
     const norm = normalize(combined);
-    const recentDimension=/\b(?:3d|three\\.?js|tres dimensoes|terceira dimensao)\b/.test(normalize(extra))?'3d':
-      /\b(?:2d|duas dimensoes|canvas)\b/.test(normalize(extra))?'2d':null;
-    const dimension=options.dimension&&options.dimension!=='auto'?options.dimension:recentDimension||(/\b(3d|three\\.?js|tres dimensoes|fps|primeira pessoa|first.person)\b/.test(norm)||options.genre==='fps'?'3d':'2d');
-    // Um comando de criacao recente e explicito tem prioridade sobre um GDD antigo.
+    // Um comando novo que descreve outro jogo tem precedência sobre o GDD antigo.
     const direct=normalize(extra);
     const createsNew=/\b(crie|cria|criar|quero|faca|fazer|gere|gerar|desenvolva|novo|transforme|jogo|game)\b.{0,110}\b(navinha|nave espacial|jogo de nave|shoot.?em.?up|shmup|rpg|fps|primeira pessoa|corrida|carro|plataforma|platformer|tower defense|defesa de torres|aventura)\b/.test(direct);
     const requestedGenre=createsNew?detectGenre(direct):null;
     const genreInference=detectGenreInfo(source.trim()?source:combined);
     const explicitGenre=options.genre&&options.genre!=='auto'?options.genre:null;
     let genre=explicitGenre||requestedGenre||detectGenre(combined);
+    const recentDimension=/\b(?:3d|three[.]?js|tres dimensoes|terceira dimensao)\b/.test(direct)?'3d':
+      /\b(?:2d|duas dimensoes|canvas)\b/.test(direct)?'2d':null;
+    const inferred3d=/\b(?:3d|three[.]?js|tres dimensoes|primeira pessoa|first[ .-]?person)\b/.test(norm);
+    let dimension=options.dimension&&options.dimension!=='auto'?options.dimension:recentDimension||(genre==='fps'||inferred3d?'3d':'2d');
     const genreOverrideWarning=explicitGenre&&genreInference.confidence==='alta'&&genreInference.genre!==explicitGenre
       ?'O GDD indica '+(labels[genreInference.genre]||genreInference.genre)+', mas está selecionado manualmente '+(labels[explicitGenre]||explicitGenre)+'. Selecione "Detectar pelo GDD" para usar a identificação automática.':null;
     if(!styles[dimension])throw Error('Dimensão não compatível.');
     if(!styles[dimension].includes(genre)){
-      if(options.dimension===dimension||options.genre&&options.genre!=='auto')throw Error('O estilo '+(labels[genre]||genre)+' ainda não possui motor '+dimension.toUpperCase()+'. Escolha 2D ou um estilo compatível nas opções.');
-      genre='arena';
+      const other=dimension==='3d'?'2d':'3d';
+      // Quando a dimensão não foi especificada, usar o motor compatível
+      // em vez de trocar silenciosamente o gênero identificado por "arena".
+      if((!options.dimension||options.dimension==='auto')&&!recentDimension&&genre!=='arena'&&styles[other].includes(genre)){
+        dimension=other;
+      }else{
+        throw Error('O GDD foi identificado como '+(labels[genre]||genre)+', mas ainda não existe motor '+dimension.toUpperCase()+' para esse estilo. Altere a dimensão nas opções ou escolha outro motor manualmente.');
+      }
     }
     const oldGenre=source.trim()?detectGenre(source):null;
     const sourceConflict=requestedGenre&&oldGenre&&requestedGenre!==oldGenre

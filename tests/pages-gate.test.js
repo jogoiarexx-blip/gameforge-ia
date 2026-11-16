@@ -43,6 +43,13 @@ test('pipeline publica apenas artefato do commit validado depois da verificacao'
  assert.match(workflow,/git ls-remote/);
  assert.match(workflow,/upload-pages-artifact@v3/);
  assert.match(workflow,/deploy-pages@v4/);
+ const headChecks=[...workflow.matchAll(/git ls-remote/g)];
+ assert.equal(headChecks.length,2,'Verificar HEAD antes e depois do empacotamento');
+ const packagePosition=workflow.indexOf('upload-pages-artifact@v3');
+ const deployPosition=workflow.indexOf('deploy-pages@v4');
+ assert.ok(headChecks[0].index<packagePosition,'Primeira verificação deve preceder o pacote');
+ assert.ok(headChecks[1].index>packagePosition&&headChecks[1].index<deployPosition,
+   'Segunda verificação deve preceder imediatamente o deploy');
  assert.ok(workflow.indexOf('node tools/pages-gate.cjs')<workflow.indexOf('deploy-pages@v4'));
  assert.ok(workflow.indexOf('CURRENT')<workflow.indexOf('deploy-pages@v4'));
  assert.doesNotMatch(workflow,/pull_request:\s*\n\s*types:\s*\[.*opened/);

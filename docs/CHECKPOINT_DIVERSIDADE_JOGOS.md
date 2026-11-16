@@ -376,3 +376,17 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - **Interpretação:** o ganho de CPU **adicional** da reutilização em relação à grade anterior é pequeno ou nulo neste microbenchmark, embora elimine a alocação de arrays por inimigo no caminho de produção. Não foi medida redução de GC ou heap em navegador; não anunciar melhora de FPS.
 - **Limites:** grade ainda cria strings de chaves de célula; pool mantém buffers até o maior pico de ocupação; medir heap/GC em sessão real e mobile. Não foi realizado QA em navegador ou celular nesta etapa.
 - **Próxima prioridade:** perfil de memória e pausa de GC com ferramentas de navegador; revisar movimentação de inimigos e culling, expandindo para outros motores somente com benchmark apropriado.
+
+## Engenharia — etapa 11: integração inicial de GLB estático no mundo 3D (16/11/2026)
+
+**Objetivo:** superar a inspeção isolada de metadados GLB e permitir que o modelo seja realmente usado dentro de um jogo gerado.
+
+**Arquivos alterados:** `js/glb-runtime.js` (novo), `js/three-runtime.js`, `js/generator.js`, `js/app.js`, `js/project-backup.js`, `index.html`, `tests/glb-import.test.js`, `package.json`, `LEIA-ME.md` e este checkpoint.
+
+**Concluído em código:** entrada de um GLB 2.0 estático até 1,2 MB; malhas triangulares e materiais/texturas embutidos; posição X/Z e escala; instância preservada por fase sem substituir regras de personagens; prévia e HTML offline com asset embutido; ZIP com `assets/cenario.glb`; backup/restauração de base64 e metadados; controles de remoção e reposicionamento.
+
+**Validação realizada nesta sessão:** compilação de sintaxe de 8 módulos JS com V8 (sem erros). Testes de fumaça executados com o código lido diretamente do GitHub: GLB sintético com 3 vértices decodificado pela cópia real do Three.js r180; material, geometria e alinhamento ao chão instanciados; geração de HTML/iframe com asset e limites de posição; backup `encode/decode` recuperando o conteúdo; inicialização de arena real com renderizador substituto, objeto importado em X=8, Z=7, escala 1,4, preservado ao iniciar. Suíte Node `tests/glb-import.test.js` adicionada para reproduzir conversão, rejeição, HTML, backup e inserção no runtime.
+
+**Não verificado:** execução completa de `npm test` no runner ou conclusão do GitHub Actions do commit final; WebGL real em navegador publicado, desempenho Android, qualidade de modelo Meshy, texturas em exemplos reais, animações esqueléticas, física e colisão de assets. Esses itens **não** estão marcados como concluídos.
+
+**Próximos objetivos:** executar `npm test`/CI e QA visual, conferir texturas; remover limite de 1,2 MB com armazenamento IndexedDB para arquivos binários e ZIP importável; biblioteca de múltiplos assets com licenças e papéis (player, NPC, inimigo, cenário); GLTFLoader completo e sistema de animações por estado; benchmarks de memória e regressões dos motores 2D/3D.

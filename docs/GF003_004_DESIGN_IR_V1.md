@@ -1,6 +1,6 @@
 # GF-003/004 — Design IR v1: interpretação de comandos leigos
 
-Data: 16/11/2026. Estado: **EM REVISÃO** até CI no último SHA, testes de navegador e atualização do checkpoint.
+Data: 16/11/2026. Estado: **VALIDADO no escopo Design IR v1**, CI [43892035587](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43892035587), commit `b80b8088` — **270/270 testes Node aprovados**, **16 variantes de exportação verificadas**, **17 cenários Chromium aprovados** e continuidade GF-005 concluída. A meta de benchmark de 100 pedidos e a construção de mecânicas arbitrárias seguem pendentes.
 
 ## Por que esta mudança existe
 

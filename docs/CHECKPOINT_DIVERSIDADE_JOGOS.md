@@ -319,3 +319,14 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - Regressão anterior: CI 43780747779 passou após substituir assert rígido de 29 entradas do catálogo por teste de mínimo e IDs únicos.
 - Resultado da alteração do loop: código publicado; CI 43780779249 estava na fila na consulta inicial, portanto ainda não validado como aprovado.
 - Pendências: confirmar CI e corrigir regressões, testar em navegador/celular, medir frame time e integrar simulação determinística nos outros motores com interfaces adequadas.
+
+## Engenharia — etapa 7: núcleo geométrico de colisões
+- CI da etapa 6 confirmado: GitHub Actions runs 43780833312 e 43780833169 aprovados no commit 2829d17fadec1c8aa1cdcb6a5f3cdbf6b13599e5.
+- Origem da ideia: despachante de colisões de `Dragon-Fury/collision-system.js`; implementação nova e independente no runtime GameForge.
+- Arquivos alterados: `js/runtime-template.js`, `tests/collision-geometry.test.js` e este checkpoint.
+- Adicionado `circlesOverlap(a,b,extra)` com distância quadrática, margem opcional e tangência sem colisão; `rectanglesOverlap(a,b)` AABB pura.
+- Migradas detecções circulares de arena (contato, projéteis e coleta), plataforma (contato) e corrida (obstáculos) para helper compartilhado. Preservadas regras de dano e progressão.
+- Testes adicionados: sobreposição, tangência, simetria, margem de coleta, raios nulos, retângulos e presença de integração dos gêneros.
+- Limite: AABB disponível mas ainda não conectada aos cenários; não houve benchmark de FPS, navegador ou QA móvel.
+- Resultado: commits 40408c2425ec76607aa55afeca33d751e36d31a2 e d66613283119dcff0769ad46aa8bbfd173a84356 publicados; CI ainda pendente de confirmação.
+- Próximo: confirmar CI, resolver regressões e investigar grade espacial para projéteis e inimigos numerosos.

@@ -1,6 +1,20 @@
 # CHECKPOINT — GameForge Studio | 2026-11-14
 
 
+## GF-028 / URB-02 — Rotas geométricas de NPCs em bairros 3D (16/11/2026)
+
+**Estado:** EM REVISÃO, confirmar CI Node/Chromium do SHA final e workflow de publicação. A navegação foi implementada no código utilizado pelos dois jogos urbanos; não é somente plano ou botão.
+
+**Problema:** na versão anterior os guardas possuíam percepção e estados de patrulha/busca/combate, mas seguiam a reta até o alvo. Uma parede podia bloquear o deslocamento indefinidamente, deixando um NPC preso diante de um prédio.
+
+**Implementação:** `js/urban-rules.js` recebe `routeClear` (colisão de segmento versus blocos ampliados) e `planGuardRoute` (grafo de visibilidade com nós nos cantos válidos e Dijkstra). `guardStep` passa a consumir waypoints por proximidade, manter um cache por ~0,65 s e recomputar quando a intenção do guarda ou a posição desejada muda. Um caminho inexistente não habilita atravessar obstáculo. `js/urban-runtime.js` e `js/urban-mission-runtime.js` expõem a quantidade de waypoints na telemetria.
+
+**Testes:** `tests/urban-slice.test.js` valida segmentos livres, caminho mais longo que a reta obstruída, múltiplos prédios, alvos inválidos, 600 ticks a 60 Hz sem atravessar paredes ou exceder velocidade e cache. `tests/browser-export-matrix.py` confirma que os dois modos exportados apresentam a informação de navegação.
+
+**Commits:** `74235351` (rotas), `a2331c0a` (testes), `537b682c`/`c6509e9c` (telemetria) e `ef4a63f5` (Chromium). Pendente de relatar o resultado específico do SHA final. Não foi alterado o modelo de missões, economia ou schema de savegame.
+
+**Limites e próximo foco:** volumes retangulares em bairro único, sem rotas de interiores ou obstáculos móveis; rota ativa não é gravada no save. Próxima etapa: cobertura tática e precisão da mira em terceira pessoa, sem regredir a navegação. GF-001: migração administrativa de Pages permanece registrada como dependência de publicação segura.
+
 ## GF-028 / URB-02 — Guardas com patrulha, alerta, busca e combate (16/11/2026)
 
 **Estado:** EM REVISÃO — funcionalidade implementada em `main`, esperando confirmação da CI do último commit e testes visuais adicionais. **Não é IA completa de NPC**.

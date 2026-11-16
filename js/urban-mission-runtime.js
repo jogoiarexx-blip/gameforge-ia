@@ -5,7 +5,7 @@
 'use strict';
 function gameForgeUrbanMissionBoot(){
  'use strict';
- const spec=GAME_SPEC,plan=spec.urbanMissions,T=THREE,R=GameForgeUrbanRules,F=GameForgeUrbanMissionFlow;
+ const spec=GAME_SPEC,plan=spec.urbanMissions,T=THREE,R=GameForgeUrbanRules,F=GameForgeUrbanMissionFlow,I=GameForgeUrbanInput;
  const $=id=>document.getElementById(id),canvas=$('game');
  const blockers=[
   {x:-10,z:-8,w:5,d:6},{x:10,z:-8,w:5,d:6},
@@ -13,6 +13,9 @@ function gameForgeUrbanMissionBoot(){
   {x:-10,z:0,w:5,d:3},{x:10,z:0,w:5,d:3}
  ];
  const warehouse={x:-6.7,z:-7.4},keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
+ const padControl=I.create(),touchOwners=new Map();
+ let padState=I.neutral();
+ function clearTouches(){touchOwners.clear();for(const name of Object.keys(touch))touch[name]=false;}
  const storageKey='gameforge-urban-missions-v2-'+String(spec.title||'jogo').toLowerCase()
   .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').slice(0,45);
  let renderer=null;
@@ -117,7 +120,7 @@ function gameForgeUrbanMissionBoot(){
   $('level').textContent=(sim.stage+1)+'/'+plan.length;
   $('timer').textContent=Math.floor(clock)+'s';
   $('mission').textContent=statusText();
-  $('control-help').textContent='WASD/setas mover · ESPAÇO atirar · R recarregar · E interagir · P pausar';
+  $('control-help').textContent='WASD/setas mover · ESPAÇO atirar · E interagir · Controle: analógicos mover/mirar, RT tiro, A usar, X recarga, Menu pausa';
   const act=F.nextStep(plan,sim);
   marker.visible=!!act&&['capture','deliver'].includes(act.action);
   marker.position.set(warehouse.x,3.45+Math.sin(clock*2)*.2,warehouse.z);
@@ -149,7 +152,7 @@ function gameForgeUrbanMissionBoot(){
    try{window.localStorage?.removeItem(storageKey);}catch(_){}
   }else if(sim.status==='intermission')sim=F.advance(plan,sim).state;
   else if(sim.status==='victory')sim=F.initial(plan);
-  gameState='play';paused=false;clock=0;prev=0;acc=0;keys.clear();
+  gameState='play';paused=false;clock=0;prev=0;acc=0;keys.clear();clearTouches();
   attackCooldown=0;invuln=0;fireCooldown=0;reloading=0;shotNoise=0;
   lastStepId=null;
   hero.position.set(sim.position.x,0,sim.position.z);
@@ -167,7 +170,7 @@ function gameForgeUrbanMissionBoot(){
  $('restart').addEventListener('click',()=>reset(true));
  $('pause').addEventListener('click',()=>{
   if(gameState!=='play')return;
-  paused=!paused;keys.clear();acc=0;prev=0;
+  paused=!paused;keys.clear();clearTouches();acc=0;prev=0;
   $('pause').textContent=paused?'Continuar':'Pausar';notice(paused?'Pausado':'Retomado');save();
  });
  function interact(){
@@ -210,19 +213,39 @@ function gameForgeUrbanMissionBoot(){
   keys.add(k);
  });
  window.addEventListener('keyup',ev=>keys.delete(String(ev.key).toLowerCase()));
- window.addEventListener('blur',()=>{keys.clear();if(gameState==='play'&&!paused)$('pause').click();});
+ window.addEventListener('blur',()=>{keys.clear();clearTouches();padControl.clear();padState=I.neutral();if(gameState==='play'&&!paused)$('pause').click();});
  document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='hidden'){keys.clear();if(gameState==='play'&&!paused)$('pause').click();}
+  if(document.visibilityState==='hidden'){keys.clear();clearTouches();padControl.clear();padState=I.neutral();if(gameState==='play'&&!paused)$('pause').click();}
  });
  for(const el of document.querySelectorAll('[data-control]')){
   const name=el.getAttribute('data-control');
-  const release=()=>{if(name in touch)touch[name]=false;};
+  const release=event=>{
+   if(touchOwners.get(el)!==event.pointerId)return;
+   touchOwners.delete(el);if(name in touch)touch[name]=false;
+  };
   el.addEventListener('pointerdown',ev=>{
-   ev.preventDefault?.();
-   if(name==='fire'){const a=F.nextStep(plan,sim);if(a&&['deliver','capture'].includes(a.action)&&Math.hypot(sim.position.x-warehouse.x,sim.position.z-warehouse.z)<2.3)interact();else fire();}
-   else if(name in touch)touch[name]=true;
+   if(touchOwners.has(el))return;
+   ev.preventDefault?.();touchOwners.set(el,ev.pointerId);
+   try{el.setPointerCapture?.(ev.pointerId);}catch(_){}
+   if(name==='fire'){
+    const a=F.nextStep(plan,sim);
+    const near=a&&['deliver','capture'].includes(a.action)&&Math.hypot(sim.position.x-warehouse.x,sim.position.z-warehouse.z)<2.3;
+    if(near)interact();else{touch.fire=true;fire();}
+   }else if(name in touch)touch[name]=true;
   });
-  for(const key of ['pointerup','pointercancel','pointerleave'])el.addEventListener(key,release);
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(type,release);
+ }
+ function controllerFrame(){
+  let pads=[];
+  try{if(typeof navigator!=='undefined'&&typeof navigator.getGamepads==='function')pads=navigator.getGamepads()||[];}catch(_){}
+  padState=padControl.poll(pads);
+  if(!padState.connected)return;
+  if(gameState!=='play'){if(padState.begin)$('start').click();return;}
+  if(padState.pause||(paused&&padState.begin)){$('pause').click();return;}
+  if(!paused){
+   if(padState.interact)interact();
+   if(padState.reload)reload();
+  }
  }
  function simulate(dt){
   clock+=dt;fireCooldown=Math.max(0,fireCooldown-dt);attackCooldown=Math.max(0,attackCooldown-dt);
@@ -237,13 +260,17 @@ function gameForgeUrbanMissionBoot(){
   if(keys.has('s')||keys.has('arrowdown')||touch.down)dz++;
   if(keys.has('a')||keys.has('arrowleft')||touch.left)dx--;
   if(keys.has('d')||keys.has('arrowright')||touch.right)dx++;
+  dx+=padState.moveX;dz+=padState.moveZ;
   const len=Math.hypot(dx,dz);
   if(len){
    dx/=len;dz/=len;heading=Math.atan2(dx,-dz);
    sim.position=R.move(sim.position,dx*dt*5,dz*dt*5,blockers,17,.4);
    hero.rotation.y=-heading;walk+=dt*11;
   }
-  if((keys.has(' ')||touch.fire)&&fireCooldown===0)fire();
+  if(Math.hypot(padState.aimX,padState.aimZ)>.28)
+   heading=Math.atan2(padState.aimX,-padState.aimZ);
+  hero.rotation.y=-heading;
+  if((keys.has(' ')||touch.fire||padState.fire)&&fireCooldown===0)fire();
   hero.position.set(sim.position.x,0,sim.position.z);
   const stride=len?Math.sin(walk)*.38:0;
   hero.userData.legs[0].rotation.x=stride;hero.userData.legs[1].rotation.x=-stride;
@@ -276,7 +303,7 @@ function gameForgeUrbanMissionBoot(){
  }
  let simAccumulator=0,framePrev=0;
  function frame(now){
-  requestAnimationFrame(frame);frames++;
+  requestAnimationFrame(frame);frames++;controllerFrame();
   const delta=Math.max(0,(now-(framePrev||now))/1000);framePrev=now;
   if(gameState==='play'&&!paused){
    simAccumulator+=Math.min(.25,delta);
@@ -305,7 +332,7 @@ function gameForgeUrbanMissionBoot(){
   simulationHz:60,simulationSteps:simSteps,stage:sim.stage+1,stages:plan.length,clock,
   health:sim.health,score:sim.cash,ammo:sim.ammo,reserve:sim.reserve,
   player:{x:sim.position.x,y:0,z:sim.position.z,heading},enemies:guards.filter(g=>g.alive).length,
-  guardModes:guards.filter(g=>g.alive).map(g=>g.brain.mode),
+  gamepadConnected:padState.connected,guardModes:guards.filter(g=>g.alive).map(g=>g.brain.mode),
   guardWaypoints:guards.filter(g=>g.alive).map(g=>g.brain.navRoute?.length||0),
   mission:{complete:gameState==='victory',step:F.nextStep(plan,sim)?.action||null,
    progress:F.progress(plan,sim).steps,stage:sim.stage+1,rewards:[...sim.rewards]},

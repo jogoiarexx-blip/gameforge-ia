@@ -184,7 +184,15 @@ Derrote o chefe.
     </section>
     <section class="panel right-panel" aria-label="Arquivos de código">
       <div class="panel-head slim"><span class="eyebrow">04 / PROJETO</span><h2>Arquivos gerados</h2><p>O código pertence a você: inspecione, edite e exporte.</p></div>
-      <div class="right-content"><div id="file-list" class="files"><div class="muted tiny">Nenhum arquivo gerado.</div></div><div class="code-head"><label for="file-editor" id="editor-label">Editor de código</label><button id="apply-edit" class="small outline" disabled>Salvar alteração</button></div><textarea spellcheck="false" id="file-editor" class="code" aria-label="Editor de código" placeholder="Selecione um arquivo gerado..." disabled></textarea><div class="asset-inspector"><strong>Inspeção de personagem GLB/GLTF</strong><label class="small file-btn" for="model-file">Importar modelo (inspeção estrutural)</label><input type="file" id="model-file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json"><div id="model-report" class="hint">Verifica malhas, rig, ossos e clipes localmente. Pose e qualidade visual exigem laboratório 3D.</div>
+      <div class="right-content"><div id="file-list" class="files"><div class="muted tiny">Nenhum arquivo gerado.</div></div><div class="code-head"><label for="file-editor" id="editor-label">Editor de código</label><button id="apply-edit" class="small outline" disabled>Salvar alteração</button></div><textarea spellcheck="false" id="file-editor" class="code" aria-label="Editor de código" placeholder="Selecione um arquivo gerado..." disabled></textarea><div class="asset-inspector"><strong>Usar modelo GLB no cenário 3D</strong>
+<p class="hint">Primeira integração: um objeto estático GLB de até 1,2 MB, com geometria e materiais. Não aplica rig nem animações. Gere um jogo 3D e selecione o arquivo.</p>
+<label class="small file-btn" for="scene-asset-file">Adicionar objeto ao jogo</label>
+<input type="file" id="scene-asset-file" accept=".glb,model/gltf-binary">
+<div class="split"><div><label for="scene-asset-x">Posição X</label><input id="scene-asset-x" type="number" min="-35" max="35" step="1" value="5"></div><div><label for="scene-asset-z">Posição Z</label><input id="scene-asset-z" type="number" min="-35" max="35" step="1" value="5"></div></div>
+<label for="scene-asset-scale">Escala adicional</label><input id="scene-asset-scale" type="number" min="0.2" max="4" step="0.1" value="1">
+<button id="scene-asset-remove" class="small outline" type="button">Remover objeto importado</button>
+<div id="scene-asset-status" class="hint" role="status" aria-live="polite">Nenhum modelo adicionado.</div></div>
+<div class="asset-inspector"><strong>Inspeção de personagem GLB/GLTF</strong><label class="small file-btn" for="model-file">Importar modelo (inspeção estrutural)</label><input type="file" id="model-file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json"><div id="model-report" class="hint">Verifica malhas, rig, ossos e clipes localmente. Pose e qualidade visual exigem laboratório 3D.</div>
 <div class="character-create"><strong>Gerar personagem 3D procedural</strong><label for="character-name">Nome</label><input id="character-name" type="text" maxlength="50" value="Personagem 01">
 <div class="split"><div><label for="character-style">Tipo</label><select id="character-style"><option value="soldado">Soldado</option><option value="exploradora">Exploradora</option><option value="zumbi">Zumbi</option><option value="policial">Policial</option></select></div><div><label for="character-height">Altura (m)</label><input id="character-height" type="number" min="0.4" max="3.5" step="0.05" value="1.75"></div></div>
 <button type="button" class="outline small" id="character-generate">Criar GLB com Blender</button>
@@ -203,6 +211,7 @@ Derrote o chefe.
   <script src="./js/advanced-td-rules.js"></script>
   <script src="./js/advanced-td-runtime.js"></script>
   <script src="./js/qa-bridge.js"></script>
+  <script src="./js/glb-runtime.js"></script>
   <script src="./js/generator.js"></script>
   <script src="./js/development-engine.js"></script>
   <script src="./js/gdd-roadmap.js"></script>

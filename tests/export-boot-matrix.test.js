@@ -174,6 +174,22 @@ test('GF-018 gamepad funciona no game.js urbano exportado: anda, atira, pausa se
  h.tick(1);
  assert.equal(h.telemetry().gamepadConnected,false,'desconexao nao deixa pad ativo');
 });
+test('GF-010 shooter 3D exportado executa a escolha de rota antes da primeira fase',()=>{
+ const gdd='# Navinha das rotas\\n## Fase 1\\n## Fase 2\\nTrês caminhos alternativos e passagem secreta com recompensas diferentes';
+ const spec=parser.parseGdd(gdd,'',{dimension:'3d',genre:'shooter'});
+ assert.equal(spec.stageBranches?.enabled,true);
+ const files=generator.generate(spec,gdd);
+ validateFiles(files,'3d','shooter');
+ const scene=environment(files,'3d');scene.tick(2);
+ scene.element('start').click();
+ assert.equal(scene.telemetry().state,'route-choice');
+ scene.input('keydown','3');
+ assert.equal(scene.telemetry().state,'play');
+ assert.equal(scene.telemetry().route,'low');
+ assert.ok(scene.telemetry().enemies>=6);
+ scene.tick(10);
+ assert.equal(scene.telemetry().routeName,'Caminho inferior');
+});
 test('GF-002 exportação FPS com loja inicia após serializar múltiplos módulos',()=>{
  const files=filesFor('3d','fps','Crie um FPS 3D com loja para comprar munição, kit médico e melhorar armas.');
  assert.match(files['game.js'],/gameForgeCombatEconomyFactory/);

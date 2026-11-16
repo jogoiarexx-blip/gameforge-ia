@@ -63,7 +63,7 @@ function gameForgeUrbanMissionBoot(){
  const marker=new T.Mesh(new T.ConeGeometry(.4,.9,6),material(0xffd36b));scene.add(marker);
  let sim=F.initial(plan),gameState='menu',paused=false,frames=0,simSteps=0,clock=0,walk=0;
  let heading=0,prev=0,acc=0,attackCooldown=0,invuln=0,fireCooldown=0,reloading=0,saveTimer=0;
- let guards=[],items=[],lastStepId=null,saveStatus='novo',saveEnabled=true;
+ let guards=[],items=[],lastStepId=null,saveStatus='novo',saveEnabled=true,cameraOccluded=false;
  function save(){
   sim.position={x:sim.position.x,z:sim.position.z};
   try{window.localStorage?.setItem(storageKey,JSON.stringify(sim));saveStatus='salvo';saveEnabled=true;}
@@ -289,13 +289,20 @@ function gameForgeUrbanMissionBoot(){
    }
    if(steps===5&&simAccumulator>=1/60)simAccumulator=0;
   }else simAccumulator=0;
-  camera.position.lerp(new T.Vector3(sim.position.x+2.6,4.6,sim.position.z+6.5),.16);
+  const eye={x:sim.position.x,y:1.45,z:sim.position.z};
+  const desired=R.cameraPosition(eye,{x:sim.position.x+2.6,y:4.6,z:sim.position.z+6.5},blockers);
+  camera.position.lerp(new T.Vector3(desired.x,desired.y,desired.z),.16);
+  const safe=R.cameraPosition(eye,camera.position,blockers);
+  camera.position.set(safe.x,safe.y,safe.z);
+  cameraOccluded=desired.occluded||safe.occluded;
   camera.lookAt(sim.position.x,1.2,sim.position.z-2.5);
   renderer.render(scene,camera);
  }
  hero.position.set(sim.position.x,0,sim.position.z);syncObjects();hud();
  $('mission').textContent=statusText();notice('Missões compiladas do GDD. WASD, Espaço, E, R, P.');
- camera.position.set(sim.position.x+2.6,4.6,sim.position.z+6.5);
+ const firstCamera=R.cameraPosition({x:sim.position.x,y:1.45,z:sim.position.z},
+  {x:sim.position.x+2.6,y:4.6,z:sim.position.z+6.5},blockers);
+ camera.position.set(firstCamera.x,firstCamera.y,firstCamera.z);
  window.__gameforgeTelemetry=()=>({
   dimension:'3d',genre:'urban-action',camera:'third-person',state:gameState,paused,frames,
   simulationHz:60,simulationSteps:simSteps,stage:sim.stage+1,stages:plan.length,clock,
@@ -303,7 +310,7 @@ function gameForgeUrbanMissionBoot(){
   player:{x:sim.position.x,y:0,z:sim.position.z,heading},enemies:guards.filter(g=>g.alive).length,
   mission:{complete:gameState==='victory',step:F.nextStep(plan,sim)?.action||null,
    progress:F.progress(plan,sim).steps,stage:sim.stage+1,rewards:[...sim.rewards]},
-  saveEnabled,saveStatus,saveKey:storageKey,prototype:true
+  cameraOccluded,saveEnabled,saveStatus,saveKey:storageKey,prototype:true
  });
  requestAnimationFrame(frame);
 }

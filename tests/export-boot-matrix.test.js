@@ -9,7 +9,7 @@ const parser=require('../js/parser.js');
 for(const moduleName of [
  'runtime-template','shooter-runtime','world-rules','software-renderer','three-runtime',
  'shooter-3d-runtime','strategy-rules','expanded-2d-runtime',
- 'advanced-td-rules','advanced-td-runtime','combat-economy'
+ 'advanced-td-rules','advanced-td-runtime','combat-economy','urban-rules','urban-runtime'
 ])require('../js/'+moduleName+'.js');
 require('../vendor/three-source.js');
 const generator=require('../js/generator.js');
@@ -108,7 +108,7 @@ function filesFor(dimension,genre,extra=''){
  return files;
 }
 const combinations=Object.entries(parser.styles).flatMap(([dimension,genres])=>genres.map(genre=>({dimension,genre})));
-assert.equal(combinations.length,14,'A matriz deve ser atualizada quando um motor novo aparecer');
+assert.equal(combinations.length,15,'A matriz deve ser atualizada quando um motor novo aparecer');
 
 for(const {dimension,genre} of combinations){
  test('GF-002 exportação e inicialização offline '+dimension+'/'+genre,()=>{

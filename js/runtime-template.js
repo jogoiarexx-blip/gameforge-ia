@@ -331,10 +331,21 @@ function gameForgeBoot() {
     if(state==='play'&&paused){ctx.fillStyle='#0b1024be';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 44px sans-serif';ctx.textAlign='center';ctx.fillText('PAUSADO',W/2,H/2);ctx.textAlign='left';}
   }
   window.__gameforgeTelemetry = () => ({state,paused,frames:renderedFrames,clock,stage,genre:spec.genre,player:{x:player.x,y:player.y,screenX:player.x-(spec.genre==='platform'?cameraX:0),screenY:player.y,radius:player.r},enemies:enemies.length,graphicsQuality,graphicsFrameMs:Math.round(graphicsFrameAverage*1000),racing:spec.genre==='racing'?{speed:Math.round(racingSpeed),distance:Math.round(traveled),hits:racingHits}:null,checkpoint:spec.genre==='platform'?platformCheckpointIndex:null,falls:spec.genre==='platform'?platformDeaths:null,traps:spec.genre==='platform'?platformTraps.length:null});
+  // Passo de simulacao fixo: evita fisica dependente do FPS e espiral apos aba suspensa.
+  const SIM_STEP=1/60,MAX_SIM_STEPS=5;
+  let simulationAccumulator=0;
   function frame(ms){
-    const rawDt=Math.max(0,(ms-lastTime)/1000);const dt=Math.min(.033,rawDt);lastTime=ms;
+    const rawDt=Math.max(0,(ms-lastTime)/1000);lastTime=ms;
     if(graphicsSetting==='auto'&&rawDt>0&&rawDt<.25){graphicsFrameAverage=graphicsFrameAverage*.97+rawDt*.03;if(++graphicsSampleCount%180===0){if(graphicsFrameAverage>.029)graphicsQuality='low';else if(graphicsFrameAverage>.021)graphicsQuality='medium';else if(graphicsFrameAverage<.018)graphicsQuality='high';}}
-    update(dt);render();renderedFrames++;requestAnimationFrame(frame);
+    if(state==='play'&&!paused){
+      simulationAccumulator+=Math.min(rawDt,.25);
+      let steps=0;
+      while(simulationAccumulator>=SIM_STEP&&steps<MAX_SIM_STEPS&&state==='play'&&!paused){
+        update(SIM_STEP);simulationAccumulator-=SIM_STEP;steps++;
+      }
+      if(steps===MAX_SIM_STEPS)simulationAccumulator=0;
+    }else simulationAccumulator=0;
+    render();renderedFrames++;requestAnimationFrame(frame);
   }
   const prevent = new Set([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
   window.addEventListener('keydown',e=>{

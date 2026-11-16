@@ -21,8 +21,8 @@
           <strong>Continuar seu projeto</strong>
           <p class="hint">Preserve código, GDD, tarefas e histórico para continuar em outro computador.</p>
           <div class="project-backup-actions"><button type="button" id="project-backup" class="small outline">Baixar backup</button><button type="button" id="project-open" class="small outline">Abrir backup</button></div>
-          <input type="file" id="project-file" accept=".json,application/json" hidden>
-          <p id="project-storage-status" class="hint" role="status" aria-live="polite">O backup .gameforge.json permite reabrir o projeto completo.</p>
+          <input type="file" id="project-file" accept=".json,.zip,application/json,application/zip" hidden>
+          <p id="project-storage-status" class="hint" role="status" aria-live="polite">Projetos com GLBs usam backup ZIP completo. Projetos sem assets usam JSON.</p>
         </section></details>
         <label for="project-name">Nome do projeto</label><input id="project-name" type="text" maxlength="90" value="Meu jogo" placeholder="Nome do jogo">
         <details class="studio-disclosure rpg-disclosure"><summary><span>Editor de mapas RPG</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="project-backups" aria-label="Editor visual de fases RPG 2D">
@@ -190,9 +190,12 @@ Derrote o chefe.
     <section class="panel right-panel" aria-label="Arquivos de código">
       <div class="panel-head slim"><span class="eyebrow">ARQUIVOS DO JOGO</span><h2>Editar e baixar</h2><p>Veja o código quando precisar.</p></div>
       <div class="right-content"><div id="file-list" class="files"><div class="muted tiny">Nenhum arquivo gerado.</div></div><div class="code-head"><label for="file-editor" id="editor-label">Editor de código</label><button id="apply-edit" class="small outline" disabled>Salvar alteração</button></div><textarea spellcheck="false" id="file-editor" class="code" aria-label="Editor de código" placeholder="Selecione um arquivo gerado..." disabled></textarea><details class="studio-disclosure model-disclosure"><summary><span>Inserir modelo 3D (GLB)</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><div class="asset-inspector"><strong>Usar modelo GLB no cenário 3D</strong>
-<p class="hint">Primeira integração: um objeto estático GLB de até 1,2 MB, com geometria e materiais. Não aplica rig nem animações. Gere um jogo 3D e selecione o arquivo.</p>
+<p class="hint">Biblioteca de até 4 objetos estáticos GLB: 25 MB cada, 50 MB no total. O modelo entra na cena; personagens e animações ainda não são substituídos.</p>
 <label class="small file-btn" for="scene-asset-file">Adicionar objeto ao jogo</label>
-<input type="file" id="scene-asset-file" accept=".glb,model/gltf-binary">
+<input type="file" id="scene-asset-file" accept=".glb,model/gltf-binary" multiple>
+<label for="scene-asset-select">Objetos do projeto</label>
+<select id="scene-asset-select" aria-label="Selecione o objeto 3D"><option value="">Nenhum objeto</option></select>
+<div id="scene-asset-list" class="hint" aria-live="polite">0 modelos no projeto.</div>
 <div class="split"><div><label for="scene-asset-x">Posição X</label><input id="scene-asset-x" type="number" min="-35" max="35" step="1" value="5"></div><div><label for="scene-asset-z">Posição Z</label><input id="scene-asset-z" type="number" min="-35" max="35" step="1" value="5"></div></div>
 <label for="scene-asset-scale">Escala adicional</label><input id="scene-asset-scale" type="number" min="0.2" max="4" step="0.1" value="1">
 <button id="scene-asset-remove" class="small outline" type="button">Remover objeto importado</button>
@@ -217,6 +220,7 @@ Derrote o chefe.
   <script src="./js/advanced-td-runtime.js"></script>
   <script src="./js/qa-bridge.js"></script>
   <script src="./js/glb-runtime.js"></script>
+  <script src="./js/asset-library.js"></script>
   <script src="./js/generator.js"></script>
   <script src="./js/development-engine.js"></script>
   <script src="./js/gdd-roadmap.js"></script>

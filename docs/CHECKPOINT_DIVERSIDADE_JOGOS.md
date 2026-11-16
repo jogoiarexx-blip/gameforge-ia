@@ -1,5 +1,20 @@
 # CHECKPOINT — GameForge Studio | 2026-11-14
 
+
+## GF-028 / URB-02 — Câmera urbana com oclusão (16/11/2026)
+
+**Estado:** EM REVISÃO — implementação enviada a `main`, testes de regressão adicionados; validação automatizada do SHA final a conferir. Escopo estrito: câmera que não atravessa edificações nos **dois** protótipos urbanos 3D, sem declarar IA de guardas ou câmera orbital concluídas.
+
+**Causa:** as câmeras anteriores seguiam um deslocamento fixo atrás do jogador com `lerp`, sem testar volumes de edifícios; o observador podia atravessar prédios em ruas estreitas e esquinas.
+
+**Arquivos:** `js/urban-rules.js` (colisão do segmento em AABB tridimensional, raio e altura); `js/urban-runtime.js` (primeira câmera, seguimento, segunda verificação pós-interpolação e `cameraOccluded`); `js/urban-mission-runtime.js` (mesmas regras para missões de GDD); `tests/urban-slice.test.js` (testes de posição segura, corredor livre, altura e usos em ambos os runtimes); `docs/GAMEFORGE_URBAN_ACTION_THREEJS.md` (limites e skill).
+
+**Commits de implementação:** `15f91153`, `90f13fb0`, `78a6a8ab`, `e391e710`. Testes do último SHA devem incluir `npm test`, validação das exportações e cenário Chromium. O fato de a CI histórica ter passado não valida o commit atual.
+
+**Garantias de escopo:** não alterou o parser, o Action Model, a estrutura do save nem a geração de recompensas. Mantém guarda, armazém e missões preexistentes. Limites: colisão usa os blocos fornecidos, não gerencia câmera orbitável nem geometria GLB arbitrária. QA visual em dispositivo físico ainda pendente.
+
+**Próximo desenvolvimento:** URB-02 — IA com patrulha, percepção, alerta, busca e combate com casos reais de navegação; em paralelo, GF-004 v3 — condições textuais/numerais executáveis e benchmark abrangente de pedidos infantis. GF-001 ainda exige configurar Pages para fonte GitHub Actions.
+
 ## PAINEL ATIVO DE CONTINUIDADE — auditoria geral de 16/11/2026
 
 **Fonte de verdade para as próximas etapas:** [PLANO MESTRE — 28 itens com prioridade, evidência e aceite](./PLANO_MESTRE_GAMEFORGE.md).

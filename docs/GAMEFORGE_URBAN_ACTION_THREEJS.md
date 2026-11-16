@@ -70,3 +70,18 @@ O vertical slice recomendado no documento de conversão é **Porto Velho**, Nova
 6. Os assets de franquias comerciais exigem direitos de uso para redistribuição; criar arte e identidade próprias quando necessário.
 
 **Próximo desenvolvimento do motor: URB-02.** Priorizar câmera sem atravessar edifícios, mira baseada no retículo, guardas com estados de patrulha/alerta/busca/combate, rotas e mais opções de movimentação. URB-03 a URB-05 permanecem pendentes; GF-001 requer confirmar a proteção da publicação pela configuração do Pages.
+
+## 6. Action Model v2 — interpretar a lógica de uma missão
+
+**Modelo:** GDD ou comando natural → ações, objetos, quantidades, fases, pré-requisitos e efeitos → missões estruturadas. O GameForge preserva a redação original, mas não executa texto do GDD.
+
+**Exemplo reproduzível:**
+- Missão 1: “Colete 2 provas no bairro; depois entregue 2 provas no armazém; recompensa 600.”
+- Missão 2: “Capture o armazém depois de eliminar 1 guarda; recompensa 850.”
+- O compilador gera duas missões realmente diferentes: a primeira coleta objetos até completar 2/2 e só depois habilita entrega; a segunda exige derrotar o guarda antes de capturar. O jogo guarda a etapa e o dinheiro, sem recompensa duplicada.
+
+**Arquivos da execução:** js/mission-semantics.js, js/urban-mission-flow.js, js/urban-mission-runtime.js, tests/mission-semantics.test.js e tests/browser-export-matrix.py. MODELO_ACOES.json e PLANO_ACOES.md são exportados com o jogo, para facilitar auditoria da interpretação.
+
+**Não confundir planejamento com gameplay:** só estão disponíveis no motor atual até 3 fases, 3 guardas ou provas, entrega/captura no armazém e eventos de coleta/combate básicos. Dirigir carros, fugir da polícia, invadir interiores, condições numéricas complexas e ramificações continuam pendentes e devem aparecer no relatório. Se as missões explícitas não tiverem nenhuma etapa viável, o gerador bloqueia o fallback genérico.
+
+**Teste final de referência:** [Actions 43896601850](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43896601850), 277 testes Node e 18 cenários Chromium, incluindo jogo com duas missões por GDD. Confirmar CI dos commits seguintes antes de marcar validado.

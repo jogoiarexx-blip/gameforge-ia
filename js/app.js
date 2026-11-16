@@ -5,6 +5,7 @@
   const state={files:{},spec:null,selected:null,mode:'offline',generation:0};
   const allowed=GameForgeProject.allowedFiles;
   let pendingProject=null,saveTimer=null,projectOperations=0,unrestoredProject=false;
+  let assetProjectId=GameForgeAssetLibrary.newId(),previewAssetSequence=0;
   const devHistory=[];let lastPlan=null;
   let roadmapTasks=[],selectedTaskId=null,preparedTaskId=null,roadmapCount=60,roadmapSource=null;
   const example=$('gdd').value;
@@ -219,7 +220,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('stage-reset').addEventListener('click',()=>stageEditorSave(true));
   function projectSnapshot(){
     roadmapSync();
-    return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,creationOptions:creationOptions(),rpgLayoutJson:$('rpg-layout-json').value,roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
+    return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,assetProjectId,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,creationOptions:creationOptions(),rpgLayoutJson:$('rpg-layout-json').value,roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
   }
   function storageMessage(result){
     $('project-storage-status').textContent=result.message;
@@ -244,6 +245,8 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     pinnedReferences=snap.pinnedReferences.filter(x=>repoKnowledge.entries.some(r=>r.id===x));
     devHistory.length=0;devHistory.push(...snap.history);
     $('deep-plan').checked=snap.deepPlan;
+    previewAssetSequence++;
+    assetProjectId=snap.assetProjectId||GameForgeAssetLibrary.newId();
     state.files=snap.files;state.selected=null;preparedTaskId=null;lastPlan=null;state.generation++;
     restoreSceneAssetControls();
     state.spec=GameForgeProject.activeSpec(state.files,GameForgeParser.parseGdd(snap.gdd));
@@ -274,7 +277,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     }catch{unrestoredProject=true;storageMessage({ok:false,message:'Não foi possível restaurar o projeto salvo. Abra um backup; o registro anterior foi preservado.'});}
   }
   function listFiles(){
-    const keys=Object.keys(state.files).filter(k=>allowed.includes(k)&&!k.endsWith('.b64'));
+    const keys=Object.keys(state.files).filter(k=>allowed.includes(k)&&!k.endsWith('.b64')&&k!=='ASSET_LIBRARY.json');
     $('file-list').innerHTML=keys.length?'':'<div class="muted tiny">Nenhum arquivo gerado.</div>';
     for(const k of keys){
       const btn=document.createElement('button');btn.type='button';btn.className='file-item'+(state.selected===k?' active':'');
@@ -398,7 +401,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(qaState.candidate){feedback('Aceite ou descarte a correção candidata antes de gerar outro jogo.',true);return;}
     const spec=analyze();if(!spec)return;
     const mode=state.mode;
-    const retainedAsset=spec.dimension==='3d'?Object.fromEntries(['ASSET_CENARIO.b64','ASSET_CENARIO.json'].filter(k=>state.files[k]).map(k=>[k,state.files[k]])):{};
+    const retainedAsset=spec.dimension==='3d'?Object.fromEntries(['ASSET_CENARIO.b64','ASSET_CENARIO.json','ASSET_LIBRARY.json'].filter(k=>state.files[k]).map(k=>[k,state.files[k]])):{};
     $('generate').disabled=true;
     status('Gerando...');$('log').textContent=`[Studio] Interpretando GDD de ${spec.sourceLength} caracteres...`;
     try{

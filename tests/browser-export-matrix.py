@@ -79,6 +79,41 @@ def run():
                     page.wait_for_function(
                         "window.__gameforgeTelemetry().paused === true", timeout=5000
                     )
+                    if label == '3d-urban-action':
+                        # Missão jogada em Chromium: combate -> armazém -> recompensa -> reload.
+                        page.locator('#restart').click()
+                        page.wait_for_function("window.__gameforgeTelemetry().state === 'play'")
+                        for _ in range(6):
+                            if page.evaluate('window.__gameforgeTelemetry().mission.guardDefeated'):
+                                break
+                            page.keyboard.press('Space')
+                            page.wait_for_timeout(480)
+                        assert page.evaluate('window.__gameforgeTelemetry().mission.guardDefeated'), 'Guarda não é derrotável'
+                        page.keyboard.down('w')
+                        page.wait_for_function(
+                            "window.__gameforgeTelemetry().player.z < -6", timeout=9500
+                        )
+                        page.keyboard.up('w')
+                        page.keyboard.down('a')
+                        page.wait_for_function(
+                            "window.__gameforgeTelemetry().player.x < -5.3", timeout=6500
+                        )
+                        page.keyboard.up('a')
+                        page.keyboard.press('e')
+                        page.wait_for_function(
+                            "window.__gameforgeTelemetry().mission.complete === true", timeout=5000
+                        )
+                        won = page.evaluate('window.__gameforgeTelemetry()')
+                        assert won['score'] == 1450 and won['state'] == 'victory', won
+                        assert won['saveEnabled'], 'Progresso deve ser salvo fora de iframe'
+                        page.reload(wait_until='load')
+                        page.wait_for_function("typeof window.__gameforgeTelemetry === 'function'")
+                        page.locator('#start').click()
+                        restored = page.evaluate('window.__gameforgeTelemetry()')
+                        assert restored['mission']['complete'] and restored['score'] == 1450, restored
+                        page.keyboard.press('e')
+                        assert page.evaluate('window.__gameforgeTelemetry().score') == 1450, 'Recompensa duplicada'
+
                     assert not page_errors, (label, page_errors)
                     assert not remote_requests, (label, remote_requests)
                     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), (label, 'rolagem horizontal')
@@ -158,7 +193,7 @@ def run():
                 urban_page.locator('#analyze').click()
                 assert 'ação urbana' in urban_page.locator('#analysis').inner_text().lower()
                 assert urban_page.locator('#download-urban-plan').is_visible()
-                assert urban_page.locator('#generate').is_disabled(), 'motor urbano não existe: botão deve bloquear geração falsa'
+                assert urban_page.locator('#generate').is_enabled(), 'URB-01 é jogável e deve permitir gerar o primeiro bairro'
                 with urban_page.expect_download(timeout=15000) as d:
                     urban_page.locator('#download-urban-plan').click()
                 zip_path = Path(tmp) / 'urban-plan.zip'
@@ -168,12 +203,31 @@ def run():
                     assert contract['genre'] == 'urban-action'
                     assert contract['dimension'] == '3d'
                     assert contract['camera'] == 'third-person'
-                    assert contract['engineAvailability']['status'] == 'planned'
+                    assert contract['engineAvailability']['status'] == 'prototype'
                     assert archive.read('GDD_original.md').decode('utf-8') == urban_source
                     assert 'vertical slice' in archive.read('PLANO_URBAN_ACTION.md').decode('utf-8').lower()
-                    assert 'game.js' not in archive.namelist(), 'não exportar jogo inexistente'
+                    assert 'game.js' not in archive.namelist(), 'ZIP de planejamento não deve conter jogo misturado'
+                urban_page.locator('#generate').click()
+                urban_page.wait_for_function(
+                    "document.querySelector('#preview').hasAttribute('srcdoc')", timeout=25000
+                )
+                urban_preview = urban_page.frame_locator('#preview')
+                urban_preview.locator('#start').wait_for(timeout=20000)
+                urban_preview.locator('#start').click()
+                urban_page.locator('#file-list').get_by_text('game.js',exact=True).wait_for(timeout=15000)
+                with urban_page.expect_download(timeout=20000) as game_download:
+                    urban_page.locator('#export').click()
+                urban_zip = Path(tmp) / 'urb-01-jogavel.zip'
+                game_download.value.save_as(urban_zip)
+                with zipfile.ZipFile(urban_zip) as archive:
+                    assert b'gameForgeUrban3DBoot' in archive.read('game.js')
+                    assert b'gameForgeUrbanRulesFactory' in archive.read('game.js')
+                    assert 'engine-3d.js' in archive.namelist()
+                    assert 'SLICE_URBAN_3D.md' in archive.namelist()
+                    assert archive.read('GDD_original.md').decode('utf-8') == urban_source
+                urban_page.screenshot(path=str(screenshots / 'urban-action-studio.png'),full_page=True)
                 assert not urban_errors, urban_errors
-                results.append('urban-design-planning')
+                results.append('urban-design-slice-and-export')
             except Exception as exc:
                 urban_page.screenshot(path=str(screenshots / 'urban-design-failure.png'), full_page=True)
                 failures.append(('urban-design-planning', str(exc), urban_errors, []))

@@ -87,6 +87,7 @@ def run():
                     '# Projeto de teste\n## Gênero\nArena 2D de combate com inimigos.\n'
                     '## Fase 1\nEnfrentar inimigos e alcançar o objetivo.'
                 )
+                page.locator('.engine-disclosure > summary').click()
                 page.locator('#game-dimension').select_option('2d')
                 page.locator('#game-style').select_option('arena')
                 page.locator('#generate').click()
@@ -96,7 +97,6 @@ def run():
                 preview = page.frame_locator('#preview')
                 preview.locator('#start').wait_for(timeout=15000)
                 preview.locator('#start').click()
-                preview.locator('#canvas-does-not-exist').count()  # mantém a referência ao iframe
                 assert preview.locator('#game').count() == 1
                 page.locator('#file-list').get_by_text('game.js', exact=True).click()
                 original_code = page.locator('#file-editor').input_value()

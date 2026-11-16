@@ -149,11 +149,11 @@ function gameForgeThreeBoot(){
    }
   }
   if(importedSceneModel){
-   const model=importedSceneModel.clone(true),p=typeof GF_SCENE_GLB_OPTIONS==='object'?GF_SCENE_GLB_OPTIONS:{};
+   const model=importedSceneModel.clone(true),anchor=new T.Group(),p=typeof GF_SCENE_GLB_OPTIONS==='object'?GF_SCENE_GLB_OPTIONS:{};
    const coordinate=(v,def)=>Number.isFinite(Number(v))?R.clamp(Number(v),-size*.4,size*.4):def;
-   model.position.set(coordinate(p.x,5),0,coordinate(p.z,5));
-   model.scale.multiplyScalar(Number.isFinite(Number(p.scale))?R.clamp(Number(p.scale),.2,4):1);
-   model.userData.gameForgeImported=true;world.add(model);
+   anchor.position.set(coordinate(p.x,5),0,coordinate(p.z,5));
+   anchor.scale.setScalar(Number.isFinite(Number(p.scale))?R.clamp(Number(p.scale),.2,4):1);
+   anchor.add(model);anchor.userData.gameForgeImported=true;world.add(anchor);
   }
   if(genre!=='racing')hero=humanoid(0x508da2);
   hero.visible=genre!=='fps';hero.position.set(player.x,player.y,player.z);

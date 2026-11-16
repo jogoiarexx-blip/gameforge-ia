@@ -65,6 +65,14 @@ def run():
             page.locator('#generate').click()
             page.wait_for_function("document.querySelector('#preview').hasAttribute('srcdoc')",timeout=25000)
             assert page.locator('#gdd').input_value()==''
+            page.locator('#file-list').get_by_text('game.js',exact=True).click()
+            initial=page.locator('#file-editor').input_value()
+            assert 'GAME_SPEC' in initial
+            marker='\\n// GF005: edição de código persistente'
+            page.locator('#file-editor').fill(initial+marker)
+            page.locator('#apply-edit').click()
+            page.wait_for_function("document.querySelector('#preview').getAttribute('srcdoc').includes('GF005: edição')",
+                                   timeout=20000)
 
             # Upload of a real miniature GLB to IndexedDB, with manifest digest.
             glb=triangle_glb()
@@ -90,6 +98,7 @@ def run():
                 binary_name='assets/'+asset['id']+'.glb'
                 assert z.read(binary_name)==glb
                 assert meta['files']['game.js'].startswith('/* Jogo criado')
+                assert marker in meta['files']['game.js']
                 corrupt=rewrite_model(path.read_bytes(),binary_name)
                 tampered=Path(directory)/'adulterado.gameforge.zip';tampered.write_bytes(corrupt)
             # The exported ZIP must be byte-identical after local reload.
@@ -118,6 +127,19 @@ def run():
             assert spec['size']==len(glb) and spec['gdd']=='' and spec['stages']==2
             assert command in spec['instruction']
 
+            # Reuse restored project, apply one supported gameplay change and
+            # undo it without losing the code that came from the other computer.
+            restored.locator('.development-disclosure > summary').click()
+            restored.locator('#instruction').fill('adicione uma fase "Terceira Etapa"')
+            restored.locator('#improve').click()
+            restored.wait_for_function("document.querySelector('#feedback').textContent.includes('Melhoria salva')",
+                                       timeout=30000)
+            restored.locator('#file-list').get_by_text('game.js',exact=True).click()
+            assert 'Terceira Etapa' in restored.locator('#file-editor').input_value()
+            restored.locator('#undo-improvement').click()
+            restored.locator('#file-list').get_by_text('game.js',exact=True).click()
+            assert restored.locator('#file-editor').input_value()==meta['files']['game.js']
+
             # SHA-256 must catch same-size GLB modification even after a ZIP is
             # recompressed with correct CRC. Existing project may NOT be replaced.
             restored.locator('#project-file').set_input_files(tampered)
@@ -132,6 +154,7 @@ def run():
             restored.locator('#project-restore-dialog').wait_for(state='visible')
             restored.locator('#project-restore-confirm').click()
             restored.wait_for_function("document.querySelector('#feedback').textContent.includes('Falha simulada')",timeout=12000)
+            assert restored.locator('#project-restore-dialog').is_hidden()
             assert restored.locator('#file-editor').input_value()==meta['files']['game.js']
             restored.evaluate("()=>{GameForgeAssetLibrary.put=window.gf005Put;}")
 
@@ -146,8 +169,9 @@ def run():
             restored.screenshot(path=str(SCREEN/'gf005-restore-mobile.png'),full_page=True)
             assert not errors,errors
             print(json.dumps({'gf005':'ok','glb_bytes':len(glb),'sha256':asset['sha256'],
-                  'tests':['command-only','browser reload','GLB+ZIP','clean context',
-                    'CRC-valid tampering blocked','IndexedDB failure rollback','quota warning','mobile']},
+                  'tests':['command-only','code edit','browser reload','GLB+ZIP','clean context',
+                    'incremental improvement','undo','CRC-valid tampering blocked',
+                    'IndexedDB failure rollback','quota warning','mobile']},
                   ensure_ascii=False))
         finally:
             browser.close()

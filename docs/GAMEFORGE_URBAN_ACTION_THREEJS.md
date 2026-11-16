@@ -96,3 +96,14 @@ O vertical slice recomendado no documento de conversão é **Porto Velho**, Nova
 - `tests/urban-slice.test.js` cobre obstáculo, caminho livre, altura, margem e integração estática nos dois runtimes.
 - **Limites:** câmera segue em terceira pessoa com ângulo fixo e só considera os volumes explicitamente fornecidos. Ainda falta câmera orbital, oclusão por objetos móveis, testes de usabilidade em celular real e IA urbana com estados de patrulha/alerta/busca/combate.
 - **Próximo passo URB-02:** guardas com patrulha e estados de percepção; preservar saves existentes, interface touch e orçamento gráfico. GF-001 (fonte do Pages via GitHub Actions) continua como ajuste administrativo independente.
+
+## 8. URB-02 — IA de guardas por estados (16/11/2026)
+
+**Código implementado; ainda não equivale a uma IA completa de cidade.**
+
+- `js/urban-rules.js` inclui `guardStep(guard,player,dt,solids)`, máquina determinística com quatro estados: `patrol` (percurso curto ao redor da posição inicial), `alert` (persegue jogador visível), `search` (procura a última posição conhecida após perder linha de visão) e `combat` (perto e com visão livre).
+- Obstáculos bloqueiam a detecção por `clearShot`, e a movimentação usa `move` e os mesmos blocos sólidos da cidade. Sem sorteio, dependência de rede ou temporizadores independentes do timestep.
+- O guarda do URB-01 e os guardas de fases compostas pelo GDD executam a mesma regra. A telemetria informa `guardMode` (URB-01) ou `guardModes` (missões).
+- `tests/urban-slice.test.js` cobre transições, perda de visão, retorno à patrulha, ataque proibido através da parede, colisão e passo de simulação.
+- **Limites:** patrulha é local e curta; ainda não há grafo de rotas, campo de visão angular, cobertura tática, comunicação entre guardas, animações GLB ou interiores complexos. Estado momentâneo de guarda não é persistido no save; a progressão da missão continua persistida normalmente. A validação no Chromium do SHA final é necessária antes de marcar a entrega como VALIDADA.
+- **Próximo foco:** melhorar navegação por rotas/cobertura e mira em terceira pessoa, depois expandir objetivos e condições executáveis do Action Model, sem inventar funcionalidades do GDD.

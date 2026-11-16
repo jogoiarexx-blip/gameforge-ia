@@ -36,10 +36,10 @@ function gameForgeStageBranchesFactory(){
      raw.health<=0||raw.health>100||!Number.isSafeInteger(raw.score)||raw.score<0||
      !Number.isInteger(raw.weapon)||raw.weapon<1||raw.weapon>3||
      !Number.isInteger(raw.kills)||raw.kills<0||raw.kills>1e7||
-     typeof raw.route!=='string'||raw.route.length>20)return null;
-  const option=choose(config,raw.route,raw.kills>=10);
-  if(!option)return null;
-  return {version:1,stage:raw.stage,route:option.id,
+     !(raw.route===null||(typeof raw.route==='string'&&raw.route.length<=20)))return null;
+  const option=raw.route===null?null:choose(config,raw.route,raw.kills>=10);
+  if(raw.route!==null&&!option)return null;
+  return {version:1,stage:raw.stage,route:option?.id||null,
    health:raw.health,score:raw.score,weapon:raw.weapon,kills:raw.kills};
  }
  return {parse,options,choose,validateCheckpoint};

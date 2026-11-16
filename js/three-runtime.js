@@ -326,6 +326,10 @@ function gameForgeThreeBoot(){
      if(combatStore){ammo+=combatStore.useReserve(20-ammo);notice(ammo?'Arma carregada · '+ammo+'/20':'Sem munição · pressione B',1.4);}
      else{ammo=40;notice('Munição recarregada',1.4);}
    }}
+   if(combatStore&&ammo===0&&reloadDelay<=0&&combatStore.requestEmergencyAmmo(clock,ammo)>0){
+     notice('Reabastecimento emergencial: 6 balas · aguarde a recarga.',2);
+     startReload();
+   }
    if(transition>0){transition-=dt;if(transition<=0)advance();}
    else if(genre==='platform')updatePlatform(dt);else if(genre==='racing')updateRacing(dt);else updateCombat(dt);
    if(state!=='play')return;

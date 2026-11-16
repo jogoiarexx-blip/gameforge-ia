@@ -45,6 +45,18 @@
 
 **Próximo desenvolvimento:** URB-02 — IA com patrulha, percepção, alerta, busca e combate com casos reais de navegação; em paralelo, GF-004 v3 — condições textuais/numerais executáveis e benchmark abrangente de pedidos infantis. GF-001 ainda exige configurar Pages para fonte GitHub Actions.
 
+## GF-018/GF-025 — Estudo e incorporação parcial do Quebra no Tempo v0.15.0 (16/11/2026)
+
+**Fonte:** ZIP do jogo disponibilizado na conversa. **Natureza:** práticas técnicas reimplementadas; sem assets ou códigos literais de terceiros. Relatório detalhado: [ESTUDO_QUEBRA_NO_TEMPO_GAMEFORGE_2026-11-16.md](./ESTUDO_QUEBRA_NO_TEMPO_GAMEFORGE_2026-11-16.md).
+
+**GF-018 realizado no urbano:** js/urban-input.js (gamepad standard, deadzone, D-pad, bordas, desconexão), integração com js/urban-runtime.js e js/urban-mission-runtime.js (movimento, mira, RT tiro, A interação, X recarga, Menu pausa) e touch por ponteiro com captura e liberação correta. js/generator.js embute o novo módulo nos jogos offline; index.html carrega no Studio. Testes em tests/urban-input.test.js. Ainda não implementado nos outros motores, nem touch de dois analógicos ou remapeamento.
+
+**GF-025 realizado no urbano:** js/urban-save.js (gravação temporária, confirmação, promoção, estado de falha), integrado aos dois runtimes com as chaves e os schemas de save existentes, preservando validação de versão, etapa e recompensa. Testes em tests/urban-save.test.js. Não é backup no servidor nem transação multi-chave.
+
+**A confirmar:** CI do último commit, exportações reais e Chromium; testes físicos de touch/gamepad continuam pendentes. Não indicar validação visual até evidencia do SHA final.
+
+**Próximos desenvolvimentos:** GF-015 importador de personagens GLB animados + fallback; GF-018 v2 gamepad por motor e joysticks multitouch; GF-010 LevelSpec, campanhas e checkpoints, buscando a diversidade de sistemas observada no ZIP; GF-017/019 performance e QA. GF-001 (fonte administrativa do Pages) segue independente.
+
 ## PAINEL ATIVO DE CONTINUIDADE — auditoria geral de 16/11/2026
 
 **Fonte de verdade para as próximas etapas:** [PLANO MESTRE — 28 itens com prioridade, evidência e aceite](./PLANO_MESTRE_GAMEFORGE.md).

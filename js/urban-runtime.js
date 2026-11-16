@@ -5,7 +5,7 @@
 'use strict';
 function gameForgeUrban3DBoot(){
  'use strict';
- const T=THREE,R=GameForgeUrbanRules,I=GameForgeUrbanInput,spec=GAME_SPEC;
+ const T=THREE,R=GameForgeUrbanRules,I=GameForgeUrbanInput,S=GameForgeUrbanSave,spec=GAME_SPEC;
  const $=id=>document.getElementById(id),canvas=$('game');
  const SIM_DT=1/60, MAX_STEPS=5,keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
  const padControl=I.create(),touchOwners=new Map();
@@ -19,6 +19,7 @@ function gameForgeUrban3DBoot(){
  const door={x:-6.7,z:-7.4};
  const saveKey='gameforge-urban-v1-'+String(spec.title||'projeto').toLowerCase()
   .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').slice(0,54);
+ const saveStore=S.create(()=>window.localStorage,saveKey,raw=>R.load(raw));
  let renderer=null,scene,camera,hero,guard,guardMesh,buildingDoor,beacon;
  try{
   renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'default',alpha:false});
@@ -119,19 +120,10 @@ function gameForgeUrban3DBoot(){
      fireCooldown=0,reloadRemaining=0,saveCooldown=0,guardAttack=0,guardPhase=0,shotNoise=0;
  let saveEnabled=true,saveStatus='novo',cameraOccluded=false;
  let guardBrain={x:0,z:1.5,homeX:0,homeZ:1.5,mode:'patrol'};
- function readSave(){
-  try{
-   const raw=window.localStorage?.getItem(saveKey);
-   if(!raw)return null;
-   return R.load(JSON.parse(raw));
-  }catch(_){return null;}
- }
+ function readSave(){return saveStore.read();}
  function save(){
-  try{
-   const data={version:1,...progress};
-   window.localStorage?.setItem(saveKey,JSON.stringify(data));
-   saveStatus='salvo';saveEnabled=true;
-  }catch(_){saveStatus='indisponível';saveEnabled=false;}
+  const ok=saveStore.write({version:1,...progress});
+  saveStatus=ok?'salvo':'indisponível';saveEnabled=ok;
  }
  function restore(){
   const old=readSave();
@@ -139,7 +131,7 @@ function gameForgeUrban3DBoot(){
  }
  restore();
  function reset(newGame){
-  if(newGame){progress=initial();try{window.localStorage?.removeItem(saveKey);}catch(_){}}
+  if(newGame){progress=initial();saveStore.remove();}
   state='play';paused=false;acc=0;last=0;keys.clear();clearTouches();
   $('pause').textContent='Pausar';
   fireCooldown=0;attackCooldown=0;reloadRemaining=0;invulnerable=0;shotNoise=0;

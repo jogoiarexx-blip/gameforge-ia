@@ -5,9 +5,12 @@
 'use strict';
 function gameForgeUrban3DBoot(){
  'use strict';
- const T=THREE,R=GameForgeUrbanRules,spec=GAME_SPEC;
+ const T=THREE,R=GameForgeUrbanRules,I=GameForgeUrbanInput,spec=GAME_SPEC;
  const $=id=>document.getElementById(id),canvas=$('game');
  const SIM_DT=1/60, MAX_STEPS=5,keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
+ const padControl=I.create(),touchOwners=new Map();
+ let padState=I.neutral();
+ function clearTouches(){touchOwners.clear();for(const name of Object.keys(touch))touch[name]=false;}
  const blockers=[
   {x:-10,z:-8,w:5,d:6},{x:10,z:-8,w:5,d:6},
   {x:-10,z:9,w:5,d:5},{x:10,z:9,w:5,d:5},
@@ -137,7 +140,7 @@ function gameForgeUrban3DBoot(){
  restore();
  function reset(newGame){
   if(newGame){progress=initial();try{window.localStorage?.removeItem(saveKey);}catch(_){}}
-  state='play';paused=false;acc=0;last=0;keys.clear();
+  state='play';paused=false;acc=0;last=0;keys.clear();clearTouches();
   $('pause').textContent='Pausar';
   fireCooldown=0;attackCooldown=0;reloadRemaining=0;invulnerable=0;shotNoise=0;
   hero.position.set(progress.x,0,progress.z);
@@ -168,7 +171,7 @@ function gameForgeUrban3DBoot(){
    progress.guardDefeated?'Aproxime-se do armazém e pressione E':
    'Missão: derrote o guarda e capture o armazém';
   $('mission').textContent=m;
-  $('control-help').textContent='WASD/setas mover · ESPAÇO atirar · R recarregar · E interagir · P pausar';
+  $('control-help').textContent='WASD/setas mover · ESPAÇO atirar · E interagir · Controle: analógicos mover/mirar, RT tiro, A usar, X recarga, Menu pausa';
   beacon.visible=!progress.captured;
   beacon.position.y=3.65+Math.sin(clock*2.6)*.18;
   buildingDoor.material=material(progress.captured?0x56ba93:0x63534a);
@@ -179,7 +182,7 @@ function gameForgeUrban3DBoot(){
  }
  function pause(){
   if(state!=='play')return;
-  paused=!paused;acc=0;last=0;keys.clear();
+  paused=!paused;acc=0;last=0;keys.clear();clearTouches();
   $('pause').textContent=paused?'Continuar':'Pausar';
   notice(paused?'Jogo pausado':'Exploração retomada');
   save();
@@ -237,21 +240,39 @@ function gameForgeUrban3DBoot(){
   keys.add(key);
  });
  window.addEventListener('keyup',event=>keys.delete(String(event.key).toLowerCase()));
- window.addEventListener('blur',()=>{keys.clear();if(state==='play'&&!paused)pause();});
+ window.addEventListener('blur',()=>{keys.clear();clearTouches();padControl.clear();padState=I.neutral();if(state==='play'&&!paused)pause();});
  document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='hidden'){keys.clear();if(state==='play'&&!paused)pause();}
+  if(document.visibilityState==='hidden'){keys.clear();clearTouches();padControl.clear();padState=I.neutral();if(state==='play'&&!paused)pause();}
  });
  for(const el of document.querySelectorAll('[data-control]')){
   const action=el.getAttribute('data-control');
-  const release=()=>{if(action in touch)touch[action]=false;};
+  const release=event=>{
+   if(touchOwners.get(el)!==event.pointerId)return;
+   touchOwners.delete(el);if(action in touch)touch[action]=false;
+  };
   el.addEventListener('pointerdown',event=>{
-   event.preventDefault?.();
+   if(touchOwners.has(el))return;
+   event.preventDefault?.();touchOwners.set(el,event.pointerId);
+   try{el.setPointerCapture?.(event.pointerId);}catch(_){}
    if(action==='fire'){
-    if(progress.guardDefeated&&Math.hypot(progress.x-door.x,progress.z-door.z)<2.2)interact();
-    else fire();
+    const near=progress.guardDefeated&&Math.hypot(progress.x-door.x,progress.z-door.z)<2.2;
+    if(near)interact();
+    else{touch.fire=true;fire();}
    }else if(action in touch)touch[action]=true;
   });
-  el.addEventListener('pointerup',release);el.addEventListener('pointercancel',release);el.addEventListener('pointerleave',release);
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(type,release);
+ }
+ function controllerFrame(){
+  let pads=[];
+  try{if(typeof navigator!=='undefined'&&typeof navigator.getGamepads==='function')pads=navigator.getGamepads()||[];}catch(_){}
+  padState=padControl.poll(pads);
+  if(!padState.connected)return;
+  if(state!=='play'){if(padState.begin)$('start').click();return;}
+  if(padState.pause||(paused&&padState.begin)){$('pause').click();return;}
+  if(!paused){
+   if(padState.interact)interact();
+   if(padState.reload)reload();
+  }
  }
  function simulate(dt){
   clock+=dt;
@@ -271,6 +292,7 @@ function gameForgeUrban3DBoot(){
   if(keys.has('s')||keys.has('arrowdown')||touch.down)dz++;
   if(keys.has('a')||keys.has('arrowleft')||touch.left)dx--;
   if(keys.has('d')||keys.has('arrowright')||touch.right)dx++;
+  dx+=padState.moveX;dz+=padState.moveZ;
   const len=Math.hypot(dx,dz);
   if(len>0){
    dx/=len;dz/=len;
@@ -278,7 +300,9 @@ function gameForgeUrban3DBoot(){
    const moved=R.move(progress,dx*dt*5,dz*dt*5,blockers,17,.4);
    progress.x=moved.x;progress.z=moved.z;walkPhase+=dt*12;
   }
-  if((keys.has(' ')||touch.fire)&&fireCooldown<=0)fire();
+  if(Math.hypot(padState.aimX,padState.aimZ)>.28)
+   progress.heading=Math.atan2(padState.aimX,-padState.aimZ);
+  if((keys.has(' ')||touch.fire||padState.fire)&&fireCooldown<=0)fire();
   hero.position.set(progress.x,0,progress.z);
   hero.rotation.y=-progress.heading;
   const stride=len>0?Math.sin(walkPhase)*.38:0;
@@ -320,7 +344,7 @@ function gameForgeUrban3DBoot(){
  }
  let prevFrame=0,accumulator=0;
  function frame(now){
-  requestAnimationFrame(frame);frames++;
+  requestAnimationFrame(frame);frames++;controllerFrame();
   const elapsed=Math.max(0,(now-(prevFrame||now))/1000);prevFrame=now;
   if(state==='play'&&!paused){
    accumulator+=Math.min(.25,elapsed);
@@ -346,7 +370,7 @@ function gameForgeUrban3DBoot(){
   health:progress.health,score:progress.cash,ammo:progress.ammo,
   reserve:progress.reserve,player:{x:progress.x,y:0,z:progress.z,heading:progress.heading},
   enemies:progress.guardDefeated?0:1,enemyHp:progress.guardHp,
-  guardMode:progress.guardDefeated?'defeated':guardBrain.mode,
+  gamepadConnected:padState.connected,guardMode:progress.guardDefeated?'defeated':guardBrain.mode,
   guardWaypoints:progress.guardDefeated?0:(guardBrain.navRoute?.length||0),
   mission:{guardDefeated:progress.guardDefeated,captured:progress.captured,
    complete:progress.missionComplete,rewardGranted:progress.rewardGranted},

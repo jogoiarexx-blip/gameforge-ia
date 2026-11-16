@@ -74,7 +74,7 @@ test('ZIP preserva bytes de arquivos GLB e verifica CRC antes de restaurar',asyn
  const bytes=new Uint8Array(await archive.arrayBuffer()),unpacked=ZIP.unzipFiles(bytes);
  assert.deepEqual(unpacked['assets/assetABC1234.glb'],glb);
  assert.equal(new TextDecoder().decode(unpacked['PROJETO.gameforge.json']),'{"ok":true}');
- const damaged=bytes.slice();damaged[32]^=7;
+ const damaged=bytes.slice(),firstNameLength=new DataView(bytes.buffer).getUint16(26,true);damaged[30+firstNameLength]^=7;
  assert.throws(()=>ZIP.unzipFiles(damaged),/Checksum/);
  assert.throws(()=>ZIP.zipFiles({'../evil':'data'}),/inseguro/);
 });

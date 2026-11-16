@@ -137,6 +137,7 @@ function gameForgeUrban3DBoot(){
  function reset(newGame){
   if(newGame){progress=initial();try{window.localStorage?.removeItem(saveKey);}catch(_){}}
   state='play';paused=false;acc=0;last=0;keys.clear();
+  $('pause').textContent='Pausar';
   fireCooldown=0;attackCooldown=0;reloadRemaining=0;invulnerable=0;
   hero.position.set(progress.x,0,progress.z);
   guard.visible=!progress.guardDefeated;

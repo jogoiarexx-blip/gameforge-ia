@@ -78,6 +78,11 @@
     if(three&&spec.genre==='urban-action'&&typeof actorFactory!=='function')throw Error('Reprodutor de clips GLB ausente. Atualize o Studio.');
     const urbanSaveFactory=root.gameForgeUrbanSaveFactory||(typeof require==='function'?require('./urban-save'):null);
     if(three&&spec.genre==='urban-action'&&typeof urbanSaveFactory!=='function')throw Error('Modulo de salvamento urbano offline ausente. Atualize o Studio.');
+    const shooterSaveFactory=root.gameForgeShooterCampaignSaveFactory||
+      (typeof require==='function'?require('./shooter-campaign-save'):null);
+    if(three&&spec.genre==='shooter'&&
+       (typeof shooterSaveFactory!=='function'||typeof urbanSaveFactory!=='function'))
+      throw Error('Módulo de checkpoint de campanha 3D ausente. Atualize o Studio.');
     const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n'+(spec.genre==='urban-action'?'const GameForgeUrbanRules = ('+root.gameForgeUrbanRulesFactory.toString()+')();\nconst GameForgeUrbanInput = ('+urbanInputFactory.toString()+')();\nconst GameForgeUrbanSave = ('+urbanSaveFactory.toString()+')();\nconst GameForgeActorAnimations = ('+actorFactory.toString()+')();\n'+(spec.urbanMissions?.length?'const GameForgeUrbanMissionFlow = ('+root.gameForgeUrbanMissionFlowFactory.toString()+')();\n':''):''):advanced?'const GameForgeTDRules = ('+root.gameForgeTDRulesFactory.toString()+')();\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
     // Incluído no FPS para permitir loja por comandos futuros sem reconstruir o motor.
     if(spec.genre==='urban-action'&&typeof root.gameForgeUrbanRulesFactory!=='function')throw Error('Regras urbanas URB-01 não carregadas. Atualize o Studio.');
@@ -92,9 +97,12 @@
     if(three&&spec.genre==='shooter'&&spec.stageBranches?.enabled&&typeof branchFactory!=='function')
       throw Error('Modulo de rotas alternadas nao carregado. Atualize o Studio.');
     const branchModule=three&&spec.genre==='shooter'&&spec.stageBranches?.enabled
-      ?'const GameForgeStageBranches = ('+branchFactory.toString()+')();\nconst GameForgeUrbanSave = ('+urbanSaveFactory.toString()+')();\n':'';
+      ?'const GameForgeStageBranches = ('+branchFactory.toString()+')();\n':'';
+    const shooterSaveModule=three&&spec.genre==='shooter'
+      ?'const GameForgeUrbanSave = ('+urbanSaveFactory.toString()+')();\n'
+       +'const GameForgeShooterCampaignSave = ('+shooterSaveFactory.toString()+')();\n':'';
 
-    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+rules+combatModule+branchModule+'('+runtime.toString()+')();\n';
+    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+rules+combatModule+branchModule+shooterSaveModule+'('+runtime.toString()+')();\n';
     const css=BASE_CSS;
     const dependencies=three?{'engine-3d.js':root.GameForgeThreeSource,'THREE-LICENSE.txt':root.GameForgeThreeLicense}:{};
     const shooterManifest=spec.genre==='shooter' ? {'MANIFESTO_SHMUP.md':

@@ -60,3 +60,14 @@ test('histórico 3D não grava cinco cópias da mesma dependência no navegador'
  assert.equal(backup.save(storage,'project',snap).ok,true);
  const restored=backup.restoreStored(raw);assert.equal(restored.history[3].files['engine-3d.js'],engine);assert.equal(restored.files['engine-3d.js'],engine);
 });
+
+
+test('backup e restauração local preservam qualidade 2D e estilo visual',()=>{
+ const snap={...original(),creationOptions:{dimension:'2d',genre:'shooter',theme:'neon',size:48,quality:'high',graphicsQuality:'medium',visualStyle:'ruins'}};
+ const portable=backup.decode(backup.encode(snap));
+ assert.equal(portable.creationOptions.graphicsQuality,'medium');
+ assert.equal(portable.creationOptions.visualStyle,'ruins');
+ let stored;
+ assert.equal(backup.save({setItem(_key,value){stored=value;}},'project',snap).ok,true);
+ assert.deepEqual(backup.restoreStored(stored).creationOptions,portable.creationOptions);
+});

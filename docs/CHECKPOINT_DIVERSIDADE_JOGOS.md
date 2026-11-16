@@ -2,7 +2,7 @@
 
 ## PAINEL ATIVO DE CONTINUIDADE — auditoria geral de 16/11/2026
 
-**Fonte de verdade para as próximas etapas:** [PLANO MESTRE — 27 itens com prioridade, evidência e aceite](./PLANO_MESTRE_GAMEFORGE.md).
+**Fonte de verdade para as próximas etapas:** [PLANO MESTRE — 28 itens com prioridade, evidência e aceite](./PLANO_MESTRE_GAMEFORGE.md).
 
 **Base auditada:** `main` `5130453010ba7c590a30ad5def463678c7d45bd6`, GameForge Studio `v0.20.0`. A execução [CI 43860458148](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43860458148) aprovou **196 testes, zero falhas**; Pages também foi publicado. Regressões de exportação **ocorreram** em runs anteriores e foram corrigidas no commit citado. O histórico técnico abaixo não deve ser lido como estado atual.
 
@@ -13,6 +13,7 @@
 - [ ] **GF-003 · P0 — Reconhecimento real de GDD:** corpus versionado de gêneros e casos longos (incluindo GoldenEye FPS 3D), incerteza e conflitos.
 - [ ] **GF-004 · P0 — Contrato de capacidades:** diferenciar requisito solicitado, parâmetro configurado e mecânica implementada/testada.
 - [ ] **GF-005 · P0 — Integridade de projeto:** trazer Playwright de backup/recarga/ZIP/IndexedDB para CI, incluindo GLB e restauração limpa.
+- [ ] **GF-028 · P1 — Ação urbana 3D (motor planejado):** GDD original/Three.js/skill integrados ao classificador e ao plano exportável; **URB-01** (bairro 3D jogável, câmera, combate, negócio, missão e save) continua pendente.
 
 **Bloqueio externo:** GF-001 precisa da mudança administrativa na origem de publicação do Pages. **Próxima tarefa técnica prioritária: GF-005**, continuidade, backup e recuperação em navegador real, incluindo GLB e persistência. GF-003 e GF-004 seguem em revisão; GF-019 mantém QA em hardware Android/iOS. Os **22 itens P1/P2** (interface, evolução de motores, campanhas, assets, animações, performance, segurança, backend e editor) estão detalhados no plano mestre. Manter IDs estáveis e alterar o estado para `VALIDADO` somente com código publicado, testes e CI no mesmo commit; QA visual requer navegador real.
 
@@ -735,3 +736,23 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Evidência parcial confirmada:** execução de CI `43880155784` aprovou **248 testes Node, 0 falhas** e a versão inicial do cenário GF-005 em Chromium (antes do teste extra de edição/desfazer). A revisão estendida permanece pendente de resultado verde no SHA atual; não declarar GF-005 VALIDADO antes disso.
 
 **Limites:** SHA-256 detecta adulteração de arquivo em relação ao manifesto, não autentica origem. Browser automatizado usa GLB de triângulo mínimo, não um personagem animado complexo. Não executou testes Android/iOS reais ou de interrupção abrupta do processo. GF-001 continua com a rota antiga de Pages por branch, que depende de migração nas configurações do GitHub.
+
+## GF-028 — Uso dos três arquivos anexados para evoluir o GameForge (16/11/2026)
+
+**Material analisado:** `GDD_GODFATHER_COMPLETO(1).md`, `GDD_GODFATHER_THREEJS_3D_COMPLETO(1).md` e `SKILL_GAMEFORGE_URBAN_THREEJS(1).md`. O primeiro descreve a base **Canvas 2D**, enquanto o segundo é um **projeto de conversão Three.js em terceira pessoa**. A skill exige não confundir ações com FPS ou corrida e não tratar motores ausentes como implementados.
+
+**Diagnóstico:** o catálogo anterior só tinha `arena`, `fps`, `racing` e outros motores executáveis. Projetos com carros + tiroteios + negócios + cidade eram forçados para um deles. Um GDD 3D Godfather podia receber classificação de arena por referência histórica ao projeto 2D, produzindo um protótipo que não correspondia à fantasia principal.
+
+**Implementação de interpretação e planejamento:**
+- Novo `js/urban-design.js`: identifica evidências de **ação urbana 3D com câmera em terceira pessoa**, separa gênero principal de mecânicas secundárias (carros/tiros), atribui origem/linha aos requisitos, reconhece quantidades somente quando declaradas e constrói matriz de cobertura com estado `planned`.
+- `js/parser.js`: reconhece `urban-action` como **gênero em planejamento**, sem alterar os 14 pares de motores já testados; preserva a identificação original do Godfather Canvas 2D e de FPS/naves/corrida. Registra `engineAvailability.status='planned'`, câmera `third-person` e pendências. `js/generator.js` recusa exportar uma arena como se fosse cidade 3D.
+- `index.html` + `js/app.js`: botão **Baixar contrato + plano urbano 3D** quando o GDD for identificado. O ZIP inclui `GAME_DESIGN_CONTRACT.json`, `PLANO_URBAN_ACTION.md` e `GDD_original.md` integral, **sem `game.js` inventado**. Criar jogo fica bloqueado até existir um motor urbano real.
+- `docs/GAMEFORGE_URBAN_ACTION_THREEJS.md`: skill operável, fases URB-01 a URB-05, critérios de qualidade, preservação de saves e direitos dos assets.
+- `tests/urban-design.test.js`: GDD 2D vs 3D, conversão por comando, invariância dos gêneros GoldenEye/naves/corrida, auditoria de requisitos, quantidades e ausência de motor falso.
+- `tests/browser-export-matrix.py`: novo caso de navegação Chromium para ação urbana; importa um GDD, reconhece o gênero, mantém Criar bloqueado e baixa o ZIP do contrato, conferindo seu conteúdo.
+
+**Prova já observada:** CI [43880420689](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43880420689) com testes Node aprovados. O cenário de navegador `urban-design-planning` apareceu entre os **16 casos aprovados individualmente** nos logs do run [43880775531](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43880775531); porém esse workflow completo **falhou em um teste GF-005**, separado, que também estava sendo alterado. **Não declarar a última CI verde sem confirmar HEAD**.
+
+**Escopo preservado:** o exemplo Godfather informa **3 cidades, 18 distritos, 36 negócios, 24 missões e três chefes** para aquele projeto. São metas do GDD 3D, **não defaults para outros jogos**. A classificação correta não cria veículos dirigíveis, polícia, IA de guardas, interiores, economia, animação GLB nem campanha 3D.
+
+**Próximo passo específico para ação urbana: URB-01.** Implementar um vertical slice de bairro pequeno com XZ/Y, protagonista/câmera em terceira pessoa, colisores, mira, um inimigo, um negócio, uma missão concluível, HUD, pausa e save/load; validar em Chromium sem rede e adicionar à matriz de jogos exportáveis somente depois de funcionar. **GF-001** continua dependendo da configuração administrativa do Pages e **GF-005** deve passar integralmente para impedir perda de dados. Não proclamar motor urbano pronto antes de URB-01.

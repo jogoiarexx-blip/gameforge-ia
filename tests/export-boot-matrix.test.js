@@ -15,10 +15,12 @@ require('../vendor/three-source.js');
 const generator=require('../js/generator.js');
 const zipper=require('../js/zip.js');
 const {validateFiles}=require('../tools/verify-exports.cjs');
+const glb=require('../js/glb-runtime.js');
+const assets=require('../js/asset-library.js');
 
 function environment(files,dimension){
  const callbacks=[],handlers={},elements=new Map(),errors=[];
- let now=0,drawCount=0;
+ let now=0,drawCount=0,lastScene=null;
  const gradient=()=>({addColorStop(){}});
  const canvas2d=new Proxy({
   createLinearGradient:gradient,createRadialGradient:gradient,
@@ -59,7 +61,7 @@ function environment(files,dimension){
   requestAnimationFrame:callback=>callbacks.push(callback),
   addEventListener(type,cb){(handlers[type]??=[]).push(cb);},
   setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},
-  navigator:{userAgent:'GameForge CI'},
+  navigator:{userAgent:'GameForge CI'},atob:globalThis.atob,
   devicePixelRatio:1,innerWidth:960,innerHeight:540
  };
  env.window=env;env.globalThis=env;vm.createContext(env);
@@ -71,8 +73,12 @@ function environment(files,dimension){
   env.THREE={...T,WebGLRenderer:class {
    constructor(){this.shadowMap={};this.info={render:{calls:0,triangles:0},memory:{geometries:0}};this.renderLists={dispose(){}};}
    setClearColor(){}setPixelRatio(){}setSize(width,height){element('game').width=width;element('game').height=height;}
-   render(scene){drawCount++;assert.ok(scene?.isScene);}
+   render(scene){drawCount++;assert.ok(scene?.isScene);lastScene=scene;}
   }};
+ }
+ // O HTML exportado carrega assets GLB como script inline antes de game.js.
+ for(const [_,inline] of files['index.html'].matchAll(/<script>([\s\S]*?)<\/script>/gi)){
+  vm.runInContext(inline,env,{timeout:5000,filename:'inline-assets.js'});
  }
  vm.runInContext(files['game.js'],env,{timeout:5000,filename:'game.js'});
  assert.ok(callbacks.length,'Motor exportado precisa agendar quadros');
@@ -90,7 +96,7 @@ function environment(files,dimension){
     target:{tagName:'CANVAS'}});
   }
  }
- return {env,tick,input,element,errors,draws:()=>drawCount,telemetry:()=>env.__gameforgeTelemetry()};
+ return {env,tick,input,element,errors,draws:()=>drawCount,scene:()=>lastScene,telemetry:()=>env.__gameforgeTelemetry()};
 }
 function filesFor(dimension,genre,extra=''){
  const gdd='# Matriz GameForge\n## Primeira fase\nControles, desafios e objetivo.\n';
@@ -155,4 +161,66 @@ test('GF-002 mutação no código exportado é detectada e ZIP não mascara queb
  const bad={...files,'game.js':files['game.js']+'\nconst x = ;'};
  assert.throws(()=>validateFiles(bad,'3d','fps'),SyntaxError);
  assert.doesNotThrow(()=>validateFiles(files,'3d','fps'));
+});
+
+function sampleGLB(){
+ const json={
+  asset:{version:'2.0'},buffers:[{byteLength:44}],
+  bufferViews:[{buffer:0,byteOffset:0,byteLength:36},{buffer:0,byteOffset:36,byteLength:6}],
+  accessors:[{bufferView:0,componentType:5126,type:'VEC3',count:3},{bufferView:1,componentType:5123,type:'SCALAR',count:3}],
+  meshes:[{primitives:[{attributes:{POSITION:0},indices:1}]}],
+  nodes:[{mesh:0}],scenes:[{nodes:[0]}],scene:0
+ };
+ const bin=new Uint8Array(44),dv=new DataView(bin.buffer);
+ [0,0,0,1,0,0,0,1,0].forEach((v,i)=>dv.setFloat32(i*4,v,true));
+ [0,1,2].forEach((v,i)=>dv.setUint16(36+i*2,v,true));
+ const raw=new TextEncoder().encode(JSON.stringify(json));
+ const len=Math.ceil(raw.length/4)*4,out=new Uint8Array(12+8+len+8+bin.length);
+ const view=new DataView(out.buffer);
+ view.setUint32(0,0x46546c67,true);view.setUint32(4,2,true);view.setUint32(8,out.length,true);
+ view.setUint32(12,len,true);view.setUint32(16,0x4e4f534a,true);
+ out.fill(32,20,20+len);out.set(raw,20);
+ const start=20+len;view.setUint32(start,bin.length,true);view.setUint32(start+4,0x004e4942,true);
+ out.set(bin,start+8);return out;
+}
+test('GF-002 GLB real permanece no ZIP e é instanciado na cena 3D exportada',async()=>{
+ const model=sampleGLB(),id='modelogf02',files=filesFor('3d','arena');
+ const manifest={version:1,assets:[{
+  id,name:'cenario.glb',bytes:model.byteLength,role:'scene',
+  placement:{x:5,z:4,scale:1.2}
+ }]};
+ const bundle={...files,
+  'ASSET_LIBRARY.json':JSON.stringify(manifest),
+  ['assets/'+id+'.glb']:model
+ };
+ bundle['index.html']=generator.shell('Cena de teste',files['style.css'],files['game.js'],false,bundle);
+ validateFiles(bundle,'3d','arena');
+ assert.match(bundle['index.html'],/GF_SCENE_ASSETS/);
+ assert.match(bundle['index.html'],/gameForgeDecodeGLB/);
+ const packed=zipper.zipFiles(bundle);
+ const unpacked=zipper.unzipFiles(new Uint8Array(await packed.arrayBuffer()));
+ assert.equal(Buffer.compare(Buffer.from(unpacked['assets/'+id+'.glb']),Buffer.from(model)),0);
+ const restored={};
+ for(const [name,bytes] of Object.entries(unpacked))
+  restored[name]=name.endsWith('.glb')?bytes:new TextDecoder().decode(bytes);
+ const game=environment(restored,'3d');game.tick(2);
+ const imported=[];game.scene().traverse(o=>{if(o.userData?.gameForgeImported)imported.push(o);});
+ assert.equal(imported.length,1,'GLB não foi instanciado após restaurar o ZIP');
+ assert.equal(imported[0].position.x,5);
+ assert.equal(imported[0].position.z,4);
+ assert.equal(imported[0].scale.x,1.2);
+ game.element('start').click();game.tick(3);
+ assert.equal(game.telemetry().state,'play');
+});
+test('GF-002 reexportação após editar fases mantém especificação e jogo iniciável',async()=>{
+ const first=parser.parseGdd('# Avanço\n## Fase Um\nInimigos e objetivos','',{dimension:'3d',genre:'fps'});
+ const revised={...first,stages:['Fase Um','Fase Dois','Fase Final']};
+ const files=generator.generate(revised,'# Avanço\n## Fase Um\n## Fase Dois\n## Fase Final');
+ validateFiles(files,'3d','fps');
+ const zip=zipper.zipFiles(files),unpacked=zipper.unzipFiles(new Uint8Array(await zip.arrayBuffer()));
+ const restored=Object.fromEntries(Object.entries(unpacked).map(([name,bytes])=>[name,new TextDecoder().decode(bytes)]));
+ const ctx=environment(restored,'3d');ctx.element('start').click();ctx.tick(8);
+ assert.equal(ctx.telemetry().state,'play');
+ assert.equal(JSON.parse(files['game.js'].match(/const GAME_SPEC = ([^\n]+);/)?.[1]).stages.length,3);
+ assert.deepEqual(Array.from(revised.stages),['Fase Um','Fase Dois','Fase Final']);
 });

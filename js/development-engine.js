@@ -84,9 +84,8 @@ function plan(instruction,spec,files){
   const supported=Boolean(files?.['game.js']&&specPattern.test(files['game.js']));
   const supportedActions=spec?.dimension==='3d'?(spec.genre==='platform'?['speed','world','quality','theme','stage']:spec.genre==='racing'?['speed','enemies','world','quality','theme','stage']:['difficulty','enemies','boss','speed','fire','world','quality','theme','stage','mission']):['tower-defense','lane-defense','block-td'].includes(spec?.genre)?['difficulty','enemies','boss','fire','stage']:spec?.genre==='platform'?['speed','enemies','stage']:spec?.genre==='racing'?['speed','enemies','difficulty','stage']:Object.keys(actions);
   const direct=supported?directInterpretation(text,files):{tasks:[],pending:[]};
-  const directUsesMission=direct.tasks.some(x=>x.id==='mission');
-  const tasks=changes.filter(a=>!(a.id==='mission'&&directUsesMission)).map((a,i)=>({number:i+1,title:a.title,rationale:a.why,checks:a.checks,possible:supported&&supportedActions.includes(a.id)&&(a.id!=='theme'||spec?.genre==='shooter'||(spec?.dimension==='3d'&&['forest','desert','neon','ruins'].includes(a.value)))&&(a.id!=='mission'||(spec?.dimension==='3d'&&['arena','fps','rpg'].includes(spec.genre)&&a.value.index>=0&&a.value.index<spec.stages.length&&files['game.js'].includes('R.missionReady(')))}));
-  for(const row of direct.tasks){row.number=tasks.length+1;tasks.push(row);}
+  const tasks=changes.map((a,i)=>({number:i+1,title:a.title,rationale:a.why,checks:a.checks,possible:supported&&supportedActions.includes(a.id)&&(a.id!=='theme'||spec?.genre==='shooter'||(spec?.dimension==='3d'&&['forest','desert','neon','ruins'].includes(a.value)))&&(a.id!=='mission'||(spec?.dimension==='3d'&&['arena','fps','rpg'].includes(spec.genre)&&a.value.index>=0&&a.value.index<spec.stages.length&&files['game.js'].includes('R.missionReady(')))}));
+  for(const row of direct.tasks){if(row.id==='mission'&&tasks.some(t=>t.title===actions.mission.title&&t.possible))continue;row.number=tasks.length+1;tasks.push(row);}
 
   const unknown=text.length>0&&changes.length===0&&direct.tasks.length===0&&direct.pending.length===0;
   const unsupported=tasks.filter(t=>!t.possible).map(t=>t.title+(t.title==='Programar objetivo da fase'?' — informe "fase N" de um jogo ação/FPS 3D gerado no motor v0.14':' — regra não implementada neste motor'));

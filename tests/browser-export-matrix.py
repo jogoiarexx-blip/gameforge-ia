@@ -139,9 +139,49 @@ def run():
                 failures.append(('studio-editor-preview-zip', str(exc), page_errors, []))
             finally:
                 page.close()
+            # GDD urbano Three.js: interpretação correta, contrato, sem motor falso.
+            urban_page = browser.new_page(viewport={'width': 390, 'height': 844}, accept_downloads=True)
+            urban_errors = []
+            urban_page.on('pageerror', lambda error: urban_errors.append(str(error)))
+            try:
+                urban_page.goto(origin + '/', wait_until='load')
+                urban_source = (
+                    '# Porto Vesper — Urban Action 3D\\n'
+                    '## Gênero e câmera\\n'
+                    'Ação criminal urbana 3D em terceira pessoa com câmera por trás do jogador.\\n'
+                    '## Mundo e mecânicas\\n'
+                    'Cidade explorável com carros, polícia, negócios, territórios, inimigos e missões.\\n'
+                    '## Primeira missão\\n'
+                    'Entrar no armazém, vencer guarda e capturar um negócio com renda.\\n'
+                )
+                urban_page.locator('#gdd').fill(urban_source)
+                urban_page.locator('#analyze').click()
+                assert 'ação urbana' in urban_page.locator('#analysis').inner_text().lower()
+                assert urban_page.locator('#download-urban-plan').is_visible()
+                assert urban_page.locator('#generate').is_disabled(), 'motor urbano não existe: botão deve bloquear geração falsa'
+                with urban_page.expect_download(timeout=15000) as d:
+                    urban_page.locator('#download-urban-plan').click()
+                zip_path = Path(tmp) / 'urban-plan.zip'
+                d.value.save_as(zip_path)
+                with zipfile.ZipFile(zip_path) as archive:
+                    contract = json.loads(archive.read('GAME_DESIGN_CONTRACT.json'))
+                    assert contract['genre'] == 'urban-action'
+                    assert contract['dimension'] == '3d'
+                    assert contract['camera'] == 'third-person'
+                    assert contract['engineAvailability']['status'] == 'planned'
+                    assert archive.read('GDD_original.md').decode('utf-8') == urban_source
+                    assert 'vertical slice' in archive.read('PLANO_URBAN_ACTION.md').decode('utf-8').lower()
+                    assert 'game.js' not in archive.namelist(), 'não exportar jogo inexistente'
+                assert not urban_errors, urban_errors
+                results.append('urban-design-planning')
+            except Exception as exc:
+                urban_page.screenshot(path=str(screenshots / 'urban-design-failure.png'), full_page=True)
+                failures.append(('urban-design-planning', str(exc), urban_errors, []))
+            finally:
+                urban_page.close()
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == 15
+            assert len(results) == 16
         finally:
             browser.close()
             server.shutdown()

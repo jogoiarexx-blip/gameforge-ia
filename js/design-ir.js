@@ -8,7 +8,7 @@ const patterns=Object.freeze([
  {id:'shooting',label:'Tiros e armas',pattern:/\b(tiros?|tiroteios?|atirar|disparar|pistolas?|fuzis?|municao|armas? de fogo)\b/,engines:['fps-3d','urban-action-3d','arena-2d','arena-3d','shooter-2d','shooter-3d'],partial:['urban-action-3d']},
  {id:'driving',label:'Veículos dirigíveis',pattern:/\b(dirigir|pilot(?:ar|agem)|entrar em carros?|conduzir|carros?|veiculos?|caminhoes?|carros? dirigiveis|caminhoes? dirigiveis)\b/,engines:['racing-3d','racing-2d']},
  {id:'police',label:'Polícia e nível de procurado',pattern:/\b(policia|viaturas?|estrelas? de procurad[oa]|perseguicao policial)\b/,engines:[]},
- {id:'business',label:'Conquistar ou administrar negócios',pattern:/\b(negocios?|estabelecimentos?|empresas?|propriedades|lojas? comerciais?)\b/,engines:['urban-action-3d'],partial:['urban-action-3d']},
+ {id:'business',label:'Conquistar ou administrar negócios',pattern:/\b(negocios?|estabelecimentos?|empresas?|propriedades|lojas?(?: comerciais?)?)\b/,engines:['urban-action-3d'],partial:['urban-action-3d']},
  {id:'territories',label:'Territórios conquistáveis',pattern:/\b(territorios?|distritos?|dominar bairros?|recaptura)\b/,engines:[]},
  {id:'interiors',label:'Interiores acessíveis',pattern:/\b(interiores?|entrar em predios?|entrar em lojas?|entrar em casas?)\b/,engines:[]},
  {id:'stealth',label:'Furtividade e esconder-se',pattern:/\b(furtividade|stealth|esconder(?:-se)?|escondid[oa]s?|se esconder|nao ser visto)\b/,engines:[]},

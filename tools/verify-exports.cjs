@@ -12,13 +12,13 @@ function validateFiles(files,dimension,genre){
  }
  const html=files['index.html'];
  const scripts=[...html.matchAll(/<script\s+[^>]*src=["']([^"']+)["']/gi)].map(x=>x[1]);
- if(scripts.length===0||scripts.at(-1)!=='game.js')throw Error('Exportação '+genre+': script principal não encontrado');
  for(const script of scripts){
   if(/^(?:https?:|\/\/|data:|javascript:)/i.test(script)||script.startsWith('/')||script.includes('..'))
    throw Error('Script remoto ou inseguro em '+genre+': '+script);
   if(typeof files[script]!=='string'||!files[script].length)
    throw Error('Arquivo local ausente em '+genre+': '+script);
  }
+ if(scripts.length===0||scripts.at(-1)!=='game.js')throw Error('Exportação '+genre+': script principal não encontrado');
  new vm.Script(files['game.js'],{filename:'export-'+dimension+'-'+genre+'-game.js',timeout:10000});
  if(dimension==='3d'){
   if(!files['engine-3d.js']||!files['THREE-LICENSE.txt'])

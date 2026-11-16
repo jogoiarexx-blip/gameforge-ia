@@ -64,12 +64,14 @@
     if(three&&!root.GameForgeThreeSource)throw Error('Biblioteca 3D local ausente. Atualize o Studio.');
     if(advanced&&typeof root.gameForgeTDRulesFactory!=='function')throw Error('Motor de regras Tower Defense não carregado. Atualize o Studio.');
     const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n':advanced?'const GameForgeTDRules = ('+root.gameForgeTDRulesFactory.toString()+')();\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
-    // FPS 3D recebe o módulo isolado mesmo sem loja ativa: pode habilitá-la por comando futuro.
-    const combatModule=three&&spec.genre==='fps'
-      ?'const gameForgeCombatEconomyFactory = '+root.gameForgeCombatEconomyFactory.toString()+';\\n':'';
-    if(three&&spec.genre==='fps'&&typeof root.gameForgeCombatEconomyFactory!=='function')
+    // Incluído no FPS para permitir loja por comandos futuros sem reconstruir o motor.
+    const combatFactory=root.gameForgeCombatEconomyFactory||
+      (typeof require==='function'?require('./combat-economy'):null);
+    if(three&&spec.genre==='fps'&&typeof combatFactory!=='function')
       throw Error('Módulo de economia de combate não carregado. Atualize o Studio.');
-    const code='/* Jogo criado no modo sem IA. Código editável. */\\nconst GAME_SPEC = '+data+';\\n'+rules+combatModule+'('+runtime.toString()+')();\\n';
+    const combatModule=three&&spec.genre==='fps'
+      ?'const gameForgeCombatEconomyFactory = '+combatFactory.toString()+';\n':'';
+    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+rules+combatModule+'('+runtime.toString()+')();\n';
     const css=BASE_CSS;
     const dependencies=three?{'engine-3d.js':root.GameForgeThreeSource,'THREE-LICENSE.txt':root.GameForgeThreeLicense}:{};
     const shooterManifest=spec.genre==='shooter' ? {'MANIFESTO_SHMUP.md':

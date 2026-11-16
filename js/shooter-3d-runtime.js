@@ -8,7 +8,8 @@ function gameForgeShooter3DBoot(){
   .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').slice(0,52);
  const branchSave=branchConfig?GameForgeUrbanSave.create(
   ()=>window.localStorage,branchKey,data=>BR.validateCheckpoint(branchConfig,data,spec.stages?.length||3)):null;
- let chosenRoute=null,routePanel=null,branchRestored=false;
+ let chosenRoute=null,routePanel=null,branchRestored=false,routeEvents=[],routeDecorCount=0;
+ let routeTriggered=new Set(),claimedEvents=new Set();
  const $=id=>document.getElementById(id),canvas=$('game');
  const opts={size:48,quality:'auto',seed:12345,theme:'neon',...spec.worldOptions};
  const size=R.clamp(Number(opts.size)||48,32,88),stages=(spec.stages?.length?spec.stages:['Fase 1']).slice(0,30);
@@ -17,7 +18,7 @@ function gameForgeShooter3DBoot(){
  const availableRoutes=()=>BR?BR.options(branchConfig,kills>=10):[];
  function saveRouteCheckpoint(){
   if(!branchSave)return;
-  branchSave.write({version:1,stage,route:chosenRoute?.id||null,score,health,weapon,kills});
+  branchSave.write({version:1,stage,route:chosenRoute?.id||null,score,health,weapon,kills,claimed:[...claimedEvents]});
  }
  function showRouteChoice(){
   if(!BR)return;
@@ -44,7 +45,7 @@ function gameForgeShooter3DBoot(){
   if(!BR||state!=='route-choice')return false;
   const route=BR.choose(branchConfig,id,kills>=10);
   if(!route)return false;
-  chosenRoute=route;branchRestored=false;
+  chosenRoute=route;branchRestored=false;claimedEvents=new Set();routeTriggered=new Set();
   $('start').style.display='';routePanel.style.display='none';
   state='play';paused=false;release();setUpStage();
   $('overlay').classList.add('hidden');
@@ -122,7 +123,7 @@ function gameForgeShooter3DBoot(){
   player={x:0,y:0,z:size*.27,speed:0};
   scene=new T.Scene();
   const selectedTheme=['forest','desert','neon','ruins'].includes(custom.theme)?custom.theme:opts.theme;
-  const bg=selectedTheme==='ruins'?0x101325:selectedTheme==='desert'?0x342837:selectedTheme==='forest'?0x0d2630:0x080e27;
+  const bg=chosenRoute?.scene?.bg??(selectedTheme==='ruins'?0x101325:selectedTheme==='desert'?0x342837:selectedTheme==='forest'?0x0d2630:0x080e27);
   scene.background=new T.Color(bg);scene.fog=new T.Fog(bg,size*.7,size*2.1);
   renderer.setClearColor(bg);
   world=new T.Group();scene.add(world);
@@ -138,6 +139,11 @@ function gameForgeShooter3DBoot(){
    shot:geometry(new T.SphereGeometry(.18,6,5)),hostile:geometry(new T.OctahedronGeometry(.25)),
    power:geometry(new T.OctahedronGeometry(.48)),star:geometry(new T.OctahedronGeometry(.075)),
    ground:geometry(new T.BoxGeometry(size,.4,size*1.25)),line:geometry(new T.BoxGeometry(.1,.02,size*1.24))};
+  if(chosenRoute?.scene){
+   mats.ground.color.setHex(chosenRoute.scene.ground);
+   mats.routeStructure=mat(chosenRoute.scene.structures);
+   mats.routeGlow=mat(chosenRoute.scene.glow,chosenRoute.scene.glow);
+  }
   makeMesh(geos.ground,mats.ground,world,0,-.35,0);
   for(let i=-4;i<=4;i++)makeMesh(geos.line,mats.line,world,i*size/9,-.12,0);
   const rng=R.rng((Number(opts.seed)||12345)+stage*501);
@@ -161,6 +167,33 @@ function gameForgeShooter3DBoot(){
     stars.push({mesh:o,speed:1+rng()*3});
    }
   }
+  // Cada caminho monta um bioma 3D diferente, não apenas um número no HUD.
+  // Geometrias e materiais são compartilhados por toda a fase.
+  routeDecorCount=0;
+  if(chosenRoute?.scene){
+   const kind=chosenRoute.scene.id;
+   const dims=kind==='sky-bridges'?[1.15,3.2,2.3]:kind==='central-outpost'?[1.65,3,1.65]:
+     kind==='canyon-ruins'?[2.2,2.5,2.2]:[1.35,3.8,1.2];
+   geos.routePillar=geometry(new T.BoxGeometry(...dims));
+   geos.routeBeacon=geometry(new T.BoxGeometry(dims[0]*1.17,.18,dims[2]*1.12));
+   const xOffset=kind==='sky-bridges'?size*.36:kind==='central-outpost'?size*.33:
+     kind==='canyon-ruins'?size*.37:size*.39;
+   for(let i=0;i<5;i++)for(const side of [-1,1]){
+    const z=(i-2)*size*.17;
+    const lateral=kind==='canyon-ruins'?(i%2?1.3:0):kind==='hidden-rift'?(i%2?.75:0):0;
+    const x=side*(xOffset+lateral);
+    const height=dims[1]*(kind==='canyon-ruins'?(i%3===0?1.35:.85):1);
+    const pillar=makeMesh(geos.routePillar,mats.routeStructure,world,x,height/2-.1,z);
+    pillar.scale.y=height/dims[1];routeDecorCount++;
+    makeMesh(geos.routeBeacon,mats.routeGlow,world,x,height-.05,z);routeDecorCount++;
+   }
+   if(kind==='hidden-rift'){
+    geos.portalBeam=geometry(new T.BoxGeometry(size*.17,.26,.55));
+    makeMesh(geos.portalBeam,mats.routeGlow,world,0,3,-size*.28);routeDecorCount++;
+   }
+  }
+  routeEvents=BR&&chosenRoute?BR.events(chosenRoute,stage):[];
+  routeTriggered=new Set(claimedEvents);
   drawImports();
   ship=starfighter('player');ship.position.set(player.x,.25,player.z);
   const c=Number(custom.waves),w=Number.isFinite(c)&&c>0?Math.round(c):3+Math.floor(stage/2);
@@ -172,7 +205,10 @@ function gameForgeShooter3DBoot(){
  }
  function spawnEnemy(i,count,boss=false){
   const center=(count-1)/2;
-  const x=boss?0:R.clamp((i-center)*3.1,-size*.37,size*.37);
+  const lane=chosenRoute?.id;
+  const offset=lane==='high'?size*.085:lane==='secret'?(i%2?size*.095:-size*.095):0;
+  const spread=lane==='low'?1.19:lane==='middle'?.92:1;
+  const x=boss?0:R.clamp((i-center)*3.1*spread+offset,-size*.37,size*.37);
   const z=boss?-size*.25:-size*.39-(i%3)*1.25;
   const mesh=starfighter('enemy',boss);mesh.position.set(x,.2,z);
   const hp=boss?Math.ceil((20+stage*7)*tuning.bossMultiplier*(chosenRoute?.enemyMultiplier||1)):
@@ -189,6 +225,31 @@ function gameForgeShooter3DBoot(){
   bossSpawned=true;spawnEnemy(0,1,true);
   notice('CHEFE · 3 fases de batalha!',3);
  }
+ function runRouteEvents(){
+  for(const event of routeEvents){
+   if(stageClock<event.at||routeTriggered.has(event.id))continue;
+   routeTriggered.add(event.id);
+   if(event.type==='ambush'){
+    for(let i=0;i<event.enemies&&enemies.length<22;i++){
+     spawnEnemy(i,event.enemies);
+     const e=enemies[enemies.length-1];if(e)e.shotTimer=.55;
+    }
+   }else if(event.type==='hazard'){
+    for(let i=0;i<event.projectiles;i++){
+     const x=(i-(event.projectiles-1)/2)*size*.105;
+     const dx=player.x-x,dz=player.z+size*.24,mag=Math.max(1,Math.hypot(dx,dz));
+     projectile(x,-size*.24,true,dx/mag,dz/mag);
+    }
+   }else if(event.type==='supply'||event.type==='cache'){
+    const x=event.type==='cache'?-size*.16:size*.16,z=size*.22;
+    const mesh=makeMesh(geos.power,mats.routeGlow||mats.power,world,x,.8,z);
+    mesh.scale.setScalar(1.6);
+    drops.push({mesh,x,z,life:22,kind:'route',eventId:event.id,reward:event.reward});
+   }
+   notice(event.label+' · '+(event.type==='hazard'?'Desvie!':event.type==='ambush'?'Elimine a patrulha!':'Colete o item!'),3);
+  }
+ }
+
  function projectile(x,z,hostile,dx=0,dz=-1){
   if(hostile&&hostileShots.length>=70)return;
   const obj=makeMesh(hostile?geos.hostile:geos.shot,hostile?mats.hostile:mats.shot,world,x,.83,z);
@@ -274,9 +335,20 @@ function gameForgeShooter3DBoot(){
  function updateDrops(dt){
   for(const d of drops){
    d.z+=dt*5.6;d.life-=dt;d.mesh.position.z=d.z;d.mesh.rotation.y+=dt*2;
-   if((d.x-player.x)**2+(d.z-player.z)**2<1.3){
-    d.life=0;weapon=Math.min(3,weapon+1);health=Math.min(100,health+12);score+=90;
-    notice('Power-up! Arma nível '+weapon+' · +12 vida',2);
+   if((d.x-player.x)**2+(d.z-player.z)**2<(d.kind==='route'?2.1:1.3)){
+    d.life=0;
+    if(d.kind==='route'){
+     if(!claimedEvents.has(d.eventId)){
+      claimedEvents.add(d.eventId);score+=d.reward;
+      health=Math.min(100,health+(chosenRoute?.id==='high'?18:8));
+      if(chosenRoute?.id==='secret')weapon=Math.min(3,weapon+1);
+      saveRouteCheckpoint();
+      notice('Evento '+(chosenRoute?.name||'')+' · bônus '+d.reward,2.3);
+     }
+    }else{
+     weapon=Math.min(3,weapon+1);health=Math.min(100,health+12);score+=90;
+     notice('Power-up! Arma nível '+weapon+' · +12 vida',2);
+    }
    }
   }
   drops=drops.filter(d=>{if(d.life<=0||d.z>size*.53){world.remove(d.mesh);return false;}return true;});
@@ -292,6 +364,7 @@ function gameForgeShooter3DBoot(){
   ship.rotation.z=-x*.1;ship.rotation.x=-z*.09;
   ship.visible=invulnerable<=0||Math.floor(invulnerable*14)%2===0;
   if(down(' ','Enter','fire')||pendingPointer)playerShoot();
+  runRouteEvents();
   updateEnemies(dt);updateProjectiles(dt);updateDrops(dt);
   if(starField){
    for(let i=0;i<stars.length;i++){
@@ -336,7 +409,7 @@ function gameForgeShooter3DBoot(){
     stageTransition-=dt;
     if(stageTransition<=0){
      if(stage+1===stages.length){state='victory';$('overlay-title').textContent='Campanha concluída!';$('overlay-sub').textContent='Pontos: '+score+' · '+stages.length+' fases.';$('start').textContent='Jogar novamente';$('overlay').classList.remove('hidden');}
-     else{stage++;health=Math.min(100,health+20);chosenRoute=null;if(BR)showRouteChoice();else setUpStage();}
+     else{stage++;health=Math.min(100,health+20);chosenRoute=null;claimedEvents=new Set();routeTriggered=new Set();if(BR)showRouteChoice();else setUpStage();}
     }
    }else updateStage(dt);
    updateHud();
@@ -347,12 +420,14 @@ function gameForgeShooter3DBoot(){
  function start(){
   if(state==='route-choice')return;
   if(state==='play'&&paused){togglePause();return;}
-  stage=0;health=100;score=0;weapon=1;kills=0;clock=0;paused=false;chosenRoute=null;release();
+  stage=0;health=100;score=0;weapon=1;kills=0;clock=0;paused=false;chosenRoute=null;
+  claimedEvents=new Set();routeTriggered=new Set();release();
   if(BR){
    const loaded=branchSave.read();
    if(loaded&&state==='menu'){
     stage=loaded.stage;health=loaded.health;score=loaded.score;weapon=loaded.weapon;kills=loaded.kills;
     chosenRoute=BR.choose(branchConfig,loaded.route,kills>=10);
+    claimedEvents=new Set(loaded.claimed||[]);
     branchRestored=!!chosenRoute;
    }else branchSave.remove();
    if(chosenRoute){state='play';setUpStage();$('overlay').classList.add('hidden');}
@@ -372,6 +447,8 @@ function gameForgeShooter3DBoot(){
     enemies:enemies.length,playerBullets:shots.length,enemyBullets:hostileShots.length,powerups:drops.length,
     wave,waveMax,bossSpawned,bossPhase,weapon,kills,
     route:chosenRoute?.id||null,routeName:chosenRoute?.name||null,routeChoices:BR?availableRoutes().map(r=>r.id):[],routeCheckpoint:!!branchSave?.read(),
+    routeScene:chosenRoute?.scene?.id||null,routeDecorCount,
+    routeEvents:routeEvents.map(e=>({id:e.id,type:e.type,at:e.at})),routeEventsTriggered:[...routeTriggered],routeRewardsClaimed:[...claimedEvents],
     starCount:stars.length,starDrawBatches:starField?1:stars.length,
     render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},
     player:{x:player.x*100,y:player.z*100,z:0,angle:0,screenX:(playerPosition.x*.5+.5)*canvas.width,screenY:(-.5*playerPosition.y+.5)*canvas.height,radius:24}};

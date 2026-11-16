@@ -259,6 +259,12 @@
   function creationInstruction(spec,instruction=''){
     const plan=spec.implementation||{applied:[],pending:[],warnings:[]};
     const summarized=(arr,limit)=>arr.slice(0,limit).map(a=>a.description+' ('+a.where+')').join('; ');
+    const semantic=spec.designIR||{requirements:[],constraints:[]};
+    const trace=semantic.requirements.slice(0,20).map(x=>
+      '['+x.status+'] '+x.label+' ('+(x.origin?.document||'fonte')+' linha '+(x.origin?.line||'?')+')').join('; ');
+    const negatives=semantic.constraints.slice(0,12).map(x=>
+      '['+x.status+'] '+x.label).join('; ');
+
     const sourcePattern=spec.referenceGame?
       'EXEMPLO DE CÓDIGO FONTE ESTUDADO: '+spec.referenceGame.repository+' ('+spec.referenceGame.url+'). Técnicas: '+
       spec.referenceGame.lessons.join('; ')+'. Requisitos ainda não gerados: '+spec.referenceGame.unsupported.join('; ')+
@@ -268,6 +274,9 @@
       sourcePattern+
       'Configurações executáveis identificadas: '+summarized(plan.applied||[],18)+'\\n'+
       'Pendências que exigem implementação real: '+summarized(plan.pending||[],12)+'\\n'+
+      'LEITURA DE MECÂNICAS POR REQUISITO: '+trace+'\\n'+
+      'PROIBIÇÕES E RESTRIÇÕES DO USUÁRIO (nunca ignorar): '+negatives+'\\n'+
+
       'Limites/alertas: '+(plan.warnings||[]).slice(0,6).join('; ')+'\\n\\n';
     const value=context+String(instruction);
     if(value.length>10000)throw Error('Configuração e instrução de IA ultrapassam 10.000 caracteres. Reduza a instrução adicional.');

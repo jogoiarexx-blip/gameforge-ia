@@ -850,6 +850,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         const report=await GameForgeModelInspector.readFile(file);
         if(report.meshes<1)throw Error('GLB sem malhas: '+file.name);
         const data=GameForgeAssetLibrary.validateGLB(new Uint8Array(await file.arrayBuffer()));
+        GameForgeGLB.decode(null,data); // valida geometria, hierarquia e texturas antes de salvar
         const id=GameForgeAssetLibrary.newId();
         const item={id,name:file.name,bytes:data.length,role:'scene',placement:assetPlacement()};
         const next=GameForgeAssetLibrary.append(current,item);

@@ -45,8 +45,8 @@ function briefFromCommand(instruction){
  return '# '+clean+'\n\n## Ideia original\n'+value+'\n';
 }
 function stageIndex(text){
- const m=/\b(?:fase|missao|level|stage|etapa)\s*(\d{1,2})\b/.exec(normalize(text));
- return m?Number(m[1])-1:null;
+ const m=/\b(?:fase|missao|level|stage|etapa)\s*(\d{1,2}|um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\b/.exec(normalize(text));
+ return m?number(m[1])-1:null;
 }
 function requirements(text,origin){
  // Dividir por linhas preserva escopo de titulos: informacoes de fase nao vazam para outras fases.
@@ -131,10 +131,19 @@ function compile(spec,gdd,instruction='',options={}){
  const changeTuning=(field,value,id,description)=>{
   tuning[field]=value;push('applied',id,description,'Jogo inteiro');
  };
- if(/\b(mais dificil|dificuldade (alta|elevada)|hardcore|inimigos? mais (fortes?|resistentes?))\b/.test(combined))
-  changeTuning('difficulty',1.4,'difficulty','Dificuldade ampliada no motor');
- else if(/\b(mais facil|dificuldade (baixa|facil)|inimigos? mais fracos?)\b/.test(combined))
-  changeTuning('difficulty',.8,'difficulty','Dificuldade reduzida no motor');
+ // A última ordem explícita prevalece, especialmente quando o usuário modifica um GDD.
+ // Interpretar GDD e comando separadamente evita que "hardcore" no GDD antigo
+ // anule "deixe mais fácil" escrito depois.
+ let difficultyAction=null;
+ for(const record of sections){
+  const t=record.normal;
+  if(/\b(mais dificil|dificuldade (alta|elevada)|hardcore|inimigos? mais (fortes?|resistentes?))\b/.test(t))
+   difficultyAction='hard';
+  else if(/\b(mais facil|dificuldade (baixa|facil)|inimigos? mais fracos?)\b/.test(t))
+   difficultyAction='easy';
+ }
+ if(difficultyAction==='hard')changeTuning('difficulty',1.4,'difficulty','Dificuldade ampliada no motor');
+ else if(difficultyAction==='easy')changeTuning('difficulty',.8,'difficulty','Dificuldade reduzida no motor');
  if(/\b(nave|jogador|personagem|carro|veiculo)\b.{0,22}\b(mais rapid[oa]|mais veloz)\b|\baument(?:ar|e)\b.{0,20}\bvelocidade\b/.test(combined)){
   if(!capabilities||capabilities.capability('speed',spec).allowed)changeTuning('playerSpeedMultiplier',1.25,'speed','Velocidade do jogador aumentada');
   else push('pending','speed','Velocidade do jogador não configurável neste motor','Jogo inteiro');
@@ -161,8 +170,10 @@ function compile(spec,gdd,instruction='',options={}){
  const order=[...sections.filter(r=>r.origin==='GDD'),...sections.filter(r=>r.origin==='Comando')];
  for(const line of order){
   const t=line.normal,where=line.stage, origin=line.origin+' linha '+line.line;
-  // Evitar pedidos negados: "nao quero inimigos" nao deve criar 10 inimigos.
-  const negated=/\b(sem|nao quero|nenhum|nenhuma|remova|retire|elimine o sistema de)\b/.test(t);
+  // Negação localizada: "sem chefe, com 7 inimigos" ainda pede 7 inimigos.
+  const enemyMention=/\b(?:inimigos?|adversarios?|monstros?)\b/.exec(t);
+  const enemyClause=enemyMention?t.slice(0,enemyMention.index).split(/[,.!?;]|\b(?:mas|porem)\b/).pop():'';
+  const negated=/\b(sem|nao quero|nenhum|nenhuma|remova|retire|elimine o sistema de)\b/.test(enemyClause);
   const wave=quantity(t,'ondas|waves');
   if(wave!==null&&/\b(onda|wave)/.test(t)){
    if(spec.genre==='shooter'&&spec.dimension==='3d'){
@@ -251,9 +262,12 @@ function compile(spec,gdd,instruction='',options={}){
  const shopLines=[...sections.filter(r=>r.origin==='GDD'),...sections.filter(r=>r.origin==='Comando')];
  const disableStore=/\b(sem loja|nao quero (?:uma )?loja|remova? a loja|desativar? a loja|retirar a loja)\b/;
  const enableStore=/\b(comprar|compre|compra|loja|mercador|mercado)\b.*\b(municao|balas?|cartuchos?|armas?|vida|cura|kit medico|medkits?|upgrades?|melhorias?)\b|\b(ativar|habilitar|adicionar|criar)\b.{0,26}\bloja\b/;
- const pricePattern=/\b(municao|balas?|kit medico|cura|melhoria de arma|upgrade de arma)\b.{0,32}\b(custa|custo|preco)\b/;
+ const pricePattern=/\b(municao|balas?|kit medico|cura|melhoria de arma|upgrade de arma)\b.{0,32}\b(custa|custam|custo|preco|vale)\b/;
+ // Ordens na mesma linha têm sequência: "sem loja. Depois adicione uma loja".
+ const shopStatements=shopLines.flatMap(record=>record.normal.split(/[.!?;]|\b(?:depois|mas)\b/)
+  .map(normal=>({...record,normal:normal.trim()})).filter(x=>x.normal));
  let storeAction=null,shopRequest=false,priceRequest=false;
- for(const record of shopLines){
+ for(const record of shopStatements){
   if(disableStore.test(record.normal))storeAction='off';
   else if(enableStore.test(record.normal)){storeAction='on';shopRequest=true;}
   if(pricePattern.test(record.normal)){priceRequest=true;if(storeAction===null)storeAction='on';}
@@ -273,7 +287,7 @@ function compile(spec,gdd,instruction='',options={}){
     if(stock)config.startingReserve=clamp(Number(stock[1]),0,250);
     const kinds=[['ammo','municao|balas?|pacote de municao'],['heal','kit medico|kit de cura|cura|medkit'],['upgrade','upgrade de arma|melhoria de arma|melhorar arma']];
     for(const [key,noun] of kinds){
-     const match=new RegExp('\\b(?:'+noun+')\\b.{0,24}\\b(?:custa|custar|preco|valor)\\s*(?:de|:|=)?\\s*(\\d{1,4})\\s*(?:creditos?)?\\b').exec(t);
+     const match=new RegExp('\\b(?:'+noun+')\\b.{0,24}\\b(?:custa|custam|custar|preco|valor|vale)\\s*(?:de|:|=)?\\s*(\\d{1,4})\\s*(?:creditos?)?\\b').exec(t);
      if(match)config.prices[key]=clamp(Number(match[1]),key==='upgrade'?20:5,key==='upgrade'?2000:500);
     }
    }

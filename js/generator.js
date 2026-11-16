@@ -51,10 +51,11 @@
     return `# Relatório da geração\n\n- Título: ${spec.title}\n- Estilo: ${spec.genre}\n- Dimensão: ${spec.dimension||'2d'}\n- Fases: ${spec.stages.join(' / ')}\n- Motor: ${spec.dimension==='3d'?'Three.js r180 local, personagens e ambientes procedurais; uma fase carregada por vez':'Canvas 2D local'}\n- Modelo: ${mechanics[spec.genre]||'Shoot’em up com ondas, melhorias e chefes.'}\n\n${spec.genre==='lane-defense'?'## Recursos do motor por linhas implementados\n\n- Tabuleiro 5x9, coleta manual de recursos, cards com custo e recarga.\n- Ondas reproduzíveis, dano na mesma faixa, proteção de uso único e derrota por segundo vazamento.\n- Até 40 títulos de fases importados. O conteúdo e habilidades próprios de cada fase ainda precisam de programação.\n\n## Fora do motor genérico\n\n- Catálogo completo, chefes roteirizados, minigames, atlas animados, PWA e testes em dispositivos reais não foram criados automaticamente.\n\n':''}## Interpretação do GDD\n\n${spec.detected.map(x=>'- '+x).join('\n')}\n\n## Limites\n\n${spec.limitations.map(x=>'- '+x).join('\n')}\n\n## Como jogar e publicar\n\nAbra index.html e mantenha todos os arquivos do ZIP juntos. No 3D, engine-3d.js e sua licença acompanham o projeto. O motor de nave 3D possui ondas, chefes, tiros inimigos, power-ups e HUD próprios; o RPG 3D tem progressão básica. O HTML único também inclui a biblioteca; não baixa código de CDN. As regras livres do GDD não são implementadas automaticamente pelo modo sem IA.\n`;
   }
   function generate(spec, gdd) {
-    if (typeof gameForgeBoot !== 'function')throw new Error('Modelo básico não carregado');
-    if(spec.genre==='shooter' && spec.dimension!=='3d' && typeof gameForgeShooterBoot !== 'function')throw new Error('Motor de nave não carregado');
+    const three=spec.dimension==='3d';
+    if(!three && typeof gameForgeBoot !== 'function')throw new Error('Modelo básico não carregado');
+    if(spec.genre==='shooter' && !three && typeof gameForgeShooterBoot !== 'function')throw new Error('Motor de nave não carregado');
     const data=JSON.stringify(spec).replace(/<\//g,'<\\/');
-    const three=spec.dimension==='3d';const expanded=!three&&['rpg','tower-defense'].includes(spec.genre);
+    const expanded=!three&&['rpg','tower-defense'].includes(spec.genre);
     const advanced=!three&&['lane-defense','block-td'].includes(spec.genre);
     const runtime=three?(spec.genre==='shooter'?root.gameForgeShooter3DBoot:root.gameForgeThreeBoot):advanced?root.gameForgeAdvancedTDBoot:expanded?root.gameForgeExpanded2DBoot:spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
     if(typeof runtime!=='function')throw Error('Motor '+spec.genre+' '+(spec.dimension||'2d')+' não carregado. Atualize o Studio.');

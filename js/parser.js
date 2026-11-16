@@ -110,7 +110,8 @@
     }:sourceInference;
     const explicitGenre=options.genre&&options.genre!=='auto'?options.genre:null;
     let genre=explicitGenre||(urbanProfile?.identified?'urban-action':requestedGenre||detectGenre(combined));
-    const recentDimension=/\b(?:3d|three[.]?js|tres dimensoes|terceira dimensao)\b/.test(direct)?'3d':
+    const excludes3d=/\b(?:sem 3d|nao quero 3d|nao usar 3d|evitar 3d|fora de escopo.{0,18}3d)\b/.test(direct);
+    const recentDimension=!excludes3d&&/\b(?:3d|three[.]?js|tres dimensoes|terceira dimensao)\b/.test(direct)?'3d':
       /\b(?:2d|duas dimensoes|canvas)\b/.test(direct)?'2d':null;
     const semanticIntro=normalize(source.trim()?source.slice(0,2600):extra.slice(0,2600));
     // O "não usar 3D" de um escopo negativo nunca é uma exigência positiva.

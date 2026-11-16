@@ -1,6 +1,20 @@
 # CHECKPOINT — GameForge Studio | 2026-11-14
 
 
+## GF-010 v2 / GF-015 v2 — Eventos por rota e finalização de animações GLB (16/11/2026)
+
+**Estado da etapa:** EM REVISÃO; consultar CI Node/Chromium e o workflow Publicar GameForge verificado do SHA final após concluir. A implementação está no código fonte e não depende de download adicional nem de servidores.
+
+**GF-010 v2 implementado — shooter 3D exportável:** `js/stage-branches.js` enriqueceu cada rota predefinida com seu próprio bioma (`sky-bridges`, `central-outpost`, `canyon-ruins`, `hidden-rift`) e um evento com ID de fase/rota. `js/shooter-3d-runtime.js` constrói objetos 3D decorativos por caminho com geometrias compartilhadas, ajusta fundo/chão e formação de inimigos e dispara aos 4,5 s um encontro próprio: suprimento recolhível (alto), emboscada de dois inimigos (central), chuva de quatro projéteis (baixo) ou relíquia recolhível (secreto). Os bônus requerem colisão do jogador com o item. O save inclui `claimed` validado por ID; saves anteriores sem esse campo permanecem válidos e recompensas já coletadas não ressurgem em checkpoint da mesma fase. `__gameforgeTelemetry` expõe bioma, cenário, disparos de evento e reivindicações para QA.
+
+**GF-015 v2 implementado — campanhas urbanas:** `js/actor-animations.js` temporiza `hit`/`attack`, conserva clipe de `death` terminal e libera o retorno ao idle/walk somente após a ação temporária. `js/urban-mission-runtime.js` transfere guardas derrotados para `corpseGroup`, sem torná-los atacáveis e sem bloquear a contagem/recompensa de eliminação; a animação GLB de morte ou tombamento procedural roda por um intervalo finito, é descartada depois, e a tela final aguarda terminar o efeito. Reiniciar limpa efeitos e mixers. `__gameforgeTelemetry` expõe `deathAnimations` e `deathOverlayPending`.
+
+**Testes adicionados/estendidos:** `tests/stage-branches.test.js` (biomas e evento/ID sem duplicação), `tests/shooter-3d.test.js` (três cenários, evento real em simulação, pickup, save), `tests/glb-animations.test.js` (impacto temporizado, morte terminal e overlay). A matriz de exportação Node/Chromium continua exigida. Um erro de compatibilidade no teste antigo de save (campo `claimed` agora aparece como array vazio) foi ajustado e testes de coleta foram corrigidos para o item permanecer alcançável.
+
+**Limites:** as rotas diferenciam visual, encontros e economia mas ainda não são caminhos físicos que se bifurcam e conduzem a saídas diferentes; os eventos são predefinidos e não scripts livres compilados do GDD. Não há checkpoints de todos os projéteis/posições intermediárias. Animações GLB exigem clips e rigs compatíveis; não existem retargeting universal, fusão de rigs, importação de qualquer GLB ou medição de FPS em celulares físicos.
+
+**Próximos IDs:** GF-010 v3 para navegação física de bifurcações, colisão e encadeamento de objetivos; GF-015 v3 para eficiência de rigs, transições com root motion e QA visual com modelos autorizados. GF-001 (configuração administrativa Pages) ainda é dependência independente.
+
 ## GF-010/GF-015 — Caminhos de fase e personagens GLB animados (16/11/2026)
 
 **Estado:** EM REVISÃO até aprovação Node/Chromium e publicação verificada do SHA final. Base técnica reimplementada a partir de padrões observados nos ZIPs `Asas_do_Ultimo_Ninho_v0.4.0_Caminhos_dos_Esquecidos.zip` e `Quebra-no-tempo-v0.15.0.zip`, sem distribuir os modelos, narrativas, músicas ou código literal. Skill: [SKILL_GAMEFORGE_ROTAS_E_PERSONAGENS_GLB.md](./SKILL_GAMEFORGE_ROTAS_E_PERSONAGENS_GLB.md).

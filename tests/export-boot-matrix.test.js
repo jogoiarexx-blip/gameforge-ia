@@ -175,7 +175,7 @@ test('GF-018 gamepad funciona no game.js urbano exportado: anda, atira, pausa se
  assert.equal(h.telemetry().gamepadConnected,false,'desconexao nao deixa pad ativo');
 });
 test('GF-010 shooter 3D exportado executa a escolha de rota antes da primeira fase',()=>{
- const gdd='# Navinha das rotas\\n## Fase 1\\n## Fase 2\\nTrês caminhos alternativos e passagem secreta com recompensas diferentes';
+ const gdd='# Navinha das rotas\n## Fase 1\n## Fase 2\nTrês caminhos alternativos e passagem secreta com recompensas diferentes';
  const spec=parser.parseGdd(gdd,'',{dimension:'3d',genre:'shooter'});
  assert.equal(spec.stageBranches?.enabled,true);
  const files=generator.generate(spec,gdd);

@@ -532,6 +532,8 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       feedback('Projeto restaurado com código, histórico e modelos GLB. Confirme na prévia.');
     }catch(e){
       if(nextId)for(const id of stored)try{await GameForgeAssetLibrary.erase(nextId,id);}catch{}
+      pendingProject=null;
+      $('project-restore-dialog').close();
       feedback('Restauração cancelada; projeto anterior preservado. '+e.message,true);
     }finally{projectOperations--;}
   });

@@ -8,6 +8,10 @@ const root=path.join(__dirname,'..');
 const parser=require(path.join(root,'js/parser.js'));
 require(path.join(root,'js/runtime-template.js'));
 require(path.join(root,'js/shooter-runtime.js'));
+require(path.join(root,'js/world-rules.js'));
+require(path.join(root,'js/software-renderer.js'));
+require(path.join(root,'vendor/three-source.js'));
+require(path.join(root,'js/three-runtime.js'));
 const generator=require(path.join(root,'js/generator.js'));
 const zip=require(path.join(root,'js/zip.js'));
 const tests=[

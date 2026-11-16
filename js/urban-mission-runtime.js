@@ -5,7 +5,7 @@
 'use strict';
 function gameForgeUrbanMissionBoot(){
  'use strict';
- const spec=GAME_SPEC,plan=spec.urbanMissions,T=THREE,R=GameForgeUrbanRules,F=GameForgeUrbanMissionFlow,I=GameForgeUrbanInput;
+ const spec=GAME_SPEC,plan=spec.urbanMissions,T=THREE,R=GameForgeUrbanRules,F=GameForgeUrbanMissionFlow,I=GameForgeUrbanInput,S=GameForgeUrbanSave;
  const $=id=>document.getElementById(id),canvas=$('game');
  const blockers=[
   {x:-10,z:-8,w:5,d:6},{x:10,z:-8,w:5,d:6},
@@ -18,6 +18,7 @@ function gameForgeUrbanMissionBoot(){
  function clearTouches(){touchOwners.clear();for(const name of Object.keys(touch))touch[name]=false;}
  const storageKey='gameforge-urban-missions-v2-'+String(spec.title||'jogo').toLowerCase()
   .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').slice(0,45);
+ const saveStore=S.create(()=>window.localStorage,storageKey,raw=>F.restore(plan,raw));
  let renderer=null;
  try{renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'default'});}
  catch(_){if(typeof gameForgeSoftwareRenderer==='function')try{renderer=gameForgeSoftwareRenderer(T,canvas);}catch(_){}}
@@ -69,14 +70,12 @@ function gameForgeUrbanMissionBoot(){
  let guards=[],items=[],lastStepId=null,saveStatus='novo',saveEnabled=true,cameraOccluded=false;
  function save(){
   sim.position={x:sim.position.x,z:sim.position.z};
-  try{window.localStorage?.setItem(storageKey,JSON.stringify(sim));saveStatus='salvo';saveEnabled=true;}
-  catch(_){saveStatus='indisponível';saveEnabled=false;}
+  const ok=saveStore.write(sim);
+  saveStatus=ok?'salvo':'indisponível';saveEnabled=ok;
  }
  function restore(){
-  try{
-   const raw=window.localStorage?.getItem(storageKey);
-   if(raw){const loaded=F.restore(plan,JSON.parse(raw));if(loaded){sim=loaded;saveStatus='recuperado';}}
-  }catch(_){}
+  const loaded=saveStore.read();
+  if(loaded){sim=loaded;saveStatus='recuperado';}
  }
  restore();
  function clearObjects(group){while(group.children.length)group.remove(group.children[0]);}
@@ -149,7 +148,7 @@ function gameForgeUrbanMissionBoot(){
  function reset(newGame=false){
   if(newGame){
    sim=F.initial(plan);
-   try{window.localStorage?.removeItem(storageKey);}catch(_){}
+   saveStore.remove();
   }else if(sim.status==='intermission')sim=F.advance(plan,sim).state;
   else if(sim.status==='victory')sim=F.initial(plan);
   gameState='play';paused=false;clock=0;prev=0;acc=0;keys.clear();clearTouches();

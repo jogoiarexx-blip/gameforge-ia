@@ -540,9 +540,9 @@ function gameForgeThreeBoot(){
    const effect=npcStatus==='completed'?R.npcMissionEffect(npc,npcSelectedChoice,stage):null;
    stage++;campaignEffect=effect;
    health=Math.min(100,health+25+(effect?.kind==='aid'?20:0));
-   if(!storeEnabled)ammo=Math.max(80,ammo+40);
+   if(!storeEnabled)ammo=Math.min(999,Math.max(80,ammo+40)+(effect?.kind==='aid'?20:0));
    saveCheckpoint();buildStage();
-   if(effect)notice(effect.kind==='aid'?'Aliados ajudaram! +20 vida nesta fase.':
+   if(effect)notice(effect.kind==='aid'?'Aliados ajudaram! Até +20 vida e +20 balas.':
     'Emboscada! +2 inimigos nesta fase.',4);
   }
  }

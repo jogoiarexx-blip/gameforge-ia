@@ -29,12 +29,18 @@ function environment(files,dimension){
  function element(id){
   if(!elements.has(id)){
    const events={};
+   const children=[];
    elements.set(id,{
-    id,style:{},dataset:{},textContent:'',innerText:'',innerHTML:'',width:960,height:540,
+    id,style:{},dataset:{},children,parentElement:null,
+    textContent:'',innerText:'',innerHTML:'',width:960,height:540,
     classList:{add(){},remove(){},contains(){return false;}},
     addEventListener(type,handler){(events[type]??=[]).push(handler);},
     click(){for(const callback of events.click||[])callback({preventDefault(){}});},
-    focus(){},setAttribute(){},appendChild(){},removeChild(){},
+    focus(){},setAttribute(){},
+    append(...items){for(const child of items){children.push(child);if(child&&typeof child==='object')child.parentElement=this;}},
+    appendChild(child){this.append(child);return child;},
+    replaceChildren(...items){children.length=0;this.append(...items);},
+    removeChild(child){const at=children.indexOf(child);if(at>=0)children.splice(at,1);},
     getBoundingClientRect(){return {left:0,top:0,width:960,height:540};},
     getContext(){return canvas2d;},
     setPointerCapture(){}

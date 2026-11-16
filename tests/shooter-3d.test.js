@@ -19,7 +19,10 @@ function three(){
 }
 function boot(overrides={}){
  const handlers={},elements={},callbacks=[];let now=0,rendered=null,disposals=0;
- const item=id=>elements[id]||(elements[id]={textContent:'',style:{},classList:{add(){},remove(){}},dataset:{},addEventListener(type,fn){this[type]=fn;},focus(){},getBoundingClientRect(){return {width:960,height:540};}});
+ const item=id=>elements[id]||(elements[id]={textContent:'',style:{},classList:{add(){},remove(){}},dataset:{},children:[],events:{},
+  addEventListener(type,fn){this.events[type]=fn;this[type]=fn;},click(){this.events.click?.({preventDefault(){}});},
+  appendChild(child){this.children.push(child);return child;},setAttribute(){},focus(){},
+  getBoundingClientRect(){return {width:960,height:540};}});
  const T=three();
  const currentDispose=T.BufferGeometry.prototype.dispose;
  T.BufferGeometry.prototype.dispose=function(){disposals++;return currentDispose.call(this);};
@@ -29,10 +32,13 @@ function boot(overrides={}){
  }};
  const env={THREE,GAME_SPEC:{genre:'shooter',dimension:'3d',stages:['Patrulha','Boss final'],features:{bosses:true},
   worldOptions:{size:48,quality:'low',theme:'neon',seed:33},shooterOptions:{boss:true},...overrides},
-  document:{getElementById:item,querySelectorAll:()=>[],addEventListener(){}},
+  document:{getElementById:item,createElement:()=>item('created-'+Object.keys(elements).length),querySelectorAll:()=>[],addEventListener(){}},
   performance:{now:()=>now},requestAnimationFrame:f=>callbacks.push(f),
   addEventListener:(name,fn)=>(handlers[name]||(handlers[name]=[])).push(fn),
   gameForgeWorldRules:worldRules,gameForgeSoftwareRenderer:null,
+  GameForgeStageBranches:require('../js/stage-branches.js')(),
+  GameForgeUrbanSave:require('../js/urban-save.js')(),
+  localStorage:{data:new Map(),getItem(k){return this.data.get(k)||null;},setItem(k,v){this.data.set(k,String(v));},removeItem(k){this.data.delete(k);}},
   window:null,globalThis:null};
  env.window=env;env.globalThis=env;
  vm.createContext(env);vm.runInContext('('+engine.toString()+')()',env);

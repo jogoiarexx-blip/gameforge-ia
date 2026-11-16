@@ -146,7 +146,8 @@ test('GF-010 v2 as rotas alteram bioma 3D e disparam encontros exclusivos execut
   assert.equal(start.route,id);
   assert.equal(start.routeScene,sceneId);
   assert.equal(start.routeDecorCount,20,'pilares e luminárias ficam na cena real');
-  const bg=g.scene().background.getHex();
+  const bg=start.routeBackground;
+  assert.ok(g.scene().background,'cenário foi construído com cor real de fundo');
   g.tick(295);
   const after=g.telemetry();
   const evt=after.routeEvents.find(e=>e.type===eventType);

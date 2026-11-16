@@ -65,3 +65,17 @@ test('GF-TRAIN-02: requisitos sem suporte não viram sistema executável',()=>{
  for(const id of ['craft','skill-tree','network'])
   assert.equal(spec.implementation.applied.some(x=>x.id===id),false,id);
 });
+
+test('GF-TRAIN-02: evolução incremental por nome da fase não modifica fases vizinhas',()=>{
+ const Dev=require('../js/development-engine.js');
+ const spec=Parser.parseGdd('# Arena 3D\\n## Fase 1\\n## Fase 2\\n## Fase 3'',{genre:'arena',dimension:'3d'});
+ const files={'game.js':'const GAME_SPEC = '+JSON.stringify(spec)+';\\n// R.missionReady( presente no motor','style.css':''};
+ const plan=Dev.plan('Na fase dois, sobreviver por 70 segundos.',spec,files);
+ assert.equal(plan.supported,true);
+ const result=Dev.modify(files,spec,plan);
+ assert.equal(result.changed,true);
+ assert.equal(result.spec.stageConfig[1].mission,'survive');
+ assert.equal(result.spec.stageConfig[1].seconds,70);
+ assert.equal(result.spec.stageConfig[0].mission,undefined);
+ assert.equal(result.spec.stageConfig[2].mission,undefined);
+});

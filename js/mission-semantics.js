@@ -67,15 +67,17 @@ function gameForgeMissionSemanticsFactory(){
      rule.pattern.lastIndex=0;let m;
      while((m=rule.pattern.exec(text))!==null){
       if(negative(text,m.index))continue;
-      const qty=quantity(m[0],rule.target);
+      const qty=quantity(m[0],rule.id==='deliver'?'evidence':rule.target);
+      const stepCount=rule.id==='deliver'?1:qty;
       const raw=m[0].slice(0,180);
       const precondition=/(?:depois de|apos|so depois|quando|somente se|se)\b/.test(text);
       const conditionTerms=[...text.matchAll(/\b(?:antes de|depois de|apos|quando|se|somente se)\b.{0,95}/g)]
         .map(x=>x[0].slice(0,105));
       events.push({index:m.index,action:rule.id,actor:rule.actor,target:rule.target,
-       quantity:qty,preconditions:[],effect:rule.effect,raw,conditions:conditionTerms,
-       status:qty>rule.max?'unsupported':'supported',source:row.origin,
-       ...(qty>rule.max?{reason:'URB-01 suporta até '+rule.max+' '+(rule.target==='guard'?'guardas':'objetos')+' por missão; solicitado '+qty+'.'}:{})});
+       quantity:stepCount,objectQuantity:rule.id==='deliver'?qty:undefined,
+       preconditions:[],effect:rule.effect,raw,conditions:conditionTerms,
+       status:stepCount>rule.max?'unsupported':'supported',source:row.origin,
+       ...(stepCount>rule.max?{reason:'URB-01 suporta até '+rule.max+' '+(rule.target==='guard'?'guardas':'objetos')+' por missão; solicitado '+qty+'.'}:{})});
       if(rule.pattern.lastIndex===m.index)rule.pattern.lastIndex++;
      }
     }
@@ -100,9 +102,29 @@ function gameForgeMissionSemanticsFactory(){
     }
    }
    for(const deliver of byAction('deliver')){
-    for(const collect of byAction('collect')){
-     deliver.preconditions.push(collect.id);
-     relations.push({from:collect.id,to:deliver.id,type:'before',reason:'Itens devem ser coletados antes da entrega'});
+    const collected=byAction('collect');
+    const available=collected.reduce((total,step)=>total+step.quantity,0);
+    if(!collected.length||available<deliver.objectQuantity){
+     deliver.status='unsupported';
+     deliver.reason='Entrega de '+deliver.objectQuantity+' item(ns) exige coleta explícita suficiente no mesmo objetivo; o GDD não a definiu.';
+     issues.push({id:deliver.id,action:deliver.action,quantity:deliver.objectQuantity,
+      source:deliver.source,reason:deliver.reason});
+    }else{
+     for(const collect of collected){
+      deliver.preconditions.push(collect.id);
+      relations.push({from:collect.id,to:deliver.id,type:'before',reason:'Itens coletados antes da entrega'});
+     }
+    }
+   }
+   // Condições complexas sem evento mensurável não viram mecânicas fingidas.
+   for(const step of steps.filter(s=>s.status==='supported')){
+    const conditional=step.conditions.find(c=>/\b(?:se|quando|somente se)\b/.test(c));
+    const known=step.action==='capture'&&byAction('eliminate').length>0&&
+      /\b(?:guarda|guardas|inimigo|inimigos)\b/.test(conditional||'');
+    if(conditional&&!known){
+     step.status='unsupported';
+     step.reason='Condição "'+conditional+'" não tem avaliação implementada no protótipo.';
+     issues.push({id:step.id,action:step.action,source:step.source,reason:step.reason});
     }
    }
    const sorted=[];const left=steps.filter(x=>x.status==='supported');
@@ -131,7 +153,7 @@ function gameForgeMissionSemanticsFactory(){
   return model.missions.filter(m=>m.steps.length&&m.status==='supported').map(m=>({
    id:m.id,title:m.title,source:m.source,phase:m.phase,reward:m.reward,
    steps:m.steps.map(s=>({id:s.id,action:s.action,actor:s.actor,target:s.target,
-    quantity:s.quantity,requires:s.preconditions,source:s.source,effect:s.effect})),
+    quantity:s.quantity,objectQuantity:s.objectQuantity,requires:s.preconditions,source:s.source,effect:s.effect})),
    relations:m.relations
   }));
  }

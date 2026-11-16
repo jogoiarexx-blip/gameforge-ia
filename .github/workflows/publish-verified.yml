@@ -1,0 +1,77 @@
+name: Publicar GameForge verificado
+
+on:
+  workflow_run:
+    workflows: ["Validar GameForge Studio"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: gameforge-pages-verificado
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    # Nunca promover PRs, forks, workflows desconhecidos ou builds com falha.
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - name: Baixar exatamente o commit validado
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Validar origem, resultado e hash da execução
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node tools/pages-gate.cjs
+
+      - name: Impedir publicação atrasada de versão anterior
+        shell: bash
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          CURRENT="$(git ls-remote https://github.com/${{ github.repository }}.git refs/heads/main | cut -f1)"
+          if [ "$CURRENT" != "$VERIFIED_SHA" ]; then
+            echo "::error::Main avançou para $CURRENT enquanto a CI validou $VERIFIED_SHA. Publicação cancelada."
+            exit 1
+          fi
+
+      - name: Preparar somente os arquivos estáticos do aplicativo
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp index.html _site/index.html
+          cp -a css js vendor examples tools _site/
+          touch _site/.nojekyll
+          test -s _site/index.html
+          test -s _site/js/app.js
+          test -s _site/js/generator.js
+          test -s _site/vendor/three-source.js
+          for f in _site/js/*.js; do node --check "$f"; done
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+
+      - name: Empacotar artefato verificado
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+
+      - name: Publicar artefato somente após CI aprovada
+        id: pages
+        uses: actions/deploy-pages@v4

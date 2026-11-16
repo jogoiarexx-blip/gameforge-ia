@@ -21,6 +21,17 @@ function gameForgeBoot() {
   const clamp = (n, a, b) => Math.max(a, Math.min(b,n));
   const rand = (a,b) => a + Math.random() * (b - a);
   const dist = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
+  // Núcleo geométrico sem efeitos colaterais, serializado no game.js offline.
+  function circlesOverlap(a,b,extra=0){
+    if(!a||!b)return false;
+    const radius=Math.max(0,a.r)+Math.max(0,b.r)+extra;
+    if(!(radius>0))return false;
+    const dx=a.x-b.x,dy=a.y-b.y;
+    return dx*dx+dy*dy<radius*radius;
+  }
+  function rectanglesOverlap(a,b){
+    return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+  }
   let stage = 0, hp = 100, score = 0, ammo = 40, xp = 0, upgrades = 0;
   let state = 'menu', paused = false, clock = 0, stageClock = 0, lastTime = 0, renderedFrames=0;
   let player = {x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
@@ -97,14 +108,14 @@ function gameForgeBoot() {
     bullets=bullets.filter(b=>b.x>0&&b.x<W&&b.y>38&&b.y<H);
     for(const e of enemies){
       const a=Math.atan2(player.y-e.y,player.x-e.x);e.x+=Math.cos(a)*e.speed*dt;e.y+=Math.sin(a)*e.speed*dt;
-      if(dist(e,player)<e.r+player.r)damage(e.boss?18:10);
-      for(const b of bullets)if(!b.dead && dist(b,e)<b.r+e.r){b.dead=true;e.hp--;if(e.hp<=0){e.dead=true;score+=e.boss?250:50;xp+=1; if(Math.random()<.24)drops.push({x:e.x,y:e.y,r:10,kind:Math.random()<.25?'heal':'ammo'});for(let i=0;i<Math.max(2,Math.round(9*tuning.particlesMultiplier))&&particles.length<150;i++)particles.push({x:e.x,y:e.y,vx:rand(-120,120),vy:rand(-120,120),ttl:.5});}break;}
+      if(circlesOverlap(e,player))damage(e.boss?18:10);
+      for(const b of bullets)if(!b.dead && circlesOverlap(b,e)){b.dead=true;e.hp--;if(e.hp<=0){e.dead=true;score+=e.boss?250:50;xp+=1; if(Math.random()<.24)drops.push({x:e.x,y:e.y,r:10,kind:Math.random()<.25?'heal':'ammo'});for(let i=0;i<Math.max(2,Math.round(9*tuning.particlesMultiplier))&&particles.length<150;i++)particles.push({x:e.x,y:e.y,vx:rand(-120,120),vy:rand(-120,120),ttl:.5});}break;}
     }
     bullets=bullets.filter(b=>!b.dead);enemies=enemies.filter(e=>!e.dead);
     if(enemies.length===0)nextStage();
     collectDrops();
   }
-  function collectDrops(){for(const d of drops){if(dist(player,d)<player.r+d.r+7){d.dead=true;if(d.kind==='heal')hp=clamp(hp+30,0,100);else if(d.kind==='ammo')ammo+=15;else {score+=20;xp+=1;} }}drops=drops.filter(d=>!d.dead);}
+  function collectDrops(){for(const d of drops){if(circlesOverlap(player,d,7)){d.dead=true;if(d.kind==='heal')hp=clamp(hp+30,0,100);else if(d.kind==='ammo')ammo+=15;else {score+=20;xp+=1;} }}drops=drops.filter(d=>!d.dead);}
   let platformCoyote=0,platformJumpBuffer=0,platformJumpHeld=false;
   function stepPlatform(dt){
     const dx=(input('right')||isPressed('d')||isPressed('ArrowRight')?1:0)-(input('left')||isPressed('a')||isPressed('ArrowLeft')?1:0);
@@ -151,7 +162,7 @@ function gameForgeBoot() {
       if(e.x>=e.patrolRight){e.x=e.patrolRight;e.dir=-1;}
       const support=platforms.find(p=>e.x>=p.x&&e.x<=p.x+p.w);
       e.y=(support?support.y-e.r:355)+Math.sin(e.phase)*2;
-      if(dist(player,e)<player.r+e.r+4){
+      if(circlesOverlap(player,e,4)){
         if(wasFalling&&oldBottom<=e.y-e.r*.15&&player.y+player.r>=e.y-e.r*.65){if(e.kind==='armored'){e.kind='walker';e.hitFlash=.25;e.speed*=1.2;showMessage('Armadura quebrada!',1);}else{e.dead=true;platformDefeated.push({x:e.x,y:e.y,ttl:.45,kind:e.kind,dir:e.dir});score+=100;xp+=2;}for(let j=0;j<7;j++)platformSparks.push({x:e.x,y:e.y,vx:(j-3)*45,vy:-110-(j%3)*30,life:.4});player.vy=-320;}
         else damage(12);
       }
@@ -203,7 +214,7 @@ function gameForgeBoot() {
         o.laneOffset=clamp((o.laneOffset||0)+Math.sin(clock*.8+o.phase)*dt*12,-18,18);
       }
       o.x=W/2+((o.lanePosition??o.lane)-1)*125+racingCurve(traveled,o.y)+(o.laneOffset||0);
-      if(!o.hit&&Math.hypot(player.x-o.x,player.y-o.y)<player.r+o.r){
+      if(!o.hit&&circlesOverlap(player,o)){
         o.hit=true;o.y=H+130;racingHits++;racingSpeed*=o.kind==='cone'?.78:.48;
         damage(o.kind==='cone'?8:23);
         showMessage(o.kind==='cone'?'Cone atingido!':'Colisão! Reduza a velocidade.',1.2);

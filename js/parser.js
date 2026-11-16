@@ -228,7 +228,13 @@
       // O modo urbano executa somente ações suportadas e com ordem verificável.
       // Pedidos sem ações explícitas usam o slice original de uma missão.
       const urbanMissions=missionSemantics?.executable(compiled.actionModel)||[];
-      const hasExplicitActions=(compiled.actionModel?.missions||[]).some(m=>m.actions.length||m.issues.length);
+      // Não bloquear GDDs de alto nível que apenas descrevem ideias futuras.
+      // O bloqueio se aplica a uma missão/fase que o usuário pediu explicitamente,
+      // não a uma lista de sistemas do mundo ou do roadmap.
+      const explicitMission=/(?:^|\n)#{1,4}\s*(?:miss[aã]o|fase|cap[ií]tulo)\b/im.test(source)||
+        /\b(?:miss[aã]o|fase)\s*(?:\d+|[:—-])/i.test(extra);
+      const hasExplicitActions=explicitMission&&
+        (compiled.actionModel?.missions||[]).some(m=>m.actions.length||m.issues.length);
       if(hasExplicitActions&&!urbanMissions.length){
         compiled.engineAvailability={status:'blocked',
           reason:'As missões detalhadas do GDD exigem ações/condições ainda não implementadas. O GameForge não vai substituí-las por uma missão genérica. Consulte o Modelo de Ações.'};

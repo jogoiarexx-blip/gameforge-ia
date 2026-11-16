@@ -75,6 +75,37 @@ function gameForgeUrbanRulesFactory(){
   return (facingX*dx+facingZ*dz)/distance>=Math.cos(halfAngle)
    &&clearShot(player,target,solids);
  }
+ // IA deterministica para guardas: patrulha, alerta, busca e combate.
+ // Nenhum temporizador global: apenas dt, geometria e estado serializavel.
+ function guardStep(guard,player,dt,solids=[]){
+  if(!guard||!Number.isFinite(guard.x)||!Number.isFinite(guard.z)||
+     !player||!Number.isFinite(player.x)||!Number.isFinite(player.z))
+   return {...guard,mode:'patrol',canAttack:false};
+  const delta=clamp(Number.isFinite(dt)?dt:0,0,.05);
+  const homeX=Number.isFinite(guard.homeX)?guard.homeX:guard.x;
+  const homeZ=Number.isFinite(guard.homeZ)?guard.homeZ:guard.z;
+  const distance=Math.hypot(player.x-guard.x,player.z-guard.z);
+  const seesPlayer=distance<8.6&&clearShot(guard,player,solids);
+  const memory=seesPlayer?2.4:Math.max(0,(guard.memory||0)-delta);
+  const mode=seesPlayer?(distance<=2.05?'combat':'alert'):memory>0?'search':'patrol';
+  const patrolClock=(guard.patrolClock||0)+delta;
+  const lastSeenX=seesPlayer?player.x:Number.isFinite(guard.lastSeenX)?guard.lastSeenX:homeX;
+  const lastSeenZ=seesPlayer?player.z:Number.isFinite(guard.lastSeenZ)?guard.lastSeenZ:homeZ;
+  const goal=mode==='patrol'?{x:homeX+Math.sin(patrolClock*.7)*1.6,z:homeZ}:
+   mode==='search'?{x:lastSeenX,z:lastSeenZ}:{x:player.x,z:player.z};
+  let x=guard.x,z=guard.z,heading=guard.heading||0;
+  const gx=goal.x-x,gz=goal.z-z,remaining=Math.hypot(gx,gz);
+  const minDistance=mode==='combat'?1.65:mode==='alert'?1.55:.08;
+  if(remaining>minDistance&&delta>0){
+   const speed=mode==='alert'?1.4:mode==='search'?1.1:.85;
+   const stride=Math.min(remaining-minDistance,speed*delta);
+   const moved=move({x,z},gx/remaining*stride,gz/remaining*stride,solids,17,.36);
+   x=moved.x;z=moved.z;
+   if(Math.hypot(x-guard.x,z-guard.z)>1e-5)heading=Math.atan2(gx,-gz);
+  }
+  return {x,z,homeX,homeZ,heading,mode,patrolClock,lastSeenX,lastSeenZ,memory,
+   seesPlayer,canAttack:mode==='combat'&&seesPlayer};
+ }
  function capture(state,nearBusiness){
   if(!nearBusiness||!state.guardDefeated||state.captured)
    return {state:{...state},changed:false};
@@ -96,7 +127,7 @@ function gameForgeUrbanRulesFactory(){
    heading:finite(raw.heading,0,-Math.PI*4,Math.PI*4)
   };
  }
- return {clamp,intersects,move,clearShot,canHit,cameraPosition,capture,load};
+ return {clamp,intersects,move,clearShot,canHit,cameraPosition,guardStep,capture,load};
 }
 root.gameForgeUrbanRulesFactory=gameForgeUrbanRulesFactory;
 if(typeof module!=='undefined')module.exports=gameForgeUrbanRulesFactory;

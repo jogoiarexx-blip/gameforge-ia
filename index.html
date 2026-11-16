@@ -100,6 +100,14 @@ Derrote o chefe.
         <label for="instruction">O que você quer no jogo? <span class="label-optional">(opcional)</span></label>
         <textarea id="instruction" rows="3" placeholder="Ex.: Crie um chefe na última fase, melhore a dificuldade e adicione inventário e ataques especiais."></textarea>
         <div class="actions"><button id="generate" class="primary">▶ Criar jogo</button><button id="rerun" class="outline" disabled>↻ Executar prévia</button></div>
+        
+        
+        
+        <p id="feedback" class="hint" role="status">Você pode começar sem instalar nada. O projeto e seu código ficam armazenados neste navegador.</p>
+      </div>
+      <div class="preview-head"><div><span class="eyebrow">PASSO 3 · TESTAR</span><h3>Seu jogo <span id="live-indicator" class="live-dot"></span></h3></div><div class="preview-tools"><button id="fullscreen" class="small outline">⛶ Tela cheia</button><button id="open-game" class="small outline" disabled>Abrir jogo</button></div></div>
+      <div class="preview-box" id="preview-box"><iframe id="preview" title="Prévia isolada do jogo" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe><div class="preview-empty" id="preview-empty"><div class="empty-symbol">▣</div><h3>Seu jogo aparece aqui</h3><p>Escreva sua ideia e clique em <b>Criar jogo</b>.</p></div></div>
+      <details class="studio-disclosure tools-collection"><summary><span>Mais ferramentas de criação</span><span class="disclosure-marker" aria-hidden="true">+</span></summary>
         <details class="studio-disclosure roadmap-disclosure"><summary><span>Etapas e tarefas do GDD</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="roadmap-panel" aria-label="Plano implementável do GDD">
           <div class="qa-workbench-title"><span class="eyebrow">10 / ROTEIRO DO GDD</span><strong>Crie o jogo por etapas</strong></div>
           <p class="hint">Organiza todo o Markdown em tarefas rastreáveis, inclusive GDDs de 300 KB. <strong>As tarefas começam pendentes.</strong> Gerar código não comprova que o requisito está pronto.</p>
@@ -139,10 +147,7 @@ Derrote o chefe.
           <div class="dev-controls"><button id="create-3d" type="button" class="outline small">◈ Criar projeto Three.js/Vite no backend</button></div>
           <div id="create-3d-result" class="hint">Opção para projetos separados no servidor, com Node.js e compilação. Para jogar em 3D aqui, escolha um exemplo 3D e clique em Criar novo jogo no modo Sem IA.</div>
         </section></details>
-        <p id="feedback" class="hint" role="status">Você pode começar sem instalar nada. O projeto e seu código ficam armazenados neste navegador.</p>
-      </div>
-      <div class="preview-head"><div><span class="eyebrow">PASSO 3 · TESTAR</span><h3>Seu jogo <span id="live-indicator" class="live-dot"></span></h3></div><div class="preview-tools"><button id="fullscreen" class="small outline">⛶ Tela cheia</button><button id="open-game" class="small outline" disabled>Abrir jogo</button></div></div>
-      <div class="preview-box" id="preview-box"><iframe id="preview" title="Prévia isolada do jogo" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe><div class="preview-empty" id="preview-empty"><div class="empty-symbol">▣</div><h3>Seu jogo aparece aqui</h3><p>Escreva sua ideia e clique em <b>Criar jogo</b>.</p></div></div>
+      </details>
       <details class="studio-disclosure qa-disclosure"><summary><span>Testes e diagnóstico visual</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="qa-workbench" aria-label="Laboratório de testes visuais">
         <div class="qa-workbench-title"><span class="eyebrow">04 / INSPEÇÃO & CORREÇÃO</span><strong>QA visual e regressão</strong></div>
         <div class="qa-controls">

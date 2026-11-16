@@ -314,7 +314,9 @@ function gameForgeThreeBoot(){
   missionGuides=[];
   if(!['arena','fps','rpg'].includes(genre))return;
   const zones=new Set();
-  for(const step of missionPlan())if(step.kind==='reach'&&R.waypoint(step.zone,size))zones.add(step.zone);
+  const npc=npcAt();
+  const candidateSteps=npc?.choices?npc.choices.flatMap(c=>c.steps):missionPlan();
+  for(const step of candidateSteps)if(step.kind==='reach'&&R.waypoint(step.zone,size))zones.add(step.zone);
   for(const event of (Array.isArray(configAt(stage).zoneEvents)?configAt(stage).zoneEvents:[]))
    if(R.waypoint(event?.zone,size))zones.add(event.zone);
   for(const zone of zones){

@@ -1,8 +1,8 @@
 /* Leitor determinístico de GDD. Sem APIs, sem modelos externos. */
 (function (root) {
   'use strict';
-  const normalize = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const intentCompiler=root.GameForgeIntent||(typeof require==='function'?require('./intent-compiler'):null);
+  const normalize = s => intentCompiler?.normalize ? intentCompiler.normalize(s) : String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const sourceCorpus=root.GameForgeGameCorpus||(typeof require==='function'?require('./game-corpus'):null);
   const urbanDesign=root.GameForgeUrbanDesign||(typeof require==='function'?require('./urban-design'):null);
   const designIR=root.GameForgeDesignIR||(typeof require==='function'?require('./design-ir'):null);

@@ -1,6 +1,6 @@
 # GF-005 — Continuidade de projetos e integridade de GLBs
 
-**Data:** 16/11/2026 · **Estado:** EM REVISÃO até CI/Chromium do último commit.
+**Data:** 16/11/2026 · **Estado:** VALIDADO no escopo Chromium com modelo GLB sintético, CI [43881202409](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43881202409), commit `7ca72df8`. Foram **256 testes Node aprovados, zero falhas**, além da matriz de 15 cenários de navegador e da continuidade GF-005.
 
 ## Diagnóstico encontrado no código
 
@@ -29,7 +29,7 @@
 
 ## Checklist da revisão
 
-1. Conferir a execução CI e Chromium para o mesmo SHA da main após concluir todas as mudanças.
+1. Execução verificada em `7ca72df8`: Node e Chromium aprovados. Em alterações futuras, verificar sempre o SHA mais recente antes de publicar.
 2. No navegador, gerar um FPS 3D sem GDD, importar um GLB, baixar `.gameforge.zip`, recarregar e abrir em um perfil limpo.
 3. Confirmar que o `ASSET_LIBRARY.json` possui `sha256` e que o GLB materializado tem os mesmos bytes.
 4. Em ZIP inválido ou falha simulada no IndexedDB, o projeto anterior não deve ser substituído.

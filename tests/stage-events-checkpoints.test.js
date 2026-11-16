@@ -533,3 +533,123 @@ test('GF-010 NPC: botão de toque escolhe opção 1 e NPC caminha com animação
  assert.equal(b.telemetry().npc.state,'completed');
  assert.equal(b.telemetry().score,150);
 });
+
+
+test('GF-011: GDD gera rotina diaria, missao secundaria e consequencias por escolha',()=>{
+ const gdd=[
+  '# Vila','## Fase 1','NPC: Exploradora Lia no sul',
+  'Missão secundária do NPC: sim',
+  'NPC rotina: manhã sul, tarde centro, noite norte',
+  'Opção 1: Proteger | ir ao sul -> sobreviver 5 segundos | 120 pontos',
+  'Opção 2: Investigar | ir ao sul -> sobreviver 7 segundos | 280 pontos',
+  'Consequência opção 1: apoio na próxima fase',
+  'Consequência opção 2: emboscada na próxima fase',
+  '## Fase 2','3 inimigos rápidos'
+ ].join('\n');
+ const make=()=>StageSpec.compile({title:'Vila',genre:'arena',dimension:'3d',
+  stages:['Vila','Ruínas'],stageConfig:[{},{}]},gdd);
+ const spec=make(),npc=spec.stageConfig[0].npcQuest;
+ assert.ok(npc);
+ assert.equal(npc.sideQuest,true);
+ assert.deepEqual(npc.routine,{morning:'south',afternoon:'center',night:'north'});
+ assert.deepEqual(npc.choices.map(c=>c.effect),['aid','threat']);
+ assert.equal(spec.stageSpecs[0].npcQuest.sideQuest,true);
+ assert.deepEqual(spec.stageConfig,make().stageConfig);
+ assert.match(StageSpec.report(spec),/Missão secundária: sim/);
+ assert.ok(R.npcQuestContract(npc));
+});
+test('GF-011: rotina muda de zona no relogio de jogo; contratos invalidos sao pendentes',()=>{
+ const npc={id:'npc-stage-01',name:'Lia',zone:'south',dialogue:'Ola',
+  steps:[{id:'step-1',kind:'reach',zone:'south',label:'Ir ao sul'},
+   {id:'step-2',kind:'survive',seconds:5,label:'Resistir'}],
+  reward:{score:10,health:0,ammo:0},routine:{morning:'south',afternoon:'center',night:'north'},
+  sideQuest:true};
+ assert.deepEqual([0,29.9,30,59.9,60,89,90].map(R.npcDailyPeriod),
+  ['morning','morning','afternoon','afternoon','night','night','morning']);
+ assert.ok(R.npcRoutineTarget(npc,0,48).z>10);
+ assert.equal(R.npcRoutineTarget(npc,32,48).z,0);
+ assert.ok(R.npcRoutineTarget(npc,65,48).z<0);
+ assert.equal(R.npcQuestContract({...npc,routine:{morning:'moon',afternoon:'center',night:'north'}}),null);
+ assert.equal(R.npcQuestContract({...npc,sideQuest:'sim'}),null);
+ const invalid=StageSpec.compile({title:'Vila',genre:'arena',dimension:'3d',
+  stages:['A'],stageConfig:[{}]},'# Vila\n## Fase 1\nNPC: Guia no sul\nNPC rotina: manhã lua, tarde centro, noite sul\n'+
+  'Missão do NPC: ir ao sul -> eliminar inimigos');
+ assert.equal(invalid.stageSpecs[0].npcQuest.status,'pendente');
+ const unsupported=StageSpec.compile({title:'Vila',genre:'arena',dimension:'3d',
+  stages:['A'],stageConfig:[{}]},'# Vila\n## Fase 1\nNPC: Guia no sul\n'+
+  'Opção 1: Ajudar | ir ao sul -> eliminar inimigos | 100 pontos\n'+
+  'Opção 2: Fugir | ir ao norte -> coletar cristais | 100 pontos\n'+
+  'Consequência opção 2: construir um castelo na fase 2');
+ assert.equal(unsupported.stageSpecs[0].npcQuest.status,'pendente');
+});
+test('GF-011: quest secundaria não bloqueia missão principal e rotina move NPC de verdade',()=>{
+ const quest={id:'npc-stage-01',name:'Lia',zone:'south',dialogue:'Posso ajudar',
+  steps:[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},
+   {id:'step-2',kind:'survive',seconds:9,label:'Resistir'}],
+  reward:{score:100,health:0,ammo:0},sideQuest:true,
+  routine:{morning:'north',afternoon:'center',night:'south'}};
+ const spec={genre:'arena',dimension:'3d',title:'Opcional',stages:['A'],
+  stageConfig:[{mission:'survive',seconds:5,enemies:1,boss:'no',npcQuest:quest}],
+  features:{bosses:false},worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const b=boot(spec);b.start();b.tick(2);
+ assert.equal(b.telemetry().npc.sideQuest,true);
+ assert.equal(b.telemetry().npc.dayPeriod,'morning');
+ assert.equal(b.telemetry().npc.state,'idle');
+ assert.equal(b.telemetry().missionReady,false);
+ const before=b.telemetry().npc.position;b.tick(60);
+ const after=b.telemetry().npc.position;
+ assert.ok(Math.hypot(before.x-after.x,before.z-after.z)>.7,'rotina tem que andar na direção norte');
+ assert.equal(b.telemetry().missionSteps,0);
+ assert.equal(b.telemetry().sideQuestSteps,2);
+ b.tick(255);
+ assert.equal(b.telemetry().missionReady,true,'o portal deve liberar sem falar com NPC opcional');
+ assert.equal(b.telemetry().npc.state,'idle');
+});
+test('GF-011: apoio e emboscada persistem em checkpoint entre fases e não podem ser forjados',()=>{
+ const npc={id:'npc-stage-01',name:'Guia',zone:'south',dialogue:'Escolha',sideQuest:true,
+  steps:[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},
+   {id:'step-2',kind:'survive',seconds:5,label:'Resistir'}],
+  reward:{score:100,health:0,ammo:0},choices:[
+   {id:'choice-1',label:'Aliados',steps:[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},
+    {id:'step-2',kind:'survive',seconds:5,label:'Resistir'}],reward:{score:100,health:0,ammo:0},effect:'aid'},
+   {id:'choice-2',label:'Inimigos',steps:[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},
+    {id:'step-2',kind:'survive',seconds:5,label:'Resistir'}],reward:{score:200,health:0,ammo:0},effect:'threat'}
+  ]};
+ const spec={title:'Campanha',genre:'arena',dimension:'3d',projectId:'gf-01234567-abcdef01',
+  stages:['Vila','Fortaleza'],
+  stageConfig:[{mission:'survive',seconds:5,enemies:1,boss:'no',npcQuest:npc},
+   {mission:'eliminate',enemies:1,boss:'no'}],
+  features:{bosses:false},worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const key=R.checkpointKey(spec),run=number=>{
+  const storage=new Map(),b=boot(spec,storage);b.start();b.tick(2);
+  b.key('keydown','e');b.key('keydown',String(number));b.tick(2);
+  assert.equal(b.telemetry().npc.state,'active');
+  assert.equal(b.telemetry().sideQuestStepIndex,1);
+  b.tick(315);
+  assert.equal(b.telemetry().npc.state,'completed','missão extra precisa terminar antes de sair');
+  b.key('keydown','w');b.tick(425);b.key('keyup','w');
+  assert.equal(b.telemetry().stage,2,'campanha deve avançar para fase 2');
+  assert.equal(b.telemetry().npc,null,'fase 2 não inclui NPC');
+  const saved=R.readCheckpoint(storage.get(key),spec);
+  assert.ok(saved,'checkpoint deve existir');
+  assert.equal(saved.campaignEffect.kind,number===1?'aid':'threat');
+  const restored=boot(spec,storage);restored.start();restored.tick(2);
+  assert.equal(restored.telemetry().stage,2);
+  assert.equal(restored.telemetry().campaignEffect.kind,saved.campaignEffect.kind);
+  assert.equal(restored.telemetry().enemies,b.telemetry().enemies);
+  restored.restart();restored.tick(1);
+  assert.equal(restored.telemetry().campaignEffect,null);
+  assert.equal(storage.has(key),false);
+  return {saved,live:b.telemetry()};
+ };
+ const aid=run(1),threat=run(2);
+ assert.equal(aid.live.enemies,1);
+ assert.equal(threat.live.enemies,3,'emboscada cria dois inimigos adicionais');
+ assert.ok(aid.saved.ammo>=100,'apoio inclui munição extra');
+ assert.equal(R.readCheckpoint(JSON.stringify({...aid.saved,campaignEffect:
+  {...aid.saved.campaignEffect,kind:'threat'}}),spec),null,'não se pode trocar ajuda por ameaça no save');
+ assert.equal(R.readCheckpoint(JSON.stringify({...threat.saved,campaignEffect:
+  {...threat.saved.campaignEffect,sourceStage:99}}),spec),null);
+ assert.equal(R.npcMissionEffect({...npc,choices:npc.choices.map(c=>({...c,effect:'invented'}))},
+  'choice-1',0),null);
+});

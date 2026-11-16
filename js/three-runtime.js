@@ -36,19 +36,26 @@ function gameForgeThreeBoot(){
  let rpgLevel=1,rpgXP=0,rpgPotions=2,rpgHealHeld=false;
  let firedEvents=new Set(),nextEnemyId=0,checkpointStored=null;
  let missionStepIndex=0,missionStepStartedAt=0,missionGuides=[];
+ let npcSideStepIndex=0,npcSideStartedAt=0,campaignEffect=null;
  let npcActor=null,npcMarker=null,npcStatus='none',npcTalkButton=null;
  let npcChoiceButtons=[],npcPosition=null,npcSelectedChoice=null;
  function npcNearby(npc=npcAt()){return npc&&R.npcNear(npc,player,size,2.6,npcPosition);}
  const npcAt=()=>R.npcQuestContract(configAt(stage).npcQuest);
+ const chosenNpc=()=>{
+  const npc=npcAt();
+  return npc?.choices?.find(c=>c.id===npcSelectedChoice)||null;
+ };
  const missionPlan=()=>{
   const npc=npcAt();
-  if(npc){
-   const choice=npc.choices?.find(c=>c.id===npcSelectedChoice);
-   return choice?.steps||npc.steps;
-  }
+  if(npc&&!npc.sideQuest)return chosenNpc()?.steps||npc.steps;
   return Array.isArray(configAt(stage).missionSteps)?configAt(stage).missionSteps.slice(0,5):[];
  };
+ const sideQuestPlan=()=>{
+  const npc=npcAt();
+  return npc?.sideQuest?(chosenNpc()?.steps||npc.steps):[];
+ };
  function activeMissionStep(){return missionPlan()[missionStepIndex]||null;}
+ function activeSideStep(){return sideQuestPlan()[npcSideStepIndex]||null;}
  const checkpointStorageKey=R.checkpointKey(spec);
  function loadCheckpoint(){
   if(!checkpointStorageKey)return null;
@@ -57,7 +64,8 @@ function gameForgeThreeBoot(){
  }
  function saveCheckpoint(){
   if(!checkpointStorageKey)return;
-  const snap=R.checkpointPayload(spec,{stage,health,score,ammo,clock,rpgLevel,rpgXP,rpgPotions});
+  const snap=R.checkpointPayload(spec,{stage,health,score,ammo,clock,rpgLevel,rpgXP,rpgPotions,
+   ...(campaignEffect?{campaignEffect}:{})});
   if(!snap)return;
   try{window.localStorage?.setItem(checkpointStorageKey,JSON.stringify(snap));checkpointStored=snap;}
   catch{checkpointStored=null;}
@@ -97,11 +105,25 @@ function gameForgeThreeBoot(){
   configAt(stage).events.some(e=>e?.type==='reinforcements'&&!firedEvents.has(e.id));
  const combatReady=()=>{
   const npc=npcAt();
-  return (!npc||npcStatus==='completed')&&!pendingReinforcements()&&
+  return (!npc||npc.sideQuest||npcStatus==='completed')&&!pendingReinforcements()&&
    (missionPlan().length?missionStepIndex>=missionPlan().length:R.missionReady(missionAt(stage),combatGoal()));
  };
  function combatObjective(){
   const npc=npcAt();
+  if(npc?.sideQuest){
+   const plan=missionPlan(),step=activeMissionStep(),side=activeSideStep();
+   const main=step?'Principal '+(missionStepIndex+1)+'/'+plan.length+': '+step.label:
+    plan.length?'Principal concluída · Portal':
+    missionAt(stage)==='survive'?'Sobreviva '+Math.max(0,Math.ceil(R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock))+'s':
+    missionAt(stage)==='eliminate'?'Elimine '+enemies.length+' inimigos':
+    missionAt(stage)==='collect'?'Colete cristais '+collected+'/'+required:
+    'Guardas '+enemies.length+' · Cristais '+collected+'/'+required;
+   const extra=npcStatus==='completed'?'Secundária concluída':
+    npcStatus==='active'?'Extra '+(npcSideStepIndex+1)+'/'+sideQuestPlan().length+': '+(side?.label||'prossiga'):
+    npcStatus==='offered'?'Secundária: escolha/aceite com '+npc.name:
+    'Opcional: converse com '+npc.name;
+   return main+' · '+extra;
+  }
   if(npc&&npcStatus==='idle')return 'Encontre '+npc.name+' no '+npc.zone+' · Converse [E]';
   if(npc&&npcStatus==='offered')return npc.choices?
    'Escolha sua missão: 1 '+npc.choices[0].label+' · 2 '+npc.choices[1].label:
@@ -242,12 +264,14 @@ function gameForgeThreeBoot(){
    if(npc.choices){
     notice(npc.name+': escolha 1 '+npc.choices[0].label+' ou 2 '+npc.choices[1].label,5);
    }else{
-    npcStatus='active';missionStepIndex=0;missionStepStartedAt=stageClock;
+    npcStatus='active';
+    if(npc.sideQuest){npcSideStepIndex=0;npcSideStartedAt=stageClock;}
+    else{missionStepIndex=0;missionStepStartedAt=stageClock;}
     updateMissionGuides();
-    notice('Missão aceita com '+npc.name+' · '+(activeMissionStep()?.label||'Comece sua jornada'),4);
+    notice('Missão aceita com '+npc.name+' · '+((npc.sideQuest?activeSideStep():activeMissionStep())?.label||'Comece sua jornada'),4);
    }
   }else if(npcStatus==='active'){
-   notice(npc.name+': complete '+(activeMissionStep()?.label||'as etapas')+' para receber a recompensa.',3);
+   notice(npc.name+': complete '+((npc.sideQuest?activeSideStep():activeMissionStep())?.label||'as etapas')+' para receber a recompensa.',3);
   }else if(npcStatus==='completed'){
    notice(npc.name+': missão concluída. Recompensa já entregue.',3);
   }
@@ -261,23 +285,37 @@ function gameForgeThreeBoot(){
   const choice=npc.choices[number-1];
   if(!choice)return false;
   npcSelectedChoice=choice.id;npcStatus='active';
-  missionStepIndex=0;missionStepStartedAt=stageClock;
+  if(npc.sideQuest){npcSideStepIndex=0;npcSideStartedAt=stageClock;}
+  else{missionStepIndex=0;missionStepStartedAt=stageClock;}
   updateMissionGuides();refreshNpcButton();
-  notice('Escolha registrada: '+choice.label+' · '+(activeMissionStep()?.label||'Comece sua jornada'),4);
+  notice('Escolha registrada: '+choice.label+' · '+((npc.sideQuest?activeSideStep():activeMissionStep())?.label||'Comece sua jornada'),4);
   return true;
  }
  function updateNpc(dt){
   const npc=npcAt();
   if(!npcActor||!npc)return;
-  if(npc.walk&&npcStatus!=='offered'){
+  if(npc.routine&&npcStatus!=='offered'){
+   const target=R.npcRoutineTarget(npc,stageClock,size),previous=npcPosition;
+   if(target&&previous){
+    const dx=target.x-previous.x,dz=target.z-previous.z,len=Math.hypot(dx,dz);
+    const moveDistance=Math.min(len,2*dt);
+    const next=R.moveCircle(previous,len>0?dx/len*moveDistance:0,
+     len>0?dz/len*moveDistance:0,.35,solids,size);
+    npcPosition=next;
+    npcActor.position.set(next.x,0,next.z);
+    if(npcMarker)npcMarker.position.set(next.x,.04,next.z);
+    const speed=dt>0?Math.hypot(next.x-previous.x,next.z-previous.z)/dt:0;
+    if(speed>.01)npcActor.rotation.y=Math.atan2(dx,dz);
+    animateActor(npcActor,speed,stageClock*5,dt);
+   }
+  }else if(npc.walk&&npcStatus!=='offered'){
    const next=R.npcPatrolPosition(npc,stageClock,size);
    if(next){
     const previous=npcPosition||next;
     npcPosition=next;
     npcActor.position.set(next.x,0,next.z);
     if(npcMarker)npcMarker.position.set(next.x,.04,next.z);
-    const distanceMoved=Math.hypot(next.x-previous.x,next.z-previous.z);
-    const speed=dt>0?distanceMoved/dt:0;
+    const speed=dt>0?Math.hypot(next.x-previous.x,next.z-previous.z)/dt:0;
     animateActor(npcActor,speed,stageClock*5,dt);
    }
   }else animateActor(npcActor,0,stageClock*3,dt);
@@ -315,7 +353,8 @@ function gameForgeThreeBoot(){
   if(!['arena','fps','rpg'].includes(genre))return;
   const zones=new Set();
   const npc=npcAt();
-  const candidateSteps=npc?.choices?npc.choices.flatMap(c=>c.steps):missionPlan();
+  const candidateSteps=[...missionPlan(),
+   ...(npc?.choices?npc.choices.flatMap(c=>c.steps):sideQuestPlan())];
   for(const step of candidateSteps)if(step.kind==='reach'&&R.waypoint(step.zone,size))zones.add(step.zone);
   for(const event of (Array.isArray(configAt(stage).zoneEvents)?configAt(stage).zoneEvents:[]))
    if(R.waypoint(event?.zone,size))zones.add(event.zone);
@@ -331,17 +370,29 @@ function gameForgeThreeBoot(){
   updateMissionGuides();
  }
  function updateMissionGuides(){
-  const active=activeMissionStep();
+  const npc=npcAt(),main=activeMissionStep(),side=activeSideStep();
   for(const marker of missionGuides){
-   const needed=active?.kind==='reach'&&active.zone===marker.zone&&(!npcAt()||npcStatus==='active');
+   const needed=(main?.kind==='reach'&&main.zone===marker.zone&&
+    (!npc||npc.sideQuest||npcStatus==='active'))||
+    (npc?.sideQuest&&npcStatus==='active'&&side?.kind==='reach'&&side.zone===marker.zone);
    const triggered=Array.isArray(configAt(stage).zoneEvents)&&
     configAt(stage).zoneEvents.some(e=>e?.zone===marker.zone&&!firedEvents.has(e.id));
    marker.mesh.visible=!!(needed||triggered);
   }
  }
+ function completeNpcQuest(npc){
+  if(npcStatus!=='active')return;
+  npcStatus='completed';
+  const choice=chosenNpc();
+  const result=R.npcReward(npc,{score,health,ammo},combatStore?20:999,npcSelectedChoice);
+  if(result){score=result.score;health=result.health;ammo=result.ammo;}
+  const reward=choice?.reward||npc.reward;
+  notice(npc.name+': missão concluída! Recompensa: '+reward.score+' pontos, '+
+   reward.health+' vida e '+reward.ammo+' balas.',5);
+ }
  function progressMissionSequence(){
   const npc=npcAt();
-  if(npc&&npcStatus!=='active')return;
+  if(npc&&!npc.sideQuest&&npcStatus!=='active')return;
   const step=activeMissionStep();
   if(!step)return;
   if(!R.missionStepReady(step,{player,size,enemies:enemies.length,
@@ -349,15 +400,21 @@ function gameForgeThreeBoot(){
    elapsedInStep:stageClock-missionStepStartedAt}))return;
   missionStepIndex++;missionStepStartedAt=stageClock;
   updateMissionGuides();
-  if(npc&&missionStepIndex>=missionPlan().length){
-   npcStatus='completed';
-   const choice=npc.choices?.find(c=>c.id===npcSelectedChoice);
-   const result=R.npcReward(npc,{score,health,ammo},combatStore?20:999,npcSelectedChoice);
-   if(result){score=result.score;health=result.health;ammo=result.ammo;}
-   const reward=choice?.reward||npc.reward;
-   notice(npc.name+': missão concluída! Recompensa: '+reward.score+' pontos, '+
-    reward.health+' vida e '+reward.ammo+' balas.',5);
-  }else notice('Etapa '+missionStepIndex+'/'+missionPlan().length+' concluída · '+step.label,2.5);
+  if(npc&&!npc.sideQuest&&missionStepIndex>=missionPlan().length)completeNpcQuest(npc);
+  else notice('Etapa '+missionStepIndex+'/'+missionPlan().length+' concluída · '+step.label,2.5);
+ }
+ function progressSideQuest(){
+  const npc=npcAt();
+  if(!npc?.sideQuest||npcStatus!=='active')return;
+  const step=activeSideStep();
+  if(!step)return;
+  if(!R.missionStepReady(step,{player,size,enemies:enemies.length,
+   pendingReinforcements:pendingReinforcements(),collected,required,
+   elapsedInStep:stageClock-npcSideStartedAt}))return;
+  npcSideStepIndex++;npcSideStartedAt=stageClock;
+  updateMissionGuides();
+  if(npcSideStepIndex>=sideQuestPlan().length)completeNpcQuest(npc);
+  else notice('Secundária '+npcSideStepIndex+'/'+sideQuestPlan().length+' · '+step.label,2.5);
  }
  function buildStage(){
   const stageRules=configAt(stage),requestedTheme=stageRules.theme;
@@ -372,6 +429,7 @@ function gameForgeThreeBoot(){
   bulletGeometry=geometry(new T.SphereGeometry(.12,6,4));
   random=R.rng((Number(opts.seed)||12345)+stage*907);collected=0;stageClock=0;invulnerable=0;fireDelay=0;reloadDelay=0;transition=0;jumpHeld=false;checkpoint=0;
   firedEvents=new Set();nextEnemyId=0;missionStepIndex=0;missionStepStartedAt=0;missionGuides=[];
+  npcSideStepIndex=0;npcSideStartedAt=0;
   npcStatus=npcAt()?'idle':'none';npcActor=null;npcMarker=null;npcPosition=null;npcSelectedChoice=null;
   if(genre==='platform'){
    platforms=R.platformRoute(Number(opts.seed)||12345,stage,size);
@@ -426,7 +484,10 @@ function gameForgeThreeBoot(){
      box(2,1.8,2,mats.stone,world,x,.9,z);solids.push({x,z,w:2,d:2});
     }
    }
-   const count=stageRules.enemies>0?R.clamp(stageRules.enemies,1,24):Math.min(22,Math.max(3,Math.round((4+stage*.6)*tuning.enemyMultiplier*tuning.difficulty)));
+   const baseCount=stageRules.enemies>0?R.clamp(stageRules.enemies,1,24):
+    Math.min(22,Math.max(3,Math.round((4+stage*.6)*tuning.enemyMultiplier*tuning.difficulty)));
+   const count=Math.min(26,baseCount+(campaignEffect?.kind==='threat'&&
+    campaignEffect.sourceStage===stage-1?2:0));
    for(let i=0;i<count;i++){
     const a=(i/count)*Math.PI*2,x=Math.sin(a)*size*.26,z=Math.cos(a)*size*.24-4;
     const boss=i===count-1&&(stageRules.boss==='yes'||(stageRules.boss!=='no'&&!!(spec.features&&spec.features.bosses)));
@@ -460,7 +521,8 @@ function gameForgeThreeBoot(){
   stage=saved?.stage??0;health=saved?.health??100;score=saved?.score??0;
   ammo=saved?.ammo??(storeEnabled?20:80);rpgLevel=saved?.rpgLevel??1;
   rpgXP=saved?.rpgXP??0;rpgPotions=saved?.rpgPotions??2;
-  rpgHealHeld=false;clock=saved?.clock??0;simulationAccumulator=0;simulationSteps=0;
+  rpgHealHeld=false;clock=saved?.clock??0;campaignEffect=saved?.campaignEffect||null;
+  simulationAccumulator=0;simulationSteps=0;
   state='play';paused=false;keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);
   pointerDown=false;buildStage();$('overlay').classList.add('hidden');
   $('pause').textContent='Pausar';canvas.focus();
@@ -474,9 +536,14 @@ function gameForgeThreeBoot(){
    clearCheckpoint();state='victory';
    overlay('Jornada concluída!','Todas as '+stages.length+' fases concluídas · Pontuação '+score,'Jogar novamente');
   }else{
-   stage++;health=Math.min(100,health+25);
-   if(!storeEnabled)ammo=Math.max(80,ammo+40);
+   const npc=npcAt();
+   const effect=npcStatus==='completed'?R.npcMissionEffect(npc,npcSelectedChoice,stage):null;
+   stage++;campaignEffect=effect;
+   health=Math.min(100,health+25+(effect?.kind==='aid'?20:0));
+   if(!storeEnabled)ammo=Math.min(999,Math.max(80,ammo+40)+(effect?.kind==='aid'?20:0));
    saveCheckpoint();buildStage();
+   if(effect)notice(effect.kind==='aid'?'Aliados ajudaram! Até +20 vida e +20 balas.':
+    'Emboscada! +2 inimigos nesta fase.',4);
   }
  }
  function togglePause(){if(shopOpen){closeShop();return;}if(state!=='play')return;paused=!paused;simulationAccumulator=0;keys.clear();pointerDown=false;Object.keys(touch).forEach(k=>touch[k]=false);$('pause').textContent=paused?'Continuar':'Pausar';if(paused)overlay('Jogo pausado','Sua jornada continua daqui.','Continuar');else{$('overlay').classList.add('hidden');canvas.focus();}}
@@ -557,7 +624,7 @@ function gameForgeThreeBoot(){
    b.life-=dt;if(b.life<=0)b.dead=true;b.mesh.position.set(b.x,b.y,b.z);
   }
   enemies=enemies.filter(e=>e.hp>0);bullets=bullets.filter(b=>{if(b.dead){world.remove(b.mesh);return false;}return true;});
-  collect();progressMissionSequence();
+  collect();progressMissionSequence();progressSideQuest();
   const ready=combatReady();goal.portal.material=ready?mats.crystal:mats.portal;
   if(ready&&distance(player,goal)<2)finishStage();
  }
@@ -595,7 +662,9 @@ function gameForgeThreeBoot(){
  }
  function updateHUD(){
   $('health').textContent=Math.ceil(health);$('score').textContent=score;$('ammo').textContent=genre==='racing'?Math.round(Math.abs(player.speed)*12)+' km/h':genre==='platform'?collected+'/'+required:genre==='rpg'?'🧪'+rpgPotions+' · '+ammo:combatStore?ammo+'/'+combatStore.state().reserve+' · ¢'+combatStore.state().credits:ammo;
-  $('level').textContent=(stage+1)+'/'+stages.length;$('timer').textContent=Math.floor(clock)+'s';
+  $('level').textContent=(stage+1)+'/'+stages.length+
+   (campaignEffect?.kind==='aid'?' · Apoio':campaignEffect?.kind==='threat'?' · Emboscada':'');
+  $('timer').textContent=Math.floor(clock)+'s';
   $('mission').textContent=(configAt(stage).objective?String(configAt(stage).objective).slice(0,140)+' · ':'')+(genre==='racing'?'Volta '+Math.min(lapTarget,race.lap+1)+'/'+lapTarget+' · Portal '+(race.next+1)+'/8':genre==='platform'?'Cristais '+collected+'/'+required+' · Alcance o portal':genre==='rpg'?'Nível '+rpgLevel+' · XP '+rpgXP+'/'+(rpgLevel*65)+' · '+combatObjective():combatObjective());
   refreshNpcButton();
  }
@@ -642,11 +711,15 @@ function gameForgeThreeBoot(){
   return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,layout:['arena','fps','rpg'].includes(genre)?(configAt(stage).layout||'cross'):'engine-default',
    enemyArchetypes:enemies.map(e=>e.archetype),eventsFired:[...firedEvents],
    missionSteps:missionPlan().length,missionStepIndex,
+   sideQuestSteps:sideQuestPlan().length,sideQuestStepIndex:npcSideStepIndex,
+   campaignEffect:campaignEffect?{...campaignEffect}:null,
    activeMissionStep:activeMissionStep()?.kind||null,
    zoneGuides:missionGuides.filter(g=>g.mesh.visible).map(g=>g.zone),
    npc:npcAt()?{id:npcAt().id,name:npcAt().name,zone:npcAt().zone,
     state:npcStatus,near:!!npcNearby(),rewardsGiven:npcStatus==='completed',
     position:npcPosition?{...npcPosition}:null,walk:!!npcAt().walk,
+    routine:npcAt().routine||null,dayPeriod:npcAt().routine?R.npcDailyPeriod(stageClock):null,
+    sideQuest:!!npcAt().sideQuest,
     choice:npcSelectedChoice,choices:npcAt().choices?.map(c=>({id:c.id,label:c.label}))||[]}:null,
    checkpointAvailable:!!loadCheckpoint(),checkpointStage:loadCheckpoint()?.stage??null,
    clock,health,score,ammo,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};

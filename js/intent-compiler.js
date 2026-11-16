@@ -57,7 +57,7 @@ function requirements(text,origin){
  // definindo o escopo de suas linhas, e o texto original não é reescrito.
  const lines=String(text||'').split(/\r?\n/),result=[];
  let current=null,scope=null;
- const phaseRef='(?:fase|missao|level|stage|etapa)\\s*(?:\\d{1,2}|um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\\b';
+ const phaseRef='(?:fase|miss[aã]o|level|stage|etapa)\\s*(?:\\d{1,2}|um|uma|dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez)\\b';
  // Segmenta somente delimitadores claros. Uma vírgula antes de "sem chefe"
  // não muda o escopo; vírgulas que introduzem uma fase diferente, sim.
  const stageStart=new RegExp('^(?:(?:na|no|para|da|do)\\s+)?'+phaseRef,'i');

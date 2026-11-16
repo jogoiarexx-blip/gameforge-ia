@@ -62,7 +62,51 @@ function gameForgeWorldRules(){
   if(mode==='survive')return Number.isFinite(s.elapsed)&&s.elapsed>=clamp(Number(s.seconds)||45,5,180);
   return goalReady('arena',s);
  }
- return {clamp,rng,moveCircle,crowdDirection,platformRoute,raceProgress,trackRibbon,goalReady,missionReady};
+ // GF-007: perfis realmente alteram HP, dano, velocidade e tamanho dos NPCs.
+ function enemyProfile(type,index=0){
+  const actual=type==='mixed'?['runner','sentinel','brute'][Math.abs(index)%3]:type;
+  const profiles={
+   runner:{id:'runner',health:0.75,speed:1.75,scale:.88,damage:8},
+   brute:{id:'brute',health:2.8,speed:.68,scale:1.27,damage:16},
+   sentinel:{id:'sentinel',health:1.65,speed:.86,scale:1.08,damage:12},
+   default:{id:'default',health:1,speed:1,scale:1,damage:10}
+  };
+  return profiles[actual]||profiles.default;
+ }
+ function dueStageEvents(events,elapsed,fired){
+  if(!Array.isArray(events)||!Number.isFinite(elapsed))return [];
+  const used=new Set(Array.isArray(fired)?fired:[]);
+  return events.filter(e=>e&&['reinforcements','heal'].includes(e.type)&&
+   (e.id==='event-'+e.type)&&Number.isInteger(e.at)&&e.at>=5&&e.at<=120&&
+   Number.isInteger(e.amount)&&e.amount>=2&&e.amount<=45&&elapsed>=e.at&&!used.has(e.id));
+ }
+ // A chave usa ID do projeto, nao o titulo, para separar jogos homonimos.
+ function checkpointKey(spec){
+  if(!spec||!/^gf-[0-9a-f]{8}-[0-9a-f]{8}$/.test(String(spec.projectId||''))||
+   !['arena','fps','rpg'].includes(spec.genre)||spec.dimension!=='3d'||spec.combatEconomy?.enabled)
+   return null;
+  return 'gameforge-campaign-v1:'+spec.genre+':'+spec.projectId;
+ }
+ function readCheckpoint(raw,spec){
+  if(!checkpointKey(spec)||typeof raw!=='string'||raw.length>1200)return null;
+  let data;try{data=JSON.parse(raw);}catch{return null;}
+  if(!data||data.version!==1||data.projectId!==spec.projectId||!Number.isInteger(data.stage)||
+   data.stage<1||data.stage>=spec.stages?.length)return null;
+  const bounded=(x,min,max)=>Number.isFinite(x)&&x>=min&&x<=max;
+  if(!bounded(data.health,1,100)||!bounded(data.score,0,1e9)||!bounded(data.ammo,0,999)||
+   !bounded(data.clock,0,1e7)||!Number.isInteger(data.rpgLevel)||!bounded(data.rpgLevel,1,30)||
+   !Number.isInteger(data.rpgXP)||!bounded(data.rpgXP,0,2000)||
+   !Number.isInteger(data.rpgPotions)||!bounded(data.rpgPotions,0,9))return null;
+  return {version:1,projectId:data.projectId,stage:data.stage,health:data.health,
+   score:data.score,ammo:data.ammo,clock:data.clock,rpgLevel:data.rpgLevel,
+   rpgXP:data.rpgXP,rpgPotions:data.rpgPotions};
+ }
+ function checkpointPayload(spec,progress){
+  if(!checkpointKey(spec))return null;
+  return readCheckpoint(JSON.stringify({version:1,projectId:spec.projectId,...progress}),spec);
+ }
+ return {clamp,rng,moveCircle,crowdDirection,platformRoute,raceProgress,trackRibbon,goalReady,missionReady,
+  enemyProfile,dueStageEvents,checkpointKey,readCheckpoint,checkpointPayload};
 }
 if(typeof module!=='undefined')module.exports=gameForgeWorldRules;
 if(typeof globalThis!=='undefined')globalThis.gameForgeWorldRules=gameForgeWorldRules;

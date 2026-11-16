@@ -90,7 +90,7 @@
     if(three&&spec.genre==='shooter'&&spec.stageBranches?.enabled&&typeof branchFactory!=='function')
       throw Error('Modulo de rotas alternadas nao carregado. Atualize o Studio.');
     const branchModule=three&&spec.genre==='shooter'&&spec.stageBranches?.enabled
-      ?'const GameForgeStageBranches = ('+branchFactory.toString()+')();\\n':'';
+      ?'const GameForgeStageBranches = ('+branchFactory.toString()+')();\n':'';
 
     const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+rules+combatModule+branchModule+'('+runtime.toString()+')();\n';
     const css=BASE_CSS;

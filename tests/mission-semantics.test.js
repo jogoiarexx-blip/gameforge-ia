@@ -133,3 +133,22 @@ test('Studio oferece exemplo pronto com relações entre missões sem sobrescrev
  assert.match(app,/urbanmissions:\{dimension:'3d',genre:'urban-action'/);
  assert.match(app,/Depois entregue 2 provas no armazém/);
 });
+
+test('GDD de visão futura não bloqueia protótipo, mas missão explicitamente impossível bloqueia',()=>{
+ const vision=parser.parseGdd([
+  '# Jogo de mafia 3D em terceira pessoa',
+  '## Visão geral',
+  'Cidade, negócios, polícia, veículos dirigíveis, interiores e missões.',
+  'No futuro o jogador poderá dirigir carros e negociar com NPCs.'
+ ].join('\n'));
+ assert.equal(vision.genre,'urban-action');
+ assert.equal(vision.engineAvailability.status,'prototype');
+ const impossible=parser.parseGdd([
+  '# Cidade de máfia 3D em terceira pessoa com negócios e polícia',
+  '## Missão 1 — Fuga do centro',
+  'Dirija o carro e fuja da polícia.'
+ ].join('\n'));
+ assert.equal(impossible.genre,'urban-action');
+ assert.equal(impossible.engineAvailability.status,'blocked');
+ assert.throws(()=>generator.generate(impossible,''),/missões detalhadas|não vai substituí-las/);
+});

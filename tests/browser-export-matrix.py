@@ -6,6 +6,7 @@ from threading import Thread
 import json
 import tempfile
 import zipfile
+import traceback
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -230,7 +231,7 @@ def run():
                 results.append('urban-design-slice-and-export')
             except Exception as exc:
                 urban_page.screenshot(path=str(screenshots / 'urban-design-failure.png'), full_page=True)
-                failures.append(('urban-design-planning', str(exc), urban_errors, []))
+                failures.append(('urban-design-slice-and-export', type(exc).__name__+': '+str(exc)+'\n'+traceback.format_exc(), urban_errors, []))
             finally:
                 urban_page.close()
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))

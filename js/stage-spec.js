@@ -195,7 +195,7 @@ function compile(spec,gdd='',command=''){
   }
   const spatial=combat?zoneEvents(rows):[];
   if(combat&&(spatial.length||rows.some(row=>/\b(?:ao entrar|quando entrar|ao chegar|quando chegar|ao pisar|quando pisar)\b/.test(row.normal))))c.zoneEvents=spatial;
-  else if(combat&&!Array.isArray(c.zoneEvents))c.zoneEvents=[];
+  // Sem gatilho declarado, deixa a configuração original intacta.
   configs[index]=c;
   const mapLayout=combat?(LAYOUTS.some(x=>x.id===c.layout)?c.layout:'cross'):null;
   const configuredTheme=['forest','desert','neon','ruins'].includes(c.theme)?c.theme:

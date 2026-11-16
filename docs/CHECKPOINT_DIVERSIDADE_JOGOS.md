@@ -720,3 +720,18 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Limitações honestas:** Chromium headless em Linux não é dispositivo físico Android/iOS; nem valida 1% lows, consumo real de GPU, APIs gráficas de todo fabricante ou animações complexas GLB. O teste GLB em VM cobre modelo estático, não rig/AnimationMixer. Há edição real no Studio com arena 2D; a matriz de navegador cobre a execução de todos os gêneros, mas não o editor de cada um separadamente. Essas expansões permanecem em GF-005, GF-015/016 e GF-019. O Pages por branch ainda pode ignorar falhas da CI: GF-001 continua **EM REVISÃO** até alteração administrativa.
 
 **Próxima tarefa única:** **GF-005** — automatizar restauração/recarga/edição/undo em navegador limpo, ZIP e GLB com IndexedDB e falhas de quota; reutilizar job browser existente. GF-003/004 seguem em revisão e precisam de checagem de suas evidências antes de validação.
+
+
+## GF-005 — Continuidade com GLB íntegro e backup em Chromium (16/11/2026)
+
+**Estado: EM REVISÃO.** Documento técnico: `docs/GF005_CONTINUIDADE_INTEGRIDADE.md`; plano mestre atualizado.
+
+**Problemas reproduzidos no código:** restauração de projetos criados apenas por comando podia executar `parseGdd('')` antes de aproveitar `GAME_SPEC`; GLBs de mesmo tamanho podiam ser substituídos em ZIP com CRC recalculado sem alerta de conteúdo diferente; falhas no IndexedDB durante restauração deixavam o diálogo aberto.
+
+**Correções:** `js/app.js` escolhe o `GAME_SPEC` salvo sem exigir GDD não vazio, verifica SHA-256 do GLB no ZIP e encerra transação mal-sucedida mantendo os dados antigos. `js/asset-library.js` inclui hash opcional `sha256` no manifesto, verifica novos GLBs na leitura IndexedDB, exportação e restauração; backups anteriores sem hash seguem legíveis (sem alegar integridade retroativa). `tests/asset-library.test.js` valida hash contra Node crypto, adulteração de ZIP com CRC válido e compatibilidade legado.
+
+**Novo teste de integração em CI:** `tests/browser-project-continuity-gf005.py` roda no Chromium Playwright, cobrindo comando sem GDD, código editado, GLB real sintético, reload, backup `.gameforge.zip`, importação em perfil limpo, alteração incremental/desfazer, ZIP adulterado, erro de escrita e aviso por quota, sem vazamento de token. `.github/workflows/verify.yml` exige GF-005 após matriz GF-002; falhas agora bloqueiam o fluxo verificado de publicação. Teste foi adaptado à interface real com painéis recolhidos.
+
+**Evidência parcial confirmada:** execução de CI `43880155784` aprovou **248 testes Node, 0 falhas** e a versão inicial do cenário GF-005 em Chromium (antes do teste extra de edição/desfazer). A revisão estendida permanece pendente de resultado verde no SHA atual; não declarar GF-005 VALIDADO antes disso.
+
+**Limites:** SHA-256 detecta adulteração de arquivo em relação ao manifesto, não autentica origem. Browser automatizado usa GLB de triângulo mínimo, não um personagem animado complexo. Não executou testes Android/iOS reais ou de interrupção abrupta do processo. GF-001 continua com a rota antiga de Pages por branch, que depende de migração nas configurações do GitHub.

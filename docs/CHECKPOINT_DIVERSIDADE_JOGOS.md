@@ -540,3 +540,26 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Validação confirmada:** GitHub Actions **run 43858628707**, job **133269301989**, commit `20a74282a336d8178174c71979cea65c5107ce45`: **196/196 testes aprovados, zero falhas**, sintaxe JavaScript e benchmark da arena aprovados. Os testes do GoldenEye usam uma versão resumida representativa do GDD; o documento completo de 71,6 mil caracteres foi inspecionado via GitHub, sem afirmar que cada uma de suas linhas foi executada como teste unitário.
 
 **Limites:** identificar corretamente FPS 3D seleciona o runtime apropriado, mas não implementa automaticamente toda a espionagem, IA, cutscenes e missões específicas do GDD no gerador offline. Escolhas manuais explícitas ainda prevalecem, acompanhadas de alerta. Falta teste em navegador real/Android e avaliação com um catálogo maior de GDDs para medir confusão entre gêneros, inclusive pedidos híbridos.
+
+
+## Engenharia — etapa 14: compilador de GDD e comandos em linguagem natural (16/11/2026)
+
+**Objetivo solicitado:** melhorar o entendimento de instruções escritas para transformar **um GDD completo ou um comando simples** em configurações reais do jogo, e permitir modificações futuras por linguagem natural. A versão de entrega é **v0.20.0**.
+
+**Diagnóstico prévio:** `js/parser.js` selecionava o gênero via padrões e permitia criar protótipos, mas não convertia números e descrições por fase em regras executáveis. `js/app.js` bloqueava pedidos sem GDD. O fluxo incremental de `js/development-engine.js` reconhecia apenas alguns comandos relativos (mais difícil, mais rápido etc.), sem aceitar quantidades absolutas nem vários ajustes de fases em uma frase. Relatórios não separavam claramente regras implementadas de funcionalidades inexistentes.
+
+**Arquivos alterados nesta etapa:**
+- `js/intent-compiler.js` (novo): identifica especificações de número de fases, ondas, inimigos, voltas, chefes, duração/objetivo de missão, ambientação global e por fase, texto de HUD, velocidade, cadência e dificuldade; respeita prioridades do pedido recente, limites e configuração isolada por fase. Produz `GAME_SPEC.stageConfig`, `GAME_SPEC.tuning` e relatório estruturado `implementation.applied/pending/warnings`. Não executa o conteúdo enviado pelo usuário.
+- `js/parser.js`: liga o compilador a `parseGdd()`, aceita texto sem GDD, cria título inicial para comandos diretos, melhora instruções para backend de IA e preserva conflito entre GDD salvo e criação de outro gênero. As melhorias paralelas de detecção de FPS, corrida e plataformas tiveram regressões corrigidas.
+- `js/app.js`: permite criar jogo quando só há um comando, mostra resumo de regras compiladas e pendências em seção expansível, exporta comando original e relatório de interpretação. O backend opcional recebe rascunho inicial quando não há GDD.
+- `js/generator.js` e `js/project-backup.js`: relatório de geração distingue o que está no código de funcionalidades pendentes; backup permite `COMANDO_ORIGINAL.md` e `PLANO_INTERPRETACAO.md`, mantendo versões anteriores compatíveis.
+- `js/development-engine.js`: aplica mudanças de linguagem natural a jogos existentes (como seis inimigos na fase dois, quantidades de ondas e chefe somente na última) sem substituir runtime. Mantém o comportamento incremental antigo.
+- `js/campaign-editor.js`: ondas editáveis para navinha 3D e missões programadas de RPG 3D; não marca uma missão como implementada se o código antigo não contém o runtime.
+- `js/shooter-3d-runtime.js`: utiliza os temas de fase interpretados do GDD.
+- `tests/intent-compiler.test.js`, `tests/intent-evolution.test.js`: cenários de criação, GDD grande, prioridades, limites, pendências, código exportado e edição incremental.
+
+**Teste verificado:** execução GitHub Actions `43858628707` no commit `20a74282`: **196 testes passaram, 0 falhas**. A suíte inclui regressões dos motores 2D e 3D, edição de missões e testes do compilador, além do benchmark de colisões do projeto. Testes em WebGL de navegador real e Android não foram alegados. A suíte foi ajustada para preservar antigos contratos de missão; falhas intermediárias foram corrigidas.
+
+**Restrições de interpretação:** esta etapa é um compilador determinístico de requisitos suportados. Não inventa IA de inimigos, multiplayer, animações esqueléticas ou árvores de habilidades; tais recursos ficam pendentes. “Objetivo: ...” em texto livre é só um rótulo de HUD, não uma condição programada de vitória; sobrevivência, coleta e eliminação possuem condições programadas nos motores compatíveis. O relatório `implementation.applied` reflete alterações de configuração, mas teste de gameplay e revisão manual seguem essenciais.
+
+**Próxima etapa:** melhorar inferência contextual para documentos longos e instruções contraditórias, incluir assistente opcional de IA para gerar módulos novos mediante validação de testes, criar mapeamento entre entidades citadas no GDD e assets GLB, e executar QA visual real em navegadores e dispositivos móveis.

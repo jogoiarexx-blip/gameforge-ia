@@ -53,6 +53,8 @@ jobs:
         run: node tools/build-browser-fixtures.cjs
       - name: Verificar 14 exportações e editor em Chromium
         run: python tests/browser-export-matrix.py
+      - name: GF-005 — Continuar projeto, restaurar GLB e validar perda de armazenamento
+        run: python tests/browser-project-continuity-gf005.py
       - name: Salvar capturas do navegador para auditoria
         if: always()
         uses: actions/upload-artifact@v4

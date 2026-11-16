@@ -786,3 +786,26 @@ O teste novo confirmou, em perfis isolados: criação só por comando, edição 
 **Evidência positiva URB-01:** GitHub Actions [43887382720](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43887382720), SHA `9ec2995cb8`, aprovou **261 testes Node, zero falhas, 16 exportações válidas e 17 cenários Chromium** (15 jogos + Studio + cenário urbano), além da continuidade GF-005. Isto é evidência do **protótipo jogável**, não de mundo aberto completo.
 
 **Próxima tarefa única sugerida:** corrigir **GF-001** no Settings → Pages; no código, executar **GF-003/004 — benchmark reproduzível + representação semântica de comandos curtos**. Critério: 3 erros urbanos identificados virarem classificação correta sem quebrar GoldenEye, navinha, terror e corrida. Depois passar ao `UrbanLevelSpec` de GF-028, com duas missões/cidades de teste distintas do mesmo gênero. Não marcar tarefas concluídas por relatório ou texto de HUD.
+
+## URB-01 — Marco validado: primeiro bairro urbano 3D jogável (16/11/2026)
+
+**Escopo:** motor de ação urbana em protótipo. Não equivale à conversão das cidades, dos 36 negócios nem das 24 missões do GDD Godfather. A diferença entre gameplay criado e requisitos ainda planejados deve continuar visível no Studio.
+
+**Implementação registrada:**
+- **js/urban-rules.js:** movimento/collision sliding em XZ, bloqueio de tiros por edifícios, captura idempotente e save com validação de versão, tipos e limites.
+- **js/urban-runtime.js:** cenário Three.js local com ruas e edifícios low-poly, protagonista em terceira pessoa, colisões, uma pistola, um guarda com perseguição básica, armazém interativo, objetivo concluível, HUD, pausa, toque/teclado e save local separado dos saves do jogo 2D.
+- **js/parser.js e js/urban-design.js:** seleção do novo par urban-action/3d (15 motores no total), requisitos parciais vs. planejados, uma fase jogável de demonstração sem inventar campanha completa. O GDD original continua preservado integralmente.
+- **js/generator.js, index.html e js/app.js:** jogo offline exportável com Three.js local e arquivo SLICE_URBAN_3D.md; botão de exemplo Cidade 3D · URB-01 e ZIP de contrato/planejamento em paralelo.
+- **js/project-backup.js, tools/verify-exports.cjs, tools/build-browser-fixtures.cjs:** registro dos novos artefatos e da nova variante nos testes do Studio.
+- **tests/urban-slice.test.js, tests/urban-design.test.js, tests/export-boot-matrix.test.js, tests/browser-export-matrix.py:** testam colisão, linha de tiro bloqueada, recompensa concedida apenas uma vez, validação do save, classificação sem confundir FPS/naves/corrida e gameplay no navegador após descompactar o ZIP.
+
+**Evidência de execução:** [GitHub Actions 43887382720](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43887382720), commit 9ec2995cb8b139f4a12a62cafdfbd82ada7c9a97, com **261 testes Node aprovados, 0 falhas**, **17 cenários Chromium aprovados, 0 falhas**, e **16 variantes** de JavaScript exportado verificadas (15 motores e FPS com loja). O Chromium jogou a missão URB-01: derrotou o guarda, caminhou até o armazém, capturou usando E, recebeu $450 uma vez, recarregou e confirmou o mesmo saldo sem duplicação. O job de persistência GF-005 também passou.
+
+**Limitações honestas e pendências:**
+1. Somente um bairro, um guarda, uma arma e um negócio fictício: veículos no cenário são decorativos, não dirigíveis. O HUD e as malhas procedurais não reproduzem as três cidades do GDD.
+2. A câmera é de acompanhamento em terceira pessoa, ainda sem oclusão robusta. Ataques usam orientação do personagem, ainda não mira 3D completa por retículo ou armas variadas. O guarda tem perseguição/ataque básicos, não IA de patrulha, cobertura ou esquiva.
+3. Não há interiores exploráveis, sistema de procurado/polícia, imóveis múltiplos, árvore de evolução, comércio real nem rig GLB com clipes.
+4. Save é local à origem/navegador, com chave exclusiva da demonstração. Não migra o save 2D do Godfather.
+5. WebGL em Chromium da CI não substitui testes em hardware Android/iOS nem medições de memória/temperatura/FPS no dispositivo. GF-001 ainda requer confirmar a configuração protegida de Pages.
+
+**Próximo ID do motor: URB-02.** Priorizar oclusão da câmera, mira baseada no retículo, guardas com patrulha/suspeita/busca/combate e rotas/coberturas, com testes unitários e Chromium. URB-03/04/05 permanecem no plano mestre.

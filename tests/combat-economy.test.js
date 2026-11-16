@@ -48,6 +48,19 @@ test('inimigos deixam créditos persistentes e upgrades custam mais a cada níve
  assert.equal(shop.purchase('upgrade',100).ok,false);
  assert.equal(shop.state().earned,110);
 });
+test('munição de emergência só aparece sem dinheiro e com recarga limitada por tempo',()=>{
+ const shop=economyFactory().create({startingCredits:0,startingReserve:0});
+ assert.equal(shop.requestEmergencyAmmo(0,0),6);
+ assert.equal(shop.state().reserve,6);
+ assert.equal(shop.requestEmergencyAmmo(1,0),0);
+ assert.equal(shop.useReserve(6),6);
+ assert.equal(shop.requestEmergencyAmmo(10,0),0);
+ assert.equal(shop.requestEmergencyAmmo(20,0),6);
+ assert.equal(shop.state().emergencyGrants,2);
+ assert.equal(shop.requestEmergencyAmmo(41,1),0);
+ const hasFunds=economyFactory().create({startingCredits:35,startingReserve:0});
+ assert.equal(hasFunds.requestEmergencyAmmo(0,0),0,'com créditos suficientes deve usar a loja');
+});
 test('GDD em português configura preço, loja e gera código com módulo local sem rede',()=>{
  const instruction='Crie um FPS 3D com loja para comprar munição, recuperar vida com kit médico e melhorar armas.\nMunição custa 20 créditos. Kit médico custa 40 créditos. Melhoria de arma custa 150 créditos.';
  const spec=parser.parseGdd('',instruction,{dimension:'auto',genre:'auto'});

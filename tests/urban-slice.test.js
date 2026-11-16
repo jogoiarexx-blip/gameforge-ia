@@ -196,7 +196,7 @@ test('URB-02 som faz guarda investigar atras de predio por caminho sem atacar at
  let current=heard,advanced=false;
  for(let i=0;i<250;i++){
   current=R.guardStep(current,{...player,noise:false},1/60,[building]);
-  assert.equal(current.canAttack,false,'muro nao permite ataque');
+  if(current.canAttack)assert.equal(R.clearShot(current,player,[building]),true,'ataque so apos contornar o muro e ter visao');
   assert.equal(R.intersects(current.x,current.z,.36,building),false);
   if(Math.abs(current.x)>.65)advanced=true;
  }

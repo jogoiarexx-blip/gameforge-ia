@@ -92,7 +92,7 @@ function parseMissionStep(source){
 function missionSequence(rows){
  let latest=null;
  for(const row of rows){
-  const t=row.normal;
+  const t=row.normal.replace(/^[-*+]\s*/, '').replace(/^(?:(?:na|no|para a|para o)\s+)?(?:fase|missao|etapa|stage|level)\s*\d{1,2}\s*[:,-]?\s*/, '');
   if(!/^(?:etapas|sequencia|objetivos em ordem)\s*[:\-]|^\s*primeiro\s+/.test(t))continue;
   if(/\b(sem|nao quero|remover|desativar)\b.{0,22}\b(etapas|sequencia)\b/.test(t)){
    latest={steps:null,status:'nao_solicitado',origin:{document:row.document,line:row.line}};
@@ -189,7 +189,10 @@ function compile(spec,gdd='',command=''){
   const events=combat?timedEvents(rows):[];
   if(combat&&events.length)c.events=events;
   const sequence=combat?missionSequence(rows):null;
-  if(combat&&sequence?.steps)c.missionSteps=sequence.steps;
+  if(combat&&sequence){
+   if(sequence.steps)c.missionSteps=sequence.steps;
+   else delete c.missionSteps; // Ordem recente inválida não pode fingir manter roteiro anterior.
+  }
   const spatial=combat?zoneEvents(rows):[];
   if(combat&&spatial.length)c.zoneEvents=spatial;
   configs[index]=c;

@@ -245,6 +245,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     devHistory.length=0;devHistory.push(...snap.history);
     $('deep-plan').checked=snap.deepPlan;
     state.files=snap.files;state.selected=null;preparedTaskId=null;lastPlan=null;state.generation++;
+    restoreSceneAssetControls();
     state.spec=GameForgeProject.activeSpec(state.files,GameForgeParser.parseGdd(snap.gdd));
     restoreCreationOptions(snap.creationOptions||{dimension:state.spec.dimension,genre:state.spec.genre,...state.spec.worldOptions});
     roadmapTasks=GameForgeRoadmap.build(snap.gdd,snap.roadmapRecords);roadmapSource=snap.gdd;roadmapCount=60;
@@ -273,7 +274,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     }catch{unrestoredProject=true;storageMessage({ok:false,message:'Não foi possível restaurar o projeto salvo. Abra um backup; o registro anterior foi preservado.'});}
   }
   function listFiles(){
-    const keys=Object.keys(state.files).filter(k=>allowed.includes(k));
+    const keys=Object.keys(state.files).filter(k=>allowed.includes(k)&&!k.endsWith('.b64'));
     $('file-list').innerHTML=keys.length?'':'<div class="muted tiny">Nenhum arquivo gerado.</div>';
     for(const k of keys){
       const btn=document.createElement('button');btn.type='button';btn.className='file-item'+(state.selected===k?' active':'');
@@ -327,6 +328,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     roadmapSaveFiles();
     const files={...state.files};
     files['PROJETO.gameforge.json']=GameForgeProject.encode(projectSnapshot());
+    if(files['ASSET_CENARIO.b64'])files['assets/cenario.glb']=Uint8Array.from(atob(files['ASSET_CENARIO.b64']),c=>c.charCodeAt(0));
     if(qaState.last){
       files['QA_inicio.png']=screenshotBytes(qaState.last.before.image);
       files['QA_movimento.png']=screenshotBytes(qaState.last.after.image);
@@ -396,6 +398,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(qaState.candidate){feedback('Aceite ou descarte a correção candidata antes de gerar outro jogo.',true);return;}
     const spec=analyze();if(!spec)return;
     const mode=state.mode;
+    const retainedAsset=spec.dimension==='3d'?Object.fromEntries(['ASSET_CENARIO.b64','ASSET_CENARIO.json'].filter(k=>state.files[k]).map(k=>[k,state.files[k]])):{};
     $('generate').disabled=true;
     status('Gerando...');$('log').textContent=`[Studio] Interpretando GDD de ${spec.sourceLength} caracteres...`;
     try{
@@ -437,6 +440,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         log('[Biblioteca] '+(data.references_used||[]).length+' referências selecionadas; '+(data.source_files_read||[]).length+' arquivo(s) atual(is) do GitHub consultado(s).');
         feedback('A IA devolveu o código. Teste o jogo na prévia antes de publicar.');
       }
+      Object.assign(state.files,retainedAsset);
       unrestoredProject=false;devHistory.length=0;renderHistory();
       roadmapSaveFiles();
       state.generation++;state.spec=spec;
@@ -721,6 +725,50 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('qa-repair').addEventListener('click',()=>projectOperation(qaRepair));
   $('qa-accept').addEventListener('click',qaAccept);
   $('qa-reject').addEventListener('click',qaReject);
+  /* V0.17: GLB estático no cenário 3D, preservado em backup e ZIP. */
+  function assetPlacement(){
+    const value=(id,min,max,def)=>{
+      const n=Number($(id).value);
+      return Number.isFinite(n)?Math.max(min,Math.min(max,n)):def;
+    };
+    return {x:value('scene-asset-x',-35,35,5),z:value('scene-asset-z',-35,35,5),scale:value('scene-asset-scale',.2,4,1)};
+  }
+  function restoreSceneAssetControls(){
+    let settings={x:5,z:5,scale:1};
+    try{if(state.files['ASSET_CENARIO.json'])settings={...settings,...JSON.parse(state.files['ASSET_CENARIO.json'])};}catch{}
+    for(const k of ['x','z','scale'])$('scene-asset-'+k).value=Number.isFinite(Number(settings[k]))?settings[k]:settings[k]==='scale'?1:5;
+    $('scene-asset-status').textContent=state.files['ASSET_CENARIO.b64']?'Objeto GLB salvo no projeto. Prévia e exportação usam o modelo.':'Nenhum modelo adicionado.';
+  }
+  $('scene-asset-file').addEventListener('change',async e=>{
+    const file=e.target.files?.[0];if(!file)return;
+    try{
+      if(!state.files['engine-3d.js'])throw Error('Crie primeiro um jogo 3D no modo Sem IA.');
+      if(!/\\.glb$/i.test(file.name))throw Error('Use um arquivo .glb com recursos embutidos.');
+      if(file.size>1_200_000)throw Error('Limite inicial: GLB com até 1,2 MB. Otimize o modelo antes da importação.');
+      const report=await GameForgeModelInspector.readFile(file);
+      if(report.meshes<1)throw Error('Modelo sem malhas.');
+      const buf=new Uint8Array(await file.arrayBuffer());let raw='';
+      for(let i=0;i<buf.length;i+=32768)raw+=String.fromCharCode(...buf.subarray(i,i+32768));
+      state.files['ASSET_CENARIO.b64']=btoa(raw);
+      state.files['ASSET_CENARIO.json']=JSON.stringify(assetPlacement());
+      qaState.last=null;qaState.baseline=null;
+      listFiles();runPreview();saveState();
+      $('scene-asset-status').textContent=file.name+' importado · '+report.meshes+' malhas. Prévia atualizada; teste a posição e exporte o ZIP.';
+      feedback('Objeto de cenário incluído no jogo 3D. Animações/rig não são aplicados nesta etapa.');
+    }catch(err){$('scene-asset-status').textContent='Erro: '+err.message;feedback(err.message,true);}
+    e.target.value='';
+  });
+  for(const name of ['x','z','scale'])$('scene-asset-'+name).addEventListener('change',()=>{
+    if(!state.files['ASSET_CENARIO.b64'])return;
+    state.files['ASSET_CENARIO.json']=JSON.stringify(assetPlacement());
+    qaState.last=null;qaState.baseline=null;runPreview();saveState();
+    $('scene-asset-status').textContent='Posição/escala atualizadas. Execute a prévia para verificar o objeto.';
+  });
+  $('scene-asset-remove').addEventListener('click',()=>{
+    delete state.files['ASSET_CENARIO.b64'];delete state.files['ASSET_CENARIO.json'];
+    qaState.last=null;qaState.baseline=null;restoreSceneAssetControls();listFiles();runPreview();saveState();
+    feedback('Objeto importado removido do projeto e das próximas exportações.');
+  });
   $('model-file').addEventListener('change',async event=>{
     const file=event.target.files?.[0];if(!file)return;
     try{

@@ -51,7 +51,7 @@ function timedEvents(rows){
    amount=Math.max(2,Math.min(8,Number(qty?.[1])||3));
   }else if(/\b(cura|curar|recuperar vida|kit medico)\b/.test(t)){
    type='heal';
-   const qty=/\b(?:cura|curar|recuperar vida|kit medico)\b.{0,20}\b(\d{1,2})\s*(?:pontos?|de vida|hp)?\b/.exec(t);
+   const qty=/\b(?:cura|curar|recuperar vida|kit medico)\s*(?:de|com|\+)?\s*(\d{1,2})\b/.exec(t);
    amount=Math.max(10,Math.min(45,Number(qty?.[1])||25));
   }
   if(!type)continue;

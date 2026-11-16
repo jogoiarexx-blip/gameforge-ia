@@ -132,3 +132,48 @@ test('GF-010 caminhos alternativos geram encontros e checkpoints diferentes no s
  assert.ok(game.telemetry().enemies<hard,'rota superior muda quantidade real de inimigos');
  assert.equal(game.telemetry().routeName,'Caminho superior');
 });
+
+test('GF-010 v2 as rotas alteram bioma 3D e disparam encontros exclusivos executáveis',()=>{
+ const branch=require('../js/stage-branches.js')();
+ const spec={title:'Biomas por caminho',stageBranches:branch.parse('3 caminhos alternativos e passagem secreta')};
+ const loaded=[];
+ for(const [number,id,sceneId,eventType] of [
+  [1,'high','sky-bridges','supply'],[2,'middle','central-outpost','ambush'],[3,'low','canyon-ruins','hazard']
+ ]){
+  const g=boot(spec);g.tick(2);g.item('start').click();g.key('keydown',String(number));
+  const start=g.telemetry();
+  assert.equal(start.state,'play');
+  assert.equal(start.route,id);
+  assert.equal(start.routeScene,sceneId);
+  assert.equal(start.routeDecorCount,20,'pilares e luminárias ficam na cena real');
+  const bg=g.scene().background.getHex();
+  g.tick(295);
+  const after=g.telemetry();
+  const evt=after.routeEvents.find(e=>e.type===eventType);
+  assert.ok(evt,'evento deve existir no runtime, não só no manifesto');
+  assert.ok(after.routeEventsTriggered.includes(evt.id),'evento inicia após o tempo jogado');
+  assert.equal(after.routeEventsTriggered.filter(x=>x===evt.id).length,1,'evento dispara uma vez');
+  if(eventType==='supply')assert.ok(after.powerups>=1,'surge recompensa coletável');
+  if(eventType==='ambush')assert.ok(after.enemies>=start.enemies+2,'emboscada cria inimigos adicionais');
+  if(eventType==='hazard')assert.ok(after.enemyBullets>=4,'ataque de projéteis é físico');
+  loaded.push({id,bg});
+ }
+ assert.equal(new Set(loaded.map(x=>x.bg)).size,3,'cor real do ambiente muda por caminho');
+});
+test('GF-010 v2 coletar suprimentos confirma ID no checkpoint e não premia novamente',()=>{
+ const branch=require('../js/stage-branches.js')();
+ const game=boot({title:'Teste de tesouro único',stageBranches:branch.parse('3 caminhos alternativos')});
+ game.tick(2);game.item('start').click();game.key('keydown','1');
+ const event=game.telemetry().routeEvents[0];
+ game.tick(276);
+ assert.ok(game.telemetry().routeEventsTriggered.includes(event.id));
+ game.key('keydown','ArrowRight');game.tick(42);game.key('keyup','ArrowRight');
+ const after=game.telemetry();
+ assert.deepEqual(Array.from(after.routeRewardsClaimed),[event.id],'evento foi coletado na colisão real');
+ assert.equal(after.routeCheckpoint,true);
+ const stored=game.env.localStorage.getItem('gameforge-shooter-branches-v1-teste-de-tesouro-unico');
+ assert.ok(stored,'progresso do evento foi persistido');
+ assert.deepEqual(JSON.parse(stored).claimed,[event.id]);
+ const cash=after.score;game.tick(70);
+ assert.equal(game.telemetry().score,cash,'não é possível ganhar o mesmo bônus repetidamente');
+});

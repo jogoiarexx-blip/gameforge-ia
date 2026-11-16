@@ -346,6 +346,7 @@ function gameForgeUrban3DBoot(){
   reserve:progress.reserve,player:{x:progress.x,y:0,z:progress.z,heading:progress.heading},
   enemies:progress.guardDefeated?0:1,enemyHp:progress.guardHp,
   guardMode:progress.guardDefeated?'defeated':guardBrain.mode,
+  guardWaypoints:progress.guardDefeated?0:(guardBrain.navRoute?.length||0),
   mission:{guardDefeated:progress.guardDefeated,captured:progress.captured,
    complete:progress.missionComplete,rewardGranted:progress.rewardGranted},
   colliders:blockers.length,cameraOccluded,saveStatus,saveEnabled,saveKey,

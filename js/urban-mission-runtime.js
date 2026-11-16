@@ -305,6 +305,7 @@ function gameForgeUrbanMissionBoot(){
   health:sim.health,score:sim.cash,ammo:sim.ammo,reserve:sim.reserve,
   player:{x:sim.position.x,y:0,z:sim.position.z,heading},enemies:guards.filter(g=>g.alive).length,
   guardModes:guards.filter(g=>g.alive).map(g=>g.brain.mode),
+  guardWaypoints:guards.filter(g=>g.alive).map(g=>g.brain.navRoute?.length||0),
   mission:{complete:gameState==='victory',step:F.nextStep(plan,sim)?.action||null,
    progress:F.progress(plan,sim).steps,stage:sim.stage+1,rewards:[...sim.rewards]},
   cameraOccluded,saveEnabled,saveStatus,saveKey:storageKey,prototype:true

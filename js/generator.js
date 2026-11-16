@@ -98,7 +98,8 @@
        '- Recompensa única de exemplo: $450. Este valor não altera a economia dos GDDs originais.\n'+
        '- Salve versionado em chave gameforge-urban-v1-<titulo>, separado dos saves do Godfather 2D.\n'+
        '- Pendente: carros dirigíveis, polícia, guardas com IA avançada, interiores, 18 distritos, 36 negócios, 24 missões, 3 chefes, GLB animado, compatibilidade com campanhas antigas e testes físicos mobile.\n'+
-       '- Código do motor em game.js, sem dependências de rede; Three.js incluído em engine-3d.js.\n'
+       '- Código do motor em game.js, sem dependências de rede; Three.js incluído em engine-3d.js.\n'+
+       (spec.urbanMissions?.length?'- Missões estruturadas pelo GDD: '+spec.urbanMissions.map(m=>m.title+' ['+m.steps.map(s=>s.action+' '+s.quantity+' '+s.target).join(' → ')+']').join('; ')+'\n':'')
     }:{}; 
     return {
       ...urbanSlice,
@@ -108,6 +109,8 @@
       'style.css':css,
       'game.js':code,
       'GDD_original.md':String(gdd||''),
+      ...(spec.actionModel?{'MODELO_ACOES.json':JSON.stringify(spec.actionModel,null,2),
+        'PLANO_ACOES.md':(root.GameForgeMissionSemantics||(typeof require==='function'?require('./mission-semantics'):null))?.report(spec.actionModel)||''}:{}),
       'RELATORIO_GERACAO.md':generationReport(spec),
       ...(root.GameForgeDesignIR?{'PLANO_REQUISITOS.md':root.GameForgeDesignIR.report(spec.designIR)}:{}),
       ...(capabilityApi?{

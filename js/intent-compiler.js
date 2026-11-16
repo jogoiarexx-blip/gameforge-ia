@@ -119,7 +119,7 @@ function compile(spec,gdd,instruction='',options={}){
  if(Object.keys(tuning).length)parsed.tuning=tuning;
  // Temas de ambiente, com precedencia do pedido mais recente quando houver.
  const themeRegex=/\b(neon|cyberpunk|cibernetic[oa]|deserto|desert|floresta|forest|ruinas|ruins)\b/;
- const themed=[...sections].reverse().find(r=>themeRegex.test(r.normal)&&/\b(grafico|ambiente|visual|cenario|tema|mundo|floresta|deserto|neon|ruinas)\b/.test(r.normal));
+ const themed=[...sections].reverse().find(r=>r.stage===null&&themeRegex.test(r.normal)&&/\b(grafico|ambiente|visual|cenario|tema|mundo|floresta|deserto|neon|ruinas)\b/.test(r.normal));
  if(themed){
   const t=themed.normal;
   const theme=/neon|cyberpunk|cibernetic/.test(t)?'neon':/deserto|desert/.test(t)?'desert':/ruinas|ruins/.test(t)?'ruins':'forest';
@@ -140,15 +140,32 @@ function compile(spec,gdd,instruction='',options={}){
    if(spec.genre==='shooter'&&spec.dimension==='3d'){
     const n=clamp(wave,2,6);configure(where,'waves',n,'waves','Configuração de '+n+' ondas',origin);
     if(wave!==n)warn('Ondas: pedido '+wave+', limite do shooter 3D entre 2 e 6.');
+   }else if(spec.dimension==='2d'&&['tower-defense','lane-defense','block-td'].includes(spec.genre)){
+    const n=clamp(wave,1,12);configure(where,'waves',n,'waves','Defesa com '+n+' ondas',origin);
+    if(wave!==n)warn('Ondas limitadas a 12 neste motor.');
    }else push('pending','waves','Número de ondas por fase não configurável neste motor',origin);
   }
   const enemies=quantity(t,'inimigos|adversarios|monstros');
   if(enemies!==null&&!negated){
-   const max=spec.dimension==='3d'?(spec.genre==='shooter'?14:24):spec.genre==='shooter'?80:36;
-   if(supports(['shooter','fps','rpg','arena','racing'],['2d','3d'])&&!(spec.genre==='shooter'&&spec.dimension==='3d')){
+   const allowed=spec.dimension==='3d'?['arena','fps','rpg','racing'].includes(spec.genre):
+      ['arena','platform','shooter','rpg'].includes(spec.genre);
+   const max=spec.dimension==='3d'?(spec.genre==='racing'?12:24):
+      spec.genre==='shooter'?80:spec.genre==='platform'?45:spec.genre==='arena'?48:36;
+   if(allowed){
     const n=clamp(enemies,1,max);configure(where,'enemies',n,'enemies','Quantidade de '+n+' inimigos',origin);
     if(enemies!==n)warn('Número de inimigos reduzido ao limite seguro de '+max+'.');
    }else push('pending','enemies','Quantidade de inimigos solicitada não controlável neste motor',origin);
+  }
+  const perStageTheme=where!==null&&/\b(neon|cyberpunk|deserto|desert|floresta|forest|ruinas|ruins)\b/.test(t)&&
+    /\b(cenario|ambiente|visual|tema|neon|floresta|deserto|ruinas)\b/.test(t);
+  if(perStageTheme&&spec.dimension==='3d'){
+   const theme=/neon|cyberpunk/.test(t)?'neon':/deserto|desert/.test(t)?'desert':/ruinas|ruins/.test(t)?'ruins':'forest';
+   configure(where,'theme',theme,'theme-stage','Tema '+theme+' para esta fase',origin);
+  }
+  const objective=/^(?:[-*+]\s*)?(?:objetivo|missao principal|meta)\s*:\s*(.{5,140})/i.exec(line.text);
+  if(objective&&where!==null){
+   const readable=objective[1].replace(/[<>]/g,'').trim().slice(0,140);
+   configure(where,'objective',readable,'objective-label','Texto do objetivo visível no HUD (não define vitória)',origin);
   }
   const laps=quantity(t,'voltas');
   if(laps!==null){
@@ -196,8 +213,13 @@ function compile(spec,gdd,instruction='',options={}){
   ['network',/multiplayer|multijogador|online cooperativ/,'Multijogador'],
   ['physics',/fisica realista|rigid.?body|destruicao de cenario|destrutivel/,'Simulação física avançada'],
   ['animated-assets',/glb animad|personagem animado importad|rig automatico|animacoes? (do meshy|importad)/,'Animação e rig automático de GLB'],
-  ['procedural-world',/mundo aberto sem fim|mundo infinito|terreno infinito/,'Mundo aberto infinito']
+  ['procedural-world',/mundo aberto sem fim|mundo infinito|terreno infinito/,'Mundo aberto infinito'],
+  ['complex-ai',/inimigos? (inteligentes?|com ia|que usam cobertura|que investigam)|comportamento tatico/,'IA de inimigos tática customizada'],
+  ['story',/cutscenes?|cenas? cinematicas?|historia ramificada/,'Cenas e narrativa personalizadas'],
+  ['skills',/sistema de habilidades? completo|skill points|pontos de habilidade/,'Sistema de habilidades personalizáveis']
  ];
+ if(spec.genre==='rpg'&&spec.dimension==='3d'&&/\b(inventario|mochila|equipamentos? colecionaveis?)\b/.test(combined))
+   push('pending','inventory-3d','Inventário equipado e persistente no RPG 3D ainda não implementado','Jogo inteiro');
  for(const [id,regex,label] of pendingCatalog)if(regex.test(normalize(source+'\n'+extra)))
   push('pending',id,label+' — requer implementação própria','Jogo inteiro');
  // Separar intenção de evidencia: configuracoes serializadas no código sao verificaveis.

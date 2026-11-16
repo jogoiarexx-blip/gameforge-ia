@@ -25,7 +25,7 @@
         `<script>${root.GameForgeQABridge ? '('+root.GameForgeQABridge.install.toString()+')();' : ''}</script>`+
         `<script>${cleanScript}</script></body></html>`;
     }
-    return head+`<link rel="stylesheet" href="style.css"></head><body>${content}${files['engine-3d.js']?'<script src="engine-3d.js" defer></script>':''}${embeddedAsset?'<script>'+embeddedAsset.replace(/<\\/script/gi,'<\\\\/script')+'</script>':''}<script src="game.js" defer></script></body></html>`;
+    return head+`<link rel="stylesheet" href="style.css"></head><body>${content}${files['engine-3d.js']?'<script src="engine-3d.js" defer></script>':''}${embeddedAsset?'<script>'+embeddedAsset+'</script>':''}<script src="game.js" defer></script></body></html>`;
   }
   function generationReport(spec){
     const mechanics={rpg:'Mapa de 2400 × 1600 com câmera, combate, XP, poções, inventário, guardião e relíquias para liberar o portal.','tower-defense':'Construção de torres por grade, dois tipos de torre, melhorias, ondas, recursos e defesa da base.','lane-defense':'Cinco linhas, quatro unidades originais, economia geradora, inimigos atacando unidades, chefes, ondas e dispositivos de emergência por linha.','block-td':'Campo em blocos, três alturas, quatro tipos de torre/extrator, bônus de altura, escolhas permanentes entre ondas e chefes.',fps:'Câmera em primeira pessoa, movimento, mira por teclado/toque, tiros e recarga.',arena:'Exploração, combate, coleta e saída por objetivos.',racing:'Direção, obstáculos e progressão.',platform:'Movimento, saltos e progressão.'};

@@ -115,6 +115,7 @@ O vertical slice recomendado no documento de conversão é **Porto Velho**, Nova
 **Implementação:**
 - `js/urban-rules.js` introduz `routeClear` (segmento contra AABBs infladas pela largura do guarda) e `planGuardRoute` (grafo de visibilidade e menor caminho por cantos livres, dentro de 16,5 unidades por eixo).
 - `guardStep` utiliza um ponto intermediário de cada vez, evitando travessia por paredes. Quando existe linha direta livre, descarta o desvio. Recalcula no máximo após um intervalo de ~0,65 s, ou antes se o modo/destino mudar; não executa planejamento integral a cada frame.
+-Quando o jogador anda ou dispara a até 6,5 unidades, um guarda sem visão direta também pode ouvir, investigar a posição percebida e planejar caminho em volta do prédio. Sons não concedem direito de atacar: para dar dano, o guarda precisa recuperar visão livre.
 - `js/urban-runtime.js` e `js/urban-mission-runtime.js` já usam `guardStep` e por isso se beneficiam sem duplicar o planejador. A telemetria `__gameforgeTelemetry()` expõe `guardWaypoints` para QA, sem revelar/armazenar rotas completas do jogador.
 - `tests/urban-slice.test.js` executa desvio de obstáculo real, mais de um prédio, destino inviável, integração temporal a 60 Hz, colisão e cache; `tests/browser-export-matrix.py` verifica telemetria em ambos os jogos exportados.
 

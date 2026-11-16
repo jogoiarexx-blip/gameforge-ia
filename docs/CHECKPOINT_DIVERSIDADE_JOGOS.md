@@ -453,3 +453,16 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Cobertura adicionada:** \`tests/glb-import.test.js\` compara identidade dos materiais e texturas, número de carregamentos, tipos dos buffers e rejeição de índice normalizado. Verificação sintática em V8 concluída. No GitHub Actions run \`43851747931\`, etapa \`Testes automatizados\` aprovada; benchmark de arena ainda em execução no momento deste registro.
 
 **Escopo e limites:** foram eliminadas cópias/alocações desnecessárias no caminho de decodificação. Ganho exato de memória, pausas de GC, tempo de carga e FPS não foram medidos em browser real; a biblioteca continua limitada aos modelos GLB estáticos e o carregamento ainda é síncrono. Manter testes de todos os motores e fazer perfil Chrome/Android com arquivos 3D reais antes de anunciar melhora numérica.
+
+## Interface — etapa 12: navegação móvel e ordem acessível do editor (16/11/2026)
+- **Objetivo:** tornar o layout mais direto em smartphones e notebooks, preservar a prévia central e evitar excesso de controles na tela.
+- **Arquivos alterados:** `index.html`, `css/app.css`, `js/app.js`, `tests/studio-mobile-navigation.test.js`, `tests/studio-layout-focus.test.js` e este checkpoint.
+- **Navegação:** cabeçalho móvel com quatro links `Ideia / Criar / Jogar / Código` apontando para âncoras únicas; botão `Continuar para criação` no editor do GDD; `scroll-margin-top` acomoda a barra fixa e foco por teclado continua visível.
+- **Fluxo de criação:** ao gerar com sucesso em telas <=780px, `js/app.js` conduz à prévia; respeita a preferência `prefers-reduced-motion`. No desktop, não força a rolagem.
+- **Responsividade:** cabeçalho mais compacto até 400px; correção de `fullscreen` para utilizar `100dvh` sem altura fixa herdada do contêiner.
+- **Acessibilidade:** blocos avançados da coluna esquerda reorganizados **no DOM**, não apenas com `flex order`. Isso corrige a divergência entre ordem visual e ordem de foco e impede que o link `Continuar` fique no começo do painel.
+- **Preservação de funções:** os IDs e controles existentes (GDD, presets, backups, editor de fases, assets, exportação) foram mantidos; não houve alterações nos motores de geração de jogos.
+- **Testes novos/atualizados:** links e seus destinos, unicidade de IDs, área central antes das ferramentas, responsividade e fullscreen, movimento reduzido, ordem do DOM e inexistência de CSS `order` para os campos.
+- **Validação confirmada:** GitHub Actions **run 43851648160**, commit `1156ec5ad510624f670e07b44597628184208dc7`, **151 testes aprovados / 0 falhas**, benchmark da arena concluído.
+- **Limitação:** validação estrutural automatizada, não capturas visuais nem navegação manual real em Android, iOS ou notebook; essas verificações permanecem pendentes.
+- **Próximo:** QA visual em Chrome e smartphone real, observar foco da navegação fixa, prévia e possíveis rolagens horizontais; ajustar com base no resultado.

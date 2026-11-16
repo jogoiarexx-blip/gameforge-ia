@@ -133,6 +133,56 @@ function zoneEvents(rows){
  return events.slice(0,4);
 }
 
+// GF-009: um NPC de missão por fase, com origem e contrato restrito.
+function npcQuest(rows,index){
+ let current=null,origin=null,pending=false,removed=false;
+ const parseLine=t=>t.replace(/^[-*+]\s*/,'')
+  .replace(/^(?:(?:na|no|para a|para o)\s+)?(?:fase|missao|etapa|stage|level)\s*\d{1,2}\s*[:,-]?\s*/i,'');
+ for(const row of rows){
+  const normalized=parseLine(row.normal);
+  const raw=parseLine(row.text);
+  if(/^(?:sem|remover|retirar|nao quero)\s+(?:o\s+)?npc\b/.test(normalized)){
+   current=null;pending=false;origin=null;removed=true;continue;
+  }
+  const npc=/^npc\s*:\s*([\p{L}\p{N}][\p{L}\p{N} \-]{0,37})\s+(?:no|na|ao)\s+(norte|sul|leste|oeste|centro)\s*$/iu.exec(raw);
+  if(npc){
+   current={id:'npc-stage-'+String(index+1).padStart(2,'0'),
+    name:safeTitle(npc[1].trim().replace(/\s+/g,' ')),
+    zone:ZONE_IDS[normalize(npc[2])],dialogue:'',steps:null,
+    reward:{score:0,health:0,ammo:0}};
+   origin={document:row.document,line:row.line};
+   pending=false;removed=false;continue;
+  }
+  if(!current)continue;
+  if(/^fala do npc\s*[:\-]/.test(normalized)){
+   let dialogue=raw.replace(/^fala do npc\s*[:\-]\s*/i,'').trim();
+   dialogue=dialogue.replace(/^["“']|["”']$/g,'');
+   current.dialogue=safeTitle(dialogue).slice(0,160);
+  }
+  if(/^missao do npc\s*[:\-]/.test(normalized)){
+   const contents=normalized.replace(/^missao do npc\s*[:\-]\s*/,'');
+   const fragments=contents.split(/\s*(?:->|=>|;|\s*,?\s+(?:depois|entao|em seguida|por fim)\s+)\s*/).map(s=>s.trim()).filter(Boolean);
+   const steps=fragments.map(parseMissionStep);
+   if(fragments.length>=2&&fragments.length<=5&&steps.every(Boolean)){
+    current.steps=steps.map((v,i)=>({...v,id:'step-'+(i+1)}));pending=false;
+   }else {current.steps=null;pending=true;}
+  }
+  if(/^recompensa do npc\s*[:\-]/.test(normalized)){
+   const contents=normalized.replace(/^recompensa do npc\s*[:\-]\s*/,'');
+   const pts=/\b(\d{1,4})\s+pontos?\b/.exec(contents);
+   const health=/\b(\d{1,3})\s+(?:pontos? de vida|de vida|vida|hp)\b/.exec(contents);
+   const ammo=/\b(\d{1,3})\s+(?:balas?|municoes?|municao)\b/.exec(contents);
+   const amounts={score:Number(pts?.[1]||0),health:Number(health?.[1]||0),ammo:Number(ammo?.[1]||0)};
+   if(!pts&&!health&&!ammo||amounts.score>500||amounts.health>45||amounts.ammo>80){
+    current.reward={score:0,health:0,ammo:0};pending=true;
+   }else current.reward=amounts;
+  }
+ }
+ if(!current)return {status:'nao_solicitado',quest:null,origin:null,removed};
+ if(!current.steps||pending)return {status:'pendente',quest:null,origin};
+ return {status:'implementado',quest:current,origin};
+}
+
 function records(source,document){
  const rows=[],lines=String(source||'').split(/\r?\n/);
  let stage=null;
@@ -196,6 +246,9 @@ function compile(spec,gdd='',command=''){
   const spatial=combat?zoneEvents(rows):[];
   if(combat&&(spatial.length||rows.some(row=>/\b(?:ao entrar|quando entrar|ao chegar|quando chegar|ao pisar|quando pisar)\b/.test(row.normal))))c.zoneEvents=spatial;
   // Sem gatilho declarado, deixa a configuração original intacta.
+  const npc=combat?npcQuest(rows,index):null;
+  if(combat&&npc?.status==='implementado')c.npcQuest=npc.quest;
+  else if(combat&&(npc?.status==='pendente'||npc?.removed))delete c.npcQuest;
   configs[index]=c;
   const mapLayout=combat?(LAYOUTS.some(x=>x.id===c.layout)?c.layout:'cross'):null;
   const configuredTheme=['forest','desert','neon','ruins'].includes(c.theme)?c.theme:
@@ -217,11 +270,16 @@ function compile(spec,gdd='',command=''){
     status:combat?(sequence?.status||(c.missionSteps?.length?'implementado':'nao_solicitado')):'nao_verificado',
     ...(sequence?{origin:sequence.origin}:{})},
    zoneEvents:combat?(c.zoneEvents||[]):[],
+   npcQuest:{status:combat?(npc?.status==='implementado'?'implementado':
+    npc?.status==='pendente'?'pendente':(c.npcQuest?'implementado':'nao_solicitado')):'nao_verificado',
+    ...(combat&&c.npcQuest?{id:c.npcQuest.id,name:c.npcQuest.name,zone:c.npcQuest.zone,
+     steps:c.npcQuest.steps,reward:c.npcQuest.reward}:{}),
+    ...(npc?.origin?{origin:npc.origin}:{})},
    checkpoint:{kind:combat?'between-stages':spec.genre==='platform'&&spec.dimension==='3d'?'platform':'unsupported',
     status:combat&&!spec.combatEconomy?.enabled?'implementado':'nao_verificado'},
    events:combat?c.events||[]:[],
    scriptedEvents:[],customTriggers:[],
-   note:'Executa sequências tipadas e zonas cardeais no combate 3D. Diálogos e roteiro livre não são interpretados como lógica.'
+   note:'GF-009 reconhece diálogos curtos e uma missão oferecida por NPC por fase. Cenas e diálogos ramificados permanecem pendentes.'
   };
  });
  spec.stageConfig=configs.slice(0,stages.length);
@@ -241,6 +299,8 @@ function report(spec){
    ' · Checkpoint: '+s.checkpoint.status,
    '- Missão encadeada: '+s.missionSequence.status+' · '+(s.missionSequence.steps.map(x=>x.label).join(' → ')||'padrão do motor'),
    '- Gatilhos de zona: '+(s.zoneEvents.map(x=>x.type+' em '+x.zone).join(', ')||'nenhum'),
+   '- NPC: '+s.npcQuest.status+(s.npcQuest.name?' · '+s.npcQuest.name+' em '+s.npcQuest.zone:'')+
+   (s.npcQuest.reward?' · Recompensa: '+s.npcQuest.reward.score+' pontos, '+s.npcQuest.reward.health+' vida, '+s.npcQuest.reward.ammo+' balas':''),
    '- Inimigos definidos: '+(s.encounters.enemyCount??'procedural do motor')+
    ' · Ondas: '+(s.encounters.waves??'padrão do motor')+' · Chefe: '+
     (s.encounters.boss===null?'padrão do motor':s.encounters.boss?'sim':'não'),
@@ -251,7 +311,7 @@ function report(spec){
  return lines.join('\n')+'\n';
 }
 const api={compile,report,records,selectLayout,selectArchetype,timedEvents,projectIdentity,
- parseMissionStep,missionSequence,zoneEvents};
+ parseMissionStep,missionSequence,zoneEvents,npcQuest};
 root.GameForgeStageSpec=api;
 if(typeof module!=='undefined')module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

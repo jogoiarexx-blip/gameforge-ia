@@ -36,7 +36,12 @@ function gameForgeThreeBoot(){
  let rpgLevel=1,rpgXP=0,rpgPotions=2,rpgHealHeld=false;
  let firedEvents=new Set(),nextEnemyId=0,checkpointStored=null;
  let missionStepIndex=0,missionStepStartedAt=0,missionGuides=[];
- const missionPlan=()=>Array.isArray(configAt(stage).missionSteps)?configAt(stage).missionSteps.slice(0,5):[];
+ let npcActor=null,npcStatus='none',npcTalkButton=null;
+ const npcAt=()=>R.npcQuestContract(configAt(stage).npcQuest);
+ const missionPlan=()=>{
+  const npc=npcAt();
+  return npc?npc.steps:Array.isArray(configAt(stage).missionSteps)?configAt(stage).missionSteps.slice(0,5):[];
+ };
  function activeMissionStep(){return missionPlan()[missionStepIndex]||null;}
  const checkpointStorageKey=R.checkpointKey(spec);
  function loadCheckpoint(){
@@ -84,9 +89,16 @@ function gameForgeThreeBoot(){
  const combatGoal=()=>({enemies:enemies.length,collected,required,elapsed:stageClock,seconds:configAt(stage).seconds});
  const pendingReinforcements=()=>Array.isArray(configAt(stage).events)&&
   configAt(stage).events.some(e=>e?.type==='reinforcements'&&!firedEvents.has(e.id));
- const combatReady=()=>!pendingReinforcements()&&
-  (missionPlan().length?missionStepIndex>=missionPlan().length:R.missionReady(missionAt(stage),combatGoal()));
+ const combatReady=()=>{
+  const npc=npcAt();
+  return (!npc||npcStatus==='completed')&&!pendingReinforcements()&&
+   (missionPlan().length?missionStepIndex>=missionPlan().length:R.missionReady(missionAt(stage),combatGoal()));
+ };
  function combatObjective(){
+  const npc=npcAt();
+  if(npc&&npcStatus==='idle')return 'Encontre '+npc.name+' no '+npc.zone+' · Converse [E]';
+  if(npc&&npcStatus==='offered')return 'Fale novamente com '+npc.name+' para aceitar a missão [E]';
+  if(npc&&npcStatus==='completed')return 'Missão de '+npc.name+' concluída · Encontre o portal';
   const plan=missionPlan();
   if(plan.length){
    const step=plan[missionStepIndex];
@@ -211,6 +223,45 @@ function gameForgeThreeBoot(){
   }
   if(events.length)updateMissionGuides();
  }
+ function interactNpc(){
+  const npc=npcAt();
+  if(!npc||state!=='play'||paused||shopOpen||transition>0||!R.npcNear(npc,player,size))return false;
+  if(npcStatus==='idle'){
+   npcStatus='offered';
+   notice(npc.name+': '+(npc.dialogue||'Tenho uma missão para você.')+' · Aperte E novamente para aceitar.',6);
+  }else if(npcStatus==='offered'){
+   npcStatus='active';missionStepIndex=0;missionStepStartedAt=stageClock;
+   updateMissionGuides();
+   notice('Missão aceita com '+npc.name+' · '+(activeMissionStep()?.label||'Comece sua jornada'),4);
+  }else if(npcStatus==='active'){
+   notice(npc.name+': complete '+(activeMissionStep()?.label||'as etapas')+' para receber a recompensa.',3);
+  }else if(npcStatus==='completed'){
+   notice(npc.name+': missão concluída. Recompensa já entregue.',3);
+  }
+  refreshNpcButton();
+  return true;
+ }
+ function buildNpc(){
+  npcActor=null;
+  const npc=npcAt();
+  if(!npc||!['arena','fps','rpg'].includes(genre))return;
+  const point=R.waypoint(npc.zone,size);
+  if(!point)return;
+  const actor=humanoid(0x70b8bd,false);
+  actor.scale.multiplyScalar(.93);
+  actor.position.set(point.x+1.6,0,point.z);
+  actor.userData.gameForgeNPC=npc.id;
+  const marker=mesh(new T.CylinderGeometry(.75,.75,.06,16),mats.gold,world,point.x+1.6,.04,point.z);
+  marker.userData.gameForgeNPCMarker=npc.id;
+  npcActor=actor;
+ }
+ function refreshNpcButton(){
+  if(!npcTalkButton)return;
+  const npc=npcAt(),near=npc&&R.npcNear(npc,player,size);
+  npcTalkButton.hidden=!(npc&&near&&state==='play'&&!paused&&!shopOpen);
+  if(npc)npcTalkButton.textContent=npcStatus==='offered'?'Aceitar missão [E]':
+   npcStatus==='completed'?'Falar novamente [E]':'Conversar [E]';
+ }
  function buildMissionGuides(){
   missionGuides=[];
   if(!['arena','fps','rpg'].includes(genre))return;
@@ -232,13 +283,15 @@ function gameForgeThreeBoot(){
  function updateMissionGuides(){
   const active=activeMissionStep();
   for(const marker of missionGuides){
-   const needed=active?.kind==='reach'&&active.zone===marker.zone;
+   const needed=active?.kind==='reach'&&active.zone===marker.zone&&(!npcAt()||npcStatus==='active');
    const triggered=Array.isArray(configAt(stage).zoneEvents)&&
     configAt(stage).zoneEvents.some(e=>e?.zone===marker.zone&&!firedEvents.has(e.id));
    marker.mesh.visible=!!(needed||triggered);
   }
  }
  function progressMissionSequence(){
+  const npc=npcAt();
+  if(npc&&npcStatus!=='active')return;
   const step=activeMissionStep();
   if(!step)return;
   if(!R.missionStepReady(step,{player,size,enemies:enemies.length,
@@ -246,7 +299,13 @@ function gameForgeThreeBoot(){
    elapsedInStep:stageClock-missionStepStartedAt}))return;
   missionStepIndex++;missionStepStartedAt=stageClock;
   updateMissionGuides();
-  notice('Etapa '+missionStepIndex+'/'+missionPlan().length+' concluída · '+step.label,2.5);
+  if(npc&&missionStepIndex>=missionPlan().length){
+   npcStatus='completed';
+   const result=R.npcReward(npc,{score,health,ammo},combatStore?20:999);
+   if(result){score=result.score;health=result.health;ammo=result.ammo;}
+   notice(npc.name+': missão concluída! Recompensa: '+npc.reward.score+' pontos, '+
+    npc.reward.health+' vida e '+npc.reward.ammo+' balas.',5);
+  }else notice('Etapa '+missionStepIndex+'/'+missionPlan().length+' concluída · '+step.label,2.5);
  }
  function buildStage(){
   const stageRules=configAt(stage),requestedTheme=stageRules.theme;
@@ -261,6 +320,7 @@ function gameForgeThreeBoot(){
   bulletGeometry=geometry(new T.SphereGeometry(.12,6,4));
   random=R.rng((Number(opts.seed)||12345)+stage*907);collected=0;stageClock=0;invulnerable=0;fireDelay=0;reloadDelay=0;transition=0;jumpHeld=false;checkpoint=0;
   firedEvents=new Set();nextEnemyId=0;missionStepIndex=0;missionStepStartedAt=0;missionGuides=[];
+  npcStatus=npcAt()?'idle':'none';npcActor=null;
   if(genre==='platform'){
    platforms=R.platformRoute(Number(opts.seed)||12345,stage,size);
    for(let i=0;i<platforms.length;i++){const p=platforms[i];box(p.w,.8,p.d,mats.stone,world,p.x,p.y-.4,p.z);box(p.w+.05,.08,p.d+.05,mats.leaf,world,p.x,p.y+.015,p.z);if(i>0)coinAt(p.x,p.y+1,p.z);if(i%3===1){box(.15,2,.15,mats.wood,world,p.x-1.7,p.y+1,p.z-1.7);mesh(new T.OctahedronGeometry(.22),mats.crystal,world,p.x-1.7,p.y+2,p.z-1.7);}}
@@ -321,7 +381,7 @@ function gameForgeThreeBoot(){
     spawnCombatEnemy(i,x,z,boss);
    }
    for(const c of [{x:-size*.22,z:0},{x:size*.22,z:-2},{x:0,z:-size*.24}])coinAt(c.x,1,c.z);
-   setGoal(0,0,-size*.37);scenery();buildMissionGuides();
+   setGoal(0,0,-size*.37);scenery();buildMissionGuides();buildNpc();
    for(const sign of [-1,1])for(let i=0;i<7;i++){const x=sign*(size/2-.6),z=(i-3)*size/7;box(.6,1.2,size/7-.2,mats.stone,world,x,.6,z);}
    if(genre==='fps'){
     const gun=new T.Group();gun.userData.gameForgeGun=true;gunRig=gun;box(.16,.2,.75,mats.trim,gun,.36,-.28,-.7);box(.12,.13,.55,mats.crystal,gun,.36,-.26,-1.07);camera.add(gun);
@@ -412,7 +472,7 @@ function gameForgeThreeBoot(){
   const a=axes(),mag=Math.max(1,Math.hypot(a.x,a.z)),speed=6*tuning.playerSpeedMultiplier;
   let dx=a.x/mag,dz=a.z/mag;
   if(genre==='fps'){
-   player.yaw+=((down('q')?1:0)-(down('e')?1:0))*2.2*dt;
+   player.yaw+=((down('q')?1:0)-(down('e')&&!(npcAt()&&R.npcNear(npcAt(),player,size))?1:0))*2.2*dt;
    const yaw=player.yaw;
    // Forward points along the camera heading; local strafe follows camera right.
    dx=(-a.z*Math.sin(yaw)-a.x*Math.cos(yaw))/mag;dz=(-a.z*Math.cos(yaw)+a.x*Math.sin(yaw))/mag;
@@ -485,6 +545,7 @@ function gameForgeThreeBoot(){
   $('health').textContent=Math.ceil(health);$('score').textContent=score;$('ammo').textContent=genre==='racing'?Math.round(Math.abs(player.speed)*12)+' km/h':genre==='platform'?collected+'/'+required:genre==='rpg'?'🧪'+rpgPotions+' · '+ammo:combatStore?ammo+'/'+combatStore.state().reserve+' · ¢'+combatStore.state().credits:ammo;
   $('level').textContent=(stage+1)+'/'+stages.length;$('timer').textContent=Math.floor(clock)+'s';
   $('mission').textContent=(configAt(stage).objective?String(configAt(stage).objective).slice(0,140)+' · ':'')+(genre==='racing'?'Volta '+Math.min(lapTarget,race.lap+1)+'/'+lapTarget+' · Portal '+(race.next+1)+'/8':genre==='platform'?'Cristais '+collected+'/'+required+' · Alcance o portal':genre==='rpg'?'Nível '+rpgLevel+' · XP '+rpgXP+'/'+(rpgLevel*65)+' · '+combatObjective():combatObjective());
+  refreshNpcButton();
  }
  function resize(){const rect=canvas.getBoundingClientRect(),w=Math.max(320,Math.round(rect.width||960)),h=Math.round(w*9/16);renderer.setPixelRatio(ratio);renderer.setSize(w,h,false);if(camera){camera.aspect=w/h;camera.updateProjectionMatrix();}}
  function simulate(dt){
@@ -531,8 +592,10 @@ function gameForgeThreeBoot(){
    missionSteps:missionPlan().length,missionStepIndex,
    activeMissionStep:activeMissionStep()?.kind||null,
    zoneGuides:missionGuides.filter(g=>g.mesh.visible).map(g=>g.zone),
+   npc:npcAt()?{id:npcAt().id,name:npcAt().name,zone:npcAt().zone,
+    state:npcStatus,near:R.npcNear(npcAt(),player,size),rewardsGiven:npcStatus==='completed'}:null,
    checkpointAvailable:!!loadCheckpoint(),checkpointStage:loadCheckpoint()?.stage??null,
-   clock,health,score,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
+   clock,health,score,ammo,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
  };
  $('control-help').textContent=genre==='fps'?(combatStore?'WASD: mover · Espaço: atirar · R: recarregar · B: loja de armas/vida':'WASD / setas: mover · Q/E ou arrastar: mirar · Espaço/clique: atirar'):genre==='racing'?'W / ↑ acelerar · S / ↓ frear · A/D virar · Espaço turbo':genre==='platform'?'A/D ou ←/→: mover · W/↑/Espaço: saltar · Q/S: profundidade':genre==='rpg'?'WASD: explorar · Espaço: magia · H: poção · P: pausa':'WASD / setas: mover · Espaço/clique: ataque · P: pausa';
  $('overlay-sub').textContent=genre==='fps'?(combatStore?'FPS com economia: elimine guardas para ganhar créditos, compre munição, kits médicos e melhorias de armas na loja [B].':'Explore em primeira pessoa, elimine os guardiões, colete 3 cristais e atravesse o portal. Mire com Q/E ou arrastando no cenário.'):genre==='racing'?'Complete as voltas atravessando os portais em ordem. Evite o tráfego e as barreiras.':genre==='platform'?'Salte entre as ilhas, colete cristais e alcance o portal. Cada plataforma alcançada salva seu retorno.':genre==='rpg'?'RPG 3D: explore, derrote guardiões para ganhar XP, aumente sua magia e use H para beber poções.':'Explore o mundo, enfrente os guardiões e reúna os cristais para abrir o portal.';
@@ -593,6 +656,20 @@ function gameForgeThreeBoot(){
   host.append(shopToggle,shopPanel);refreshShop();
  }
  buildShopUI();
+ function buildNpcUI(){
+  if(!stageConfig.some(c=>R.npcQuestContract(c?.npcQuest))||typeof document.createElement!=='function')return;
+  const host=canvas.parentElement||document.body;
+  if(!host||typeof host.append!=='function')return;
+  npcTalkButton=document.createElement('button');npcTalkButton.type='button';
+  npcTalkButton.textContent='Conversar [E]';npcTalkButton.hidden=true;
+  npcTalkButton.setAttribute('aria-label','Conversar com personagem próximo');
+  npcTalkButton.style.cssText='position:absolute;right:10px;bottom:68px;z-index:25;background:#d5aa63;color:#172239;border:1px solid #fff8;padding:11px 15px;border-radius:9px;font-weight:700;';
+  npcTalkButton.addEventListener('click',interactNpc);
+  host.append(npcTalkButton);refreshNpcButton();
+ }
+ buildNpcUI();
+ if(stageConfig.some(c=>R.npcQuestContract(c?.npcQuest)))
+  $('control-help').textContent+=' · E: conversar com NPC';
  $('start').addEventListener('click',()=>{if(state==='play'&&paused)togglePause();else start();});
  $('restart').addEventListener('click',()=>start(false));$('pause').addEventListener('click',togglePause);
  addEventListener('keydown',e=>{
@@ -607,6 +684,7 @@ function gameForgeThreeBoot(){
      }
      if(k==='r'){startReload();return;}
    }
+   if(k==='e'&&!e.repeat&&interactNpc())return;
    if((k==='p'||k==='Escape')&&!e.repeat)togglePause();
    if(!shopOpen)keys.add(k);
  });

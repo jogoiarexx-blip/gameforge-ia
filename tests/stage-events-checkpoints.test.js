@@ -11,17 +11,24 @@ function boot(spec,storage=new Map()){
  vm.createContext(THREE_CTX);
  vm.runInContext(fs.readFileSync(require.resolve('../vendor/three-source.js'),'utf8'),THREE_CTX);
  vm.runInContext(THREE_CTX.GameForgeThreeSource,THREE_CTX);
- const handlers={},elements={},frames=[];let elapsed=0;
+ const handlers={},elements={},frames=[],uiButtons=[];let elapsed=0,lastScene=null;
  const element=id=>elements[id]||(elements[id]={
   textContent:'',style:{},classList:{add(){},remove(){}},dataset:{},
   addEventListener(type,fn){this[type]=fn;},focus(){},
   getContext(){return {fillRect(){},setTransform(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},fill(){}};},
   getBoundingClientRect(){return {width:960,height:540};}
  });
+ element('game').parentElement={append(...nodes){uiButtons.push(...nodes);}};
+ const createElement=tag=>({
+  tagName:tag,style:{},dataset:{},hidden:false,textContent:'',
+  setAttribute(k,v){this[k]=v;},
+  addEventListener(k,fn){this[k]=fn;},
+  append(){},remove(){},focus(){}
+ });
  const THREE={...THREE_CTX.THREE,WebGLRenderer:class{
   constructor(){this.shadowMap={};this.info={render:{calls:0},memory:{geometries:0}};this.renderLists={dispose(){}};}
   setClearColor(){}setPixelRatio(){}setSize(w,h){element('game').width=w;element('game').height=h;}
-  render(){}
+  render(scene){lastScene=scene;}
  }};
  const localStorage={
   getItem(k){return storage.has(k)?storage.get(k):null;},
@@ -29,7 +36,7 @@ function boot(spec,storage=new Map()){
   removeItem(k){storage.delete(k);}
  };
  const env={THREE,GAME_SPEC:spec,localStorage,document:{
-  getElementById:element,querySelectorAll:()=>[],addEventListener(){}
+  getElementById:element,querySelectorAll:()=>[],createElement,addEventListener(){}
  },performance:{now:()=>elapsed},requestAnimationFrame:f=>frames.push(f),
  addEventListener:(type,fn)=>{(handlers[type]||(handlers[type]=[])).push(fn);},
  gameForgeWorldRules:require('../js/world-rules'),gameForgeSoftwareRenderer:require('../js/software-renderer'),
@@ -42,7 +49,7 @@ function boot(spec,storage=new Map()){
  };
  return {tick,start:()=>element('start').click(),restart:()=>element('restart').click(),
   key:(type,key)=>{for(const fn of handlers[type]||[])fn({key,repeat:false,preventDefault(){}});},
-  telemetry:()=>env.__gameforgeTelemetry(),elements,storage};
+  telemetry:()=>env.__gameforgeTelemetry(),scene:()=>lastScene,elements,storage,uiButtons};
 }
 test('GF-007: GDD separa inimigos rápidos, brutamontes, eventos e fontes por fase',()=>{
  const gdd=[
@@ -249,4 +256,131 @@ test('GF-008: sobrevivencia so conta tempo depois de chegar ao ponto inicial',()
  assert.equal(b.telemetry().missionStepIndex,2);
  assert.equal(b.telemetry().missionReady,true);
  assert.equal(b.telemetry().state,'play','portal deve ser alcancado para completar a fase');
+});
+
+
+test('GF-009: GDD cria NPC com fala, quest oferecida, prêmios e origem por fase',()=>{
+ const source=[
+  '# A Vila','## Fase 1 — Pátio',
+  'NPC: exploradora Lia no sul',
+  'Fala do NPC: "Socorro, precisamos defender a cidade!"',
+  'Missão do NPC: ir ao sul -> sobreviver 5 segundos',
+  'Recompensa do NPC: 200 pontos e 20 de vida e 30 balas',
+  '## Fase 2 — Outpost',
+  'NPC: médico no leste',
+  'Missão do NPC: ir ao leste -> coletar cristais',
+  'Recompensa do NPC: 100 pontos'
+ ].join('\n');
+ const make=()=>StageSpec.compile({title:'A Vila',genre:'arena',dimension:'3d',
+  stages:['Vila','Posto'],stageConfig:[{},{}]},source);
+ const spec=make();
+ const one=spec.stageConfig[0].npcQuest,two=spec.stageConfig[1].npcQuest;
+ assert.equal(one.id,'npc-stage-01');
+ assert.equal(one.name,'exploradora Lia');
+ assert.equal(one.zone,'south');
+ assert.equal(one.dialogue,'Socorro, precisamos defender a cidade!');
+ assert.deepEqual(one.steps.map(s=>s.kind),['reach','survive']);
+ assert.equal(one.steps[1].seconds,5);
+ assert.deepEqual(one.reward,{score:200,health:20,ammo:30});
+ assert.equal(two.zone,'east');
+ assert.deepEqual(two.reward,{score:100,health:0,ammo:0});
+ assert.equal(spec.stageSpecs[0].npcQuest.origin.line,3);
+ assert.equal(spec.stageSpecs[1].npcQuest.origin.line,8);
+ assert.equal(spec.stageSpecs[0].npcQuest.status,'implementado');
+ assert.match(StageSpec.report(spec),/NPC: implementado/);
+ assert.deepEqual(spec.stageConfig,make().stageConfig);
+ assert.equal(R.npcQuestContract(one).id,'npc-stage-01');
+});
+test('GF-009: comando muda NPC apenas na fase 2 e rejects quests sem contrato valido',()=>{
+ const source=[
+  '# Base','## Fase 1','NPC: guia no sul','Missão do NPC: ir ao sul -> eliminar inimigos',
+  '## Fase 2','NPC: comerciante no oeste','Missão do NPC: ir ao oeste -> coletar cristais'
+ ].join('\n');
+ const c=StageSpec.compile({title:'Base',genre:'rpg',dimension:'3d',stages:['A','B'],stageConfig:[{},{}]},source,
+  'Fase 2: NPC: ferreiro no norte\nFase 2: Fala do NPC: "Nova tarefa!"\nFase 2: Missão do NPC: ir ao norte -> sobreviver 7 segundos');
+ assert.equal(c.stageConfig[0].npcQuest.name,'guia');
+ assert.equal(c.stageConfig[1].npcQuest.name,'ferreiro');
+ assert.equal(c.stageConfig[1].npcQuest.zone,'north');
+ assert.equal(c.stageConfig[1].npcQuest.dialogue,'Nova tarefa!');
+ assert.equal(c.stageConfig[1].npcQuest.steps[1].seconds,7);
+ const pending=StageSpec.compile({title:'Base',genre:'arena',dimension:'3d',stages:['A'],stageConfig:[{}]},
+  '## Fase 1\nNPC: guia no centro\nMissão do NPC: entrar no castelo -> coletar 5 moedas\nRecompensa do NPC: 99999 pontos');
+ assert.equal(pending.stageSpecs[0].npcQuest.status,'pendente');
+ assert.equal(pending.stageConfig[0].npcQuest,undefined);
+ const no=StageSpec.compile({title:'Base',genre:'rpg',dimension:'2d',stages:['A'],stageConfig:[{}]},
+  '## Fase 1\nNPC: guia no centro\nMissão do NPC: ir ao norte -> eliminar inimigos');
+ assert.equal(no.stageSpecs[0].npcQuest.status,'nao_verificado');
+ assert.equal(no.stageConfig[0].npcQuest,undefined);
+ const remove=StageSpec.compile({title:'Base',genre:'arena',dimension:'3d',stages:['A'],
+  stageConfig:[{npcQuest:c.stageConfig[0].npcQuest}]},'','Na fase 1: sem NPC');
+ assert.equal(remove.stageConfig[0].npcQuest,undefined);
+ assert.equal(remove.stageSpecs[0].npcQuest.status,'nao_solicitado');
+});
+test('GF-009: contrato valida limites, evita recompensa arbitraria e calcula pagamento limitado',()=>{
+ const valid={id:'npc-stage-01',name:'Guia',zone:'south',dialogue:'Precisamos de ajuda',
+  steps:[{id:'step-1',kind:'reach',zone:'south',label:'Vá ao sul'},
+   {id:'step-2',kind:'eliminate',label:'Derrote os inimigos'}],
+  reward:{score:200,health:30,ammo:40}};
+ assert.ok(R.npcQuestContract(valid));
+ assert.equal(R.npcNear(valid,{x:1.6,z:13.44},48),true);
+ assert.equal(R.npcNear(valid,{x:0,z:-13.44},48),false);
+ const payout=R.npcReward(valid,{score:999,health:90,ammo:70},99);
+ assert.deepEqual(payout,{score:1199,health:100,ammo:99});
+ assert.equal(R.npcQuestContract({...valid,reward:{...valid.reward,score:999999}}),null);
+ assert.equal(R.npcQuestContract({...valid,name:'<script>'}),null);
+ assert.equal(R.npcQuestContract({...valid,steps:[{...valid.steps[0],zone:'outside'},valid.steps[1]]}),null);
+ assert.equal(R.npcQuestContract({...valid,dialogue:'<img onerror=alert(1)>'}),null);
+ assert.equal(R.npcQuestContract({...valid,steps:[{...valid.steps[0],id:'bad'},valid.steps[1]]}),null);
+});
+test('GF-009: 3D bloqueia a fase ate dialogar, aceitar, concluir e receber prêmio uma vez',()=>{
+ const quest={id:'npc-stage-01',name:'Guia',zone:'south',dialogue:'Proteja a vila!',
+  steps:[{id:'step-1',kind:'reach',zone:'south',label:'Chegue ao sul'},
+   {id:'step-2',kind:'survive',seconds:5,label:'Resista por 5s'}],
+  reward:{score:200,health:20,ammo:30}};
+ const spec={genre:'arena',dimension:'3d',title:'Guia e a vila',
+  stages:['Vila'],stageConfig:[{enemies:1,boss:'no',npcQuest:quest}],features:{bosses:false},
+  worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const b=boot(spec);b.start();b.tick(2);
+ assert.equal(b.telemetry().npc.state,'idle');
+ assert.equal(b.telemetry().npc.near,true);
+ assert.equal(b.telemetry().missionReady,false);
+ assert.equal(b.telemetry().missionStepIndex,0);
+ assert.ok(b.uiButtons.some(x=>x.textContent==='Conversar [E]'&&!x.hidden));
+ const actors=[];b.scene().traverse(o=>{if(o.userData?.gameForgeNPC)actors.push(o);});
+ assert.equal(actors.length,1,'NPC deve possuir um modelo visivel na cena 3D');
+ assert.equal(actors[0].visible,true);
+ const btn=b.uiButtons.find(x=>x['aria-label']==='Conversar com personagem próximo');
+ assert.ok(btn);btn.click();
+ assert.equal(b.telemetry().npc.state,'offered');
+ assert.match(b.elements.message.textContent,/Proteja a vila/);
+ assert.equal(b.telemetry().score,0);
+ b.key('keydown','e');
+ assert.equal(b.telemetry().npc.state,'active');
+ b.tick(2);
+ assert.equal(b.telemetry().missionStepIndex,1);
+ assert.equal(b.telemetry().missionReady,false);
+ b.tick(315);
+ assert.equal(b.telemetry().npc.state,'completed');
+ assert.equal(b.telemetry().missionReady,true);
+ assert.equal(b.telemetry().score,200);
+ assert.equal(b.telemetry().ammo,110);
+ assert.equal(b.telemetry().npc.rewardsGiven,true);
+ b.key('keydown','e');b.tick(120);
+ assert.equal(b.telemetry().score,200,'não deve pagar ao repetir conversa');
+ assert.match(b.elements.mission.textContent,/Missão de Guia concluída/);
+ b.restart();b.tick(2);
+ assert.equal(b.telemetry().npc.state,'idle');
+ assert.equal(b.telemetry().score,0);
+ assert.equal(b.telemetry().missionReady,false);
+});
+test('GF-009: jogos 3D sem NPC conservam progressão e controles anteriores',()=>{
+ const spec={genre:'arena',dimension:'3d',title:'Sem NPC',stages:['A'],
+  stageConfig:[{mission:'survive',seconds:5,enemies:1,boss:'no'}],
+  features:{bosses:false},worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const b=boot(spec);b.start();b.tick(2);
+ assert.equal(b.telemetry().npc,null);
+ assert.equal(b.telemetry().missionSteps,0);
+ assert.equal(b.telemetry().missionReady,false);
+ b.tick(315);
+ assert.equal(b.telemetry().missionReady,true);
 });

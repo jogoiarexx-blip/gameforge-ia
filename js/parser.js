@@ -279,6 +279,9 @@
       '['+x.status+'] '+x.label+' ('+(x.origin?.document||'fonte')+' linha '+(x.origin?.line||'?')+')').join('; ');
     const negatives=semantic.constraints.slice(0,12).map(x=>
       '['+x.status+'] '+x.label).join('; ');
+    const actionFlow=(spec.actionModel?.missions||[]).slice(0,3).map(m=>m.title+': '+m.steps.map(x=>
+      x.actor+' '+x.action+' '+x.quantity+' '+x.target+'; depende de '+(x.preconditions||[]).join(',')).join(' -> ')).join(' | ');
+    const actionPending=(spec.actionModel?.issues||[]).slice(0,5).map(x=>x.reason).join('; ');
 
     const sourcePattern=spec.referenceGame?
       'EXEMPLO DE CÓDIGO FONTE ESTUDADO: '+spec.referenceGame.repository+' ('+spec.referenceGame.url+'). Técnicas: '+
@@ -290,6 +293,8 @@
       'Configurações executáveis identificadas: '+summarized(plan.applied||[],18)+'\\n'+
       'Pendências que exigem implementação real: '+summarized(plan.pending||[],12)+'\\n'+
       'LEITURA DE MECÂNICAS POR REQUISITO: '+trace+'\\n'+
+      'AÇÕES E RELAÇÕES POR FASE, COM QUANTIDADES E CONDIÇÕES: '+actionFlow+'\\n'+
+      'AÇÕES AINDA NÃO EXECUTÁVEIS: '+actionPending+'\\n'+
       'PROIBIÇÕES E RESTRIÇÕES DO USUÁRIO (nunca ignorar): '+negatives+'\\n'+
 
       'Limites/alertas: '+(plan.warnings||[]).slice(0,6).join('; ')+'\\n\\n';

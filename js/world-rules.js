@@ -111,44 +111,83 @@ function gameForgeWorldRules(){
    e.amount>=2&&e.amount<=45&&!used.has(e.id)&&enteredZone(e.zone,player,size));
  }
  // GF-009: quest declarativa, sem execucao de texto arbitrario e com limite de recompensa.
+ // GF-010 NPC choices: two verified outcomes, optional bounded patrol.
  function npcQuestContract(raw){
   if(!raw||typeof raw!=='object'||Array.isArray(raw)||!/^npc-stage-(0[1-9]|[1-2]\d|30)$/.test(String(raw.id||''))||
    typeof raw.name!=='string'||raw.name.length<1||raw.name.length>40||/[<>]/.test(raw.name)||
    typeof raw.dialogue!=='string'||raw.dialogue.length>160||/[<>]/.test(raw.dialogue)||
    !Object.prototype.hasOwnProperty.call(ZONES,raw.zone)||
    !Array.isArray(raw.steps)||raw.steps.length<2||raw.steps.length>5||
-   !raw.reward||typeof raw.reward!=='object')return null;
-  const steps=[];
-  for(let i=0;i<raw.steps.length;i++){
-   const step=raw.steps[i];
-   if(!step||step.id!=='step-'+(i+1)||!['reach','eliminate','collect','survive'].includes(step.kind)||
-    typeof step.label!=='string'||step.label.length>90||/[<>]/.test(step.label))return null;
-   if(step.kind==='reach'){
-    if(!Object.prototype.hasOwnProperty.call(ZONES,step.zone))return null;
-    steps.push({id:step.id,kind:step.kind,zone:step.zone,label:step.label});
-   }else if(step.kind==='survive'){
-    if(!Number.isInteger(step.seconds)||step.seconds<5||step.seconds>180)return null;
-    steps.push({id:step.id,kind:step.kind,seconds:step.seconds,label:step.label});
-   }else steps.push({id:step.id,kind:step.kind,label:step.label});
+   !raw.reward||typeof raw.reward!=='object'||(raw.walk!==undefined&&typeof raw.walk!=='boolean'))
+   return null;
+  function checkSteps(input){
+   if(!Array.isArray(input)||input.length<2||input.length>5)return null;
+   const steps=[];
+   for(let i=0;i<input.length;i++){
+    const step=input[i];
+    if(!step||step.id!=='step-'+(i+1)||!['reach','eliminate','collect','survive'].includes(step.kind)||
+     typeof step.label!=='string'||step.label.length>90||/[<>]/.test(step.label))return null;
+    if(step.kind==='reach'){
+     if(!Object.prototype.hasOwnProperty.call(ZONES,step.zone))return null;
+     steps.push({id:step.id,kind:step.kind,zone:step.zone,label:step.label});
+    }else if(step.kind==='survive'){
+     if(!Number.isInteger(step.seconds)||step.seconds<5||step.seconds>180)return null;
+     steps.push({id:step.id,kind:step.kind,seconds:step.seconds,label:step.label});
+    }else steps.push({id:step.id,kind:step.kind,label:step.label});
+   }
+   return steps;
   }
-  const reward=raw.reward;
-  if(!Number.isInteger(reward.score)||reward.score<0||reward.score>500||
-   !Number.isInteger(reward.health)||reward.health<0||reward.health>45||
-   !Number.isInteger(reward.ammo)||reward.ammo<0||reward.ammo>80)return null;
-  return {id:raw.id,name:raw.name,zone:raw.zone,dialogue:raw.dialogue,steps,
-   reward:{score:reward.score,health:reward.health,ammo:reward.ammo}};
+  function checkReward(reward){
+   if(!reward||!Number.isInteger(reward.score)||reward.score<0||reward.score>500||
+    !Number.isInteger(reward.health)||reward.health<0||reward.health>45||
+    !Number.isInteger(reward.ammo)||reward.ammo<0||reward.ammo>80)return null;
+   return {score:reward.score,health:reward.health,ammo:reward.ammo};
+  }
+  const steps=checkSteps(raw.steps),reward=checkReward(raw.reward);
+  if(!steps||!reward)return null;
+  let choices;
+  if(raw.choices!==undefined){
+   if(!Array.isArray(raw.choices)||raw.choices.length!==2)return null;
+   choices=[];
+   for(let i=0;i<2;i++){
+    const value=raw.choices[i];
+    if(!value||value.id!=='choice-'+(i+1)||typeof value.label!=='string'||
+     !value.label.trim()||value.label.length>56||/[<>]/.test(value.label))return null;
+    const choiceSteps=checkSteps(value.steps),choiceReward=checkReward(value.reward);
+    if(!choiceSteps||!choiceReward)return null;
+    choices.push({id:value.id,label:value.label,steps:choiceSteps,reward:choiceReward});
+   }
+  }
+  return {id:raw.id,name:raw.name,zone:raw.zone,dialogue:raw.dialogue,steps,reward,
+   ...(raw.walk===true?{walk:true}:{}),...(choices?{choices}:{})};
  }
- function npcNear(quest,player,size,radius=2.6){
-  const npc=npcQuestContract(quest),p=npc&&waypoint(npc.zone,size);
+ function npcPatrolPosition(quest,elapsed,size){
+  const npc=npcQuestContract(quest),base=npc&&waypoint(npc.zone,size);
+  if(!base)return null;
+  const home={x:base.x+1.6,z:base.z};
+  if(!npc.walk||!Number.isFinite(elapsed))return home;
+  const radius=clamp(Number(size)||48,32,88)/2-2;
+  return {x:clamp(home.x+Math.sin(elapsed*.75)*1.1,-radius,radius),
+   z:clamp(home.z+(1-Math.cos(elapsed*.75))*.34,-radius,radius)};
+ }
+ function npcNear(quest,player,size,radius=2.6,position){
+  const p=position&&Number.isFinite(position.x)&&Number.isFinite(position.z)
+   ?position:npcPatrolPosition(quest,0,size);
   return !!p&&player&&Number.isFinite(player.x)&&Number.isFinite(player.z)&&
-   Math.hypot(player.x-(p.x+1.6),player.z-p.z)<=radius;
+   Math.hypot(player.x-p.x,player.z-p.z)<=radius;
  }
- function npcReward(quest,state,magazineMax=999){
+ function npcReward(quest,state,magazineMax=999,choiceId=null){
   const npc=npcQuestContract(quest);
   if(!npc||!state||!Number.isFinite(state.score)||!Number.isFinite(state.health)||!Number.isFinite(state.ammo))return null;
-  return {score:clamp(state.score+npc.reward.score,0,1e9),
-   health:clamp(state.health+npc.reward.health,0,100),
-   ammo:clamp(state.ammo+npc.reward.ammo,0,clamp(magazineMax,20,999))};
+  let reward=npc.reward;
+  if(npc.choices){
+   const selected=npc.choices.find(c=>c.id===choiceId);
+   if(!selected)return null;
+   reward=selected.reward;
+  }
+  return {score:clamp(state.score+reward.score,0,1e9),
+   health:clamp(state.health+reward.health,0,100),
+   ammo:clamp(state.ammo+reward.ammo,0,clamp(magazineMax,20,999))};
  }
  // A chave usa ID do projeto, nao o titulo, para separar jogos homonimos.
  function checkpointKey(spec){
@@ -177,7 +216,7 @@ function gameForgeWorldRules(){
  }
  return {clamp,rng,moveCircle,crowdDirection,platformRoute,raceProgress,trackRibbon,goalReady,missionReady,
   enemyProfile,dueStageEvents,waypoint,enteredZone,missionStepReady,dueZoneEvents,
-  npcQuestContract,npcNear,npcReward,checkpointKey,readCheckpoint,checkpointPayload};
+  npcQuestContract,npcPatrolPosition,npcNear,npcReward,checkpointKey,readCheckpoint,checkpointPayload};
 }
 if(typeof module!=='undefined')module.exports=gameForgeWorldRules;
 if(typeof globalThis!=='undefined')globalThis.gameForgeWorldRules=gameForgeWorldRules;

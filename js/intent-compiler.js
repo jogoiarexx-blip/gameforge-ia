@@ -61,12 +61,22 @@ function compile(spec,gdd,instruction='',options={}){
  const parsed=spec;
  const implementation={version:1,source:source.trim()?(extra.trim()?'gdd+comando':'gdd'):'comando',
    applied:[],pending:[],warnings:[],requirements:[],summary:''};
- const recognized=new Set();
+ const recognized=new Map();
  const push=(status,id,description,where,detail='')=>{
   const key=id+'|'+where+'|'+status;
-  if(recognized.has(key))return;
-  recognized.add(key);
-  implementation[status].push({id,description,where,detail});
+  if(recognized.has(key)){
+    // O comando recente substitui a explicacao do GDD antigo, assim como a configuracao.
+    Object.assign(recognized.get(key),{description,detail});
+    return;
+  }
+  if(implementation[status].length>=100){
+    if(!implementation.warnings.includes('Muitas regras encontradas: exibindo as primeiras 100 por categoria.'))
+      implementation.warnings.push('Muitas regras encontradas: exibindo as primeiras 100 por categoria.');
+    return;
+  }
+  const record={id,description,where,detail};
+  recognized.set(key,record);
+  implementation[status].push(record);
  };
  const warn=(text)=>{if(!implementation.warnings.includes(text))implementation.warnings.push(text);};
  const supports=(genres,dims)=>genres.includes(spec.genre)&&(!dims||dims.includes(spec.dimension));

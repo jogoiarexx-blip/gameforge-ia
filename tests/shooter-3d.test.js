@@ -229,10 +229,10 @@ test('GF-TRAIN-05: colisão direta do chefe causa derrota em vez de conclusão f
 
 test('GF-TRAIN-05: disparos reais derrotam chefe, pagam recompensa única e concluem a campanha',()=>{
  const game=boot({stages:['Batalha final'],stageConfig:[{waves:2,boss:'yes'}],
-  tuning:{difficulty:1,enemyMultiplier:1,bossMultiplier:.09,playerSpeedMultiplier:1,fireRateMultiplier:2}},true);
+  tuning:{difficulty:1,enemyMultiplier:1,bossMultiplier:.25,playerSpeedMultiplier:1,fireRateMultiplier:2}},true);
  game.item('start').click();game.tick(2);
  const hp=game.env.__gfBossProbe.setup();
- assert.ok(hp>=1&&hp<=3,'chefe de teste deve ser abatível sem dezenas de segundos');
+ assert.ok(hp>=1&&hp<=6,'chefe de teste deve ser abatível sem dezenas de segundos');
  game.key('keydown',' ');
  let iterations=0;
  while(!game.telemetry().bossDefeated&&iterations++<30){

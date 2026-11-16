@@ -28,7 +28,10 @@ function decodeGLB(T, source) {
     const v=views[a.bufferView],c=types[a.type],width=components[a.componentType][0],stride=v?.byteStride||c*width;
     const start=(v?.byteOffset||0)+(a.byteOffset||0);
     if(!v||v.buffer!==0||stride<c*width||start<0||!Number.isSafeInteger(start)||!Number.isSafeInteger(stride)||start+(a.count-1)*stride+c*width>(v.byteOffset||0)+v.byteLength||start+(a.count-1)*stride+c*width>bin.length)throw Error('Buffer GLB fora dos limites: '+semantic);
-    const d=new DataView(bin.buffer,bin.byteOffset,bin.byteLength),out=[];
+    // Avoid boxed arrays and repeated Float32 copies of large model attributes.
+    const out=semantic==='indices'?(a.componentType===5121?new Uint8Array(a.count):a.componentType===5123?new Uint16Array(a.count):new Uint32Array(a.count)):new Float32Array(a.count*c);
+    if(semantic==='indices'&&(![5121,5123,5125].includes(a.componentType)||a.normalized||c!==1))throw Error('Accessor de indices GLB invalido.');
+    const d=new DataView(bin.buffer,bin.byteOffset,bin.byteLength);
     for(let i=0;i<a.count;i++)for(let k=0;k<c;k++){
       const p=start+i*stride+k*width;
       let n;
@@ -45,16 +48,20 @@ function decodeGLB(T, source) {
         else if(a.componentType===5125)n=n/4294967295;
       }
       if(!Number.isFinite(n))throw Error('Coordenada não finita: '+semantic);
-      out.push(n);
+      out[i*c+k]=n;
     }
     return {array:out,itemSize:c,count:a.count,type:a.componentType};
   }
+  const materialCache=new Map(),textureCache=new Map();
+  let textureLoader=null;
   function material(index){
+    if(materialCache.has(index))return materialCache.get(index);
+    if(index!==undefined&&(!Number.isInteger(index)||!materials[index]))throw Error('Material GLB inexistente.');
     const src=materials[index]||{},pbr=src.pbrMetallicRoughness||{},f=pbr.baseColorFactor||[1,1,1,1];
     const color=new T.Color().setRGB(f[0]??1,f[1]??1,f[2]??1,T.LinearSRGBColorSpace);
     const m=new T.MeshStandardMaterial({color,metalness:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??1,transparent:src.alphaMode==='BLEND',opacity:f[3]??1,side:src.doubleSided?T.DoubleSide:T.FrontSide});
     const ti=pbr.baseColorTexture?.index;
-    if(ti!==undefined){
+    if(ti!==undefined&&!textureCache.has(ti)){
       const tex=json.textures?.[ti],img=json.images?.[tex?.source];
       if(!img)throw Error('Textura referenciada não encontrada.');
       let uri=img.uri;
@@ -72,11 +79,15 @@ function decodeGLB(T, source) {
       }
       if(typeof uri!=='string'||!/^data:image\/(png|jpeg|webp);base64,/i.test(uri))throw Error('Textura externa não permitida no GLB offline.');
       if(typeof T.TextureLoader==='function'){
-        m.map=new T.TextureLoader().load(uri);
+        if(!textureLoader)textureLoader=new T.TextureLoader();
+        m.map=textureLoader.load(uri);
+        textureCache.set(ti,m.map);
         m.map.colorSpace=T.SRGBColorSpace;
         m.map.flipY=false;
       }
     }
+    if(ti!==undefined&&textureCache.has(ti))m.map=textureCache.get(ti);
+    materialCache.set(index,m);
     return m;
   }
   // Reject malformed hierarchies before Three.js recursively traverses them.
@@ -145,10 +156,10 @@ function decodeGLB(T, source) {
       const pos=attribute(prim.attributes.POSITION,'POSITION');
       if(pos.itemSize!==3)throw Error('POSITION deve ser VEC3.');
       const geo=new T.BufferGeometry();
-      geo.setAttribute('position',new T.Float32BufferAttribute(pos.array,3));
-      if(prim.attributes.NORMAL!==undefined){const normals=attribute(prim.attributes.NORMAL,'NORMAL');if(normals.itemSize!==3||normals.count!==pos.count)throw Error('NORMAL incompatível.');geo.setAttribute('normal',new T.Float32BufferAttribute(normals.array,3));}
-      if(prim.attributes.TEXCOORD_0!==undefined){const uv=attribute(prim.attributes.TEXCOORD_0,'TEXCOORD_0');if(uv.itemSize!==2||uv.count!==pos.count)throw Error('UV incompatível.');geo.setAttribute('uv',new T.Float32BufferAttribute(uv.array,2));}
-      if(prim.indices!==undefined){const ind=attribute(prim.indices,'indices');if(![5121,5123,5125].includes(ind.type)||ind.itemSize!==1||ind.count%3!==0||ind.array.some(n=>!Number.isInteger(n)||n<0||n>=pos.count))throw Error('Índices de triângulos inválidos.');geo.setIndex(ind.array);}
+      geo.setAttribute('position',new T.BufferAttribute(pos.array,3));
+      if(prim.attributes.NORMAL!==undefined){const normals=attribute(prim.attributes.NORMAL,'NORMAL');if(normals.itemSize!==3||normals.count!==pos.count)throw Error('NORMAL incompatível.');geo.setAttribute('normal',new T.BufferAttribute(normals.array,3));}
+      if(prim.attributes.TEXCOORD_0!==undefined){const uv=attribute(prim.attributes.TEXCOORD_0,'TEXCOORD_0');if(uv.itemSize!==2||uv.count!==pos.count)throw Error('UV incompatível.');geo.setAttribute('uv',new T.BufferAttribute(uv.array,2));}
+      if(prim.indices!==undefined){const ind=attribute(prim.indices,'indices');if(![5121,5123,5125].includes(ind.type)||ind.itemSize!==1||ind.count%3!==0||ind.array.some(n=>!Number.isInteger(n)||n<0||n>=pos.count))throw Error('Índices de triângulos inválidos.');geo.setIndex(new T.BufferAttribute(ind.array,1));}
       if(!geo.getAttribute('normal'))geo.computeVertexNormals();
       const obj=new T.Mesh(geo,material(prim.material));obj.castShadow=true;obj.receiveShadow=true;group.add(obj);primitiveCount++;
       if(primitiveCount>500)throw Error('GLB com malhas demais.');

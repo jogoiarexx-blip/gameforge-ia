@@ -2,6 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const {decide}=require('../tools/pages-gate.cjs');
+const {validateFiles}=require('../tools/verify-exports.cjs');
 const repo='jogoiarexx-blip/gameforge-ia',sha='a'.repeat(40);
 const good=()=>({workflow_run:{name:'Validar GameForge Studio',status:'completed',conclusion:'success',
   event:'push',head_branch:'main',head_sha:sha,repository:{full_name:repo},
@@ -50,4 +51,23 @@ test('exportacao com JS invalido e recusada pelo mesmo parser de sintaxe que rod
  assert.throws(()=>new vm.Script('const GAME_SPEC = {"genre":"fps"};\nfunction () {'),
    SyntaxError);
  assert.doesNotThrow(()=>new vm.Script('const GAME_SPEC = {"genre":"fps"};\nfunction boot(){}'));
+});
+
+test('o preflight real recusa exportação com código quebrado e dependências ausentes',()=>{
+ const good={'index.html':'<script src="game.js"></script>',
+   'game.js':'const GAME_SPEC = {"genre":"arena"};\\nfunction boot(){}',
+   'style.css':'body{}'};
+ // Use quebras reais como no export; scripts inválidos devem bloquear a CI.
+ good['game.js']=good['game.js'].replace('\\\\n','\\n');
+ assert.doesNotThrow(()=>validateFiles(good,'2d','arena'));
+ assert.throws(()=>validateFiles({...good,'game.js':'const x = ;'},'2d','arena'),SyntaxError);
+ assert.throws(()=>validateFiles({...good,'index.html':'<script src="https://evil.example/payload.js"></script>'},'2d','arena'),/Script remoto/);
+ assert.throws(()=>validateFiles({...good,'index.html':'<script src="engine.js"></script><script src="game.js"></script>'},'2d','arena'),/Arquivo local ausente/);
+ assert.throws(()=>validateFiles(good,'3d','fps'),/motor Three|Motor Three/);
+});
+test('verificação de exportação é obrigatória no workflow verificador antes do benchmark',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'../.github/workflows/verify.yml'),'utf8');
+ assert.match(source,/npm run verify:exports/);
+ assert.ok(source.indexOf('npm test')<source.indexOf('npm run verify:exports'));
+ assert.ok(source.indexOf('npm run verify:exports')<source.indexOf('npm run bench:arena'));
 });

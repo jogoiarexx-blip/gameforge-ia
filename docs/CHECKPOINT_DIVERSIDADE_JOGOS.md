@@ -1,5 +1,26 @@
 # CHECKPOINT — GameForge Studio | 2026-11-14
 
+## PAINEL ATIVO DE CONTINUIDADE — auditoria geral de 16/11/2026
+
+**Fonte de verdade para as próximas etapas:** [PLANO MESTRE — 27 itens com prioridade, evidência e aceite](./PLANO_MESTRE_GAMEFORGE.md).
+
+**Base auditada:** `main` `5130453010ba7c590a30ad5def463678c7d45bd6`, GameForge Studio `v0.20.0`. A execução [CI 43860458148](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43860458148) aprovou **196 testes, zero falhas**; Pages também foi publicado. Regressões de exportação **ocorreram** em runs anteriores e foram corrigidas no commit citado. O histórico técnico abaixo não deve ser lido como estado atual.
+
+### Fila de execução — não avançar sem registrar resultado
+
+- [ ] **GF-001 · P0 — Gate de publicação:** impedir deploy quando CI/export está falhando; criar prova automatizada e rollback.
+- [ ] **GF-002 · P0 — Matriz de exportação e boot:** cada gênero/dimensão, scripts autossuficientes, inicialização, editor e ZIP com/sem GLB.
+- [ ] **GF-003 · P0 — Reconhecimento real de GDD:** corpus versionado de gêneros e casos longos (incluindo GoldenEye FPS 3D), incerteza e conflitos.
+- [ ] **GF-004 · P0 — Contrato de capacidades:** diferenciar requisito solicitado, parâmetro configurado e mecânica implementada/testada.
+- [ ] **GF-005 · P0 — Integridade de projeto:** trazer Playwright de backup/recarga/ZIP/IndexedDB para CI, incluindo GLB e restauração limpa.
+
+**Próxima tarefa única: GF-001.** Depois seguir a ordem GF-002 → 003 → 004 → 005. Os **22 itens P1/P2** (interface, evolução de motores, campanhas, assets, animações, performance, segurança, backend e editor) estão detalhados no plano mestre. Manter IDs estáveis e alterar o estado para `VALIDADO` somente com código publicado, testes e CI no mesmo commit; QA visual requer navegador real.
+
+**Escopo desta auditoria:** análise estática de código, documentação, testes e GitHub Actions. **Não** foi feito teste manual real em Android/iPhone, nem auditoria do servidor opcional (código backend não está neste repositório).
+
+---
+
+
 ## Objetivo
 Evoluir o GameForge para criar muitos jogos distintos, inclusive dentro do mesmo gênero, com combinações de mecânicas, identidade visual, fases e progressão próprias, sem quebrar projetos existentes.
 

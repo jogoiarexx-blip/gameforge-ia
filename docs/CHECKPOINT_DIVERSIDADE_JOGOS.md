@@ -11,9 +11,9 @@
 - [ ] **GF-001 · P0 — Gate de publicação (EM REVISÃO):** workflow, preflight, testes negativos e dupla verificação de SHA implementados; **ainda falta mudar Settings → Pages → Source para GitHub Actions** para remover a rota automática da branch.
 - [x] **GF-002 · P0 — Exportação e boot (VALIDADO em Chromium):** cobertura expandida para **15 pares gênero/dimensão**, incluindo URB-01 3D; 261 testes Node e 17 cenários Chromium aprovados no run 43887382720. QA em hardware real continua GF-019.
 - [ ] **GF-003 · P0 — Reconhecimento real de GDD:** corpus versionado de gêneros e casos longos (incluindo GoldenEye FPS 3D), incerteza e conflitos.
-- [ ] **GF-004 · P0 — Contrato de capacidades:** diferenciar requisito solicitado, parâmetro configurado e mecânica implementada/testada.
+- [x] **GF-004 · P0 — Contrato de capacidades (v2 VALIDADA):** interpretação de ações, objetos, quantidades, fases, condições textuais e dependências; limites e pendências explícitas. Condições numéricas e corpus de >100 pedidos seguem evolução v3.
 - [x] **GF-005 · P0 — Integridade de projeto (VALIDADO em Chromium):** continuidade, backup, ZIP e GLB testados em browser limpo; ver seção Encerramento GF-005. Testes físicos/mobile seguem em aberto.
-- [ ] **GF-028 · P1 — Ação urbana 3D (EM EXECUÇÃO):** **URB-01 VALIDADO** — bairro 3D jogável, câmera em terceira pessoa, colisões, combate, negócio, missão e save; **URB-02 a URB-05 pendentes** (IA/câmera avançadas, economia, veículos, GLB).
+- [ ] **GF-028 · P1 — Ação urbana 3D (EM EXECUÇÃO):** URB-01 e missões por Action Model v2 validados em Chromium — coleta, entrega, eliminação e captura em até 3 fases, com save e recompensas únicas. URB-02..05 (IA/câmera, veículos, economia, GLB) pendentes.
 
 **Bloqueio externo:** GF-001 ainda depende da mudança administrativa da origem de publicação do Pages. **Próxima tarefa de motor: URB-02** (câmera com oclusão, mira e guardas com IA aprimorada). GF-005 já foi validado em Chromium; GF-019 mantém QA em dispositivos físicos. Os **22 itens P1/P2** (interface, evolução de motores, campanhas, assets, animações, performance, segurança, backend e editor) estão detalhados no plano mestre. Manter IDs estáveis e alterar o estado para `VALIDADO` somente com código publicado, testes e CI no mesmo commit; QA visual requer navegador real.
 
@@ -841,3 +841,28 @@ O teste novo confirmou, em perfis isolados: criação só por comando, edição 
 **Limites:** não confundir classificação correta, lista de mecânicas e bloqueio de incompatibilidades com geração automática de IA de inimigos, veículos, stealth, história ou GLB animado. URB-01 continua protótipo com um bairro. GF-001 continua pendente de migrar a fonte administrativa do Pages para **GitHub Actions**; o workflow antigo por branch segue registrado.
 
 **Próximo ID de desenvolvimento:** GF-004 v2 (IR com ações, objetos, quantidades e condições / avaliação >=100 briefs), seguido de GF-028/URB-02 para produzir missões diferentes a partir do GDD. A CI de commits **posteriores** deve ser confirmada separadamente.
+
+## GF-004 v2 + GF-028 — Entender COMO funciona e gerar missões diferentes (16/11/2026)
+
+**Estado:** implementação concluída para subconjunto suportado e validada em Node/Chromium; demais sistemas ficam pendentes. A interpretação de ações não significa programar universalmente qualquer GDD.
+
+### Entrada do usuário → modelo intermediário
+- **js/mission-semantics.js**: identifica, por seção Missão/Fase, verbos *eliminar guardas, coletar provas, entregar provas e capturar negócio/armazém*. Registra jogador, alvo, quantidade, fase, linha de origem, efeito e condições textuais. Relações *eliminar antes de capturar* e *coletar antes de entregar* tornam-se pré-requisitos reais, mesmo em frases invertidas.
+- O modelo diferencia pedido executável, pendente e não reconhecido. Mais de 3 guardas/provas por fase, condições arbitrárias (por exemplo, somente se a vida for superior a 50), condução de carros, polícia e interiores NÃO são descritos como jogáveis. O relatório conserva os pedidos sem falsear o resultado.
+- **js/parser.js** registra GAME_SPEC.actionModel e GAME_SPEC.urbanMissions. Para outros gêneros, o modelo pode informar requisitos mas não cria motores inexistentes. Ações e relações também chegam ao contexto de IA, preservando a origem de cada linha.
+- **js/app.js** apresenta a seção “Como o jogo funciona”, com objeto, ação, contagem, fase, condições e ordem. Missões explícitas sem qualquer etapa executável bloqueiam a geração genérica.
+- **js/generator.js** exporta MODELO_ACOES.json e PLANO_ACOES.md ao lado do GDD_original.md, jogo e contrato de capacidades. **js/project-backup.js** admite os novos arquivos.
+
+### Execução em Three.js
+- **js/urban-mission-flow.js**: máquina de estados por eventos de eliminação, coleta e interação, pré-requisitos, contadores, recompensa única, fases e save versão 2 com validação e assinatura de plano. O save URB-01 antigo é mantido em chave separada.
+- **js/urban-mission-runtime.js**: recolher provas andando na rua, entregar no armazém com E, combater 1 a 3 guardas, capturar negócio, avançar fase e carregar progresso com saldo preservado. Não adiciona veículos dirigíveis nem economia ampla.
+- O runtime de uma missão URB-01 continua disponível para GDDs sem ações explícitas. Todos os demais motores seguem independentes.
+- Novo preset no Studio: **Cidade 3D · Missões por GDD**, com duas missões diferentes prontas para testar.
+
+### Evidências e limites
+- **Node:** tests/mission-semantics.test.js valida ações, atores, alvos, quantidades, fases, pré-requisitos, condições não suportadas, transições, recompensas idempotentes e restauração segura.
+- **Chromium:** tests/browser-export-matrix.py executa GDD→Studio→ZIP→HTML offline em duas fases: coleta duas provas, confirma que não entrega longe, entrega no armazém, recarrega a fase, elimina guarda, captura, recebe valores diferentes e mantém dinheiro correto ao abrir novamente.
+- **CI de referência aprovada:** [Actions 43896601850](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43896601850), SHA d7ba84f0ec1a0f5805034d3a7c4cdef9d0cd91c4, **277 testes Node, zero falhas, 18 cenários Chromium aprovados**. O preset e estas notas tiveram commits posteriores; confirmar sempre a CI do último SHA.
+- **Limites objetivos:** até 3 fases, máximo 3 guardas ou provas por fase, um destino de entrega/captura por bairro; sem ramificações, condições numéricas livres, missões temporizadas, veículos, polícia, interiores ou NPCs avançados. Relatório deve continuar distinguindo planos de mecânicas reais.
+
+**Próximo desenvolvimento:** GF-004 v3 para condições temporais/numerais com testes e corpus de >100 pedidos; GF-028 URB-02 para câmera sem atravessar prédios e IA de patrulha/busca/combate. GF-001 ainda precisa de alteração administrativa do GitHub Pages para remover a publicação direta da branch.

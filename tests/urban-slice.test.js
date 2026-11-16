@@ -48,3 +48,38 @@ test('URB-01 save valida versão/tipos/posições e nunca recupera objetos de mo
  assert.equal(R.load({...saved,cash:Infinity}),null);
  assert.equal(R.load({...saved,guardDefeated:'yes'}),null);
 });
+
+test('URB-02 camera recua diante de paredes, sem atravessar volumes ou teletransportar o jogador',()=>{
+ const buildings=[{x:2,z:2,w:2,d:2}];
+ const eye={x:0,y:1.5,z:0},requested={x:4,y:4.4,z:4};
+ const camera=R.cameraPosition(eye,requested,buildings);
+ assert.equal(camera.occluded,true,'camera detecta o obstaculo no trajeto');
+ assert.ok(camera.x<.75&&camera.z<.75,'camera para antes da parede com margem');
+ assert.equal(R.intersects(camera.x,camera.z,.26,buildings[0]),false);
+ assert.deepEqual(eye,{x:0,y:1.5,z:0},'calculo nao move o personagem');
+ const unobstructed=R.cameraPosition(eye,{x:-4,y:4.4,z:4},buildings);
+ assert.equal(unobstructed.occluded,false);
+ assert.equal(unobstructed.x,-4);
+ assert.equal(unobstructed.z,4);
+});
+test('URB-02 considera altura e impede camera de cortar uma esquina durante a suavizacao',()=>{
+ const eye={x:0,y:1.5,z:0},building={x:2,z:2,w:2,d:2,h:1};
+ const high=R.cameraPosition(eye,{x:4,y:8,z:4},[building]);
+ assert.equal(high.occluded,false,'camera pode passar por cima de objeto baixo');
+ const tall={...building,h:5};
+ const first=R.cameraPosition(eye,{x:4,y:4,z:4},[tall]);
+ assert.equal(first.occluded,true);
+ const blended=R.cameraPosition(eye,{x:3,y:3.2,z:3},[tall]);
+ assert.ok(blended.x<.75);
+ assert.equal(R.intersects(blended.x,blended.z,.26,tall),false);
+});
+test('URB-02 ambos os modos 3D utilizam colisao da camera na atualizacao e inicializacao',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ for(const file of ['urban-runtime.js','urban-mission-runtime.js']){
+  const code=fs.readFileSync(path.join(__dirname,'../js',file),'utf8');
+  assert.match(code,/const desired=R\.cameraPosition\(/);
+  assert.match(code,/const safe=R\.cameraPosition\(/);
+  assert.match(code,/const firstCamera=R\.cameraPosition\(/);
+  assert.match(code,/cameraOccluded/);
+ }
+});

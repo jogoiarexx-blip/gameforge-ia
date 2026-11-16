@@ -116,3 +116,29 @@ test('dois GLBs distintos entram juntos na cena e sobrevivem ao reinicio',()=>{
  callbacks.shift()(16.7);check();
  element('start').click();callbacks.shift()(33.4);check();
 });
+
+
+test('pré-validação segura bloqueia ciclos, múltiplos pais e matrizes inválidas',()=>{
+  assert.equal(GLB.decode(null,fixture()).primitives,1);
+  const invalid=[
+    {nodes:[{mesh:0,children:[1]},{children:[0]}],scenes:[{nodes:[0]}]},
+    {nodes:[{mesh:0,children:[2]},{children:[2]},{}],scenes:[{nodes:[0,1]}]},
+    {nodes:[{mesh:0,children:[1,1]},{}],scenes:[{nodes:[0]}]},
+    {nodes:[{mesh:0,translation:[null,0,0]}],scenes:[{nodes:[0]}]},
+    {nodes:[{mesh:0,rotation:[0,0,0,0]}],scenes:[{nodes:[0]}]},
+    {nodes:[{mesh:0}],scenes:[{nodes:[99]}]},
+    {meshes:[{primitives:[{mode:1,attributes:{POSITION:0}}]}]}
+  ];
+  const T=three();
+  for(const changes of invalid){
+    assert.throws(()=>GLB.decode(null,fixture(changes)),/GLB|triangular|Transformação|Rotação|Raiz/);
+    assert.throws(()=>GLB.decode(T,fixture(changes)),/GLB|triangular|Transformação|Rotação|Raiz/);
+  }
+});
+test('pré-validação segura detecta vértices não finitos antes de salvar',()=>{
+ const bytes=fixture(),dv=new DataView(bytes.buffer);
+ const start=20+dv.getUint32(12,true)+8;
+ dv.setUint32(start,0x7fc00000,true);
+ assert.throws(()=>GLB.decode(null,bytes),/não finita/);
+ assert.throws(()=>GLB.decode(three(),bytes),/não finita/);
+});

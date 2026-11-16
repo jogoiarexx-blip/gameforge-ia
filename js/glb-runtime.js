@@ -1,4 +1,4 @@
-/* GameForge: leitor GLB 2.0 local para OBJETOS ESTÁTICOS. Sem fetch nem execução de conteúdo externo. */
+/* GameForge: leitor GLB 2.0 local, incluindo rigs e animacoes LINEAR/STEP. Sem fetch nem rede. */
 (function(root){
 'use strict';
 function decodeGLB(T, source) {
@@ -16,11 +16,12 @@ function decodeGLB(T, source) {
     offset+=length;
   }
   if(offset!==bytes.length || json?.asset?.version!=='2.0' || !bin)throw Error('GLB 2.0 incompleto.');
-  if(json.extensionsRequired?.length)throw Error('Extensões GLB obrigatórias não suportadas: '+json.extensionsRequired.join(', '));
+  const unsupported=(json.extensionsRequired||[]).filter(x=>x!=='EXT_texture_webp');
+  if(unsupported.length)throw Error('Extensões GLB obrigatórias não suportadas: '+unsupported.join(', '));
   if((json.buffers||[]).length!==1 || json.buffers[0].uri || json.buffers[0].byteLength>bin.length)throw Error('GLB deve ter um buffer BIN incorporado.');
   const accessors=json.accessors||[],views=json.bufferViews||[],nodes=json.nodes||[],meshes=json.meshes||[],materials=json.materials||[];
   if(nodes.length>400||meshes.length>200||accessors.length>3000||views.length>3000)throw Error('Modelo excede limites estruturais.');
-  const types={SCALAR:1,VEC2:2,VEC3:3,VEC4:4};
+  const types={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16};
   const components={5120:[1,false],5121:[1,false],5122:[2,true],5123:[2,false],5125:[4,false],5126:[4,true]};
   function attribute(index, semantic){
     const a=accessors[index];
@@ -62,7 +63,7 @@ function decodeGLB(T, source) {
     const m=new T.MeshStandardMaterial({color,metalness:pbr.metallicFactor??0,roughness:pbr.roughnessFactor??1,transparent:src.alphaMode==='BLEND',opacity:f[3]??1,side:src.doubleSided?T.DoubleSide:T.FrontSide});
     const ti=pbr.baseColorTexture?.index;
     if(ti!==undefined&&!textureCache.has(ti)){
-      const tex=json.textures?.[ti],img=json.images?.[tex?.source];
+      const tex=json.textures?.[ti],img=json.images?.[tex?.extensions?.EXT_texture_webp?.source??tex?.source];
       if(!img)throw Error('Textura referenciada não encontrada.');
       let uri=img.uri;
       if(img.bufferView!==undefined){
@@ -92,6 +93,14 @@ function decodeGLB(T, source) {
   }
   // Reject malformed hierarchies before Three.js recursively traverses them.
   const parents=new Array(nodes.length).fill(-1),visits=new Uint8Array(nodes.length);
+  const skins=json.skins||[],animations=json.animations||[];
+  if(skins.length>12||animations.length>32)throw Error('GLB excede limite de rigs/clipes.');
+  const boneIds=new Set();
+  for(const skin of skins){
+   if(!Array.isArray(skin.joints)||skin.joints.length<1||skin.joints.length>128||
+      skin.joints.some(i=>!Number.isInteger(i)||i<0||i>=nodes.length))throw Error('Rig GLB invalido.');
+   for(const i of skin.joints)boneIds.add(i);
+  }
   for(let i=0;i<nodes.length;i++){
     const node=nodes[i];
     if(!node||typeof node!=='object'||Array.isArray(node)||(node.children!==undefined&&!Array.isArray(node.children)))throw Error('Hierarquia GLB inválida.');
@@ -100,6 +109,7 @@ function decodeGLB(T, source) {
       parents[child]=i;
     }
     if(node.mesh!==undefined&&(!Number.isInteger(node.mesh)||node.mesh<0||node.mesh>=meshes.length))throw Error('Nó refere malha inexistente.');
+    if(node.skin!==undefined&&(!Number.isInteger(node.skin)||!skins[node.skin]||node.mesh===undefined))throw Error('Rig de no GLB invalido.');
     const finite=(values,length)=>Array.isArray(values)&&values.length===length&&values.every(v=>typeof v==='number'&&Number.isFinite(v));
     if(node.matrix!==undefined&&!finite(node.matrix,16))throw Error('Transformação GLB inválida: matrix.');
     for(const [key,n] of [['translation',3],['rotation',4],['scale',3]])if(node[key]!==undefined&&!finite(node[key],n))throw Error('Transformação GLB inválida: '+key);
@@ -134,7 +144,7 @@ function decodeGLB(T, source) {
         }else if(pos.count%3!==0)throw Error('Malha GLB sem triângulos completos.');
         const index=materials[prim.material]?.pbrMetallicRoughness?.baseColorTexture?.index;
         if(index!==undefined){
-          const img=json.images?.[json.textures?.[index]?.source];
+          const tex=json.textures?.[index],img=json.images?.[tex?.extensions?.EXT_texture_webp?.source??tex?.source];
           if(!img)throw Error('Textura GLB inexistente.');
           if(img.bufferView!==undefined){
             const v=views[img.bufferView];
@@ -161,15 +171,27 @@ function decodeGLB(T, source) {
       if(prim.attributes.TEXCOORD_0!==undefined){const uv=attribute(prim.attributes.TEXCOORD_0,'TEXCOORD_0');if(uv.itemSize!==2||uv.count!==pos.count)throw Error('UV incompatível.');geo.setAttribute('uv',new T.BufferAttribute(uv.array,2));}
       if(prim.indices!==undefined){const ind=attribute(prim.indices,'indices');if(![5121,5123,5125].includes(ind.type)||ind.itemSize!==1||ind.count%3!==0||ind.array.some(n=>!Number.isInteger(n)||n<0||n>=pos.count))throw Error('Índices de triângulos inválidos.');geo.setIndex(new T.BufferAttribute(ind.array,1));}
       if(!geo.getAttribute('normal'))geo.computeVertexNormals();
-      const obj=new T.Mesh(geo,material(prim.material));obj.castShadow=true;obj.receiveShadow=true;group.add(obj);primitiveCount++;
+      const hasSkin=prim.attributes.JOINTS_0!==undefined||prim.attributes.WEIGHTS_0!==undefined;
+      if(hasSkin){
+       if(prim.attributes.JOINTS_0===undefined||prim.attributes.WEIGHTS_0===undefined)throw Error('Pesos ou juntas GLB ausentes.');
+       const joints=attribute(prim.attributes.JOINTS_0,'JOINTS_0');
+       const weights=attribute(prim.attributes.WEIGHTS_0,'WEIGHTS_0');
+       if(joints.itemSize!==4||weights.itemSize!==4||joints.count!==pos.count||weights.count!==pos.count||
+          joints.array.some(v=>!Number.isInteger(v)||v<0))throw Error('Atributos de rig GLB invalidos.');
+       geo.setAttribute('skinIndex',new T.BufferAttribute(joints.array,4));
+       geo.setAttribute('skinWeight',new T.BufferAttribute(weights.array,4));
+      }
+      const obj=hasSkin?new T.SkinnedMesh(geo,material(prim.material)):new T.Mesh(geo,material(prim.material));
+      obj.castShadow=true;obj.receiveShadow=true;group.add(obj);primitiveCount++;
       if(primitiveCount>500)throw Error('GLB com malhas demais.');
     }
     return group;
   });
   if(!primitiveCount)throw Error('GLB sem malha triangular utilizável.');
   const built=nodes.map(n=>{
-    const o=n.mesh===undefined?new T.Group():meshGroups[n.mesh]?.clone(true);
+    const o=n.mesh===undefined?(boneIds.has(nodes.indexOf(n))?new T.Bone():new T.Group()):meshGroups[n.mesh]?.clone(true);
     if(!o)throw Error('Nó refere malha inexistente.');
+    o.name='GFNode'+nodes.indexOf(n);
     if(n.matrix){if(!Array.isArray(n.matrix)||n.matrix.length!==16)throw Error('Matriz GLB inválida.');new T.Matrix4().fromArray(n.matrix).decompose(o.position,o.quaternion,o.scale);}
     else{if(n.translation)o.position.fromArray(n.translation);if(n.rotation)o.quaternion.fromArray(n.rotation);if(n.scale)o.scale.fromArray(n.scale);}
     return o;
@@ -181,6 +203,45 @@ function decodeGLB(T, source) {
   if(!roots.length)throw Error('GLB sem nós de cena.');
   for(const id of roots){if(!built[id])throw Error('Raiz de cena GLB inválida.');rootModel.add(built[id]);}
   rootModel.updateMatrixWorld(true);
+  // Cada node.skin liga a malha ao array de ossos declarado no GLB.
+  for(let i=0;i<nodes.length;i++)if(nodes[i].skin!==undefined){
+   const skin=skins[nodes[i].skin];
+   const bones=skin.joints.map(id=>built[id]);
+   let inverses;
+   if(skin.inverseBindMatrices!==undefined){
+    const a=attribute(skin.inverseBindMatrices,'inverseBindMatrices');
+    if(a.itemSize!==16||a.count!==bones.length)throw Error('Matrizes inversas de rig invalidas.');
+    inverses=bones.map((_,j)=>new T.Matrix4().fromArray(a.array,j*16));
+   }else inverses=bones.map(b=>new T.Matrix4().copy(b.matrixWorld).invert());
+   built[i].traverse(o=>{if(!o.isSkinnedMesh)return;
+    const indices=o.geometry.getAttribute('skinIndex');
+    if(!indices||Array.from(indices.array).some(v=>v>=bones.length))throw Error('Indice de osso GLB fora do rig.');
+    o.bind(new T.Skeleton(bones,inverses),o.matrixWorld);o.normalizeSkinWeights();
+   });
+  }
+  const clips=[];
+  for(const def of animations){
+   if(!def||!Array.isArray(def.channels)||!Array.isArray(def.samplers)||def.channels.length>400)throw Error('Clip GLB invalido.');
+   const tracks=[];
+   for(const channel of def.channels){
+    const sampler=def.samplers[channel.sampler],target=channel.target;
+    if(!sampler||!target||!Number.isInteger(target.node)||!nodes[target.node])throw Error('Canal de clip GLB invalido.');
+    const prop={rotation:'quaternion',translation:'position',scale:'scale'}[target.path];
+    if(!prop)continue;
+    if(sampler.interpolation&& !['LINEAR','STEP'].includes(sampler.interpolation))continue;
+    const times=attribute(sampler.input,'tempo da animacao'),values=attribute(sampler.output,'amostras da animacao');
+    const dim=prop==='quaternion'?4:3;
+    if(times.itemSize!==1||values.itemSize!==dim||times.count!==values.count||times.count>10000)throw Error('Amostras de animacao GLB invalidas.');
+    for(let j=0;j<times.count;j++)if(times.array[j]<0||(j>0&&times.array[j]<=times.array[j-1]))throw Error('Tempos de animacao GLB invalidos.');
+    const name='GFNode'+target.node+'.'+prop;
+    const type=prop==='quaternion'?T.QuaternionKeyframeTrack:T.VectorKeyframeTrack;
+    const track=new type(name,times.array,values.array);
+    if(sampler.interpolation==='STEP')track.setInterpolation(T.InterpolateDiscrete);
+    tracks.push(track);
+   }
+   if(tracks.length)clips.push(new T.AnimationClip(String(def.name||'Clip').slice(0,90),-1,tracks));
+  }
+  rootModel.animations=clips;
   const bounds=new T.Box3().setFromObject(rootModel);
   if(bounds.isEmpty())throw Error('Modelo GLB vazio.');
   const dimension=new T.Vector3();bounds.getSize(dimension);
@@ -190,7 +251,7 @@ function decodeGLB(T, source) {
   rootModel.updateMatrixWorld(true);bounds.setFromObject(rootModel);
   const center=new T.Vector3();bounds.getCenter(center);
   rootModel.position.x-=center.x;rootModel.position.z-=center.z;rootModel.position.y-=bounds.min.y;
-  rootModel.userData.gameForgeAsset={primitives:primitiveCount,animated:false};
+  rootModel.userData.gameForgeAsset={primitives:primitiveCount,animated:clips.length>0,clips:clips.map(c=>c.name),skinned:skins.length>0};
   return rootModel;
 }
 root.GameForgeGLB={decode:decodeGLB};

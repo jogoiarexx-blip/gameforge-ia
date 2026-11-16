@@ -443,3 +443,13 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Limites honestos:** armazenamento IndexedDB depende da disponibilidade/quota do navegador; apenas o backup ZIP completo transporta arquivos binários entre dispositivos; GLBs continuam **objetos estáticos/decorativos**, não jogador/inimigo com rig, animações ou colisão; a prévia e o HTML único ainda incorporam modelos via base64 e podem gastar muita RAM com dezenas de MB. O leitor glTF limitado não suporta Draco/meshopt/extensões obrigatórias. Teste com arquivos Meshy reais, WebGL real e Android permanece pendente; GitHub Pages publicar não equivale a QA visual.
 
 **Próxima etapa recomendada:** medir memória e latência ao importar 25 MiB num celular real e com vários modelos; separar transferência dos bytes da prévia do HTML para reduzir base64 em memória; preparar importação GLTFLoader completa, papéis de asset e AnimationMixer por estados antes de permitir substituir o jogador/inimigos.
+
+## Engenharia — etapa 13: buffers tipados e cache por GLB (16/11/2026)
+
+**Motivo:** o importador GLB criava arrays convencionais com todos os números dos vértices, copiados em seguida para um novo \`Float32BufferAttribute\`. Primitivas com o mesmo índice de material geravam múltiplas instâncias do material, e referências diferentes ao mesmo índice de textura acionavam carregamentos duplicados.
+
+**Implementado:** \`js/glb-runtime.js\` usa \`Float32Array\` para posições/normais/UVs e \`Uint8Array\`/\`Uint16Array\`/\`Uint32Array\` para índices; os objetos \`BufferAttribute\` recebem esses arrays sem copiar de novo. Materiais são memorizados por índice por importação; texturas com mesmo índice têm um só carregamento e uma única referência, sem misturar materiais distintos. Índices normalizados são rejeitados no runtime.
+
+**Cobertura adicionada:** \`tests/glb-import.test.js\` compara identidade dos materiais e texturas, número de carregamentos, tipos dos buffers e rejeição de índice normalizado. Verificação sintática em V8 concluída. No GitHub Actions run \`43851747931\`, etapa \`Testes automatizados\` aprovada; benchmark de arena ainda em execução no momento deste registro.
+
+**Escopo e limites:** foram eliminadas cópias/alocações desnecessárias no caminho de decodificação. Ganho exato de memória, pausas de GC, tempo de carga e FPS não foram medidos em browser real; a biblioteca continua limitada aos modelos GLB estáticos e o carregamento ainda é síncrono. Manter testes de todos os motores e fazer perfil Chrome/Android com arquivos 3D reais antes de anunciar melhora numérica.

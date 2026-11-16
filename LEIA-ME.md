@@ -1,3 +1,23 @@
+# GameForge Studio v0.21 — FPS 3D com economia e loja gerada por GDD
+
+Esta etapa demonstra a passagem de um pedido em português para **um sistema de jogo com estado, controles e regras executáveis**. O novo módulo `js/combat-economy.js` implementa economia de combate para o motor FPS 3D. Não utiliza pagamentos reais nem serviço externo.
+
+## Exemplo de comando
+
+> Crie um FPS 3D com uma loja para comprar munição, kit médico e melhorar as armas. A munição custa 20 créditos, o kit médico 40 créditos e a melhoria de arma 150 créditos. Quero 4 fases.
+
+O interpretador ativa `GAME_SPEC.combatEconomy.enabled`, identifica os preços e usa o módulo serializado no `game.js`. Em combate, eliminar um inimigo normal concede 20 créditos, eliminar um chefe concede 90. O jogador começa com 20 balas no pente, 60 na reserva e 90 créditos (configuração padrão); os modelos sem economia mantêm o sistema antigo de munição. O preço da melhoria cresce com o nível, de 1 até 3; cada nível aumenta o dano por disparo.
+
+**Controles:** pressione **B** para abrir/fechar a loja ou toque no botão **Loja [B]**; no painel, pressione **1** para comprar 40 balas, **2** para comprar kit de +40 de vida e **3** para melhorar o dano da arma. **R** recarrega o pente de 20 usando a reserva disponível. A loja pausa a simulação e tem botão de retorno. A vida não ultrapassa 100, a reserva de munição é limitada a 250 e uma compra sem créditos falha sem alterar o estado. Créditos e melhorias passam de uma fase para a seguinte, mas não são persistidos após recarregar a página ou reiniciar a campanha.
+
+**Evolução incremental:** um FPS 3D criado por esta versão inclui o módulo de economia mesmo que comece com a loja desligada. Com **Planejar alteração → Aplicar melhoria**, o comando “adicione uma loja para comprar munição e melhorar armas” ativa a opção sem regenerar o motor. Projetos antigos sem o módulo não são modificados silenciosamente: recebem aviso para recriar com a versão atual.
+
+**Compatibilidade:** não ativa lojas automaticamente em navinhas, RPG, plataformas, TD nem em FPS 2D. Para esses motores, requisitos de loja não implementados aparecem como pendentes. FPS antigos sem pedido de loja seguem recarregando automaticamente, preservando jogabilidade prévia. A implementação não inclui modelos de armas GLB nem compra de armas com geometrias distintas: os três níveis modificam dano e cadência, e o motor procedural permanece.
+
+**Verificação:** GitHub Actions `43860904541`: **203 testes aprovados, zero falhas**, incluindo controles da loja na simulação 3D, preço/dano, limite de reserva, compra, recarga, reinício, ativação por comando e exportação de `game.js` sem CDN. Não foram feitos testes visuais de WebGL/Android ou QA manual de equilíbrio de fase nesta etapa.
+
+---
+
 # GameForge Studio v0.20 — Entendimento de instruções, GDD e comandos diretos
 
 **Novo núcleo de interpretação:** `js/intent-compiler.js` transforma frases comuns em **configurações executáveis** do `GAME_SPEC`, sem exigir sintaxe rígida e sem executar código recebido em texto. Pode receber um GDD Markdown inteiro, somente um comando ou os dois. O projeto mantém o texto original. O modo offline usa regras confiáveis, **não** programação universal por IA.

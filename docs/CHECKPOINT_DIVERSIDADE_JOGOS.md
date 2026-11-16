@@ -340,3 +340,20 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - Limites: custo de criação do grid por quadro e ordenação dos candidatos; sem benchmark real, sem índice para inimigos ou outros gêneros; raio de colisão maior que 64px exigirá ampliar vizinhança.
 - Publicado nos commits 92ddbe83370d1615ec2b3c467bfb5c50eec92406 e 2fa5a591d91d4825aeae7c2ec895842f03858e60; CI ainda não confirmado.
 - Próximo: confirmar CI, testar equivalência de colisões por simulação determinística e medir custo em cenários densos antes de otimizar outros motores.
+
+## Engenharia — etapa 9: equivalência determinística + benchmark da grade (16/11/2026)
+- **CI anterior confirmada:** GitHub Actions runs 43841704494 e 43841704389 aprovados no commit bcf30b48b60b3e60761e46fa2d7f9e2260aa3b05.
+- **Falha potencial corrigida:** consulta limitada a nove células ignoraria contatos de hitboxes futuras acima de 64px; a função `nearbyBullets(grid,x,y,hitRadius)` agora consulta o intervalo de células conforme o raio real do inimigo mais o maior raio de projétil presente.
+- **Arquivos atualizados:** `js/runtime-template.js`, `tests/arena-spatial-grid.test.js`, `tests/arena-spatial-equivalence.test.js`, `tools/bench-arena-spatial.cjs`, `package.json`, `.github/workflows/verify.yml` e este checkpoint.
+- **Equivalência comprovada por teste:** 120 cenas com seeds fixas, acompanhadas durante cinco quadros, comparando varredura completa e grade; resultados comparados para impactos, vida e entidades remanescentes. Cobertura adicional de chefes grandes e prioridade de alvos. GitHub Actions run 43843031966 aprovado.
+- **Benchmark real executado no runner CI:** job 133217041004, workflow run 43843284586 (Node v20.20.2). Resultados aproximados da microconsulta com construção de grade incluída:
+
+| Inimigos | Projéteis | Varredura linear | Grade | Aceleração observada | Verificações linear / grade |
+|---:|---:|---:|---:|---:|---:|
+| 12 | 30 | 6,32 ms | 3,64 ms | 1,74× | 9.710 / 186 |
+| 50 | 200 | 137,37 ms | 16,01 ms | 8,58× | 217.647 / 4.233 |
+| 140 | 650 | 772,11 ms | 59,89 ms | 12,89× | 1.228.849 / 24.006 |
+| 280 | 1.300 | 1.917,80 ms | 138,41 ms | 13,86× | 3.027.914 / 58.702 |
+
+- **Como repetir:** `npm test` e `npm run bench:arena`; CI executa ambos. Benchmark informativo: mede somente busca e interseção com cenas sintéticas, **não representa FPS real**, impacto de render, dano ou hardware móvel; tempos variam entre execuções.
+- **Limites/pendências:** testar ponta a ponta em navegador e no celular; analisar custo de memória e GC em sessões prolongadas; só ampliar a outros motores conforme necessidade e benchmark independente.

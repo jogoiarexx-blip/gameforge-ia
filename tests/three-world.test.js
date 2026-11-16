@@ -165,3 +165,37 @@ test('reiniciar campanha 3D limpa acumulador e contagem da simulação',()=>{
  assert.equal(b.telemetry().clock,0);b.tick(1);
  assert.ok(b.telemetry().simulationSteps<=1);
 });
+
+test('rig procedural 3D caminha, ataca e mantém os pés na altura do cenário',()=>{
+ const b=boot('arena');b.start();b.tick(2);
+ const actors=[];b.scene().traverse(o=>{if(Array.isArray(o.userData?.limbs))actors.push(o);});
+ assert.ok(actors.length>=2,'personagem e inimigos precisam ter rig articulado');
+ const pos=b.telemetry().player;
+ const hero=actors.find(o=>Math.abs(o.position.x-pos.x/100)<.001&&Math.abs(o.position.z-pos.y/100)<.001);
+ assert.ok(hero,'rig do jogador não localizado');
+ assert.ok(hero.userData.upperBody,'tronco animável ausente');
+ const ground=hero.position.y;
+ b.fire('keydown','ArrowRight');b.tick(9);b.fire('keyup','ArrowRight');
+ assert.ok(Math.abs(hero.userData.limbs[2].rotation.x)>.05,'pernas não se movimentaram');
+ assert.equal(hero.position.y,ground,'animação não deve acumular deslocamento vertical');
+ b.fire('keydown',' ');b.tick(1);b.fire('keyup',' ');
+ assert.ok(hero.userData.attack>.5,'disparo não acionou reação de ataque');
+ assert.ok(hero.userData.upperBody.rotation.x<-.04,'tronco não reagiu ao ataque');
+ b.tick(18);
+ assert.equal(hero.userData.attack,0,'reação de ataque não terminou');
+ assert.equal(hero.position.y,ground,'animação causou flutuação acumulada');
+});
+test('inimigos 3D reagem ao impacto e voltam à pose normal',()=>{
+ const b=boot('arena');b.start();b.tick(2);
+ const enemies=[];b.scene().traverse(o=>{if(Array.isArray(o.userData?.limbs))enemies.push(o);});
+ const player=b.telemetry().player;
+ const enemy=enemies.find(o=>Math.abs(o.position.z-player.y/100)>.5);
+ assert.ok(enemy,'nenhum inimigo encontrado para teste de pose');
+ enemy.userData.hurt=1;
+ b.tick(1);
+ assert.ok(enemy.userData.hurt>0&&enemy.userData.hurt<1,'impacto não consumiu o temporizador');
+ assert.ok(Math.abs(enemy.userData.upperBody.rotation.z)>.09,'impacto não inclinou o personagem');
+ b.tick(15);
+ assert.equal(enemy.userData.hurt,0,'personagem ficou preso no estado de dano');
+ assert.equal(enemy.position.y,0,'inimigo acumulou deslocamento vertical');
+});

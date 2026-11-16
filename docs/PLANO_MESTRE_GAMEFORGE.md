@@ -59,7 +59,7 @@
 | **GF-020** | Preview iframe, exportação de HTML/ZIP, comunicação de QA, servidor opcional e entradas de projeto. | Revisão de segurança: CSP, mensagens `postMessage`, URLs e tokens, importações ZIP/GLB, limites de arquivos, scripts editáveis e isolamento do backend. | Checklist adversarial e testes negativos; segredo não entra no export/backup/logs; aceitar candidatos só após revisão. | PENDENTE |
 | **GF-021** | `repository-knowledge.js` referencia projetos; reutilização de código/arte não é sempre licenciada. | Catálogo de **licenças, origem, compatibilidade e atribuições** antes de copiar dependências/assets; distinguir inspiração técnica de reutilização literal. | Todo pacote de código/asset incorporado possui procedência e licença documentadas; conteúdo comercial sem permissão é excluído. | PENDENTE |
 
-| **GF-028** | GDD original Godfather 2D, conversão Three.js 3D e skill Urban Action anexados pelo usuário. `urban-action` não era um gênero reconhecido, levando a fallback de `arena`/FPS. | `js/urban-design.js` extrai gênero `urban-action` 3D, câmera third-person, evidências e requisitos com linha; Studio exporta contrato + GDD integral + plano, `generator.js` recusa motor inexistente. Próxima evolução é o vertical slice URB-01 com bairro, câmera, combate, negócio, missão e save. | Reconhecer corretamente GDD original 2D vs alvo 3D, não alterar os 14 motores; testar o ZIP do plano em Chromium, sem inventar jogabilidade. Motor URB-01 só será VALIDADO após gameplay real no browser. | EM EXECUÇÃO — interpretação implementada; runtime urbano pendente |
+| **GF-028** | GDD Godfather original 2D + GDD alvo Three.js 3D + skill Urban Action. O gênero `urban-action` agora é identificado sem fallback para FPS/arena. | **URB-01 publicado:** `urban-rules.js` + `urban-runtime.js` com bairro procedural 3D, terceira pessoa, colisões XZ, combate, guarda, armazém capturável, missão com recompensa única e save local; plano e GDD original preservados. Próximo: URB-02 (câmera/IA/movimento avançados), URB-03 (economia), URB-04 (veículos/polícia/interiores), URB-05 (GLB/animação/performance). | Evidência [Actions 43887382720](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43887382720): 261 testes Node, 17 cenários Chromium com 15 engines + Studio; gameplay urbano no navegador, captura e restore sem duplicar dinheiro. **Não** equivale à campanha original. | EM EXECUÇÃO — URB-01 VALIDADO (slice); URB-02..05 PENDENTES |
 
 ## 5. P2 — Expansões controladas (não antecipar antes das bases)
 
@@ -93,4 +93,11 @@
 - **Após GF-001:** GF-002 (matriz export/boot), GF-003 (corpus de GDDs), GF-004 (contrato de implementação) e GF-005 (backup e QA de navegador).
 - **Nota de auditoria:** o incidente de exportação observado foi resolvido em `5130453` com a CI verde, mas a possibilidade de publicar com CI falhando permaneceu demonstrada. Este plano é backlog, não promessa de recursos implementados.
 
-- **GF-028 — GDD urbano 3D:** skill técnica incorporada em [GAMEFORGE_URBAN_ACTION_THREEJS.md](./GAMEFORGE_URBAN_ACTION_THREEJS.md); manter URB-01 como primeira entrega jogável, sem tratar classificação do GDD como motor concluído. Os números do Godfather 3D são alvo daquele projeto, não defaults para novos jogos.
+- **GF-028 — GDD urbano 3D:** URB-01 já possui **primeiro bairro 3D jogável, testado em Chromium** (ver [skill atualizada](./GAMEFORGE_URBAN_ACTION_THREEJS.md)). Não confundir um bairro e uma missão com a conversão total das cidades, sistemas e campanha. **Próxima etapa urbana: URB-02**, câmera com oclusão e IA de guardas/combate mais elaboradas.
+
+### Marco URB-01 — 16/11/2026
+
+- **Status:** VALIDADO como *vertical slice* de um bairro, uma arma, um guarda e um estabelecimento, não como versão 3D completa do Godfather.
+- **Código:** `js/urban-rules.js`, `js/urban-runtime.js`, `js/parser.js`, `js/generator.js`, `js/app.js` e `index.html`.
+- **Testes:** `tests/urban-slice.test.js`, `tests/urban-design.test.js`, `tests/export-boot-matrix.test.js`, `tests/browser-export-matrix.py`; CI 43887382720 com 261 Node e 17 cenários Chromium aprovados, além de GF-005.
+- **Próximo ID:** URB-02. A fila de P0 (GF-001 pendente de configuração de Pages, e outros itens do plano) permanece registrada.

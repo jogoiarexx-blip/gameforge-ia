@@ -32,6 +32,27 @@ function gameForgeBoot() {
   function rectanglesOverlap(a,b){
     return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
   }
+  // Índice espacial por quadro: células de 64px, consulta dos 9 vizinhos.
+  // Mantém a ordem original dos projéteis para preservar prioridade de acerto.
+  function buildBulletGrid(items,cellSize=64){
+    const buckets=new Map();
+    for(let i=0;i<items.length;i++){
+      const b=items[i],cx=Math.floor(b.x/cellSize),cy=Math.floor(b.y/cellSize);
+      const key=cx+','+cy;
+      if(!buckets.has(key))buckets.set(key,[]);
+      buckets.get(key).push(i);
+    }
+    return {buckets,cellSize,items};
+  }
+  function nearbyBullets(grid,x,y){
+    const cx=Math.floor(x/grid.cellSize),cy=Math.floor(y/grid.cellSize),indexes=[];
+    for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++){
+      const list=grid.buckets.get((cx+ox)+','+(cy+oy));
+      if(list)indexes.push(...list);
+    }
+    indexes.sort((a,b)=>a-b);
+    return indexes.map(i=>grid.items[i]);
+  }
   let stage = 0, hp = 100, score = 0, ammo = 40, xp = 0, upgrades = 0;
   let state = 'menu', paused = false, clock = 0, stageClock = 0, lastTime = 0, renderedFrames=0;
   let player = {x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
@@ -106,10 +127,11 @@ function gameForgeBoot() {
     }
     for(const b of bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;}
     bullets=bullets.filter(b=>b.x>0&&b.x<W&&b.y>38&&b.y<H);
+    const bulletGrid=buildBulletGrid(bullets);
     for(const e of enemies){
       const a=Math.atan2(player.y-e.y,player.x-e.x);e.x+=Math.cos(a)*e.speed*dt;e.y+=Math.sin(a)*e.speed*dt;
       if(circlesOverlap(e,player))damage(e.boss?18:10);
-      for(const b of bullets)if(!b.dead && circlesOverlap(b,e)){b.dead=true;e.hp--;if(e.hp<=0){e.dead=true;score+=e.boss?250:50;xp+=1; if(Math.random()<.24)drops.push({x:e.x,y:e.y,r:10,kind:Math.random()<.25?'heal':'ammo'});for(let i=0;i<Math.max(2,Math.round(9*tuning.particlesMultiplier))&&particles.length<150;i++)particles.push({x:e.x,y:e.y,vx:rand(-120,120),vy:rand(-120,120),ttl:.5});}break;}
+      for(const b of nearbyBullets(bulletGrid,e.x,e.y))if(!b.dead && circlesOverlap(b,e)){b.dead=true;e.hp--;if(e.hp<=0){e.dead=true;score+=e.boss?250:50;xp+=1; if(Math.random()<.24)drops.push({x:e.x,y:e.y,r:10,kind:Math.random()<.25?'heal':'ammo'});for(let i=0;i<Math.max(2,Math.round(9*tuning.particlesMultiplier))&&particles.length<150;i++)particles.push({x:e.x,y:e.y,vx:rand(-120,120),vy:rand(-120,120),ttl:.5});}break;}
     }
     bullets=bullets.filter(b=>!b.dead);enemies=enemies.filter(e=>!e.dead);
     if(enemies.length===0)nextStage();

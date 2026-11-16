@@ -5,7 +5,8 @@
   "scripts": {
     "test": "node --test tests/*.test.js tests/test_*.js",
     "vendor": "node scripts/vendor-three.cjs",
-    "bench:arena": "node tools/bench-arena-spatial.cjs"
+    "bench:arena": "node tools/bench-arena-spatial.cjs",
+    "verify:exports": "node tools/verify-exports.cjs"
   },
   "engines": {
     "node": ">=18"

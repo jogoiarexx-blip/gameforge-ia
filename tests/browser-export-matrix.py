@@ -221,7 +221,7 @@ def run():
                 urban_zip = Path(tmp) / 'urb-01-jogavel.zip'
                 game_download.value.save_as(urban_zip)
                 with zipfile.ZipFile(urban_zip) as archive:
-                    assert b'gameForgeUrban3DBoot' in archive.read('game.js')
+                    assert (b'gameForgeUrban3DBoot' in archive.read('game.js') or b'gameForgeUrbanMissionBoot' in archive.read('game.js')), 'Deve exportar o motor urbano padrão ou o de missões estruturadas'
                     assert b'gameForgeUrbanRulesFactory' in archive.read('game.js')
                     assert 'engine-3d.js' in archive.namelist()
                     assert 'SLICE_URBAN_3D.md' in archive.namelist()

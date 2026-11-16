@@ -3,7 +3,7 @@
 ## Objetivo e estado
 A partir desta etapa, existe uma rota de publicação **dependente da CI verde**.
 - `.github/workflows/verify.yml`: valida sintaxe, executa `npm test`, pré-valida todas as exportações com `npm run verify:exports` e roda o benchmark informativo.
-- `.github/workflows/publish-verified.yml`: só dispara após conclusão de **Validar GameForge Studio** e somente publica eventos de **push em main** verificados com sucesso. Revalida repositório, SHA e se a main ainda aponta para o commit testado, reduzindo risco de republicação atrasada.
+- `.github/workflows/publish-verified.yml`: só dispara após conclusão de **Validar GameForge Studio** e somente publica eventos de **push em main** verificados com sucesso. Revalida repositório e SHA; agora verifica se a main ainda aponta para o commit aprovado **antes de preparar os arquivos e novamente após empacotar, imediatamente antes de publicar**, reduzindo a janela para republicação atrasada.
 - `tools/pages-gate.cjs`: rejeita execução com falha/cancelamento, PR, fork, branch divergente ou SHA inconsistente; `tests/pages-gate.test.js` simula esses casos.
 - `tools/verify-exports.cjs`: gera e valida a sintaxe de `game.js` para todos os gêneros 2D/3D da matriz, além de FPS com loja; rejeita scripts remotos e dependências ausentes. Teste negativo prova que JS sintaticamente inválido falha.
 
@@ -28,3 +28,9 @@ Depois de alterar a fonte, confirme que a única rota de promoção ativa seja `
 - O gate valida sintaxe e dependências locais dos arquivos de saída; não garante a inexistência de bugs de lógica, segurança, desempenho ou visual. Esses riscos exigem testes de navegador e revisão humana.
 - PRs e forks não recebem autorização de publicação. O deploy confere que o HEAD de main é igual ao SHA verificado **antes** de empacotar, mas uma main que avance após essa checagem ainda pode requerer conferência no histórico.
 - O projeto é GitHub Pages estático; não usa Render nesta rota.
+
+## Evidências verificadas em 16/11/2026
+- No commit `aa21567e1f2a83417768645846623873441b7b3b`, a CI **falhou** (run [43871603100](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43871603100)), e o novo workflow **pulou o deploy** (run [43871658520](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43871658520)). Entretanto, a publicação legada **completou** no run [43871602779](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43871602779). Isso prova que a troca de `Settings → Pages → Source` não é opcional.
+- O commit `f6515aa671be2f8019491527cba7455380408a31` adicionou **teste de duas verificações do SHA** em `tests/pages-gate.test.js`; o workflow foi reforçado no commit `9d05132c9824075118e68fff652e1bcd7e5f7eaa`.
+- Algumas execuções `Publicar GameForge verificado` podem aparecer como falha porque **um commit novo chegou à main** antes da publicação de um commit antigo. Esse bloqueio é deliberado e protege o site; não é, por si só, um defeito no jogo.
+- **Pendente:** selecionar `GitHub Actions` como fonte do Pages e confirmar, em uma execução posterior, que só o workflow verificado pode promover a versão. Sem isso, o item GF-001 não deve ser marcado como `VALIDADO`.

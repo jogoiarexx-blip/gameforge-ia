@@ -123,3 +123,13 @@ test('uma fase com objetivos explícitos não inventa vinte outras fases ou miss
  assert.equal(files['GDD_original.md'],source);
  assert.equal(spec.stages.length,1);
 });
+
+test('Studio oferece exemplo pronto com relações entre missões sem sobrescrever o exemplo antigo',()=>{
+ const fs=require('node:fs');
+ const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
+ const app=fs.readFileSync(require('node:path').join(__dirname,'../js/app.js'),'utf8');
+ assert.match(html,/id="example-urban3d"/);
+ assert.match(html,/id="example-urbanmissions"/);
+ assert.match(app,/urbanmissions:\{dimension:'3d',genre:'urban-action'/);
+ assert.match(app,/Depois entregue 2 provas no armazém/);
+});

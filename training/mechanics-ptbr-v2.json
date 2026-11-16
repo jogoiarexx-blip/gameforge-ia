@@ -1,0 +1,1095 @@
+{
+  "name": "GF-TRAIN-02 mecânicas executáveis PT-BR",
+  "version": 2,
+  "scope": "exemplos sintéticos rotulados para regressão semântica; não treinam pesos de IA",
+  "cases": [
+    {
+      "instruction": "Crie jogo de navinha 3D com 3 fases, 2 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 3,
+        "waves": 2,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 3 fases, 2 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 3,
+        "waves": 2,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 3 fases, 4 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 3,
+        "waves": 4,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 3 fases, 4 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 3,
+        "waves": 4,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 3 fases, 6 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 3,
+        "waves": 6,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 3 fases, 6 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 3,
+        "waves": 6,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 4 fases, 2 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 2,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 4 fases, 2 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 2,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 4 fases, 4 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 4,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 4 fases, 4 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 4,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 4 fases, 6 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 6,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 4 fases, 6 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 6,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 5 fases, 2 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 5,
+        "waves": 2,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 5 fases, 2 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 5,
+        "waves": 2,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 5 fases, 4 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 5,
+        "waves": 4,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 5 fases, 4 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 5,
+        "waves": 4,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 5 fases, 6 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 5,
+        "waves": 6,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 5 fases, 6 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 5,
+        "waves": 6,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 6 fases, 2 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 6,
+        "waves": 2,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 6 fases, 2 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 6,
+        "waves": 2,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 6 fases, 4 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 6,
+        "waves": 4,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 6 fases, 4 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 6,
+        "waves": 4,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 6 fases, 6 ondas por fase e chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 6,
+        "waves": 6,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 6 fases, 6 ondas por fase e chefão só no final.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 6,
+        "waves": 6,
+        "bossPattern": "last"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 3 fases e sem chefe.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 3,
+        "bossPattern": "none"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 3 fases e nenhum chefão.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 3,
+        "bossPattern": "none"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 4 fases e sem chefe.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "bossPattern": "none"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 4 fases e nenhum chefão.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "bossPattern": "none"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 5 fases e sem chefe.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 5,
+        "bossPattern": "none"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 5 fases e nenhum chefão.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 5,
+        "bossPattern": "none"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 6 fases e sem chefe.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 6,
+        "bossPattern": "none"
+      }
+    },
+    {
+      "instruction": "Crie jogo de navinha 3D com 6 fases e nenhum chefão.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 6,
+        "bossPattern": "none"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 1, coloque 4 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 0,
+          "field": "enemies",
+          "value": 4
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 1, coloque 8 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 0,
+          "field": "enemies",
+          "value": 8
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 1, coloque 12 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 0,
+          "field": "enemies",
+          "value": 12
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 1, coloque 18 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 0,
+          "field": "enemies",
+          "value": 18
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 2, coloque 4 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 1,
+          "field": "enemies",
+          "value": 4
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 2, coloque 8 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 1,
+          "field": "enemies",
+          "value": 8
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 2, coloque 12 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 1,
+          "field": "enemies",
+          "value": 12
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 2, coloque 18 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 1,
+          "field": "enemies",
+          "value": 18
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 3, coloque 4 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 2,
+          "field": "enemies",
+          "value": 4
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 3, coloque 8 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 2,
+          "field": "enemies",
+          "value": 8
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 3, coloque 12 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 2,
+          "field": "enemies",
+          "value": 12
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases. Na fase 3, coloque 18 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 2,
+          "field": "enemies",
+          "value": 18
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 1, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 0,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 30,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 1, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 0,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 60,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 1, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 0,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 90,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 1, sobreviver por 120 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 0,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 120,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 2, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 1,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 30,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 2, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 1,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 60,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 2, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 1,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 90,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 2, sobreviver por 120 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 1,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 120,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 2,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 30,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 2,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 60,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 2,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 90,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com 3 fases. Na fase 3, sobreviver por 120 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 2,
+          "field": "mission",
+          "value": "survive"
+        },
+        "seconds": 120,
+        "othersUnset": "mission"
+      }
+    },
+    {
+      "instruction": "Quero um jogo de corrida 3D com 3 fases e 1 voltas por fase.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 1
+      }
+    },
+    {
+      "instruction": "Quero um jogo de corrida 3D com 3 fases e 2 voltas por fase.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 2
+      }
+    },
+    {
+      "instruction": "Quero um jogo de corrida 3D com 3 fases e 3 voltas por fase.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 3
+      }
+    },
+    {
+      "instruction": "Quero um jogo de corrida 3D com 3 fases e 4 voltas por fase.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 4
+      }
+    },
+    {
+      "instruction": "Quero um jogo de corrida 3D com 3 fases e 5 voltas por fase.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 5
+      }
+    },
+    {
+      "instruction": "Quero um jogo de corrida 3D com 3 fases e 6 voltas por fase.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 6
+      }
+    },
+    {
+      "instruction": "Quero um jogo de corrida 3D com 3 fases e 7 voltas por fase.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 7
+      }
+    },
+    {
+      "instruction": "Quero um jogo de corrida 3D com 3 fases e 8 voltas por fase.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 8
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D com loja para comprar munição. Balas custam 10 créditos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": true,
+        "ammoPrice": 10
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D com loja para comprar munição. Balas custam 20 créditos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": true,
+        "ammoPrice": 20
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D com loja para comprar munição. Balas custam 30 créditos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": true,
+        "ammoPrice": 30
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D com loja para comprar munição. Balas custam 40 créditos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": true,
+        "ammoPrice": 40
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D com loja para comprar munição. Balas custam 50 créditos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": true,
+        "ammoPrice": 50
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D com loja para comprar munição. Balas custam 75 créditos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": true,
+        "ammoPrice": 75
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D com loja para comprar munição. Balas custa 20 créditos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": true,
+        "ammoPrice": 20
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D com loja para comprar munição. Balas custa 30 créditos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": true,
+        "ammoPrice": 30
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D com loja para comprar munição. Balas custa 40 créditos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": true,
+        "ammoPrice": 40
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D com loja para comprar munição. Balas custa 60 créditos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": true,
+        "ammoPrice": 60
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com árvore de habilidades.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "pendingIncludes": [
+          "skill-tree"
+        ]
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com crafting.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "pendingIncludes": [
+          "craft"
+        ]
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com multiplayer.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "pendingIncludes": [
+          "network"
+        ]
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com árvore de habilidades, crafting e multiplayer.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "pendingIncludes": [
+          "skill-tree"
+        ]
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com skill tree.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "pendingIncludes": [
+          "skill-tree"
+        ]
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com sistema de fabricação de itens.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "pendingIncludes": [
+          "craft"
+        ]
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com multijogador.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "pendingIncludes": [
+          "network"
+        ]
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com habilidades permanentes.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "pendingIncludes": [
+          "skill-tree"
+        ]
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com online cooperativo.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "pendingIncludes": [
+          "network"
+        ]
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com sistema de habilidades completo.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "pendingIncludes": [
+          "skills"
+        ]
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com combate mais difícil.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "difficulty": 1.4
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com combate dificuldade alta.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "difficulty": 1.4
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com combate hardcore.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "difficulty": 1.4
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com combate inimigos mais fortes.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "difficulty": 1.4
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D mais fácil.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "difficulty": 0.8
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D dificuldade baixa.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "difficulty": 0.8
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D inimigos mais fracos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "difficulty": 0.8
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com 5 fases. Na fase um coloque 7 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 5,
+        "stage": {
+          "index": 0,
+          "field": "enemies",
+          "value": 7
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com 5 fases. Na fase dois coloque 7 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 5,
+        "stage": {
+          "index": 1,
+          "field": "enemies",
+          "value": 7
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com 5 fases. Na fase três coloque 7 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 5,
+        "stage": {
+          "index": 2,
+          "field": "enemies",
+          "value": 7
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com 5 fases. Na fase quatro coloque 7 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 5,
+        "stage": {
+          "index": 3,
+          "field": "enemies",
+          "value": 7
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com 5 fases. Na fase cinco coloque 7 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 5,
+        "stage": {
+          "index": 4,
+          "field": "enemies",
+          "value": 7
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 3 fases, sem chefe, com 7 inimigos na fase 2.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stage": {
+          "index": 1,
+          "field": "enemies",
+          "value": 7
+        },
+        "othersUnset": "enemies"
+      }
+    },
+    {
+      "instruction": "Crie navinha 3D com 3 fases e 4 ondas, mas sem chefe.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 3,
+        "waves": 4,
+        "bossPattern": "none"
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D com loja para comprar balas. Depois remova a loja.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": false
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D sem loja. Depois adicione uma loja para comprar balas.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "store": true
+      }
+    }
+  ]
+}

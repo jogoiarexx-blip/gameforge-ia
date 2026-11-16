@@ -1,6 +1,20 @@
 # CHECKPOINT — GameForge Studio | 2026-11-14
 
 
+## GF-010/GF-015 — Caminhos de fase e personagens GLB animados (16/11/2026)
+
+**Estado:** EM REVISÃO até aprovação Node/Chromium e publicação verificada do SHA final. Base técnica reimplementada a partir de padrões observados nos ZIPs `Asas_do_Ultimo_Ninho_v0.4.0_Caminhos_dos_Esquecidos.zip` e `Quebra-no-tempo-v0.15.0.zip`, sem distribuir os modelos, narrativas, músicas ou código literal. Skill: [SKILL_GAMEFORGE_ROTAS_E_PERSONAGENS_GLB.md](./SKILL_GAMEFORGE_ROTAS_E_PERSONAGENS_GLB.md).
+
+**GF-010 implementado no shooter 3D:** `js/stage-branches.js` define perfis alto/central/baixo e segredo, compilação de linguagem informal e validação de checkpoints; `js/parser.js` preserva `stageBranches` na especificação quando o pedido é shooter 3D. `js/generator.js` empacota o contrato no `game.js` exportado. `js/shooter-3d-runtime.js` apresenta a escolha antes de cada fase, por botões ou teclas numéricas, e altera HP, velocidade e quantidade de inimigos, bônus da fase e checkpoint com rota. A passagem secreta aparece após 10 eliminações. O progresso salvo contém fase, rota ou escolha pendente, pontuação, vida, arma e contagem de abates; **não salva posição/balas em cada frame**.
+
+**GF-015 implementado parcialmente no urbano 3D:** `js/glb-runtime.js` agora interpreta `skins`, JOINTS_0, WEIGHTS_0, inverseBindMatrices e tracks de translação/rotação/escala LINEAR/STEP; `js/actor-animations.js` controla AnimationMixer/clips por estados. Biblioteca aceita `scene`, `player`, `enemy` e Studio tem seletor de função. Exportador embute o controlador de clipes e papel do modelo. `js/urban-runtime.js` e `js/urban-mission-runtime.js` substituem visual procedural pelos GLBs importados quando compatíveis e atualizam animações com a simulação.
+
+**QA:** `tests/stage-branches.test.js` cobre prompts leigos, segredo, rotas e validador de save; `tests/shooter-3d.test.js` testa roteamento real e diferença na onda; `tests/glb-animations.test.js` cria GLB sintético de skin+7 clips para validar AnimationMixer sem incorporar arquivos de terceiros. Todos os demais testes de gêneros e exportação seguem na CI. Deve-se registrar a URL do último SHA após término positivo.
+
+**Limites explícitos:** ainda não há ramificações espaciais distintas, eventos específicos por rota, recompensas persistidas por ID em meio de fase, GDDs com regras arbitrárias, GLB com qualquer extensão/compressão, retargeting de clipes, animação de morte garantida até o fim em missões que removem o ator imediatamente, nem benchmarking de dezenas de personagens em aparelhos móveis. Outros gêneros além de shooter 3D e urbano 3D não receberam automaticamente estes sistemas.
+
+**Próxima etapa:** GF-010 v2 com eventos/biomas por rota e checkpoint mais profundo; GF-015 v2 com transições completas de dano/morte, clonagem eficiente de esqueleto e teste com arquivos GLB de uso autorizado.
+
 ## GF-017 / GF-025 — Estudo Asas do Último Ninho v0.4.0 (16/11/2026)
 
 **Fonte:** `Asas_do_Ultimo_Ninho_v0.4.0_Caminhos_dos_Esquecidos.zip` enviado em 16/11/2026. Auditoria: [ESTUDO_ASAS_ULTIMO_NINHO_V040_2026-11-16.md](./ESTUDO_ASAS_ULTIMO_NINHO_V040_2026-11-16.md). **Sem cópia de arquivos artísticos, dados de fases, código literal ou fontes.**

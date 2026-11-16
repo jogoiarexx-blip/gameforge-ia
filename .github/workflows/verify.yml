@@ -29,3 +29,27 @@ jobs:
         run: npm run verify:exports
       - name: Benchmark informativo da arena
         run: npm run bench:arena
+
+  browser:
+    name: Exportações reais no Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout do mesmo commit
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar Playwright e Chromium
+        run: |
+          python -m pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Construir exemplos reais para o navegador
+        run: node tools/build-browser-fixtures.cjs
+      - name: Verificar 14 exportações e editor em Chromium
+        run: python tests/browser-export-matrix.py

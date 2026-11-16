@@ -187,10 +187,23 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       '<li><b>'+esc(item.status)+'</b> — '+esc(item.label)+' <small>('+esc(item.origin?.document||'')+' linha '+esc(item.origin?.line||'?')+')</small></li>').join('');
     const constraintRows=ir.constraints.slice(0,12).map(item=>
       '<li><b>'+esc(item.status)+'</b> — '+esc(item.label)+' <small>('+esc(item.reason||'')+')</small></li>').join('');
+    const flow=spec.actionModel||{missions:[],issues:[],relations:[]};
+    const actionNames={eliminate:'Derrotar',collect:'Coletar',deliver:'Entregar',capture:'Capturar'};
+    const actionRows=flow.missions.slice(0,5).map(m=>
+      '<li><b>'+esc(m.title)+'</b> · fase '+esc(m.phase)+'<ul>'+
+      m.actions.slice(0,12).map(a=>'<li>'+esc(a.status==='supported'?'Executável':'Pendente')+
+        ' — '+esc(actionNames[a.action]||a.action)+' '+esc(a.quantity)+' × '+esc(a.target)+
+        (a.objectQuantity?' (itens: '+esc(a.objectQuantity)+')':'')+
+        (a.preconditions.length?' · requer '+esc(a.preconditions.join(', ')):'')+
+        ' <small>('+esc(a.source.document)+' linha '+esc(a.source.line)+')</small></li>').join('')+
+      '</ul></li>').join('');
+    const issuesRows=flow.issues.slice(0,12).map(x=>'<li>'+esc(x.reason)+
+      ' <small>('+esc(x.source?.document||'GDD')+' linha '+esc(x.source?.line||'?')+')</small></li>').join('');
     const sourceLabel=md?'Documento: '+spec.sourceLength.toLocaleString('pt-BR')+' caracteres e '+spec.sectionCount+' títulos':'Comando direto, sem GDD obrigatório';
     $('analysis').innerHTML=`<strong>${esc(spec.title)}</strong><div class="tags">${tags}</div><div class="muted">Fases: ${spec.stages.map(esc).join(' • ')}</div><p class="muted">${esc(sourceLabel)}. ${plan.applied.length} configurações compiladas; ${plan.pending.length} requisitos adicionais pendentes.</p>`+
       `<details><summary>Entendimento do pedido: ${plan.applied.length} aplicado(s) / ${plan.pending.length} pendente(s)</summary><p>Configurações adicionadas ao código:</p><ul>${section(plan.applied,25)||'<li>Motor padrão do gênero selecionado.</li>'}</ul><p>O que ainda não foi programado:</p><ul>${section(plan.pending,15)||'<li>Nenhum pedido adicional reconhecido como pendente.</li>'}</ul></details>`+
       `<details><summary>Contrato de capacidades — ${esc(auditSummary)}</summary><ul>${auditRows||'<li>Nenhuma regra adicional reconhecida.</li>'}</ul><p>Configurações usam o motor existente. Mecânicas novas continuam pendentes até haver código e testes.</p></details>`+
+      `<details><summary>Como o jogo funciona — ${flow.missions.length} fase(s) interpretada(s), ${flow.relations.length} relação(ões)</summary><p>Ações, alvos, quantidades e condições identificadas no GDD:</p><ul>${actionRows||'<li>Não foram descritas ações concretas suficientes para criar missões diferentes.</li>'}</ul><p>Pedidos que ainda exigem motor próprio:</p><ul>${issuesRows||'<li>Nenhum conflito adicional nas missões interpretadas.</li>'}</ul><p>Objetivos são executáveis somente quando classificados como suportados para este motor.</p></details>`+
       `<details><summary>Requisitos detalhados do pedido — ${ir.requirements.length} mecânica(s), ${ir.constraints.length} restrição(ões)</summary><p>Solicitações reconhecidas com origem:</p><ul>${irRows||'<li>Nenhuma mecânica especial extraída.</li>'}</ul><p>Restrições e proibições:</p><ul>${constraintRows||'<li>Nenhuma restrição explícita.</li>'}</ul></details>`+
       `<p class="muted">Modo Sem IA: somente configurações e mecânicas suportadas são executadas. Regras inéditas requerem desenvolvimento específico.</p>`;
     for(const message of [spec.sourceConflict,spec.genreOverrideWarning,spec.engineAvailability?.reason].filter(Boolean)){

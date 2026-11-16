@@ -19,6 +19,8 @@ def run():
     assert (OUTPUT / 'matrix.json').exists(), 'Execute node tools/build-browser-fixtures.cjs antes do navegador'
     matrix = json.loads((OUTPUT / 'matrix.json').read_text())
     assert len(matrix) == 14, 'Matriz de gêneros alterada: atualizar cobertura'
+    screenshots = OUTPUT / 'screenshots'
+    screenshots.mkdir(exist_ok=True)
     server = ThreadingHTTPServer(('127.0.0.1', 0), partial(QuietHandler, directory=str(ROOT)))
     Thread(target=server.serve_forever, daemon=True).start()
     origin = f'http://127.0.0.1:{server.server_port}'
@@ -34,7 +36,8 @@ def run():
         try:
             for item in matrix:
                 label = item['slug']
-                page = browser.new_page(viewport={'width': 960, 'height': 720})
+                viewport = {'width': 390, 'height': 844} if label in ('2d-arena', '3d-fps') else {'width': 960, 'height': 720}
+                page = browser.new_page(viewport=viewport)
                 page_errors = []
                 remote_requests = []
                 page.on('pageerror', lambda error: page_errors.append(str(error)))
@@ -68,10 +71,12 @@ def run():
                     )
                     assert not page_errors, (label, page_errors)
                     assert not remote_requests, (label, remote_requests)
+                    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), (label, 'rolagem horizontal')
                     results.append(label)
                     if label in ('2d-arena', '3d-fps', '3d-shooter'):
-                        page.screenshot(path=str(Path(tmp) / (label + '.png')), full_page=True)
+                        page.screenshot(path=str(screenshots / (label + '.png')), full_page=True)
                 except Exception as exc:
+                    page.screenshot(path=str(screenshots / (label + '-failure.png')), full_page=True)
                     failures.append((label, str(exc), page_errors, remote_requests))
                 finally:
                     page.close()
@@ -117,8 +122,10 @@ def run():
                     assert 'index.html' in archive.namelist()
                     assert 'style.css' in archive.namelist()
                 assert not page_errors, page_errors
+                page.screenshot(path=str(screenshots / 'studio-editor-preview-zip.png'), full_page=True)
                 results.append('studio-editor-preview-zip')
             except Exception as exc:
+                page.screenshot(path=str(screenshots / 'studio-editor-failure.png'), full_page=True)
                 failures.append(('studio-editor-preview-zip', str(exc), page_errors, []))
             finally:
                 page.close()

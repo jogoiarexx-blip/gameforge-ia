@@ -29,6 +29,8 @@ function gameForgeThreeBoot(){
  let ratio=software?.8:Math.min(window.devicePixelRatio||1,opts.quality==='high'?1.8:opts.quality==='low'?1:1.4);
  let scene,camera,world,materials,geometries,bulletGeometry,solids=[],enemies=[],coins=[],bullets=[],platforms=[],traffic=[],gates=[],goal,hero;
  let stage=0,health=100,score=0,ammo=80,state='menu',paused=false,clock=0,stageClock=0,frames=0,last=0,noticeTime=0,invulnerable=0,fireDelay=0,reloadDelay=0,transition=0;
+ const SIM_DT=1/60,MAX_SIM_STEPS=5;
+ let simulationAccumulator=0,simulationSteps=0;
  let player={x:0,y:0,z:0,yaw:0,vy:0,speed:0,grounded:true},collected=0,required=0,race={next:0,lap:0,complete:false},checkpoint=0;
  let random=R.rng(opts.seed),raceRx=0,raceRz=0,lapTarget=2,frameCost=0,perfSamples=0;
  let rpgLevel=1,rpgXP=0,rpgPotions=2,rpgHealHeld=false;
@@ -170,12 +172,12 @@ function gameForgeThreeBoot(){
   if(genre==='fps')camera.position.set(player.x,1.65,player.z);else if(genre==='platform')camera.position.set(player.x+3,player.y+10,player.z+17);else camera.position.set(player.x,15,player.z+13);
   updateCamera(1);updateHUD();resize();notice(stages[stage]+' · '+(genre==='racing'?'Siga os portais verdes em ordem':genre==='platform'?'Colete os cristais e encontre o portal':combatObjective()),5);
  }
- function start(){stage=0;health=100;score=0;ammo=80;rpgLevel=1;rpgXP=0;rpgPotions=2;rpgHealHeld=false;clock=0;state='play';paused=false;keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);pointerDown=false;buildStage();$('overlay').classList.add('hidden');$('pause').textContent='Pausar';canvas.focus();}
+ function start(){stage=0;health=100;score=0;ammo=80;rpgLevel=1;rpgXP=0;rpgPotions=2;rpgHealHeld=false;clock=0;simulationAccumulator=0;simulationSteps=0;state='play';paused=false;keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);pointerDown=false;buildStage();$('overlay').classList.add('hidden');$('pause').textContent='Pausar';canvas.focus();}
  function overlay(title,text,button){$('overlay-title').textContent=title;$('overlay-sub').textContent=text;$('start').textContent=button;$('overlay').classList.remove('hidden');}
  function damage(amount){if(invulnerable>0||state!=='play')return;health=Math.max(0,health-amount);invulnerable=.9;notice('Dano recebido · '+health+' de vida',1.2);if(health<=0){state='defeat';overlay('Fim de jogo','Pontuação: '+score+' · Reinicie a jornada.','Tentar novamente');}}
  function finishStage(){if(transition>0||state!=='play')return;score+=300;transition=1.4;notice('Objetivo concluído! Próxima fase…',1.4);}
  function advance(){if(stage+1>=stages.length){state='victory';overlay('Jornada concluída!','Todas as '+stages.length+' fases concluídas · Pontuação '+score,'Jogar novamente');}else{stage++;health=Math.min(100,health+25);ammo=Math.max(80,ammo+40);buildStage();}}
- function togglePause(){if(state!=='play')return;paused=!paused;keys.clear();pointerDown=false;Object.keys(touch).forEach(k=>touch[k]=false);$('pause').textContent=paused?'Continuar':'Pausar';if(paused)overlay('Jogo pausado','Sua jornada continua daqui.','Continuar');else{$('overlay').classList.add('hidden');canvas.focus();}}
+ function togglePause(){if(state!=='play')return;paused=!paused;simulationAccumulator=0;keys.clear();pointerDown=false;Object.keys(touch).forEach(k=>touch[k]=false);$('pause').textContent=paused?'Continuar':'Pausar';if(paused)overlay('Jogo pausado','Sua jornada continua daqui.','Continuar');else{$('overlay').classList.add('hidden');canvas.focus();}}
  function axes(){return {x:(down('d','ArrowRight','right')?1:0)-(down('a','ArrowLeft','left')?1:0),z:(down('s','ArrowDown','down')?1:0)-(down('w','ArrowUp','up')?1:0)};}
  function move(dx,dz){const p=R.moveCircle(player,dx,dz,.4,solids,size);player.x=p.x;player.z=p.z;}
  function shoot(){
@@ -268,24 +270,38 @@ function gameForgeThreeBoot(){
   $('mission').textContent=(configAt(stage).objective?String(configAt(stage).objective).slice(0,140)+' · ':'')+(genre==='racing'?'Volta '+Math.min(lapTarget,race.lap+1)+'/'+lapTarget+' · Portal '+(race.next+1)+'/8':genre==='platform'?'Cristais '+collected+'/'+required+' · Alcance o portal':genre==='rpg'?'Nível '+rpgLevel+' · XP '+rpgXP+'/'+(rpgLevel*65)+' · '+combatObjective():combatObjective());
  }
  function resize(){const rect=canvas.getBoundingClientRect(),w=Math.max(320,Math.round(rect.width||960)),h=Math.round(w*9/16);renderer.setPixelRatio(ratio);renderer.setSize(w,h,false);if(camera){camera.aspect=w/h;camera.updateProjectionMatrix();}}
- function frame(now){
-  requestAnimationFrame(frame);const costStart=performance.now(),dt=Math.min(.035,Math.max(0,(now-(last||now))/1000));last=now;frames++;
-  if(state==='play'&&!paused){
-   clock+=dt;stageClock+=dt;invulnerable=Math.max(0,invulnerable-dt);fireDelay=Math.max(0,fireDelay-dt);if(reloadDelay>0){reloadDelay-=dt;if(reloadDelay<=0){ammo=40;notice('Munição recarregada',1.4);}}
-   if(transition>0){transition-=dt;if(transition<=0)advance();}else if(genre==='platform')updatePlatform(dt);else if(genre==='racing')updateRacing(dt);else updateCombat(dt);
-   hero.position.set(player.x,player.y,player.z);hero.rotation.y=player.yaw;if(genre!=='racing')animateActor(hero,player.speed,clock*10);
+ function simulate(dt){
+   clock+=dt;stageClock+=dt;invulnerable=Math.max(0,invulnerable-dt);fireDelay=Math.max(0,fireDelay-dt);
+   if(reloadDelay>0){reloadDelay-=dt;if(reloadDelay<=0){ammo=40;notice('Munição recarregada',1.4);}}
+   if(transition>0){transition-=dt;if(transition<=0)advance();}
+   else if(genre==='platform')updatePlatform(dt);else if(genre==='racing')updateRacing(dt);else updateCombat(dt);
+   if(state!=='play')return;
+   hero.position.set(player.x,player.y,player.z);hero.rotation.y=player.yaw;
+   if(genre!=='racing')animateActor(hero,player.speed,clock*10);
    hero.visible=genre!=='fps'&&(invulnerable<=0||Math.floor(invulnerable*12)%2===0);
    for(const c of coins)if(!c.taken){c.mesh.rotation.y+=dt*1.6;c.mesh.position.y=c.y+Math.sin(clock*3+c.x)*.1;}
    if(goal)goal.portal.scale.x=1+Math.sin(clock*2)*.035;
    updateCamera(dt);updateHUD();
-  }
-  if(noticeTime>0){noticeTime-=dt;if(noticeTime<=0)$('message').style.opacity='0';}
-  if(scene&&(!software||now-lastDraw>=1000/30)){renderer.render(scene,camera);lastDraw=now;}
-  if(!software&&opts.quality==='auto'&&frames>60){frameCost+=performance.now()-costStart;perfSamples++;if(perfSamples===180){const avg=frameCost/perfSamples;if(avg>21&&ratio>.76){ratio=Math.max(.75,ratio-.2);renderer.shadowMap.enabled=ratio>1;resize();}frameCost=0;perfSamples=0;}}
+ }
+ function frame(now){
+   requestAnimationFrame(frame);
+   const costStart=performance.now(),rawDt=Math.max(0,(now-(last||now))/1000);last=now;frames++;
+   if(state==='play'&&!paused){
+     simulationAccumulator+=Math.min(.25,rawDt);
+     let steps=0;
+     while(simulationAccumulator+1e-10>=SIM_DT&&steps<MAX_SIM_STEPS&&state==='play'&&!paused){
+       simulate(SIM_DT);simulationAccumulator=Math.max(0,simulationAccumulator-SIM_DT);
+       simulationSteps++;steps++;
+     }
+     if(steps===MAX_SIM_STEPS&&simulationAccumulator>=SIM_DT)simulationAccumulator=0;
+   }else simulationAccumulator=0;
+   if(noticeTime>0){noticeTime-=Math.min(.035,rawDt);if(noticeTime<=0)$('message').style.opacity='0';}
+   if(scene&&(!software||now-lastDraw>=1000/30)){renderer.render(scene,camera);lastDraw=now;}
+   if(!software&&opts.quality==='auto'&&frames>60){frameCost+=performance.now()-costStart;perfSamples++;if(perfSamples===180){const avg=frameCost/perfSamples;if(avg>21&&ratio>.76){ratio=Math.max(.75,ratio-.2);renderer.shadowMap.enabled=ratio>1;resize();}frameCost=0;perfSamples=0;}}
  }
  window.__gameforgeTelemetry=()=>{
   vec.set(player.x,player.y+1,player.z);if(camera)vec.project(camera);
-  return {dimension:'3d',genre,state,paused,frames,stage:stage+1,stages:stages.length,clock,health,score,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
+  return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,clock,health,score,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
  };
  $('control-help').textContent=genre==='fps'?'WASD / setas: mover · Q/E ou arrastar: mirar · Espaço/clique: atirar':genre==='racing'?'W / ↑ acelerar · S / ↓ frear · A/D virar · Espaço turbo':genre==='platform'?'A/D ou ←/→: mover · W/↑/Espaço: saltar · Q/S: profundidade':genre==='rpg'?'WASD: explorar · Espaço: magia · H: poção · P: pausa':'WASD / setas: mover · Espaço/clique: ataque · P: pausa';
  $('overlay-sub').textContent=genre==='fps'?'Explore em primeira pessoa, elimine os guardiões, colete 3 cristais e atravesse o portal. Mire com Q/E ou arrastando no cenário.':genre==='racing'?'Complete as voltas atravessando os portais em ordem. Evite o tráfego e as barreiras.':genre==='platform'?'Salte entre as ilhas, colete cristais e alcance o portal. Cada plataforma alcançada salva seu retorno.':genre==='rpg'?'RPG 3D: explore, derrote guardiões para ganhar XP, aumente sua magia e use H para beber poções.':'Explore o mundo, enfrente os guardiões e reúna os cristais para abrir o portal.';

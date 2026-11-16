@@ -324,7 +324,7 @@ test('GF-TRAIN-06: campanha linear de 3 chefes, checkpoint real, reload, derrota
 
 test('GF-TRAIN-06: botão Reiniciar apaga checkpoint sem deixar backup restaurável',()=>{
  const spec={title:'Novo jogo de teste',stages:['Fase A','Fase B'],
-  stageConfig:[{waves:2,boss:'no'},{waves:2,boss:'yes'}]};
+  stageConfig:[{waves:2,boss:'no'},{waves:2,boss:'yes'}],shooterOptions:{boss:true}};
  const storage={data:new Map(),getItem(k){return this.data.get(k)||null;},
   setItem(k,v){this.data.set(k,String(v));},removeItem(k){this.data.delete(k);}};
  const id=require('../js/shooter-campaign-save.js')().key(spec);

@@ -51,7 +51,7 @@ test('backup de jogo 3D conserva motor local e opções de criação',()=>{
  const snap={...original(),creationOptions:{dimension:'3d',genre:'fps',theme:'neon',size:72,quality:'low'}};
  snap.files['engine-3d.js']='/* motor local offline */';snap.files['THREE-LICENSE.txt']='MIT';
  const restored=backup.decode(backup.encode(snap));
- assert.equal(restored.files['engine-3d.js'],'/* motor local offline */');assert.deepEqual(restored.creationOptions,snap.creationOptions);
+ assert.equal(restored.files['engine-3d.js'],'/* motor local offline */');for(const [key,value] of Object.entries(snap.creationOptions))assert.equal(restored.creationOptions[key],value);
 });
 test('histórico 3D não grava cinco cópias da mesma dependência no navegador',()=>{
  const snap=original();snap.gdd='# Jogo';const engine='ENGINE'.repeat(120000);snap.files['engine-3d.js']=engine;

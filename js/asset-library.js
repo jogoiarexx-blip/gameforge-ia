@@ -17,14 +17,14 @@
      seen.add(item.id);
      if(typeof item.name!=='string'||!item.name.toLowerCase().endsWith('.glb')||item.name.length>140||/[\\/\x00-\x1f]/.test(item.name))throw Error('Nome GLB invalido.');
      if(!Number.isSafeInteger(item.bytes)||item.bytes<20||item.bytes>MAX_BYTES)throw Error('Tamanho GLB fora do limite de 25 MB.');
-     if(item.role!=='scene')throw Error('Papel de asset ainda nao suportado; somente cenario.');
+     if(!['scene','player','enemy'].includes(item.role))throw Error('Papel de asset invalido: escolha cenario, jogador ou inimigo.');
      const p=item.placement;
      if(!p||!validNumber(p.x,-35,35)||!validNumber(p.z,-35,35)||!validNumber(p.scale,.2,4))throw Error('Posicao do asset invalida.');
      // Manifestos antigos sem hash continuam válidos; novos GLBs têm integridade SHA-256.
      if(item.sha256!==undefined && (typeof item.sha256!=='string'||!/^[a-f0-9]{64}$/i.test(item.sha256)))
        throw Error('Checksum SHA-256 de asset inválido.');
      total+=item.bytes;
-     return {id:item.id,name:item.name,bytes:item.bytes,role:'scene',
+     return {id:item.id,name:item.name,bytes:item.bytes,role:item.role,
        ...(item.sha256?{sha256:item.sha256.toLowerCase()}:{}),
        placement:{x:p.x,z:p.z,scale:p.scale}};
    });
@@ -40,7 +40,7 @@
    const list=parse(source),idx=list.assets.findIndex(a=>a.id===id);
    if(idx<0)throw Error('Asset nao encontrado.');
    const old=list.assets[idx];
-   list.assets[idx]={...old,placement:{...old.placement,...patch}};
+   list.assets[idx]={...old,role:patch.role||old.role,placement:{...old.placement,...patch}};
    return parse(list);
  }
  function remove(source,id){

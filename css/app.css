@@ -283,3 +283,53 @@ body{background:radial-gradient(ellipse at 50% 0%,#17263b 0%,#0a1120 54%) fixed}
   .center-panel .preview-box{height:310px;min-height:310px}
   .studio-disclosure>summary{padding:11px 12px}
 }
+
+
+/* v0.17.1 — navegação direta no celular e correções de viewport. */
+.mobile-steps,.step-continue{display:none}
+#idea-step,#create-step,#preview-step,#files-step{scroll-margin-top:118px}
+.center-panel .preview-box:fullscreen{
+  width:100vw;height:100dvh;min-height:0;max-height:none;
+  margin:0;border:0;border-radius:0;box-shadow:none;
+}
+.center-panel .preview-box:fullscreen iframe{height:100%;min-height:0;width:100%}
+@media (max-width:780px){
+  .top{
+    flex-wrap:wrap;row-gap:8px;align-items:center;
+    padding:9px 13px 10px;
+  }
+  .top .brand{min-width:0}
+  .top .top-actions{flex:0 0 auto}
+  .mobile-steps{
+    display:grid;width:100%;grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:5px;
+  }
+  .mobile-steps a{
+    min-width:0;text-align:center;white-space:nowrap;
+    color:#bad1df;font-size:11px;font-weight:700;
+    background:#192b3d;border:1px solid #345068;border-radius:8px;
+    padding:9px 2px;line-height:1.25;
+  }
+  .mobile-steps a:focus-visible,
+  .mobile-steps a:hover{color:#ecfff8;border-color:var(--mint);background:#244638;text-decoration:none}
+  .step-continue{
+    display:flex;justify-content:center;align-items:center;gap:8px;
+    font-size:12px;font-weight:750;padding:11px 12px;margin:3px 0 8px;
+    background:#1b3b37;border:1px solid #437e70;border-radius:10px;
+    color:#b9ffe9;text-decoration:none;
+  }
+  .step-continue:hover{text-decoration:none;background:#27534a;color:white}
+  #idea-step,#create-step,#preview-step,#files-step{scroll-margin-top:132px}
+  .center-panel .preview-box{overflow:hidden}
+}
+@media (max-width:400px){
+  .brand{gap:6px;font-size:11px;letter-spacing:.02em}
+  .brand small{font-size:7px;letter-spacing:.02em}
+  .brand-icon{padding:5px 8px;font-size:17px}
+  .top-actions .small{padding:7px 8px;font-size:11px}
+  .mobile-steps a{font-size:10px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .disclosure-marker,.primary,.outline{transition:none}
+}

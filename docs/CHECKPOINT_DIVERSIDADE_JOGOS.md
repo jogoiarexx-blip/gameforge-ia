@@ -584,3 +584,23 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Restrições de interpretação:** esta etapa é um compilador determinístico de requisitos suportados. Não inventa IA de inimigos, multiplayer, animações esqueléticas ou árvores de habilidades; tais recursos ficam pendentes. “Objetivo: ...” em texto livre é só um rótulo de HUD, não uma condição programada de vitória; sobrevivência, coleta e eliminação possuem condições programadas nos motores compatíveis. O relatório `implementation.applied` reflete alterações de configuração, mas teste de gameplay e revisão manual seguem essenciais.
 
 **Próxima etapa:** melhorar inferência contextual para documentos longos e instruções contraditórias, incluir assistente opcional de IA para gerar módulos novos mediante validação de testes, criar mapeamento entre entidades citadas no GDD e assets GLB, e executar QA visual real em navegadores e dispositivos móveis.
+
+
+## Engenharia — etapa 15: GDD → mecânica jogável de loja e evolução de armas (16/11/2026)
+
+**Objetivo:** evoluir além do catálogo de palavras-chave da v0.20 e compilar um pedido como “FPS 3D com loja para comprar munição, curar vida e melhorar armas” para um sistema real de jogo, preservando motores antigos.
+
+**Subsistema escolhido:** combate e inventário simplificado de FPS 3D, para comprovar compilação de mecânicas com estado, ações reais, interface e auditoria de requisitos. Esta fase não tenta inventar módulos arbitrários por IA no GitHub Pages.
+
+**Implementação e arquivos:**
+- `js/combat-economy.js` (novo): factory isolado, determinístico e testável de moedas, reserva de munição, custo de cada compra, kits médicos, melhorias de dano/cadência, inventário reduzido e histórico de 12 transações. Limites de custo, reserva, créditos e evolução; não executa JS arbitrário nem transaciona dinheiro real.
+- `js/intent-compiler.js`: identifica pedidos de loja de munição/vida/armas, preços explícitos, créditos e reserva inicial no GDD/comando; registra `GAME_SPEC.combatEconomy` e estados `applied/pending`. Suporte **somente FPS 3D**; outros gêneros mantêm a pendência em vez de fingir loja genérica.
+- `js/three-runtime.js`: munição com pente de 20 balas e reserva consumível no FPS opt-in, tecla R para recarga, créditos por inimigo (20) e chefes (90), pausador da loja (B), menu acessível por clique/toque, compra 1/2/3 com validação, aplicação de cura e dano real a cada tiro, HUD e telemetria. Créditos e melhorias duram toda a campanha; reinício reseta o estado. Sem loja, permanece a recarga automática antiga.
+- `js/generator.js`: inclui o código completo da factory no `game.js` offline para FPS 3D; assim, um FPS v0.21 pode habilitar a loja incrementalmente sem rebuild do runtime. Não adiciona dependências externas de rede.
+- `js/development-engine.js`: permite habilitar/configurar a loja em projetos FPS com runtime compatível; rejeita alteração de arquivos gerados por versões antigas sem o contrato da loja.
+- `index.html`, `js/parser.js`, `package.json`, `js/project-backup.js`: registro do módulo, catálogo de economia no FPS 3D e versão v0.21.
+- `tests/combat-economy.test.js`: estados da loja, recusa de compras sem dinheiro, cura máxima, reserva, evolução, preços escritos, geração offline, ativação incremental, proteção de projeto antigo e simulação 3D com menu e recarga reais.
+
+**Validação automatizada:** GitHub Actions `43860904541` completou com **203 testes aprovados e 0 falhas**. Foi encontrada e corrigida uma regressão no serializador que havia escrito escapes de quebra de linha incorretos; suíte geral voltou a verde após a correção. No teste funcional novo, a reserva consumida é proporcional às balas faltantes, e não um pente fixo.
+
+**Limitações e próximos passos:** sem persistência após refresh, salvamento só no estado da campanha; modelos procedurais e três níveis de dano, não três armas físicas diferentes. A economia é um exemplo de módulo suportado, não IA geradora ilimitada. É preciso realizar QA visual real no navegador e celular e validar equilíbrio de recursos para evitar falta permanente de munição. Futuro: geração opcional de módulos novos por backend IA com `proposal/diff`, build isolado, testes de sintaxe, smoke tests e aceite explícito, seguido de integração com assets animados de armas/itens.

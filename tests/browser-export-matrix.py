@@ -21,6 +21,16 @@ def run():
     assert len(matrix) == 14, 'Matriz de gêneros alterada: atualizar cobertura'
     screenshots = OUTPUT / 'screenshots'
     screenshots.mkdir(exist_ok=True)
+    extracted = OUTPUT / '_reimported'
+    extracted.mkdir(exist_ok=True)
+    for item in matrix:
+        destination = extracted / item['slug']
+        destination.mkdir(exist_ok=True)
+        with zipfile.ZipFile(OUTPUT / (item['slug'] + '.zip')) as archive:
+            assert set(archive.namelist()) == set(item['files'])
+            archive.extractall(destination)
+        for name in item['files']:
+            assert (destination / name).read_bytes() == (OUTPUT / item['slug'] / name).read_bytes(), (item['slug'], name)
     server = ThreadingHTTPServer(('127.0.0.1', 0), partial(QuietHandler, directory=str(ROOT)))
     Thread(target=server.serve_forever, daemon=True).start()
     origin = f'http://127.0.0.1:{server.server_port}'
@@ -49,7 +59,7 @@ def run():
                         route.continue_()
                 page.route('**/*', on_request)
                 try:
-                    page.goto(f"{origin}/tests/_browser_output/{label}/index.html", wait_until='load')
+                    page.goto(f"{origin}/tests/_browser_output/_reimported/{label}/index.html", wait_until='load')
                     page.wait_for_function(
                         "typeof window.__gameforgeTelemetry === 'function'", timeout=20000
                     )

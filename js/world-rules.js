@@ -110,6 +110,46 @@ function gameForgeWorldRules(){
    e.id==='zone-'+e.type+'-'+e.zone&&Number.isInteger(e.amount)&&
    e.amount>=2&&e.amount<=45&&!used.has(e.id)&&enteredZone(e.zone,player,size));
  }
+ // GF-009: quest declarativa, sem execucao de texto arbitrario e com limite de recompensa.
+ function npcQuestContract(raw){
+  if(!raw||typeof raw!=='object'||Array.isArray(raw)||!/^npc-stage-(0[1-9]|[1-2]\d|30)$/.test(String(raw.id||''))||
+   typeof raw.name!=='string'||raw.name.length<1||raw.name.length>40||/[<>]/.test(raw.name)||
+   typeof raw.dialogue!=='string'||raw.dialogue.length>160||/[<>]/.test(raw.dialogue)||
+   !Object.prototype.hasOwnProperty.call(ZONES,raw.zone)||
+   !Array.isArray(raw.steps)||raw.steps.length<2||raw.steps.length>5||
+   !raw.reward||typeof raw.reward!=='object')return null;
+  const steps=[];
+  for(let i=0;i<raw.steps.length;i++){
+   const step=raw.steps[i];
+   if(!step||step.id!=='step-'+(i+1)||!['reach','eliminate','collect','survive'].includes(step.kind)||
+    typeof step.label!=='string'||step.label.length>90||/[<>]/.test(step.label))return null;
+   if(step.kind==='reach'){
+    if(!Object.prototype.hasOwnProperty.call(ZONES,step.zone))return null;
+    steps.push({id:step.id,kind:step.kind,zone:step.zone,label:step.label});
+   }else if(step.kind==='survive'){
+    if(!Number.isInteger(step.seconds)||step.seconds<5||step.seconds>180)return null;
+    steps.push({id:step.id,kind:step.kind,seconds:step.seconds,label:step.label});
+   }else steps.push({id:step.id,kind:step.kind,label:step.label});
+  }
+  const reward=raw.reward;
+  if(!Number.isInteger(reward.score)||reward.score<0||reward.score>500||
+   !Number.isInteger(reward.health)||reward.health<0||reward.health>45||
+   !Number.isInteger(reward.ammo)||reward.ammo<0||reward.ammo>80)return null;
+  return {id:raw.id,name:raw.name,zone:raw.zone,dialogue:raw.dialogue,steps,
+   reward:{score:reward.score,health:reward.health,ammo:reward.ammo}};
+ }
+ function npcNear(quest,player,size,radius=2.6){
+  const npc=npcQuestContract(quest),p=npc&&waypoint(npc.zone,size);
+  return !!p&&player&&Number.isFinite(player.x)&&Number.isFinite(player.z)&&
+   Math.hypot(player.x-(p.x+1.6),player.z-p.z)<=radius;
+ }
+ function npcReward(quest,state,magazineMax=999){
+  const npc=npcQuestContract(quest);
+  if(!npc||!state||!Number.isFinite(state.score)||!Number.isFinite(state.health)||!Number.isFinite(state.ammo))return null;
+  return {score:clamp(state.score+npc.reward.score,0,1e9),
+   health:clamp(state.health+npc.reward.health,0,100),
+   ammo:clamp(state.ammo+npc.reward.ammo,0,clamp(magazineMax,20,999))};
+ }
  // A chave usa ID do projeto, nao o titulo, para separar jogos homonimos.
  function checkpointKey(spec){
   if(!spec||!/^gf-[0-9a-f]{8}-[0-9a-f]{8}$/.test(String(spec.projectId||''))||
@@ -137,7 +177,7 @@ function gameForgeWorldRules(){
  }
  return {clamp,rng,moveCircle,crowdDirection,platformRoute,raceProgress,trackRibbon,goalReady,missionReady,
   enemyProfile,dueStageEvents,waypoint,enteredZone,missionStepReady,dueZoneEvents,
-  checkpointKey,readCheckpoint,checkpointPayload};
+  npcQuestContract,npcNear,npcReward,checkpointKey,readCheckpoint,checkpointPayload};
 }
 if(typeof module!=='undefined')module.exports=gameForgeWorldRules;
 if(typeof globalThis!=='undefined')globalThis.gameForgeWorldRules=gameForgeWorldRules;

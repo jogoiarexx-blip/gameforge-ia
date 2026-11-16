@@ -238,7 +238,7 @@ function records(source,document){
   if(!raw||raw.length>2200)continue;
   const heading=/^#{1,6}\s+/.test(raw);
   const marked=/^(?:#{1,6}\s+|[-*+]\s+)?(?:(?:na|no|para a|para o)\s+)?(?:fase|missao|etapa|level|stage)\s*(\d{1,2})\b/.exec(normal);
-  const inline=!marked&&!heading?/\b(?:fase|missao|etapa|level|stage)\s*(\d{1,2})\b/.exec(normal):null;
+  const inline=!marked&&!heading&&!/^consequencia\s+opcao\b/.test(normal)?/\b(?:fase|missao|etapa|level|stage)\s*(\d{1,2})\b/.exec(normal):null;
   if(marked){stage=Number(marked[1])-1;}
   else if(heading){stage=null;}
   const rowStage=inline?Number(inline[1])-1:stage;

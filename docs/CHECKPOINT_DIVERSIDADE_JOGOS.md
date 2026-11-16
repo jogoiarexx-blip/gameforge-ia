@@ -8,7 +8,7 @@
 
 ### Fila de execução — não avançar sem registrar resultado
 
-- [ ] **GF-001 · P0 — Gate de publicação:** impedir deploy quando CI/export está falhando; criar prova automatizada e rollback.
+- [ ] **GF-001 · P0 — Gate de publicação (EM REVISÃO):** workflow, preflight, testes negativos e dupla verificação de SHA implementados; **ainda falta mudar Settings → Pages → Source para GitHub Actions** para remover a rota automática da branch.
 - [ ] **GF-002 · P0 — Matriz de exportação e boot:** cada gênero/dimensão, scripts autossuficientes, inicialização, editor e ZIP com/sem GLB.
 - [ ] **GF-003 · P0 — Reconhecimento real de GDD:** corpus versionado de gêneros e casos longos (incluindo GoldenEye FPS 3D), incerteza e conflitos.
 - [ ] **GF-004 · P0 — Contrato de capacidades:** diferenciar requisito solicitado, parâmetro configurado e mecânica implementada/testada.
@@ -626,3 +626,15 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Dependência de configuração externa para conclusão:** em **Settings → Pages → Build and deployment → Source**, selecionar **GitHub Actions** em lugar de publicação direta da branch. As ferramentas GitHub disponíveis não permitem mudar a configuração Pages. Só marcar GF-001 como VALIDADO depois de confirmar que a rota antiga deixou de promover commits e que um commit com falha fica fora do site. Consulte `docs/PUBLICACAO_VERIFICADA.md`.
 
 **Próximo ID:** GF-002 (matriz de inicialização, preview e exportação de todos os gêneros, incluindo GLB/ZIP em ambiente de browser), depois GF-003/004. A geração de novos módulos por IA permanece dependente de auditoria do backend real e revisão de alterações antes de execução.
+
+## GF-001 — Iteração de fechamento do gate (16/11/2026)
+
+**Estado: EM REVISÃO (depende de alteração administrativa no GitHub Pages). Não avançar como VALIDADO.**
+
+- **Código:** `.github/workflows/publish-verified.yml` confere o SHA atual de `main` antes de empacotar e novamente antes de `deploy-pages` (commit `9d05132c9824075118e68fff652e1bcd7e5f7eaa`). `tests/pages-gate.test.js` agora verifica as duas barreiras e a ordem dos passos (commit `f6515aa671be2f8019491527cba7455380408a31`).
+- **Evidência positiva:** CI [43872156355](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43872156355) aprovou a versão com testes do gate reforçado (commit `f6515aa6`); a validação de sintaxe, exportações e benchmark compõe o fluxo.
+- **Evidência negativa real:** CI [43871603100](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43871603100) falhou e o workflow verificado [43871658520](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43871658520) ficou pulado, **mas** o deploy antigo de branch [43871602779](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43871602779) publicou o mesmo SHA. Logo, o bloqueio global **não está completo**.
+- **Ação obrigatória pelo administrador:** `Settings → Pages → Build and deployment → Source → GitHub Actions`. Confirmar que não existe mais `pages build and deployment` promovendo código de branch; somente `Publicar GameForge verificado` pode publicar após CI verde.
+- **Segurança:** não tentar simular a falha com código quebrado na `main` enquanto a rota antiga existir; usar `tests/pages-gate.test.js` e branches de teste. Documentação e rollback em `docs/PUBLICACAO_VERIFICADA.md`.
+- **Dependência da etapa:** GF-002 pode ser preparada, mas a tarefa GF-001 só é concluída quando a configuração Pages tiver sido trocada e observada uma publicação limpa do mesmo commit.
+- **Trabalho paralelo observado:** execuções de CI mais novas estavam falhando em testes de corpus de GDD (GF-003), área distinta; enquanto não ficarem verdes, não publicar novas versões por fora do gate.

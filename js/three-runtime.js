@@ -37,6 +37,7 @@ function gameForgeThreeBoot(){
  const keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
  let pointerDown=false,dragX=null,jumpHeld=false,lastDraw=-1000;
  const vec=new T.Vector3(),look=new T.Vector3(),camTarget=new T.Vector3();
+ let gunRig=null,gunKick=0;
  const importedSceneModels=[],importedSceneErrors=[];
  if(typeof GF_SCENE_GLB_BASE64==='string' && typeof gameForgeDecodeGLB==='function'){
   try{importedSceneModels.push({id:'legacy',model:gameForgeDecodeGLB(T,GF_SCENE_GLB_BASE64),placement:typeof GF_SCENE_GLB_OPTIONS==='object'?GF_SCENE_GLB_OPTIONS:{}});}
@@ -137,7 +138,7 @@ function gameForgeThreeBoot(){
   const stageRules=configAt(stage),requestedTheme=stageRules.theme;
   opts.theme=['forest','desert','neon','ruins'].includes(requestedTheme)?requestedTheme:(spec.worldOptions?.theme||'forest');
   palette=themes[opts.theme]||themes.forest;renderer.setClearColor(palette.sky);
-  disposeStage();materials=[];geometries=[];solids=[];enemies=[];coins=[];bullets=[];platforms=[];traffic=[];gates=[];goal=null;
+  disposeStage();materials=[];geometries=[];solids=[];enemies=[];coins=[];bullets=[];platforms=[];traffic=[];gates=[];goal=null;gunRig=null;gunKick=0;
   scene=new T.Scene();scene.background=new T.Color(palette.sky);scene.fog=new T.Fog(palette.fog,genre==='fps'?16:35,genre==='platform'?105:size*1.7);
   world=new T.Group();scene.add(world);camera=new T.PerspectiveCamera(genre==='fps'?78:52,16/9,.1,260);scene.add(camera);
   const hemi=new T.HemisphereLight(opts.theme==='neon'?0xb7cdfd:0xf3f6e9,0x3b5148,2.2);scene.add(hemi);
@@ -174,7 +175,7 @@ function gameForgeThreeBoot(){
    setGoal(0,0,-size*.37);scenery();
    for(const sign of [-1,1])for(let i=0;i<7;i++){const x=sign*(size/2-.6),z=(i-3)*size/7;box(.6,1.2,size/7-.2,mats.stone,world,x,.6,z);}
    if(genre==='fps'){
-    const gun=new T.Group();box(.16,.2,.75,mats.trim,gun,.36,-.28,-.7);box(.12,.13,.55,mats.crystal,gun,.36,-.26,-1.07);camera.add(gun);
+    const gun=new T.Group();gun.userData.gameForgeGun=true;gunRig=gun;box(.16,.2,.75,mats.trim,gun,.36,-.28,-.7);box(.12,.13,.55,mats.crystal,gun,.36,-.26,-1.07);camera.add(gun);
     const sightMaterial=new T.MeshBasicMaterial({color:0xffffff,depthTest:false,depthWrite:false});materials.push(sightMaterial);const sight=new T.Mesh(geometry(new T.RingGeometry(.003,.005,12)),sightMaterial);sight.position.z=-.5;sight.renderOrder=1000;camera.add(sight);
    }
   }
@@ -206,6 +207,7 @@ function gameForgeThreeBoot(){
   }
   const o=new T.Mesh(bulletGeometry,genre==='rpg'?mats.crystal:mats.gold);o.position.set(player.x+dx*.6,player.y+1.2,player.z+dz*.6);world.add(o);
   if(hero&&hero.userData?.limbs)hero.userData.attack=1;
+  if(gunRig)gunKick=1;
   bullets.push({x:o.position.x,y:o.position.y,z:o.position.z,dx,dz,life:1.8,mesh:o});
  }
  function rpgReward(boss){
@@ -309,6 +311,7 @@ function gameForgeThreeBoot(){
    if(state!=='play')return;
    hero.position.set(player.x,player.y,player.z);hero.rotation.y=player.yaw;
    if(genre!=='racing')animateActor(hero,player.speed,clock*10,dt);
+   if(gunRig){gunRig.position.z=.13*gunKick;gunRig.rotation.x=-.09*gunKick;gunKick=Math.max(0,gunKick-dt*8);}
    hero.visible=genre!=='fps'&&(invulnerable<=0||Math.floor(invulnerable*12)%2===0);
    for(const c of coins)if(!c.taken){c.mesh.rotation.y+=dt*1.6;c.mesh.position.y=c.y+Math.sin(clock*3+c.x)*.1;}
    if(goal)goal.portal.scale.x=1+Math.sin(clock*2)*.035;

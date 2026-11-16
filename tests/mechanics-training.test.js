@@ -79,3 +79,15 @@ test('GF-TRAIN-02: evolução incremental por nome da fase não modifica fases v
  assert.equal(result.spec.stageConfig[0].mission,undefined);
  assert.equal(result.spec.stageConfig[2].mission,undefined);
 });
+
+
+test('GF-TRAIN-02: pedido sem pontuação separa ausência de chefes de contagem de inimigos',()=>{
+ const spec=Parser.parseGdd('', 'Quero jogo de arena 3D com 3 fases sem chefe com 7 inimigos na fase dois.');
+ assert.equal(spec.stageConfig.length,3);
+ assert.equal(spec.stageConfig[1].enemies,7,'com 7 inimigos continua valendo sem vírgula');
+ assert.equal(spec.stageConfig[0].enemies,undefined);
+ assert.equal(spec.stageConfig[2].enemies,undefined);
+ assert.equal(spec.stageConfig[1].boss,'no');
+ const negated=Parser.parseGdd('', 'Quero jogo de arena 3D com 3 fases sem 7 inimigos na fase dois.');
+ assert.equal(negated.stageConfig[1].enemies,undefined,'sem inimigos não pode criar inimigos');
+});

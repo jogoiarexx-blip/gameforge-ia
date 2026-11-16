@@ -21,7 +21,7 @@
         const bytes=files['assets/'+a.id+'.glb'];
         if(!(bytes instanceof Uint8Array))throw Error('GLB binario ausente para '+a.name+'. Reimporte backup ZIP completo.');
         if(bytes.length!==a.bytes)throw Error('GLB binario diferente do manifesto: '+a.name);
-        return {id:a.id,base64:library.base64(bytes),...a.placement};
+        return {id:a.id,role:a.role,base64:library.base64(bytes),...a.placement};
       });
       if(assets.length)script+='const GF_SCENE_ASSETS='+JSON.stringify(assets)+';\n';
     }
@@ -74,9 +74,11 @@
     if(advanced&&typeof root.gameForgeTDRulesFactory!=='function')throw Error('Motor de regras Tower Defense não carregado. Atualize o Studio.');
     const urbanInputFactory=root.gameForgeUrbanInputFactory||(typeof require==='function'?require('./urban-input'):null);
     if(three&&spec.genre==='urban-action'&&typeof urbanInputFactory!=='function')throw Error('Controle urbano offline ausente. Atualize o Studio.');
+    const actorFactory=root.gameForgeActorAnimationsFactory||(typeof require==='function'?require('./actor-animations'):null);
+    if(three&&spec.genre==='urban-action'&&typeof actorFactory!=='function')throw Error('Reprodutor de clips GLB ausente. Atualize o Studio.');
     const urbanSaveFactory=root.gameForgeUrbanSaveFactory||(typeof require==='function'?require('./urban-save'):null);
     if(three&&spec.genre==='urban-action'&&typeof urbanSaveFactory!=='function')throw Error('Modulo de salvamento urbano offline ausente. Atualize o Studio.');
-    const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n'+(spec.genre==='urban-action'?'const GameForgeUrbanRules = ('+root.gameForgeUrbanRulesFactory.toString()+')();\nconst GameForgeUrbanInput = ('+urbanInputFactory.toString()+')();\nconst GameForgeUrbanSave = ('+urbanSaveFactory.toString()+')();\n'+(spec.urbanMissions?.length?'const GameForgeUrbanMissionFlow = ('+root.gameForgeUrbanMissionFlowFactory.toString()+')();\n':''):''):advanced?'const GameForgeTDRules = ('+root.gameForgeTDRulesFactory.toString()+')();\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
+    const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n'+(spec.genre==='urban-action'?'const GameForgeUrbanRules = ('+root.gameForgeUrbanRulesFactory.toString()+')();\nconst GameForgeUrbanInput = ('+urbanInputFactory.toString()+')();\nconst GameForgeUrbanSave = ('+urbanSaveFactory.toString()+')();\nconst GameForgeActorAnimations = ('+actorFactory.toString()+')();\n'+(spec.urbanMissions?.length?'const GameForgeUrbanMissionFlow = ('+root.gameForgeUrbanMissionFlowFactory.toString()+')();\n':''):''):advanced?'const GameForgeTDRules = ('+root.gameForgeTDRulesFactory.toString()+')();\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
     // Incluído no FPS para permitir loja por comandos futuros sem reconstruir o motor.
     if(spec.genre==='urban-action'&&typeof root.gameForgeUrbanRulesFactory!=='function')throw Error('Regras urbanas URB-01 não carregadas. Atualize o Studio.');
     if(spec.genre==='urban-action'&&spec.urbanMissions?.length&&typeof root.gameForgeUrbanMissionFlowFactory!=='function')throw Error('Regras das missões não carregadas. Atualize o Studio.');

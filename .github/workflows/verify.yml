@@ -25,3 +25,5 @@ jobs:
           for f in js/*.js; do node --check "$f"; done
       - name: Testes automatizados
         run: npm test
+      - name: Benchmark informativo da arena
+        run: npm run bench:arena

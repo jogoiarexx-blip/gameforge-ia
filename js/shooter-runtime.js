@@ -24,6 +24,8 @@ function gameForgeShooterBoot() {
   // Particulas, tiros e inimigos possuem limites: gameplay nao depende da qualidade grafica.
   const LIMITS={enemies:32,enemyBullets:140,playerBullets:110,particles:Math.max(30,Math.round(180*tuning.particlesMultiplier)),stars:105};
   let stageIndex=0,state='menu',paused=false,last=0,frames=0,time=0,stageTime=0,stageKills=0,score=0,credits=0;
+  const SIM_DT=1/60,MAX_SIM_STEPS=5;
+  let simulationAccumulator=0,simulationSteps=0;
   let waveSpawned=0,spawnClock=0,groupStep=0,boss=null,bossSeen=false,health=100,lives=3,weapon=1,shield=0,fireClock=0,invuln=0;
   let player={x:W/2,y:H-92,r:19,afterimages:[]},enemies=[],friendly=[],hostile=[],drops=[],particles=[];
   let speedLevel=0,flash=0,shake=0,quality='high',qualitySamples=0,fpsEstimate=60;
@@ -64,8 +66,8 @@ function gameForgeShooterBoot() {
   function overlay(title,sub,action){$('overlay-title').textContent=title;$('overlay-sub').textContent=sub;$('start').textContent=action;$('overlay').classList.remove('hidden');shop();}
   function hideOverlay(){$('overlay').classList.add('hidden');store.style.display='none';canvas.focus();}
   function cleanStage(){enemies=[];friendly=[];hostile=[];drops=[];particles=[];boss=null;waveSpawned=0;groupStep=0;bossSeen=false;stageKills=0;stageTime=0;spawnClock=.8;player.x=W/2;player.y=H-92;player.afterimages=[];invuln=1.4;fireClock=0;flash=0;shake=0;}
-  function initStage(){cleanStage();state='play';paused=false;hideOverlay();note(levels[stageIndex]);sound(350,.15,'triangle',.045);}
-  function newGame(){stageIndex=0;score=0;credits=0;health=100;lives=3;weapon=1;shield=0;speedLevel=0;time=0;initStage();}
+  function initStage(){cleanStage();simulationAccumulator=0;state='play';paused=false;hideOverlay();note(levels[stageIndex]);sound(350,.15,'triangle',.045);}
+  function newGame(){stageIndex=0;score=0;credits=0;health=100;lives=3;weapon=1;shield=0;speedLevel=0;time=0;simulationSteps=0;initStage();}
   function progress(){
     const name=levels[stageIndex];
     if(stageIndex+1>=levels.length){state='victory';overlay('MISSÃO CONCLUÍDA',`Pontuação ${score} · ${credits} créditos · ${levels.length} fases vencidas`,'Nova missão');sound(820,.2);return;}
@@ -299,19 +301,28 @@ function gameForgeShooterBoot() {
     ctx.font='13px system-ui';ctx.fillText('ESCUDO  '+shield+'    CRÉDITOS  '+credits,30,61);ctx.fillText('ARMA '+weapon+'   MOTOR '+(speedLevel+1),30,78);
     if(paused&&state==='play'){ctx.fillStyle='#030a22bd';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 54px system-ui';ctx.textAlign='center';ctx.fillText('PAUSADO',W/2,H/2);ctx.textAlign='left';}
   }
-  window.__gameforgeTelemetry=()=>({state,paused,frames,clock:time,stage:stageIndex,genre:'shooter',player:{x:player.x,y:player.y,radius:player.r,screenX:player.x,screenY:player.y},enemies:enemies.length,enemyBullets:hostile.length,playerBullets:friendly.length,bossHp:boss?.hp??null,spawned:waveSpawned,weapon,lives,credits,speedLevel,quality});
+  window.__gameforgeTelemetry=()=>({state,paused,frames,clock:time,stage:stageIndex,genre:'shooter',player:{x:player.x,y:player.y,radius:player.r,screenX:player.x,screenY:player.y},enemies:enemies.length,enemyBullets:hostile.length,playerBullets:friendly.length,bossHp:boss?.hp??null,spawned:waveSpawned,weapon,lives,credits,speedLevel,quality,simulationHz:60,simulationSteps});
   function loop(ms){
-    const dt=Math.min(.035,Math.max(0,(ms-last)/1000));last=ms;
-    if(dt){fpsEstimate=fpsEstimate*.96+(.04/dt);qualitySamples+=dt;if(qualitySamples>3){qualitySamples=0;quality=fpsEstimate<38?'low':'high';}}
-    update(dt);render();frames++;requestAnimationFrame(loop);
+    const rawDt=Math.max(0,(ms-last)/1000);last=ms;
+    if(rawDt>0&&rawDt<.25){fpsEstimate=fpsEstimate*.96+(.04/rawDt);qualitySamples+=rawDt;if(qualitySamples>3){qualitySamples=0;quality=fpsEstimate<38?'low':'high';}}
+    if(state==='play'&&!paused){
+      simulationAccumulator+=Math.min(rawDt,.25);
+      let steps=0;
+      while(simulationAccumulator+1e-10>=SIM_DT&&steps<MAX_SIM_STEPS&&state==='play'&&!paused){
+        update(SIM_DT);simulationAccumulator=Math.max(0,simulationAccumulator-SIM_DT);
+        simulationSteps++;steps++;
+      }
+      if(steps===MAX_SIM_STEPS&&simulationAccumulator>=SIM_DT)simulationAccumulator=0;
+    }else simulationAccumulator=0;
+    render();frames++;requestAnimationFrame(loop);
   }
   $('start').addEventListener('click',()=>{if(state==='intermission')initStage();else newGame();});
-  $('pause').addEventListener('click',()=>{if(state==='play')paused=!paused;});
+  $('pause').addEventListener('click',()=>{if(state==='play'){paused=!paused;simulationAccumulator=0;}});
   $('restart').addEventListener('click',newGame);
   window.addEventListener('keydown',e=>{
     if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();
     keys.add(e.key.toLowerCase());keys.add(e.key);
-    if(e.key==='Escape'&&state==='play')paused=!paused;
+    if(e.key==='Escape'&&state==='play'){paused=!paused;simulationAccumulator=0;}
     if(e.key==='r'&&state!=='play')$('start').click();
   });
   window.addEventListener('keyup',e=>{keys.delete(e.key.toLowerCase());keys.delete(e.key);});

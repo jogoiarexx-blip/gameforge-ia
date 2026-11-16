@@ -6,7 +6,7 @@ const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 for(const name of [
  'runtime-template','shooter-runtime','world-rules','software-renderer','three-runtime',
- 'shooter-3d-runtime','strategy-rules','expanded-2d-runtime','advanced-td-rules',
+ 'shooter-3d-runtime','shooter-campaign-save','strategy-rules','expanded-2d-runtime','advanced-td-rules',
  'advanced-td-runtime','combat-economy','urban-rules','urban-runtime','urban-mission-flow','urban-mission-runtime','mission-semantics'
 ])require(path.join(root,'js',name+'.js'));
 require(path.join(root,'vendor/three-source.js'));

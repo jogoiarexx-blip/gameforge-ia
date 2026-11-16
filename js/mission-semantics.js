@@ -157,7 +157,36 @@ function gameForgeMissionSemanticsFactory(){
    relations:m.relations
   }));
  }
- return {parse,executable};
+ function report(model){
+  const rows=['# GameForge — Modelo de ações do GDD','','Estrutura analisada sem executar instruções do texto.',
+   'Ações somente se tornam jogáveis quando o motor do gênero possui código correspondente.',
+   '','## Ações por fase',''];
+  if(!model?.missions?.length)rows.push('Nenhuma ação estruturada foi reconhecida; a mecânica não foi inventada.');
+  for(const mission of model?.missions||[]){
+   rows.push('### '+mission.title,'Origem: '+mission.source.document+' linha '+mission.source.line,
+    'Estado: '+mission.status+' · Recompensa do protótipo: 
+}
+const api=gameForgeMissionSemanticsFactory();
+root.GameForgeMissionSemantics=api;
+if(typeof module!=='undefined')module.exports=api;
+})(typeof globalThis!=='undefined'?globalThis:this);
++mission.reward);
+   for(const s of mission.actions)rows.push('- '+s.status+' · '+s.actor+' '+s.action+' '+s.quantity+
+    ' '+s.target+(s.objectQuantity?' (itens: '+s.objectQuantity+')':'')+
+    ' · '+s.source.document+' linha '+s.source.line+
+    (s.preconditions?.length?' · depende de '+s.preconditions.join(', '):'')+
+    (s.reason?' · '+s.reason:''));
+   for(const relation of mission.relations)rows.push('  Relação: '+relation.from+' antes de '+relation.to+' ('+relation.reason+')');
+   rows.push('');
+  }
+  rows.push('## Pedidos ainda não executáveis','');
+  for(const issue of model?.issues||[])rows.push('- '+issue.reason+(issue.source?.line?' ('+issue.source.document+' linha '+issue.source.line+')':''));
+  if(!model?.issues?.length)rows.push('Nenhum bloqueio reconhecido no conjunto de ações analisado.');
+  rows.push('','## Limites','Até 3 missões, 3 guardas ou provas por missão, captura e entrega no armazém.',
+   'Condições não modeladas, dirigir, polícia e interiores são pendências. Não confundir com campanha completa.');
+  return rows.join('\n')+'\n';
+ }
+ return {parse,executable,report};
 }
 const api=gameForgeMissionSemanticsFactory();
 root.GameForgeMissionSemantics=api;

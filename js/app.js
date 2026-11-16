@@ -802,7 +802,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('qa-repair').addEventListener('click',()=>projectOperation(qaRepair));
   $('qa-accept').addEventListener('click',qaAccept);
   $('qa-reject').addEventListener('click',qaReject);
-  /* V0.17: GLB estático no cenário 3D, preservado em backup e ZIP. */
+  /* V0.18: biblioteca local de ate 4 GLBs estaticos, ate 25 MB cada. */
   function assetPlacement(){
     const value=(id,min,max,def)=>{
       const n=Number($(id).value);
@@ -810,42 +810,87 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     };
     return {x:value('scene-asset-x',-35,35,5),z:value('scene-asset-z',-35,35,5),scale:value('scene-asset-scale',.2,4,1)};
   }
-  function restoreSceneAssetControls(){
-    let settings={x:5,z:5,scale:1};
-    try{if(state.files['ASSET_CENARIO.json'])settings={...settings,...JSON.parse(state.files['ASSET_CENARIO.json'])};}catch{}
-    for(const k of ['x','z','scale'])$('scene-asset-'+k).value=Number.isFinite(Number(settings[k]))?settings[k]:k==='scale'?1:5;
-    $('scene-asset-status').textContent=state.files['ASSET_CENARIO.b64']?'Objeto GLB salvo no projeto. Prévia e exportação usam o modelo.':'Nenhum modelo adicionado.';
+  function restoreSceneAssetControls(preferred){
+    let manifest;
+    try{manifest=currentAssetManifest();}
+    catch(err){$('scene-asset-status').textContent='Manifesto de GLB invalido: '+err.message;return;}
+    const select=$('scene-asset-select'),previous=preferred||select.value,legacy=!!state.files['ASSET_CENARIO.b64'];
+    const list=[new Option('Nenhum objeto','')];
+    if(legacy)list.push(new Option('Objeto antigo (compatibilidade)','legacy'));
+    for(const a of manifest.assets)list.push(new Option(a.name+' ('+(a.bytes/1048576).toFixed(1)+' MB)',a.id));
+    select.replaceChildren(...list);
+    select.value=list.some(o=>o.value===previous)?previous:(manifest.assets[0]?.id||(legacy?'legacy':''));
+    const chosen=manifest.assets.find(a=>a.id===select.value);
+    let placement={x:5,z:5,scale:1};
+    if(chosen)placement=chosen.placement;
+    else if(select.value==='legacy'){
+      try{placement={...placement,...JSON.parse(state.files['ASSET_CENARIO.json']||'{}')};}catch{}
+    }
+    for(const key of ['x','z','scale'])$('scene-asset-'+key).value=placement[key];
+    const total=manifest.assets.reduce((n,a)=>n+a.bytes,0);
+    $('scene-asset-list').textContent=manifest.assets.length+' de 4 modelos · '+(total/1048576).toFixed(1)+' de 50 MB' +(legacy?' · um GLB antigo adicional':'');
+    $('scene-asset-status').textContent=manifest.assets.length||legacy?'Modelos disponíveis no projeto. Ajuste um objeto e execute a prévia.':'Nenhum modelo adicionado.';
   }
+  $('scene-asset-select').addEventListener('change',()=>restoreSceneAssetControls($('scene-asset-select').value));
   $('scene-asset-file').addEventListener('change',async e=>{
-    const file=e.target.files?.[0];if(!file)return;
+    const input=e.target,files=Array.from(input.files||[]);
+    if(!files.length)return;
+    if(projectOperations||qaState.candidate){feedback('Conclua a operacao atual antes de importar novos arquivos.',true);input.value='';return;}
+    projectOperations++;
+    let imported=0,lastId='';
     try{
-      if(!state.files['engine-3d.js'])throw Error('Crie primeiro um jogo 3D no modo Sem IA.');
-      if(!file.name.toLowerCase().endsWith('.glb'))throw Error('Use um arquivo .glb com recursos embutidos.');
-      if(file.size>1_200_000)throw Error('Limite inicial: GLB com até 1,2 MB. Otimize o modelo antes da importação.');
-      const report=await GameForgeModelInspector.readFile(file);
-      if(report.meshes<1)throw Error('Modelo sem malhas.');
-      const buf=new Uint8Array(await file.arrayBuffer());let raw='';
-      for(let i=0;i<buf.length;i+=32768)raw+=String.fromCharCode(...buf.subarray(i,i+32768));
-      state.files['ASSET_CENARIO.b64']=btoa(raw);
-      state.files['ASSET_CENARIO.json']=JSON.stringify(assetPlacement());
+      if(!state.files['engine-3d.js'])throw Error('Gere primeiro um jogo 3D no modo Sem IA.');
+      for(const file of files){
+        if(!file.name.toLowerCase().endsWith('.glb'))throw Error('Somente arquivos .glb sao aceitos: '+file.name);
+        if(file.size>GameForgeAssetLibrary.MAX_BYTES)throw Error('Arquivo acima de 25 MB: '+file.name);
+        const current=currentAssetManifest();
+        if(current.assets.length>=GameForgeAssetLibrary.MAX_ASSETS)throw Error('Limite de 4 objetos por projeto.');
+        const size=current.assets.reduce((n,a)=>n+a.bytes,0)+file.size;
+        if(size>GameForgeAssetLibrary.MAX_TOTAL)throw Error('Biblioteca acima de 50 MB.');
+        const report=await GameForgeModelInspector.readFile(file);
+        if(report.meshes<1)throw Error('GLB sem malhas: '+file.name);
+        const data=GameForgeAssetLibrary.validateGLB(new Uint8Array(await file.arrayBuffer()));
+        const id=GameForgeAssetLibrary.newId();
+        const item={id,name:file.name,bytes:data.length,role:'scene',placement:assetPlacement()};
+        const next=GameForgeAssetLibrary.append(current,item);
+        await GameForgeAssetLibrary.put(assetProjectId,id,data);
+        state.files['ASSET_LIBRARY.json']=JSON.stringify(next);
+        lastId=id;imported++;
+      }
       qaState.last=null;qaState.baseline=null;
-      listFiles();runPreview();saveState();
-      $('scene-asset-status').textContent=file.name+' importado · '+report.meshes+' malhas. Prévia atualizada; teste a posição e exporte o ZIP.';
-      feedback('Objeto de cenário incluído no jogo 3D. Animações/rig não são aplicados nesta etapa.');
-    }catch(err){$('scene-asset-status').textContent='Erro: '+err.message;feedback(err.message,true);}
-    e.target.value='';
+      restoreSceneAssetControls(lastId);listFiles();saveState();
+      await runPreview();
+      feedback(imported+' modelo(s) GLB salvo(s) no projeto e na biblioteca do navegador. Exporte ZIP para backup completo.');
+    }catch(err){
+      restoreSceneAssetControls(lastId);listFiles();
+      if(imported){saveState();await runPreview();}
+      $('scene-asset-status').textContent='Importacao: '+imported+' concluido(s). '+err.message;
+      feedback(err.message,true);
+    }finally{projectOperations--;input.value='';}
   });
-  for(const name of ['x','z','scale'])$('scene-asset-'+name).addEventListener('change',()=>{
-    if(!state.files['ASSET_CENARIO.b64'])return;
-    state.files['ASSET_CENARIO.json']=JSON.stringify(assetPlacement());
-    qaState.last=null;qaState.baseline=null;runPreview();saveState();
-    $('scene-asset-status').textContent='Posição/escala atualizadas. Execute a prévia para verificar o objeto.';
+  for(const key of ['x','z','scale'])$('scene-asset-'+key).addEventListener('change',()=>{
+    const id=$('scene-asset-select').value;
+    if(!id)return;
+    try{
+      if(id==='legacy')state.files['ASSET_CENARIO.json']=JSON.stringify(assetPlacement());
+      else state.files['ASSET_LIBRARY.json']=JSON.stringify(GameForgeAssetLibrary.update(currentAssetManifest(),id,assetPlacement()));
+      qaState.last=null;qaState.baseline=null;runPreview();saveState();
+      $('scene-asset-status').textContent='Posicao/escala salvas no modelo selecionado.';
+    }catch(err){feedback('Nao foi possivel alterar o modelo: '+err.message,true);}
   });
-  $('scene-asset-remove').addEventListener('click',()=>{
-    delete state.files['ASSET_CENARIO.b64'];delete state.files['ASSET_CENARIO.json'];
-    qaState.last=null;qaState.baseline=null;restoreSceneAssetControls();listFiles();runPreview();saveState();
-    feedback('Objeto importado removido do projeto e das próximas exportações.');
-  });
+  $('scene-asset-remove').addEventListener('click',()=>projectOperation(async()=>{
+    const id=$('scene-asset-select').value;if(!id)return;
+    try{
+      if(id==='legacy'){delete state.files['ASSET_CENARIO.b64'];delete state.files['ASSET_CENARIO.json'];}
+      else{
+        await GameForgeAssetLibrary.erase(assetProjectId,id);
+        state.files['ASSET_LIBRARY.json']=JSON.stringify(GameForgeAssetLibrary.remove(currentAssetManifest(),id));
+      }
+      qaState.last=null;qaState.baseline=null;
+      restoreSceneAssetControls();listFiles();saveState();await runPreview();
+      feedback('Modelo removido da cena e do armazenamento deste projeto.');
+    }catch(err){feedback('Falha ao remover GLB: '+err.message,true);}
+  }));
   $('model-file').addEventListener('change',async event=>{
     const file=event.target.files?.[0];if(!file)return;
     try{

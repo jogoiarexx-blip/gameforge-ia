@@ -16,8 +16,8 @@ function gameForgeShooter3DBoot(){
  const configAt=i=>stageConfigs[i]&&typeof stageConfigs[i]==='object'?stageConfigs[i]:{};
  const availableRoutes=()=>BR?BR.options(branchConfig,kills>=10):[];
  function saveRouteCheckpoint(){
-  if(!branchSave||!chosenRoute)return;
-  branchSave.write({version:1,stage,route:chosenRoute.id,score,health,weapon,kills});
+  if(!branchSave)return;
+  branchSave.write({version:1,stage,route:chosenRoute?.id||null,score,health,weapon,kills});
  }
  function showRouteChoice(){
   if(!BR)return;
@@ -32,7 +32,7 @@ function gameForgeShooter3DBoot(){
    routePanel.style.cssText='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px';
    $('overlay').appendChild(routePanel);
   }
-  routePanel.style.display='flex';routePanel.textContent='';
+  routePanel.style.display='flex';routePanel.textContent='';saveRouteCheckpoint();
   for(const [index,route] of availableRoutes().entries()){
    const b=document.createElement('button');b.type='button';
    b.textContent=(index+1)+' · '+route.name+' · bônus '+route.reward;

@@ -118,3 +118,64 @@ test('URB-02 IA respeita timestep e colisao e integra os dois runtimes',()=>{
   assert.match(source,/R\.guardStep\(/);
  }
 });
+
+test('URB-02 route planner contorna edificio entre guarda e ultimo destino',()=>{
+ const building={x:0,z:4,w:3,d:3},start={x:0,z:0},goal={x:0,z:8};
+ assert.equal(R.routeClear(start,goal,[building]),false);
+ const route=R.planGuardRoute(start,goal,[building]);
+ assert.ok(route.length>=3,'desvio tem curvas de esquina ate o destino');
+ assert.deepEqual(route.at(-1),goal);
+ let previous=start,distance=0;
+ for(const point of route){
+  assert.equal(R.routeClear(previous,point,[building]),true,'cada segmento deve estar livre');
+  assert.equal(R.intersects(point.x,point.z,.42,building),false);
+  distance+=Math.hypot(point.x-previous.x,point.z-previous.z);previous=point;
+ }
+ assert.ok(distance>8,'caminho de desvio nao e a reta que atravessa o predio');
+ assert.deepEqual(R.planGuardRoute(start,goal,[]),[goal],'sem obstaculo nao precisa desvio');
+});
+test('URB-02 nao inventa rotas inalcancaveis ou para destino dentro de edificio',()=>{
+ const wall={x:0,z:4,w:5,d:4};
+ assert.deepEqual(R.planGuardRoute({x:0,z:0},{x:0,z:4},[wall]),[]);
+ assert.deepEqual(R.planGuardRoute({x:0,z:0},{x:25,z:0},[wall]),[]);
+ assert.deepEqual(R.planGuardRoute({x:0,z:0},{x:NaN,z:1},[wall]),[]);
+ const pair=[{x:0,z:4,w:3,d:3},{x:-8,z:4,w:4,d:5}];
+ const route=R.planGuardRoute({x:0,z:0},{x:-11,z:8},pair);
+ assert.ok(route.length>0);
+ let source={x:0,z:0};
+ for(const destination of route){
+  assert.ok(R.routeClear(source,destination,pair));
+  source=destination;
+ }
+});
+test('URB-02 guarda executa rota com timestep fixo, sem cortar parede nem se teletransportar',()=>{
+ const building={x:0,z:4,w:3,d:3};
+ const player={x:25,z:25}; // fora do raio: procura a ultima posicao conhecida
+ let g={x:0,z:0,homeX:0,homeZ:0,memory:12,lastSeenX:0,lastSeenZ:8};
+ let travelled=0,hadWaypoints=false;
+ for(let i=0;i<600;i++){
+  const next=R.guardStep(g,player,1/60,[building]);
+  const dist=Math.hypot(next.x-g.x,next.z-g.z);
+  assert.ok(dist<=1.1/60+.001,'velocidade nunca ultrapassa a configurada');
+  assert.equal(R.intersects(next.x,next.z,.36,building),false,'nao atravessa o predio');
+  assert.equal(next.canAttack,false,'nao ataca sem visao do jogador');
+  hadWaypoints ||= next.navRoute.length>1;
+  travelled+=dist;g=next;
+ }
+ assert.equal(hadWaypoints,true);
+ assert.ok(g.z>7.5&&Math.abs(g.x)<1,'guarda chega ao objetivo por outro caminho');
+ assert.ok(travelled>8.5,'caminhou mais que a distancia em linha reta');
+});
+test('URB-02 cache de rota reduz recalculo continuo e nao muda estado parado',()=>{
+ const building={x:0,z:4,w:3,d:3},player={x:25,z:25};
+ const start={x:0,z:0,homeX:0,homeZ:0,memory:8,lastSeenX:0,lastSeenZ:8};
+ const a=R.guardStep(start,player,1/60,[building]);
+ assert.ok(a.navCooldown>.6);
+ const b=R.guardStep(a,player,1/60,[building]);
+ assert.ok(b.navCooldown<a.navCooldown,'decrementa cooldown de caminho');
+ assert.deepEqual(b.navRoute,a.navRoute,'mantem rota em vez de refazer sem necessidade');
+ const frozen=R.guardStep(b,player,0,[building]);
+ assert.equal(frozen.x,b.x);
+ assert.equal(frozen.z,b.z);
+ assert.equal(frozen.navCooldown,b.navCooldown);
+});

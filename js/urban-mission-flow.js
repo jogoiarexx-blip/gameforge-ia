@@ -72,7 +72,7 @@ function gameForgeUrbanMissionFlowFactory(){
   for(const s of m.steps){
    const value=raw.counts[s.id]||0;
    if(!Number.isInteger(value)||value<0||value>s.quantity)return null;
-   counts[s.id]=value;
+   if(Object.prototype.hasOwnProperty.call(raw.counts,s.id))counts[s.id]=value;
   }
   if(raw.completed.some(id=>!validIds.includes(id)))return null;
   if(raw.rewards.some(id=>!plan.some(m=>m.id===id)))return null;

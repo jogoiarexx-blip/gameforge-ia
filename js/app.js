@@ -322,6 +322,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       $('live-indicator').classList.add('active');status('Prévia carregada');
     };
     if(!manifest.assets.length){
+      $('preview-empty').classList.add('hide');
       try{render(state.files);}catch(err){feedback('Prévia indisponível: '+err.message,true);}
       return Promise.resolve();
     }

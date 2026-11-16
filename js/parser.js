@@ -49,7 +49,8 @@
     const extra = String(instruction || '').slice(0, 12000);
     const lines = source.split(/\r?\n/);
     const headings = lines.filter(x => /^#{1,6}\s+\S/.test(x)).map(x => x.replace(/^#{1,6}\s+/, '').trim());
-    const title = (lines.find(x => /^#\s+\S/.test(x)) || '').replace(/^#\s+/, '').trim() || 'Meu jogo';
+    const autoTitle=!source.trim()&&extra.trim()&&intentCompiler?intentCompiler.briefFromCommand(extra).split('\n')[0].replace(/^#\s+/,''):'Meu jogo';
+    const title = (lines.find(x => /^#\s+\S/.test(x)) || '').replace(/^#\s+/, '').trim() || autoTitle;
     const combined = source + '\n' + extra;
     const norm = normalize(combined);
     const recentDimension=/\b(?:3d|three\\.?js|tres dimensoes|terceira dimensao)\b/.test(normalize(extra))?'3d':

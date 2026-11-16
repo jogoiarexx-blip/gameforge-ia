@@ -12,11 +12,13 @@ for(const name of [
 require(path.join(root,'vendor/three-source.js'));
 const parser=require(path.join(root,'js/parser.js'));
 const generator=require(path.join(root,'js/generator.js'));
+const zipper=require(path.join(root,'js/zip.js'));
 const {validateFiles}=require('./verify-exports.cjs');
 const output=path.join(root,'tests','_browser_output');
 fs.rmSync(output,{recursive:true,force:true});
 fs.mkdirSync(output,{recursive:true});
 const matrix=[];
+async function main(){
 for(const [dimension,genres] of Object.entries(parser.styles)){
  for(const genre of genres){
   const source='# Navegação e exportação\n## Primeira fase\nControles, objetivos e desafios.\n';
@@ -30,8 +32,12 @@ for(const [dimension,genres] of Object.entries(parser.styles)){
    if(filename.includes('/')||filename.includes('\\')||filename.includes('..'))throw Error('Nome de export inseguro: '+filename);
    fs.writeFileSync(path.join(directory,filename),contents);
   }
+  const zip=zipper.zipFiles(files);
+  fs.writeFileSync(path.join(output,slug+'.zip'),new Uint8Array(await zip.arrayBuffer()));
   matrix.push({dimension,genre,slug,files:Object.keys(files)});
  }
 }
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
-process.stdout.write('GF-002: '+matrix.length+' jogos reais exportados para browser QA.\n');
+process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');
+}
+main().catch(err=>{console.error(err);process.exitCode=1;});

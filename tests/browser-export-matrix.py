@@ -234,9 +234,117 @@ def run():
                 failures.append(('urban-design-slice-and-export', type(exc).__name__+': '+str(exc)+'\n'+traceback.format_exc(), urban_errors, []))
             finally:
                 urban_page.close()
+            # Missões semânticas: GDD -> grafo de ações -> ZIP -> jogo -> save.
+            semantic_page = browser.new_page(viewport={'width': 1000, 'height': 750}, accept_downloads=True)
+            semantic_errors = []
+            semantic_page.on('pageerror', lambda error: semantic_errors.append(str(error)))
+            try:
+                semantic_page.goto(origin + '/', wait_until='load')
+                mission_gdd = (
+                    '# Porto Vesper - Campanha Urbana 3D\n'
+                    'Jogo de ação criminal urbana 3D em terceira pessoa com negócios, bairros e missões.\n'
+                    '## Missão 1 — Recuperar provas\n'
+                    'Colete 2 provas no bairro.\n'
+                    'Depois entregue 2 provas no armazém.\n'
+                    'Recompensa 600.\n'
+                    '## Missão 2 — Retomar o armazém\n'
+                    'Capture o armazém depois de eliminar 1 guarda.\n'
+                    'Recompensa 850.\n'
+                )
+                semantic_page.locator('#gdd').fill(mission_gdd)
+                semantic_page.locator('#analyze').click()
+                analysis = semantic_page.locator('#analysis').inner_text()
+                assert 'Como o jogo funciona' in analysis, analysis[:1100]
+                assert '2 fase(s) interpretada(s)' in analysis, analysis[:1100]
+                semantic_page.locator('#generate').click()
+                semantic_page.wait_for_function(
+                    "document.querySelector('#preview').hasAttribute('srcdoc')", timeout=25000
+                )
+                with semantic_page.expect_download(timeout=20000) as d:
+                    semantic_page.locator('#export').click()
+                bundle = Path(tmp) / 'semantic-missions.zip'
+                d.value.save_as(bundle)
+                unpack = OUTPUT / '_semantic_reimported'
+                unpack.mkdir(exist_ok=True)
+                with zipfile.ZipFile(bundle) as archive:
+                    graph = json.loads(archive.read('MODELO_ACOES.json'))
+                    assert len(graph['missions']) == 2, graph
+                    assert graph['missions'][0]['steps'][0]['action'] == 'collect'
+                    assert graph['missions'][0]['steps'][0]['quantity'] == 2
+                    assert graph['missions'][1]['steps'][0]['action'] == 'eliminate'
+                    assert 'gameForgeUrbanMissionBoot' in archive.read('game.js').decode('utf-8')
+                    assert 'PLANO_ACOES.md' in archive.namelist()
+                    archive.extractall(unpack)
+                assert not semantic_errors, semantic_errors
+                game_page = browser.new_page(viewport={'width': 960, 'height': 720})
+                game_errors = []
+                requests = []
+                game_page.on('pageerror', lambda error: game_errors.append(str(error)))
+                def block_external(route):
+                    if route.request.url.startswith(origin+'/'):
+                        route.continue_()
+                    else:
+                        requests.append(route.request.url)
+                        route.abort()
+                game_page.route('**/*', block_external)
+                try:
+                    game_page.goto(origin+'/tests/_browser_output/_semantic_reimported/index.html')
+                    game_page.wait_for_function("typeof window.__gameforgeTelemetry === 'function'",timeout=18000)
+                    game_page.locator('#start').click()
+                    assert game_page.evaluate('window.__gameforgeTelemetry().stages') == 2
+                    assert game_page.evaluate('window.__gameforgeTelemetry().mission.step') == 'collect'
+                    game_page.keyboard.down('w')
+                    game_page.wait_for_function(
+                        "window.__gameforgeTelemetry().mission.step === 'deliver'",timeout=6000
+                    )
+                    game_page.keyboard.up('w')
+                    game_page.keyboard.press('e')
+                    assert game_page.evaluate('window.__gameforgeTelemetry().mission.step') == 'deliver', 'Entrega não pode ocorrer longe'
+                    game_page.keyboard.down('w')
+                    game_page.wait_for_function("window.__gameforgeTelemetry().player.z < -6.6",timeout=8500)
+                    game_page.keyboard.up('w')
+                    game_page.keyboard.down('a')
+                    game_page.wait_for_function("window.__gameforgeTelemetry().player.x < -5.5",timeout=6000)
+                    game_page.keyboard.up('a')
+                    game_page.keyboard.press('e')
+                    game_page.wait_for_function("window.__gameforgeTelemetry().state === 'intermission'",timeout=5000)
+                    assert game_page.evaluate('window.__gameforgeTelemetry().score') == 1600
+                    game_page.reload(wait_until='load')
+                    game_page.locator('#start').click()
+                    game_page.wait_for_function("window.__gameforgeTelemetry().stage === 2",timeout=5000)
+                    assert game_page.evaluate('window.__gameforgeTelemetry().score') == 1600
+                    for _ in range(5):
+                        if game_page.evaluate("window.__gameforgeTelemetry().mission.step === 'capture'"):
+                            break
+                        game_page.keyboard.press('Space')
+                        game_page.wait_for_timeout(450)
+                    assert game_page.evaluate("window.__gameforgeTelemetry().mission.step === 'capture'"), 'Segunda missão não teve combate funcional'
+                    game_page.keyboard.down('w')
+                    game_page.wait_for_function("window.__gameforgeTelemetry().player.z < -6.6",timeout=8500)
+                    game_page.keyboard.up('w')
+                    game_page.keyboard.down('a')
+                    game_page.wait_for_function("window.__gameforgeTelemetry().player.x < -5.5",timeout=6000)
+                    game_page.keyboard.up('a')
+                    game_page.keyboard.press('e')
+                    game_page.wait_for_function("window.__gameforgeTelemetry().state === 'victory'",timeout=5000)
+                    assert game_page.evaluate('window.__gameforgeTelemetry().score') == 2450
+                    game_page.reload(wait_until='load')
+                    assert game_page.evaluate('window.__gameforgeTelemetry().score') == 2450
+                    assert not game_errors, game_errors
+                    assert not requests, requests
+                    game_page.screenshot(path=str(screenshots/'urban-semantic-campaign.png'),full_page=True)
+                finally:
+                    game_page.close()
+                results.append('urban-semantic-two-missions')
+            except Exception as exc:
+                semantic_page.screenshot(path=str(screenshots/'urban-semantic-failure.png'),full_page=True)
+                failures.append(('urban-semantic-two-missions',str(exc)+'\n'+traceback.format_exc(),semantic_errors,[]))
+            finally:
+                semantic_page.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == 17
+            assert len(results) == 18
         finally:
             browser.close()
             server.shutdown()

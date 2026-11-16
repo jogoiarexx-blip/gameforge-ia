@@ -33,13 +33,24 @@ function inspect(gdd='',command=''){
  const source=String(gdd||''),instruction=String(command||'');
  const first=norm(source.slice(0,4000)+'\n'+instruction.slice(0,1200));
  const all=norm(source+'\n'+instruction);
- const urbanTheme=/acao (?:criminal )?urbana|crime urbano|imperio|mafia|mundo aberto(?: por cidades)?|dominio (?:de )?(?:negocios|territorios)|familias rivais|jogo(?:s)? (?:no estilo|tipo) (?:gta|godfather)/.test(first);
- const thirdPerson=/terceira pessoa|third[ .-]?person|camera (?:de perseguicao|sobre o ombro|por tras)/.test(first);
- const threeD=/\b3d\b|three[ .-]?js|tridimensional/.test(first);
+ // GF-003/004: crianças e usuários iniciantes descrevem o GÊNERO por uma
+ // referência curta, não obrigatoriamente por "3D em terceira pessoa".
+ const urbanTheme=/acao (?:criminal )?urbana|crime urbano|imperio|mafia|mundo aberto(?: por cidades)?|dominio (?:de )?(?:negocios|territorios)|familias rivais|(?:jogo|game) (?:no estilo|tipo|parecido com) (?:gta|godfather)|\b(?:gta|godfather|padrinho)\b/.test(first);
+ const strongUrban=/\b(?:gta|godfather|padrinho|mafia|familias rivais|dominio de negocios)\b/.test(first);
+ const thirdPerson=/terceira pessoa|third[ .-]?person|camera (?:de perseguicao|sobre o ombro|por tras)|camera (?:atras|nas costas)|ver (?:o|meu) personagem pelas costas/.test(first);
+ const firstPerson=/\b(?:primeira pessoa|camera em primeira pessoa|first[ .-]?person|fps (?:tatico|shooter|de tiro))\b/.test(first);
+ const threeD=[...first.matchAll(/\b(?:3d|three[ .-]?js|tridimensional)\b/g)].some(m=>
+   !/\b(?:sem|nao|evitar|fora de escopo|nao usar|proibido)\b.{0,42}$/.test(first.slice(Math.max(0,m.index-45),m.index)));
+ const negative=/\b(?:nao quero|sem|evitar|fora de escopo|nao usar)\b.{0,30}\b(?:carros?|veiculos?|policia|negocios?|combate|tiros?|missoes?)\b/;
  const relevant=['city','business','vehicles','police','territories','mission','combat']
-  .filter(id=>definitions.find(x=>x.id===id).pattern.test(all));
- const identified=urbanTheme&&thirdPerson&&threeD&&relevant.length>=3;
- const confidence=identified?(relevant.length>=5?'alta':'media'):'baixa';
+  .filter(id=>definitions.find(x=>x.id===id).pattern.test(all)&&
+    !all.split(/\n|[.;]/).some(line=>negative.test(line)&&definitions.find(x=>x.id===id).pattern.test(line)&&line.trim().length<85));
+ const drivingOnly=/\b(?:jogo de corrida|racing|corrida de carros|voltas na pista|simulador de corrida)\b/.test(first);
+ const shooterOnly=/\b(?:navinha|nave espacial|shoot.?em.?up|shmup)\b/.test(first);
+ const espionage=/\b(?:goldeneye|007|espionagem|agente secreto|medal of honor)\b/.test(first);
+ const identified=urbanTheme&&threeD&&!firstPerson&&!drivingOnly&&!shooterOnly&&!espionage&&
+   (thirdPerson?relevant.length>=2:strongUrban&&relevant.length>=3);
+ const confidence=identified?(thirdPerson&&relevant.length>=4?'alta':'media'):'baixa';
  const evidence=[];
  for(const [description,pattern] of [
   ['ação urbana como gênero',/acao (?:criminal )?urbana|crime urbano|imperio|mafia|mundo aberto|dominio (?:de )?(?:negocios|territorios)|familias rivais/],

@@ -625,6 +625,8 @@ test('GF-011: apoio e emboscada persistem em checkpoint entre fases e não podem
   b.key('keydown','e');b.key('keydown',String(number));b.tick(2);
   assert.equal(b.telemetry().npc.state,'active');
   assert.equal(b.telemetry().sideQuestStepIndex,1);
+  b.tick(315);
+  assert.equal(b.telemetry().npc.state,'completed','missão extra precisa terminar antes de sair');
   b.key('keydown','w');b.tick(425);b.key('keyup','w');
   assert.equal(b.telemetry().stage,2,'campanha deve avançar para fase 2');
   assert.equal(b.telemetry().npc,null,'fase 2 não inclui NPC');

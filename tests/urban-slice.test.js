@@ -83,3 +83,38 @@ test('URB-02 ambos os modos 3D utilizam colisao da camera na atualizacao e inici
   assert.match(code,/cameraOccluded/);
  }
 });
+
+test('URB-02 guardas transitam entre patrulha, alerta, busca e combate com visao geometrica',()=>{
+ const start={x:0,z:0,homeX:0,homeZ:0};
+ const idle=R.guardStep(start,{x:25,z:25},.05);
+ assert.equal(idle.mode,'patrol');
+ assert.equal(idle.canAttack,false);
+ const alert=R.guardStep(start,{x:0,z:7},.05);
+ assert.equal(alert.mode,'alert');
+ assert.ok(alert.z>start.z,'guarda caminha em direcao ao jogador percebido');
+ assert.equal(alert.memory,2.4);
+ const hidden=R.guardStep(alert,{x:0,z:7},.05,[{x:0,z:3,w:3,d:1.6}]);
+ assert.equal(hidden.mode,'search','guarda procura a ultima posicao apos perder a visao');
+ assert.equal(hidden.canAttack,false,'nao causa dano atraves de parede');
+ assert.ok(hidden.memory<alert.memory);
+ const expired=R.guardStep({...hidden,memory:.01},{x:25,z:25},.05);
+ assert.equal(expired.mode,'patrol','guarda volta ao patrulhamento quando a busca termina');
+ const fight=R.guardStep(start,{x:0,z:1},.05);
+ assert.equal(fight.mode,'combat');
+ assert.equal(fight.canAttack,true);
+});
+test('URB-02 IA respeita timestep e colisao e integra os dois runtimes',()=>{
+ const obstacle={x:0,z:3,w:2,d:2};
+ let guard={x:0,z:0,homeX:0,homeZ:0};
+ for(let i=0;i<120;i++)guard=R.guardStep(guard,{x:0,z:7},1/60,[obstacle]);
+ assert.equal(R.intersects(guard.x,guard.z,.36,obstacle),false);
+ assert.ok(Number.isFinite(guard.x)&&Number.isFinite(guard.z));
+ const noDelta=R.guardStep(guard,{x:0,z:7},0,[obstacle]);
+ assert.equal(noDelta.x,guard.x);
+ assert.equal(noDelta.z,guard.z);
+ const fs=require('node:fs'),path=require('node:path');
+ for(const file of ['urban-runtime.js','urban-mission-runtime.js']){
+  const source=fs.readFileSync(path.join(__dirname,'../js',file),'utf8');
+  assert.match(source,/R\.guardStep\(/);
+ }
+});

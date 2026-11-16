@@ -88,7 +88,7 @@ function gameForgeUrbanMissionBoot(){
    for(let i=done;i<active.quantity;i++){
     const mesh=actor(0x9d564a);scene.remove(mesh);guardGroup.add(mesh);
     mesh.position.set(active.quantity===1?0:(i-(active.quantity-1)/2)*1.0,0,1.5-i*.7);
-    guards.push({mesh,hp:75,id:i,alive:true});
+    guards.push({mesh,hp:75,id:i,alive:true,brain:{x:mesh.position.x,z:mesh.position.z,homeX:mesh.position.x,homeZ:mesh.position.z,mode:'patrol'}});
    }
   }
   if(active.action==='collect'){
@@ -261,14 +261,10 @@ function gameForgeUrbanMissionBoot(){
   }
   for(const g of guards){
    if(!g.alive)continue;
-   const distance=Math.hypot(sim.position.x-g.mesh.position.x,sim.position.z-g.mesh.position.z);
-   if(distance>1.8&&distance<8.5){
-    const gx=(sim.position.x-g.mesh.position.x)/distance,gz=(sim.position.z-g.mesh.position.z)/distance;
-    const moved=R.move({x:g.mesh.position.x,z:g.mesh.position.z},gx*dt*1.15,gz*dt*1.15,blockers,17,.36);
-    g.mesh.position.x=moved.x;g.mesh.position.z=moved.z;
-    g.mesh.rotation.y=-Math.atan2(gx,-gz);
-   }
-   if(distance<1.9&&attackCooldown===0&&invuln===0){
+   g.brain=R.guardStep(g.brain,sim.position,dt,blockers);
+   g.mesh.position.x=g.brain.x;g.mesh.position.z=g.brain.z;
+   g.mesh.rotation.y=-g.brain.heading;
+   if(g.brain.canAttack&&attackCooldown===0&&invuln===0){
     sim.health=Math.max(1,sim.health-8);attackCooldown=1.4;invuln=.5;save();
     notice('Guarda atacou! '+sim.health+' de vida.');
    }
@@ -308,6 +304,7 @@ function gameForgeUrbanMissionBoot(){
   simulationHz:60,simulationSteps:simSteps,stage:sim.stage+1,stages:plan.length,clock,
   health:sim.health,score:sim.cash,ammo:sim.ammo,reserve:sim.reserve,
   player:{x:sim.position.x,y:0,z:sim.position.z,heading},enemies:guards.filter(g=>g.alive).length,
+  guardModes:guards.filter(g=>g.alive).map(g=>g.brain.mode),
   mission:{complete:gameState==='victory',step:F.nextStep(plan,sim)?.action||null,
    progress:F.progress(plan,sim).steps,stage:sim.stage+1,rewards:[...sim.rewards]},
   cameraOccluded,saveEnabled,saveStatus,saveKey:storageKey,prototype:true

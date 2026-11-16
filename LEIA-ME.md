@@ -1,3 +1,31 @@
+# GameForge Studio v0.20 — Entendimento de instruções, GDD e comandos diretos
+
+**Novo núcleo de interpretação:** `js/intent-compiler.js` transforma frases comuns em **configurações executáveis** do `GAME_SPEC`, sem exigir sintaxe rígida e sem executar código recebido em texto. Pode receber um GDD Markdown inteiro, somente um comando ou os dois. O projeto mantém o texto original. O modo offline usa regras confiáveis, **não** programação universal por IA.
+
+### Exemplos de comandos reconhecidos
+
+- `Crie navinha 3D com 5 fases, 4 ondas por fase, chefe somente na última, nave mais rápida e mundo neon.` — cria as cinco fases, ajusta ondas, liga o chefe final, aumenta velocidade e escolhe o tema.
+- `Na fase 2, coloque 6 inimigos e objetivo sobreviver por 60 segundos.` — nos motores arena/FPS/RPG 3D, aplica configuração de inimigos e a condição de missão, sem contaminar outras fases.
+- `Crie jogo de corrida 3D com 3 fases e 4 voltas por fase.` — configura o contador de voltas no motor de corrida.
+- `Jogo de Tower Defense 2D com 8 ondas por fase.` — aplica `stageConfig.waves` aos motores de defesa.
+- `Crie RPG 3D com árvore de habilidades, crafting e multiplayer.` — registra os requisitos **pendentes**; não anuncia recursos que o motor ainda não implementa.
+
+### Como usar no Studio
+
+1. Para criar apenas com sua ideia, apague o GDD antigo e escreva em **O que você quer no jogo?**, ou use **Usar esta ideia como novo GDD** para criar um documento inicial. Também é possível importar o GDD completo e escrever modificações no campo de comando.
+2. Clique em **Criar jogo** no modo **Sem IA**. O painel **Entendimento do pedido** detalha o que entrou no código e o que ainda exige implementação. No ZIP ficam `PLANO_INTERPRETACAO.md` e, quando houver instrução, `COMANDO_ORIGINAL.md`.
+3. Para evoluir um jogo já criado, escreva o próximo comando e use as opções de **Planejar alteração / Aplicar melhoria**. Isso pode atualizar quantidades por fase, ondas, chefes, objetivos e outras configurações sem substituir o motor. Use **Desfazer** se necessário e execute QA depois.
+
+**Como funciona:** a detecção de gênero considera sinais de jogabilidade; o compilador reconhece números, nomes de fases, regras por fase, negativas como `sem chefe`, restrições como `chefe apenas na última`, velocidades, dificuldade e tema. Configurações aplicadas viram código real no `GAME_SPEC`, consumido pelos motores. Um objetivo escrito em texto livre no HUD **não** cria automaticamente uma condição de vitória. Recursos fora do catálogo ficam pendentes.
+
+**IA por API:** `GameForgeParser.creationInstruction()` agora fornece um contrato de implementação explícito, com configurações extraídas, pendências, testes exigidos e proibição de afirmar sistemas sem código. O GitHub Pages continua sendo estático: **Com IA** exige um backend HTTPS configurado, e o fluxo de geração via backend segue restrito aos jogos 2D até existir suporte validado a 3D. O modo offline funciona sem servidor.
+
+**Limites:** GDD até 1 MB no Studio, comando até 12 mil caracteres para interpretação inicial, até 30/40 fases conforme motor, parâmetros com limites para preservar desempenho. A leitura determinística ainda não compreende todas as nuances da linguagem natural nem gera livremente sistemas inéditos. Use o relatório e a prévia para conferir a interpretação.
+
+**Validação:** CI GitHub Actions `43858628707` confirmou **196 testes, 196 aprovados, zero falhas**, incluindo criação por comando, GDD com fases, mudanças incrementais e regressão dos motores 2D/3D. QA real em navegador e dispositivos móveis ainda é necessário. Registros detalhados no checkpoint de desenvolvimento.
+
+---
+
 # GameForge Studio v0.19 — Mais gêneros jogáveis em 3D
 
 O aviso "Estilo não compatível com 3D" ocorria porque o parser só aceitava Arena, FPS, Corrida e Plataforma na lista do motor Three.js. Agora a matriz inclui **Shoot'em up 3D** e **RPG 3D**, com implementações de jogabilidade próprias, além de preservar todos os gêneros antigos.

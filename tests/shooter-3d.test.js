@@ -55,7 +55,7 @@ test('shooter 3D inicia naves procedurais, pilotos, tiros e ondas, pausa e reini
  const b=boot();
  let t=b.telemetry();
  assert.equal(t.state,'menu');assert.equal(t.genre,'shooter');
- assert.ok(t.enemies>=3);assert.equal(t.wave,1);assert.ok(b.scene()?.isScene);
+ assert.ok(t.enemies>=3);assert.equal(t.wave,1);b.tick(1);assert.ok(b.scene()?.isScene);
  b.item('start').click();b.tick(2);
  const before=b.telemetry();
  b.key('keydown','ArrowRight');b.key('keydown',' ');

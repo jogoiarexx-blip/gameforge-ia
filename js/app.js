@@ -1073,6 +1073,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     adventure3d:{dimension:'3d',genre:'arena',title:'O VALE DOS GUARDIÕES',theme:'forest',idea:'Aventura 3D em terceira pessoa. Explorar floresta com personagens low poly animados, encontrar cristais, combater criaturas e liberar o portal.'},
     shooter3d:{dimension:'3d',genre:'shooter',title:'ARMADA DAS ESTRELAS 3D',theme:'neon',idea:'Navinha espacial shoot em up 3D. Pilote uma nave de combate entre ondas de inimigos com projéteis reais, movimento livre no plano, power-ups e chefões com três fases. Teclado, controles touch, pausa e progresso de fases.'},
     rpg3d:{dimension:'3d',genre:'rpg',title:'CRÔNICAS DO VALE 3D',theme:'forest',idea:'RPG de ação 3D com personagem em terceira pessoa, magias, cristais, experiência por inimigo eliminado, evolução de níveis, poções de cura, chefes e portais para as fases seguintes.'},
+    urban3d:{dimension:'3d',genre:'urban-action',title:'PORTO VESPER — PRIMEIRO BAIRRO',theme:'neon',idea:'Ação criminal urbana 3D em terceira pessoa com cidade, ruas, negócios, combate com um guarda, missão de captura e salvamento. Carros dirigíveis, polícia, interiores e campanhas grandes são objetivos futuros.',gdd:'# PORTO VESPER — PRIMEIRO BAIRRO\n\n## Gênero e câmera\nAção criminal urbana 3D em terceira pessoa com câmera atrás do protagonista.\n\n## Primeira missão — O Armazém\nBairro com ruas, colisões, um guarda, pistola com munição e um negócio capturável com recompensa única.\n\n## Sistemas planejados\nVeículos dirigíveis, polícia, territórios, interiores, guardas mais inteligentes e animações GLB exigirão mais desenvolvimento.\n'},
     fps3d:{dimension:'3d',genre:'fps',title:'POSTO NÉON',theme:'neon',idea:'FPS 3D. Explorar o posto, usar WASD para andar e Q/E para mirar, eliminar sentinelas, coletar energia e abrir a saída.'},
     racing3d:{dimension:'3d',genre:'racing',title:'CIRCUITO DO POENTE',theme:'desert',idea:'Corrida 3D. Dirigir entre checkpoints em ordem, evitar tráfego e completar as voltas do circuito.'},
     platform3d:{dimension:'3d',genre:'platform',title:'ILHAS DO AMANHECER',theme:'ruins',idea:'Plataforma 3D. Saltar entre ilhas, recolher cristais, evitar quedas e alcançar o portal final.'}
@@ -1081,7 +1082,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     $('example-'+key).addEventListener('click',()=>{
       unrestoredProject=false;restoreCreationOptions(preset);
       $('project-name').value=preset.title;$('instruction').value='';
-      $('gdd').value='# '+preset.title+'\n\n## Visão geral\n'+preset.idea+'\n\n## Controles e interface\nMenu, pausa, controles touch e HUD.\n\n'+['Primeiros passos','Rota dos guardiões','O último desafio'].map((title,i)=>'## Fase '+(i+1)+' — '+title+'\n'+preset.idea+'\n').join('\n');
+      $('gdd').value=preset.gdd||('# '+preset.title+'\n\n## Visão geral\n'+preset.idea+'\n\n## Controles e interface\nMenu, pausa, controles touch e HUD.\n\n'+['Primeiros passos','Rota dos guardiões','O último desafio'].map((title,i)=>'## Fase '+(i+1)+' — '+title+'\n'+preset.idea+'\n').join('\n'));
       $('file-indicator').textContent='Exemplo '+GameForgeParser.labels[preset.genre]+' '+preset.dimension.toUpperCase();analyze();saveState();feedback('Exemplo carregado. Clique em Criar novo jogo para jogar.');
     });
   }

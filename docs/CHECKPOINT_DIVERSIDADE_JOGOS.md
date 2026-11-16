@@ -638,3 +638,35 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 - **Segurança:** não tentar simular a falha com código quebrado na `main` enquanto a rota antiga existir; usar `tests/pages-gate.test.js` e branches de teste. Documentação e rollback em `docs/PUBLICACAO_VERIFICADA.md`.
 - **Dependência da etapa:** GF-002 pode ser preparada, mas a tarefa GF-001 só é concluída quando a configuração Pages tiver sido trocada e observada uma publicação limpa do mesmo commit.
 - **Trabalho paralelo observado:** execuções de CI mais novas estavam falhando em testes de corpus de GDD (GF-003), área distinta; enquanto não ficarem verdes, não publicar novas versões por fora do gate.
+
+
+## GF-003 — Aprendizado a partir dos repositórios reais de jogos (16/11/2026)
+
+**Estado: EM REVISÃO**, conforme `docs/PLANO_MESTRE_GAMEFORGE.md`. Detalhamento completo em `docs/AUDITORIA_GDD_JOGOS_GF003.md`.
+
+**Objetivo:** utilizar os GDDs e códigos-fonte reais dos jogos da conta do proprietário para reduzir detecções erradas e orientar a construção de motores sem importar indiscriminadamente os projetos.
+
+**Escopo realmente inspecionado:** API GitHub listou 94 repositórios acessíveis (não todos jogos); foram verificadas árvores de 15 projetos e consultadas fontes concretas de pelo menos 10 jogos. Houve timeout ao tentar árvore de Operacao-eden nesta sessão. Não afirmar que 94 projetos foram auditados profundamente.
+
+**Erros reproduzidos antes da mudança, com textos originais abertos via GitHub:**
+- `Brinquedo-x-pesadelos-/GDD.md`: reconheceu lane-defense, mas acusou 3D por causa do trecho negativo “sem câmera 3D”.
+- `Godfather/GDD_GODFATHER_COMPLETO.md`: inferiu FPS por menções a taxa de quadros, apesar da perspectiva superior e Canvas 2D.
+- `Carga-pesada/source/docs/CARGA_PESADA_GDD_AUDITORIA_v1.0.md`: inferiu FPS pelo desempenho, em lugar de direção/corrida de caminhões 3D.
+- `Asas-de-Brumaria/README.md`: sinais de shooter aéreo confundiam a aventura 3D com voo e dragões.
+- `Folclorevania/README-v3.0.md`: era reduzido a arena em vez de plataforma/metroidvania 2D.
+- `goldeneye-077/GOLDENEYE_007_REMASTER_GDD_COMPLETO_v1_0.md`: já detectava FPS 3D, mantido como regressão obrigatória.
+
+**Implementado em código:**
+- `js/game-corpus.js` (novo) com 10 jogos, caminho/URL real e resumo autoral da técnica de engenharia, limitações explícitas e identificação de título com exclusão de “inspirado em”.
+- `js/parser.js` reequilibra palavras de câmera, fretes, corrida, plataforma, aventura de voo, distingue gênero FPS de taxa de quadros, desconsidera negações de 3D e revela ambiguidades; fonte reconhecida inclui link verificável.
+- `js/repository-knowledge.js` ganhou 6 referências auditáveis de GoldenEye, Godfather, Folclorevania, Brumária, Neon Sky Force e Grim Grove com técnica e teste recomendado.
+- `js/intent-compiler.js`, `js/app.js` e contrato da IA opcional passaram a exibir exemplos técnicos e o que **não** foi importado/implementado automaticamente.
+- `tests/game-repository-corpus.test.js` testa 10 briefs parafraseados, FPS de desempenho, gênero misto, escopo negativo de câmera, referência “inspirado em” e fontes; `tests/test_studio_web.js` importa o runtime 3D para o caso Carga Pesada.
+
+**Avaliação direta realizada:** repetida a interpretação com **seis arquivos completos** do GitHub, comparando gênero e dimensão antes/depois. Resultado depois: **6/6 classificações-base corretas** (GoldenEye FPS 3D, Brinquedos linha 2D, Godfather arena 2D, Carga Pesada corrida 3D, Folclorevania plataforma 2D, Brumária aventura/arena 3D). A amostra não representa toda a conta nem prova geração integral de todos os sistemas.
+
+**Evidência automatizada:** GitHub Actions [43872320261](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43872320261), commit `2f1e7bf8`, **218 testes aprovados, 0 falhas**; também validou 15 variantes de exportação. Execuções posteriores com ajustes de documentação/interface requerem conferência por SHA na conclusão do HEAD. Os testes Node não são QA visual de WebGL nem de comportamento completo dos jogos.
+
+**Limites:** o GameForge continua com motores parciais e capacidade determinística. O exemplo de habilidades de Folclorevania não gera automaticamente uma árvore; o GDD do Godfather não implementa cidade livre; GoldenEye exige novos objetivos interativos; Brumária não entrega automaticamente animações de dragão. Não copiar assets nem conteúdo sujeito a direitos de terceiros. Não chamar padrões do catálogo de funcionalidades implementadas.
+
+**Próximo:** expandir benchmark para mais GDDs reais (tipos híbridos, múltiplas perspectivas e negações), validar UI e QA real em navegador, e avançar **GF-004** com manifesto de capacidades executáveis por gênero para converter referências técnicas em módulos próprios testados. GF-001 continua dependente de migração administrativa da fonte Pages; não considerar gate exclusivo enquanto rota antiga de branch permanecer.

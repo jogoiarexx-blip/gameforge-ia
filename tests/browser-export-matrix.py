@@ -18,7 +18,7 @@ class QuietHandler(SimpleHTTPRequestHandler):
 def run():
     assert (OUTPUT / 'matrix.json').exists(), 'Execute node tools/build-browser-fixtures.cjs antes do navegador'
     matrix = json.loads((OUTPUT / 'matrix.json').read_text())
-    assert len(matrix) == 14, 'Matriz de gêneros alterada: atualizar cobertura'
+    assert len(matrix) == 15, 'Matriz de gêneros alterada: atualizar cobertura'
     screenshots = OUTPUT / 'screenshots'
     screenshots.mkdir(exist_ok=True)
     extracted = OUTPUT / '_reimported'
@@ -46,7 +46,7 @@ def run():
         try:
             for item in matrix:
                 label = item['slug']
-                viewport = {'width': 390, 'height': 844} if label in ('2d-arena', '3d-fps') else {'width': 960, 'height': 720}
+                viewport = {'width': 390, 'height': 844} if label in ('2d-arena', '3d-fps', '3d-urban-action') else {'width': 960, 'height': 720}
                 page = browser.new_page(viewport=viewport)
                 page_errors = []
                 remote_requests = []
@@ -83,7 +83,7 @@ def run():
                     assert not remote_requests, (label, remote_requests)
                     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), (label, 'rolagem horizontal')
                     results.append(label)
-                    if label in ('2d-arena', '3d-fps', '3d-shooter'):
+                    if label in ('2d-arena', '3d-fps', '3d-shooter', '3d-urban-action'):
                         page.screenshot(path=str(screenshots / (label + '.png')), full_page=True)
                 except Exception as exc:
                     page.screenshot(path=str(screenshots / (label + '-failure.png')), full_page=True)
@@ -181,7 +181,7 @@ def run():
                 urban_page.close()
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == 16
+            assert len(results) == 17
         finally:
             browser.close()
             server.shutdown()

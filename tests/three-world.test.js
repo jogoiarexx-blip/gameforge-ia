@@ -199,3 +199,16 @@ test('inimigos 3D reagem ao impacto e voltam à pose normal',()=>{
  assert.equal(enemy.userData.hurt,0,'personagem ficou preso no estado de dano');
  assert.equal(enemy.position.y,0,'inimigo acumulou deslocamento vertical');
 });
+
+test('FPS 3D mostra recuo da arma e volta à posição original após disparo',()=>{
+ const b=boot('fps');b.start();b.tick(2);
+ const gun=[];b.scene().traverse(o=>{if(o.userData?.gameForgeGun)gun.push(o);});
+ assert.equal(gun.length,1,'arma em primeira pessoa precisa estar vinculada à câmera');
+ const weapon=gun[0];assert.equal(weapon.position.z,0);
+ b.fire('keydown',' ');b.tick(1);b.fire('keyup',' ');
+ assert.ok(weapon.position.z>.08,'disparo precisa mostrar recuo da arma');
+ assert.ok(weapon.rotation.x<-.04,'arma não inclinou no disparo');
+ b.tick(15);
+ assert.ok(Math.abs(weapon.position.z)<.0001,'arma não retornou ao repouso');
+ assert.ok(Math.abs(weapon.rotation.x)<.0001,'arma continuou inclinada');
+});

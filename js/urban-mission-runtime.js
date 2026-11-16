@@ -78,7 +78,7 @@ function gameForgeUrbanMissionBoot(){
  const hero=actor(0x3e5966),heroAnimation=applyGLB('player',hero);
  const guardGroup=new T.Group(),itemGroup=new T.Group(),corpseGroup=new T.Group();
  scene.add(guardGroup);scene.add(itemGroup);scene.add(corpseGroup);
- const fallenGuards=[];
+ const fallenGuards=[];let deathOverlayPending=false;
  function clearFallen(){
   for(const fallen of fallenGuards)fallen.animation?.dispose();
   fallenGuards.length=0;while(corpseGroup.children.length)corpseGroup.remove(corpseGroup.children[0]);
@@ -99,6 +99,7 @@ function gameForgeUrbanMissionBoot(){
    if(!g.hasDeath)g.mesh.rotation.z=Math.min(1.2,g.mesh.rotation.z+dt*2.2);
    if(g.remaining<=0){g.animation?.dispose();corpseGroup.remove(g.mesh);fallenGuards.splice(i,1);}
   }
+  if(deathOverlayPending&&!fallenGuards.length){deathOverlayPending=false;$('overlay').classList.remove('hidden');}
  }
  const marker=new T.Mesh(new T.ConeGeometry(.4,.9,6),material(0xffd36b));scene.add(marker);
  let sim=F.initial(plan),gameState='menu',paused=false,frames=0,simSteps=0,clock=0,walk=0;
@@ -172,7 +173,10 @@ function gameForgeUrbanMissionBoot(){
     'Todas as missões suportadas foram concluídas. Este ainda é um protótipo urbano, não um mundo aberto completo.':
     'Recompensa concedida uma vez. Continue para a próxima missão.';
    $('start').textContent=sim.status==='victory'?'Reiniciar campanha':'Próxima missão';
-   $('overlay').classList.remove('hidden');
+   // Não esconder o último NPC sob um overlay antes de concluir sua animação.
+   deathOverlayPending=fallenGuards.length>0;
+   if(!deathOverlayPending)$('overlay').classList.remove('hidden');
+   else $('overlay').classList.add('hidden');
   }
   if(result.accepted)save();
   lastStepId=null;syncObjects();hud();
@@ -190,7 +194,7 @@ function gameForgeUrbanMissionBoot(){
   else if(sim.status==='victory')sim=F.initial(plan);
   gameState='play';paused=false;clock=0;prev=0;acc=0;keys.clear();clearTouches();
   attackCooldown=0;invuln=0;fireCooldown=0;reloading=0;shotNoise=0;
-  lastStepId=null;clearFallen();
+  lastStepId=null;deathOverlayPending=false;clearFallen();
   hero.position.set(sim.position.x,0,sim.position.z);
   syncObjects();hud();
   $('pause').textContent='Pausar';$('start').textContent='Continuar';
@@ -378,7 +382,7 @@ function gameForgeUrbanMissionBoot(){
   gamepadConnected:padState.connected,guardModes:guards.filter(g=>g.alive).map(g=>g.brain.mode),
   actorAnimations:{player:heroAnimation?.state||'static',enemies:guards.filter(g=>g.alive).map(g=>g.animation?.state||'static')},
   actorClipCount:{player:heroAnimation?.clips?.length||0,enemies:guards.filter(g=>g.alive).map(g=>g.animation?.clips?.length||0)},
-  deathAnimations:fallenGuards.length,
+  deathAnimations:fallenGuards.length,deathOverlayPending,
   guardWaypoints:guards.filter(g=>g.alive).map(g=>g.brain.navRoute?.length||0),
   mission:{complete:gameState==='victory',step:F.nextStep(plan,sim)?.action||null,
    progress:F.progress(plan,sim).steps,stage:sim.stage+1,rewards:[...sim.rewards]},

@@ -1,3 +1,21 @@
+# GameForge Studio v0.18 — Biblioteca de modelos 3D e backups completos
+
+A importação de GLB evoluiu de **um arquivo de até 1,2 MB** para uma **biblioteca de até 4 objetos GLB**, com **25 MiB por arquivo** e **50 MiB de arquivos no projeto**. Os modelos são **estáticos/decorativos**; não substituem automaticamente jogador, NPCs ou inimigos e ainda não recebem animação, rig, física ou colisão.
+
+## Uso
+1. Gere um jogo 3D no modo **Sem IA**.
+2. Abra **Editar e baixar → Inserir modelo 3D (GLB)**, escolha até quatro arquivos `.glb`, selecione cada objeto e edite X/Z/escala. A prévia coloca todos os objetos na fase.
+3. **Baixar projeto ZIP** gera um jogo com código e os GLBs originais em `assets/<id>.glb`; o `index.html` exportado é autônomo (inclui os modelos como base64). HTML/ZIP grandes podem consumir bastante memória no navegador.
+4. **Baixar backup** gera um `.gameforge.zip` quando existir algum GLB novo; este ZIP contém o projeto e os **binários originais**. **Abrir backup** aceita o ZIP completo e reconstitui a biblioteca em outro navegador. Sem GLBs novos, continua o backup leve `.gameforge.json`.
+
+Os arquivos binários são armazenados no **IndexedDB** do navegador; o **localStorage** guarda só metadados, código, GDD e histórico. Um `.gameforge.json` sozinho **não transporta os GLBs**, então utilize o backup ZIP para trocar de computador, evitar perda por limpeza de dados do site e preservar os assets originais. A compatibilidade com o `ASSET_CENARIO.b64` antigo foi mantida.
+
+**Limites conhecidos:** GLB 2.0 com malhas triangulares e buffers/texturas incorporados; sem Draco/meshopt e outras extensões obrigatórias; sem renderização animada, skinning, morphs, colisão real do objeto, suporte a múltiplos personagens ou editor visual de cena. A prévia atual incorpora base64 no documento, podendo ficar pesada com modelos grandes. Evite usar GLBs de terceiros sem direitos de uso. Testes de navegador real e Android ainda necessários.
+
+**Arquivos principais:** `js/asset-library.js` (metadados + IndexedDB), `js/glb-runtime.js` (leitor estático), `js/app.js` (interface/backup/exportação), `js/generator.js` (HTML com vários modelos), `js/three-runtime.js` (instâncias em cada fase), `js/zip.js` (ZIP e importação CRC), `tests/asset-library.test.js` e `tests/glb-import.test.js`.
+
+---
+
 # GameForge Studio v0.17 — Asset GLB estático no cenário 3D
 
 A primeira integração funcional de GLB a uma fase 3D está disponível. O Studio agora consegue importar **um objeto estático** e posicioná-lo dentro do motor Three.js, além de preservar o modelo na prévia, HTML único, ZIP e backup.

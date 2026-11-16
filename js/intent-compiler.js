@@ -277,12 +277,19 @@ function compile(spec,gdd,instruction='',options={}){
 }
 function report(spec){
  const p=spec?.implementation||{source:'desconhecida',applied:[],pending:[],warnings:[]};
+ const source=spec?.referenceGame;
+ const reference=source?'\n## Exemplo do repositório reconhecido\n'+
+   '- Repositório: '+source.repository+'\n- Arquivo: '+source.url+'\n'+
+   '- Técnicas para estudar: '+source.lessons.join('; ')+'\n'+
+   '- Ainda não são implementadas só por reconhecer o GDD: '+source.unsupported.join('; ')+'\n':'';
+
  const li=(items,empty)=>items.length?items.map(x=>'- '+x.description+' ('+x.where+')'+(x.detail?' — '+x.detail:'')).join('\n'):'- '+empty;
  return '# Interpretação executável do pedido\n\n'+
   '**Origem:** '+p.source+'\n\n**Gênero:** '+spec.genre+' / '+spec.dimension+'\n\n'+
   '## Configurações implementadas no GAME_SPEC\n'+li(p.applied,'Nenhuma configuração especial identificada')+'\n\n'+
   '## Requisitos ainda não implementados\n'+li(p.pending,'Nenhuma solicitação adicional reconhecida como pendente')+'\n\n'+
   '## Alertas e limites\n'+(p.warnings.length?p.warnings.map(x=>'- '+x).join('\n'):'- Nenhum')+'\n\n'+
+  reference+
   '**Como verificar:** abra game.js, localize GAME_SPEC e confira stageConfig/tuning; execute a prévia e faça testes. Não se deve marcar tarefas do GDD como concluídas apenas por aparecerem no relatório.\n';
 }
 root.GameForgeIntent={compile,briefFromCommand,requirements,quantity,report,normalize};

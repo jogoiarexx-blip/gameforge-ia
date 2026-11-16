@@ -556,6 +556,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   async function generate(){
     if(qaState.candidate){feedback('Aceite ou descarte a correção candidata antes de gerar outro jogo.',true);return;}
     const spec=analyze();if(!spec)return;
+    if(spec.designIR?.blocked?.length){
+      feedback('Não é possível criar este jogo sem violar o pedido: '+spec.designIR.blocked.map(x=>x.label).join(', ')+'. Escolha um motor compatível ou ajuste a ideia.',true);
+      return;
+    }
     if(spec.engineAvailability?.status==='planned'){
       feedback('Este motor ainda não foi implementado; baixe o contrato urbano.',true);
       return;

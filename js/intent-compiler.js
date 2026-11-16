@@ -48,7 +48,7 @@ function requirements(text,origin){
    current=inline;scope='stage';
   }
   if(raw.length>2200)continue;
-  const record={text:raw,normal:line,origin,line:i+1,stage:scope==='stage'?current:null};
+  const record={text:raw,normal:line,origin,line:i+1,stage:inline!==null?inline:(scope==='stage'?current:null)};
   result.push(record);
  }
  return result;

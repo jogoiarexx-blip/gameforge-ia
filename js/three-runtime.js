@@ -38,6 +38,12 @@ function gameForgeThreeBoot(){
  let pointerDown=false,dragX=null,jumpHeld=false,lastDraw=-1000;
  const vec=new T.Vector3(),look=new T.Vector3(),camTarget=new T.Vector3();
  let gunRig=null,gunKick=0;
+ // Economia de combate opt-in. Jogos existentes sem loja mantêm munição e comportamento originais.
+ const storeEnabled=genre==='fps'&&spec.combatEconomy?.enabled===true;
+ if(storeEnabled&&typeof gameForgeCombatEconomyFactory!=='function')
+  throw Error('Módulo de loja FPS ausente. Regenere o jogo com o GameForge atualizado.');
+ let combatStore=storeEnabled?gameForgeCombatEconomyFactory().create(spec.combatEconomy):null;
+ let shopOpen=false,shopPanel=null,shopToggle=null,shopStatus=null,shopActions=[];
  const importedSceneModels=[],importedSceneErrors=[];
  if(typeof GF_SCENE_GLB_BASE64==='string' && typeof gameForgeDecodeGLB==='function'){
   try{importedSceneModels.push({id:'legacy',model:gameForgeDecodeGLB(T,GF_SCENE_GLB_BASE64),placement:typeof GF_SCENE_GLB_OPTIONS==='object'?GF_SCENE_GLB_OPTIONS:{}});}
@@ -191,16 +197,27 @@ function gameForgeThreeBoot(){
   if(genre==='fps')camera.position.set(player.x,1.65,player.z);else if(genre==='platform')camera.position.set(player.x+3,player.y+10,player.z+17);else camera.position.set(player.x,15,player.z+13);
   updateCamera(1);updateHUD();resize();notice(stages[stage]+' · '+(genre==='racing'?'Siga os portais verdes em ordem':genre==='platform'?'Colete os cristais e encontre o portal':combatObjective()),5);
  }
- function start(){stage=0;health=100;score=0;ammo=80;rpgLevel=1;rpgXP=0;rpgPotions=2;rpgHealHeld=false;clock=0;simulationAccumulator=0;simulationSteps=0;state='play';paused=false;keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);pointerDown=false;buildStage();$('overlay').classList.add('hidden');$('pause').textContent='Pausar';canvas.focus();}
+ function start(){if(shopOpen)closeShop();if(storeEnabled)combatStore=gameForgeCombatEconomyFactory().create(spec.combatEconomy);
+  stage=0;health=100;score=0;ammo=storeEnabled?20:80;rpgLevel=1;rpgXP=0;rpgPotions=2;rpgHealHeld=false;clock=0;simulationAccumulator=0;simulationSteps=0;state='play';paused=false;keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);pointerDown=false;buildStage();$('overlay').classList.add('hidden');$('pause').textContent='Pausar';canvas.focus();}
  function overlay(title,text,button){$('overlay-title').textContent=title;$('overlay-sub').textContent=text;$('start').textContent=button;$('overlay').classList.remove('hidden');}
  function damage(amount){if(invulnerable>0||state!=='play')return;health=Math.max(0,health-amount);invulnerable=.9;notice('Dano recebido · '+health+' de vida',1.2);if(health<=0){state='defeat';overlay('Fim de jogo','Pontuação: '+score+' · Reinicie a jornada.','Tentar novamente');}}
  function finishStage(){if(transition>0||state!=='play')return;score+=300;transition=1.4;notice('Objetivo concluído! Próxima fase…',1.4);}
- function advance(){if(stage+1>=stages.length){state='victory';overlay('Jornada concluída!','Todas as '+stages.length+' fases concluídas · Pontuação '+score,'Jogar novamente');}else{stage++;health=Math.min(100,health+25);ammo=Math.max(80,ammo+40);buildStage();}}
- function togglePause(){if(state!=='play')return;paused=!paused;simulationAccumulator=0;keys.clear();pointerDown=false;Object.keys(touch).forEach(k=>touch[k]=false);$('pause').textContent=paused?'Continuar':'Pausar';if(paused)overlay('Jogo pausado','Sua jornada continua daqui.','Continuar');else{$('overlay').classList.add('hidden');canvas.focus();}}
+ function advance(){if(stage+1>=stages.length){state='victory';overlay('Jornada concluída!','Todas as '+stages.length+' fases concluídas · Pontuação '+score,'Jogar novamente');}else{stage++;health=Math.min(100,health+25);if(!storeEnabled)ammo=Math.max(80,ammo+40);buildStage();}}
+ function togglePause(){if(shopOpen){closeShop();return;}if(state!=='play')return;paused=!paused;simulationAccumulator=0;keys.clear();pointerDown=false;Object.keys(touch).forEach(k=>touch[k]=false);$('pause').textContent=paused?'Continuar':'Pausar';if(paused)overlay('Jogo pausado','Sua jornada continua daqui.','Continuar');else{$('overlay').classList.add('hidden');canvas.focus();}}
  function axes(){return {x:(down('d','ArrowRight','right')?1:0)-(down('a','ArrowLeft','left')?1:0),z:(down('s','ArrowDown','down')?1:0)-(down('w','ArrowUp','up')?1:0)};}
  function move(dx,dz){const p=R.moveCircle(player,dx,dz,.4,solids,size);player.x=p.x;player.z=p.z;}
+ function startReload(){
+  if(!combatStore||state!=='play'||paused||reloadDelay>0)return;
+  if(ammo>=20)return;
+  if(combatStore.state().reserve<=0){notice('Sem reserva de munição. Abra a loja [B].',1.5);return;}
+  reloadDelay=1.1;notice('Recarregando…',1.1);
+ }
  function shoot(){
-  if(fireDelay>0||ammo<=0)return;fireDelay=.23/tuning.fireRateMultiplier;ammo--;if(ammo===0){reloadDelay=1.3;notice('Recarregando…',1.3);}
+  if(fireDelay>0||reloadDelay>0||ammo<=0)return;
+  const level=combatStore?combatStore.state().level:1;
+  fireDelay=.23/(tuning.fireRateMultiplier*(1+(level-1)*.13));
+  ammo--;
+  if(ammo===0){if(combatStore)startReload();else{reloadDelay=1.3;notice('Recarregando…',1.3);}}
   let dx=Math.sin(player.yaw),dz=Math.cos(player.yaw);
   if(genre==='arena'||genre==='rpg'){
    let nearest=null,near=18;for(const e of enemies){const d=distance(e,player);if(d<near){near=d;nearest=e;}}if(nearest){dx=(nearest.x-player.x)/near;dz=(nearest.z-player.z)/near;player.yaw=Math.atan2(dx,dz);}
@@ -258,7 +275,7 @@ function gameForgeThreeBoot(){
    const steps=Math.ceil(27*dt/.28);for(let i=0;i<steps&&!b.dead;i++){
     b.x+=b.dx*27*dt/steps;b.z+=b.dz*27*dt/steps;
     if(solids.some(o=>Math.abs(b.x-o.x)<o.w/2+.1&&Math.abs(b.z-o.z)<o.d/2+.1)){b.dead=true;break;}
-    for(const e of enemies)if(e.hp>0&&distance(e,b)<(e.boss?.95:.65)){e.hp-=genre==='rpg'?1+Math.floor((rpgLevel-1)/2):1;e.stagger=Math.max(e.stagger||0,e.boss?.06:.13);if(e.mesh?.userData)e.mesh.userData.hurt=1;b.dead=true;if(e.hp<=0){score+=e.boss?250:70;rpgReward(e.boss);world.remove(e.mesh);ammo+=7;}break;}
+    for(const e of enemies)if(e.hp>0&&distance(e,b)<(e.boss?.95:.65)){e.hp-=genre==='rpg'?1+Math.floor((rpgLevel-1)/2):combatStore?combatStore.state().damage:1;e.stagger=Math.max(e.stagger||0,e.boss?.06:.13);if(e.mesh?.userData)e.mesh.userData.hurt=1;b.dead=true;if(e.hp<=0){score+=e.boss?250:70;rpgReward(e.boss);if(combatStore)combatStore.earn(e.boss);world.remove(e.mesh);if(!combatStore)ammo+=7;}break;}
    }
    b.life-=dt;if(b.life<=0)b.dead=true;b.mesh.position.set(b.x,b.y,b.z);
   }
@@ -298,14 +315,17 @@ function gameForgeThreeBoot(){
   camera.position.lerp(camTarget,Math.min(1,dt*7));camera.lookAt(look);
  }
  function updateHUD(){
-  $('health').textContent=Math.ceil(health);$('score').textContent=score;$('ammo').textContent=genre==='racing'?Math.round(Math.abs(player.speed)*12)+' km/h':genre==='platform'?collected+'/'+required:genre==='rpg'?'🧪'+rpgPotions+' · '+ammo:ammo;
+  $('health').textContent=Math.ceil(health);$('score').textContent=score;$('ammo').textContent=genre==='racing'?Math.round(Math.abs(player.speed)*12)+' km/h':genre==='platform'?collected+'/'+required:genre==='rpg'?'🧪'+rpgPotions+' · '+ammo:combatStore?ammo+'/'+combatStore.state().reserve+' · ¢'+combatStore.state().credits:ammo;
   $('level').textContent=(stage+1)+'/'+stages.length;$('timer').textContent=Math.floor(clock)+'s';
   $('mission').textContent=(configAt(stage).objective?String(configAt(stage).objective).slice(0,140)+' · ':'')+(genre==='racing'?'Volta '+Math.min(lapTarget,race.lap+1)+'/'+lapTarget+' · Portal '+(race.next+1)+'/8':genre==='platform'?'Cristais '+collected+'/'+required+' · Alcance o portal':genre==='rpg'?'Nível '+rpgLevel+' · XP '+rpgXP+'/'+(rpgLevel*65)+' · '+combatObjective():combatObjective());
  }
  function resize(){const rect=canvas.getBoundingClientRect(),w=Math.max(320,Math.round(rect.width||960)),h=Math.round(w*9/16);renderer.setPixelRatio(ratio);renderer.setSize(w,h,false);if(camera){camera.aspect=w/h;camera.updateProjectionMatrix();}}
  function simulate(dt){
    clock+=dt;stageClock+=dt;invulnerable=Math.max(0,invulnerable-dt);fireDelay=Math.max(0,fireDelay-dt);
-   if(reloadDelay>0){reloadDelay-=dt;if(reloadDelay<=0){ammo=40;notice('Munição recarregada',1.4);}}
+   if(reloadDelay>0){reloadDelay-=dt;if(reloadDelay<=0){
+     if(combatStore){ammo+=combatStore.useReserve(20-ammo);notice(ammo?'Arma carregada · '+ammo+'/20':'Sem munição · pressione B',1.4);}
+     else{ammo=40;notice('Munição recarregada',1.4);}
+   }}
    if(transition>0){transition-=dt;if(transition<=0)advance();}
    else if(genre==='platform')updatePlatform(dt);else if(genre==='racing')updateRacing(dt);else updateCombat(dt);
    if(state!=='play')return;
@@ -335,14 +355,83 @@ function gameForgeThreeBoot(){
  }
  window.__gameforgeTelemetry=()=>{
   vec.set(player.x,player.y+1,player.z);if(camera)vec.project(camera);
-  return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,clock,health,score,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
+  return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,clock,health,score,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
  };
- $('control-help').textContent=genre==='fps'?'WASD / setas: mover · Q/E ou arrastar: mirar · Espaço/clique: atirar':genre==='racing'?'W / ↑ acelerar · S / ↓ frear · A/D virar · Espaço turbo':genre==='platform'?'A/D ou ←/→: mover · W/↑/Espaço: saltar · Q/S: profundidade':genre==='rpg'?'WASD: explorar · Espaço: magia · H: poção · P: pausa':'WASD / setas: mover · Espaço/clique: ataque · P: pausa';
- $('overlay-sub').textContent=genre==='fps'?'Explore em primeira pessoa, elimine os guardiões, colete 3 cristais e atravesse o portal. Mire com Q/E ou arrastando no cenário.':genre==='racing'?'Complete as voltas atravessando os portais em ordem. Evite o tráfego e as barreiras.':genre==='platform'?'Salte entre as ilhas, colete cristais e alcance o portal. Cada plataforma alcançada salva seu retorno.':genre==='rpg'?'RPG 3D: explore, derrote guardiões para ganhar XP, aumente sua magia e use H para beber poções.':'Explore o mundo, enfrente os guardiões e reúna os cristais para abrir o portal.';
+ $('control-help').textContent=genre==='fps'?(combatStore?'WASD: mover · Espaço: atirar · R: recarregar · B: loja de armas/vida':'WASD / setas: mover · Q/E ou arrastar: mirar · Espaço/clique: atirar'):genre==='racing'?'W / ↑ acelerar · S / ↓ frear · A/D virar · Espaço turbo':genre==='platform'?'A/D ou ←/→: mover · W/↑/Espaço: saltar · Q/S: profundidade':genre==='rpg'?'WASD: explorar · Espaço: magia · H: poção · P: pausa':'WASD / setas: mover · Espaço/clique: ataque · P: pausa';
+ $('overlay-sub').textContent=genre==='fps'?(combatStore?'FPS com economia: elimine guardas para ganhar créditos, compre munição, kits médicos e melhorias de armas na loja [B].':'Explore em primeira pessoa, elimine os guardiões, colete 3 cristais e atravesse o portal. Mire com Q/E ou arrastando no cenário.'):genre==='racing'?'Complete as voltas atravessando os portais em ordem. Evite o tráfego e as barreiras.':genre==='platform'?'Salte entre as ilhas, colete cristais e alcance o portal. Cada plataforma alcançada salva seu retorno.':genre==='rpg'?'RPG 3D: explore, derrote guardiões para ganhar XP, aumente sua magia e use H para beber poções.':'Explore o mundo, enfrente os guardiões e reúna os cristais para abrir o portal.';
  if(importedSceneErrors.length)$('overlay-sub').textContent+=' GLB com problema: '+importedSceneErrors[0].slice(0,140);
  if(software){$('control-help').textContent+=' · Modo compatível (CPU)';$('overlay-sub').textContent+=' Renderização compatível por CPU ativada.';}
+ function refreshShop(){
+  if(!combatStore||!shopPanel)return;
+  const data=combatStore.state();
+  shopStatus.textContent='Créditos: '+data.credits+' · Vida: '+health+'/100 · Reserva: '+data.reserve+' · Arma nível '+data.level+'/3';
+  for(const entry of shopActions){
+   const value=data.prices[entry.kind];
+   entry.button.textContent=entry.label+' — '+value+' créditos';
+   entry.button.disabled=data.credits<value||(entry.kind==='heal'&&health>=100)||
+    (entry.kind==='upgrade'&&data.level>=3)||(entry.kind==='ammo'&&data.reserve>=data.maxReserve);
+  }
+ }
+ function buyShopItem(kind){
+  if(!shopOpen||!combatStore)return;
+  const result=combatStore.purchase(kind,health);
+  if(result.ok){health=result.health;updateHUD();}
+  notice(result.message,2.2);refreshShop();
+ }
+ function closeShop(){
+  if(!shopOpen)return;
+  shopOpen=false;paused=false;simulationAccumulator=0;
+  if(shopPanel)shopPanel.hidden=true;
+  if(shopToggle)shopToggle.textContent='Loja [B]';
+  canvas.focus();
+ }
+ function toggleShop(){
+  if(!combatStore||state!=='play')return;
+  if(shopOpen){closeShop();return;}
+  if(paused)return;
+  shopOpen=true;paused=true;simulationAccumulator=0;
+  keys.clear();pointerDown=false;Object.keys(touch).forEach(k=>touch[k]=false);
+  if(shopPanel)shopPanel.hidden=false;
+  if(shopToggle)shopToggle.textContent='Fechar loja [B]';
+  refreshShop();
+ }
+ function buildShopUI(){
+  if(!combatStore||shopPanel)return;
+  const host=canvas.parentElement||document.body;
+  shopToggle=document.createElement('button');shopToggle.type='button';shopToggle.textContent='Loja [B]';
+  shopToggle.style.cssText='position:absolute;right:10px;bottom:10px;z-index:20;background:#214c58;color:#fff;border:1px solid #8ae0c4;';
+  shopToggle.addEventListener('click',toggleShop);
+  shopPanel=document.createElement('section');shopPanel.hidden=true;
+  shopPanel.setAttribute('role','dialog');shopPanel.setAttribute('aria-label','Loja de combate');
+  shopPanel.style.cssText='position:absolute;right:10px;top:10px;z-index:30;max-width:min(94%,370px);padding:14px;border:1px solid #8ae0c4;border-radius:12px;background:#101c30;color:#fff;box-shadow:0 8px 30px #000a;';
+  const title=document.createElement('h3');title.textContent='Arsenal e suprimentos';title.style.cssText='font-size:18px;margin:0 0 10px';
+  shopStatus=document.createElement('p');shopStatus.style.cssText='font-size:13px;line-height:1.5';
+  shopPanel.append(title,shopStatus);
+  for(const [kind,label] of [['ammo','1 · Comprar 40 balas'],['heal','2 · Kit médico (+40 vida)'],['upgrade','3 · Melhorar arma (+dano)']]){
+   const button=document.createElement('button');button.type='button';button.style.cssText='display:block;width:100%;margin:6px 0;padding:10px;text-align:left;';
+   button.addEventListener('click',()=>buyShopItem(kind));shopActions.push({kind,label,button});shopPanel.append(button);
+  }
+  const close=document.createElement('button');close.type='button';close.textContent='Voltar ao jogo';
+  close.style.cssText='margin-top:8px;width:100%;';close.addEventListener('click',closeShop);shopPanel.append(close);
+  host.append(shopToggle,shopPanel);refreshShop();
+ }
+ buildShopUI();
  $('start').addEventListener('click',()=>{if(state==='play'&&paused)togglePause();else start();});$('restart').addEventListener('click',start);$('pause').addEventListener('click',togglePause);
- addEventListener('keydown',e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','w','a','s','d','q','e','h'].includes(k))e.preventDefault();if((k==='p'||k==='Escape')&&!e.repeat)togglePause();keys.add(k);});
+ addEventListener('keydown',e=>{
+   const k=e.key.length===1?e.key.toLowerCase():e.key;
+   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','w','a','s','d','q','e','h','b','r'].includes(k))e.preventDefault();
+   if(combatStore&&!e.repeat){
+     if(k==='b'){toggleShop();return;}
+     if(shopOpen){
+       if(k==='Escape'||k==='p'){closeShop();return;}
+       if(k==='1'||k==='2'||k==='3'){buyShopItem(({1:'ammo',2:'heal',3:'upgrade'})[k]);return;}
+       return;
+     }
+     if(k==='r'){startReload();return;}
+   }
+   if((k==='p'||k==='Escape')&&!e.repeat)togglePause();
+   if(!shopOpen)keys.add(k);
+ });
  addEventListener('keyup',e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
  function release(){keys.clear();pointerDown=false;dragX=null;Object.keys(touch).forEach(k=>touch[k]=false);}
  addEventListener('blur',()=>{release();if(state==='play'&&!paused)togglePause();});document.addEventListener('visibilitychange',()=>{if(document.hidden){release();if(state==='play'&&!paused)togglePause();}});

@@ -6,6 +6,7 @@
   const sourceCorpus=root.GameForgeGameCorpus||(typeof require==='function'?require('./game-corpus'):null);
   const urbanDesign=root.GameForgeUrbanDesign||(typeof require==='function'?require('./urban-design'):null);
   const designIR=root.GameForgeDesignIR||(typeof require==='function'?require('./design-ir'):null);
+  const missionSemantics=root.GameForgeMissionSemantics||(typeof require==='function'?require('./mission-semantics'):null);
   // Classificação semântica determinística. Sinais de jogabilidade são mais fortes
   // do que palavras ocasionais em capítulos longos de um GDD.
   function detectGenreInfo(text) {
@@ -222,11 +223,15 @@
         'Imagens, áudios e fases específicas mencionadas no GDD não são criados automaticamente neste modo.'
       ]
     };
+    compiled.actionModel=missionSemantics?missionSemantics.parse(source,extra):null;
     if(genre==='urban-action'){
-      // O GDD integral é preservado, mas URB-01 só possui UMA missão jogável.
-      compiled.stages=['Bairro 1 — Guarda e Armazém'];
-      compiled.campaign={maxStages:1,detectedStages:allLevels.length,
-        omittedStages:Math.max(0,allLevels.length-1),prototype:true};
+      // O modo urbano executa somente ações suportadas e com ordem verificável.
+      // Pedidos sem ações explícitas usam o slice original de uma missão.
+      const urbanMissions=missionSemantics?.executable(compiled.actionModel)||[];
+      compiled.urbanMissions=urbanMissions;
+      compiled.stages=urbanMissions.length?urbanMissions.map(m=>m.title):['Bairro 1 — Guarda e Armazém'];
+      compiled.campaign={maxStages:3,detectedStages:Math.max(allLevels.length,compiled.actionModel?.sourcePhases||0),
+        omittedStages:Math.max(0,(compiled.actionModel?.sourcePhases||0)-urbanMissions.length),prototype:true};
       const slice=urbanProfile.requirements.filter(req=>req.status==='partial');
       const remaining=urbanProfile.requirements.filter(req=>req.status!=='partial');
       const entry=req=>({id:req.id,description:req.name,where:'Bairro protótipo URB-01',
@@ -249,8 +254,18 @@
           counts,summary:'implementada: 0 · configurada: '+applied.length+' · pendente: '+pending.length+' · incompatível: 0',
           note:'URB-01 é um único bairro com combate e missão simples; não representa as cidades ou a campanha completa.'}
       };
+      const semanticIssues=compiled.actionModel?.issues||[];
+      for(const issue of semanticIssues)pending.push({id:'semantic-'+(issue.id||issue.action||'limit'),
+        description:issue.reason,where:'Missões do GDD',detail:issue.source?.document+' linha '+(issue.source?.line||'?')});
+      compiled.implementation.audit.counts.pendente+=semanticIssues.length;
+      compiled.implementation.audit.items.push(...semanticIssues.map(issue=>({
+        id:'semantic-'+(issue.id||issue.action||'limit'),status:'pendente',description:issue.reason,
+        origin:issue.source||null,reason:'Exige novo código de motor.',contract:null
+      })));
+      if(semanticIssues.length)compiled.limitations.push('Missões parcialmente não suportadas: '+semanticIssues.map(x=>x.reason).join('; '));
       compiled.limitations.unshift(compiled.engineAvailability.reason);
-      compiled.detected.push('Câmera: terceira pessoa','Motor urbano 3D: vertical slice URB-01 (1 bairro)');
+      compiled.detected.push('Câmera: terceira pessoa',
+        urbanMissions.length?'Motor urbano 3D: '+urbanMissions.length+' missão(ões) por ações e dependências':'Motor urbano 3D: vertical slice URB-01 (1 bairro)');
       return designIR?designIR.enrich(compiled,source,extra):compiled;
     }
     const interpreted=intentCompiler?intentCompiler.compile(compiled,source,extra,options):compiled;

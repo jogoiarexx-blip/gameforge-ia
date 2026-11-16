@@ -526,6 +526,11 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       $('qa-before').removeAttribute('src');$('qa-after').removeAttribute('src');$('qa-shot').removeAttribute('src');
       $('qa-report').textContent='Nenhuma inspeção realizada.'; qaButtons();
       listFiles();selectFile('game.js');runPreview();roadmapRender();saveState();
+      // No celular, conduzir o usuário ao jogo gerado sem alterar o fluxo desktop.
+      if(typeof window.matchMedia==='function'&&window.matchMedia('(max-width: 780px)').matches){
+        const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        $('preview-step').scrollIntoView({block:'start',behavior:reducedMotion?'auto':'smooth'});
+      }
     }catch(e){
       const message=e.name==='AbortError'?'A solicitação excedeu o tempo limite.':e.message;
       log('[Erro] '+message);feedback(message,true);status('Erro ao gerar',true);

@@ -113,7 +113,7 @@ function gameForgeUrban3DBoot(){
  });
  let progress=initial(),state='menu',paused=false,frames=0,simulationSteps=0;
  let last=0,acc=0,walkPhase=0,clock=0,attackCooldown=0,invulnerable=0,
-     fireCooldown=0,reloadRemaining=0,saveCooldown=0,guardAttack=0,guardPhase=0;
+     fireCooldown=0,reloadRemaining=0,saveCooldown=0,guardAttack=0,guardPhase=0,shotNoise=0;
  let saveEnabled=true,saveStatus='novo',cameraOccluded=false;
  let guardBrain={x:0,z:1.5,homeX:0,homeZ:1.5,mode:'patrol'};
  function readSave(){
@@ -139,7 +139,7 @@ function gameForgeUrban3DBoot(){
   if(newGame){progress=initial();try{window.localStorage?.removeItem(saveKey);}catch(_){}}
   state='play';paused=false;acc=0;last=0;keys.clear();
   $('pause').textContent='Pausar';
-  fireCooldown=0;attackCooldown=0;reloadRemaining=0;invulnerable=0;
+  fireCooldown=0;attackCooldown=0;reloadRemaining=0;invulnerable=0;shotNoise=0;
   hero.position.set(progress.x,0,progress.z);
   guard.visible=!progress.guardDefeated;
   guard.position.set(0,0,1.5);
@@ -206,7 +206,7 @@ function gameForgeUrban3DBoot(){
  function fire(){
   if(state!=='play'||paused||fireCooldown>0||reloadRemaining>0)return;
   if(progress.ammo<=0){notice('Sem balas no pente. Pressione R.');return;}
-  fireCooldown=.25;progress.ammo--;
+  fireCooldown=.25;progress.ammo--;shotNoise=1.1;
   if(!progress.guardDefeated&&R.canHit(progress,guard.position,blockers)){
    progress.guardHp=Math.max(0,progress.guardHp-25);
    guardPhase=1;notice('Guarda atingido! '+progress.guardHp+' HP');
@@ -256,6 +256,7 @@ function gameForgeUrban3DBoot(){
  function simulate(dt){
   clock+=dt;
   fireCooldown=Math.max(0,fireCooldown-dt);invulnerable=Math.max(0,invulnerable-dt);
+  shotNoise=Math.max(0,shotNoise-dt);
   attackCooldown=Math.max(0,attackCooldown-dt);guardPhase=Math.max(0,guardPhase-dt);
   if(reloadRemaining>0){
    reloadRemaining=Math.max(0,reloadRemaining-dt);
@@ -286,7 +287,7 @@ function gameForgeUrban3DBoot(){
   hero.userData.legs[2].rotation.x=-stride*.6;
   hero.userData.legs[3].rotation.x=stride*.6;
   if(!progress.guardDefeated){
-   guardBrain=R.guardStep(guardBrain,{x:progress.x,z:progress.z},dt,blockers);
+   guardBrain=R.guardStep(guardBrain,{x:progress.x,z:progress.z,noise:len>0||shotNoise>0},dt,blockers);
    guard.position.x=guardBrain.x;guard.position.z=guardBrain.z;
    guard.rotation.y=-guardBrain.heading;
    if(guardBrain.canAttack&&attackCooldown===0&&invulnerable===0){

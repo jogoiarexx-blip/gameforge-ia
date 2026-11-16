@@ -169,8 +169,42 @@ function gameForgeThreeBoot(){
    scenery();
   }else{
    player={x:0,y:0,z:size*.28,yaw:Math.PI,vy:0,speed:0,grounded:true};required=3;
-   box(size,.6,size,mats.ground,world,0,-.35,0);box(5,.035,size*.8,mats.road,world,0,.01,0);box(size*.8,.04,4,mats.road,world,0,.015,0);
-   for(let i=0;i<4;i++){const side=i<2?-1:1;box(2,1.8,2,mats.stone,world,side*(8+(i%2)*5),.9,(i%2?1:-1)*7);solids.push({x:side*(8+(i%2)*5),z:(i%2?1:-1)*7,w:2,d:2});}
+   box(size,.6,size,mats.ground,world,0,-.35,0);
+   // GF-006: geometrias e colisões diferentes, dirigidas por StageSpec.
+   // O corredor central preserva a rota do jogador ate o portal e o spawn.
+   const layout=['courtyard','outpost','cross'].includes(stageRules.layout)?stageRules.layout:'cross';
+   if(layout==='courtyard'){
+    box(size*.79,.04,3,mats.road,world,0,.015,0);
+    for(const side of [-1,1])for(const z of [-size*.23,0,size*.23]){
+     const x=side*size*.33;
+     box(1.25,3.5,1.25,mats.stone,world,x,1.75,z);
+     box(2,.24,2,mats.trim,world,x,3.6,z);
+     solids.push({x,z,w:1.25,d:1.25});
+    }
+    for(const z of [-size*.33,size*.33]){
+     box(size*.67,.28,.6,mats.stone,world,0,.16,z);
+    }
+   }else if(layout==='outpost'){
+    box(5,.035,size*.82,mats.road,world,0,.01,0);
+    for(const side of [-1,1]){
+     const x=side*size*.34;
+     box(5,2.5,7,mats.stone,world,x,1.25,-4);
+     box(5.5,.22,7.5,mats.trim,world,x,2.6,-4);
+     solids.push({x,z:-4,w:5,d:7});
+     for(const z of [-size*.25,size*.18]){
+      box(1.5,4,1.5,mats.stone,world,x,2,z);
+      box(2.4,.25,2.4,mats.crystal,world,x,4.1,z);
+      solids.push({x,z,w:1.5,d:1.5});
+     }
+    }
+   }else{
+    box(5,.035,size*.8,mats.road,world,0,.01,0);
+    box(size*.8,.04,4,mats.road,world,0,.015,0);
+    for(let i=0;i<4;i++){
+     const side=i<2?-1:1,x=side*(8+(i%2)*5),z=(i%2?1:-1)*7;
+     box(2,1.8,2,mats.stone,world,x,.9,z);solids.push({x,z,w:2,d:2});
+    }
+   }
    const count=stageRules.enemies>0?R.clamp(stageRules.enemies,1,24):Math.min(22,Math.max(3,Math.round((4+stage*.6)*tuning.enemyMultiplier*tuning.difficulty)));
    for(let i=0;i<count;i++){
     const a=(i/count)*Math.PI*2,x=Math.sin(a)*size*.26,z=Math.cos(a)*size*.24-4,boss=i===count-1&&(stageRules.boss==='yes'||(stageRules.boss!=='no'&&!!(spec.features&&spec.features.bosses)));
@@ -359,7 +393,7 @@ function gameForgeThreeBoot(){
  }
  window.__gameforgeTelemetry=()=>{
   vec.set(player.x,player.y+1,player.z);if(camera)vec.project(camera);
-  return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,clock,health,score,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
+  return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,layout:['arena','fps','rpg'].includes(genre)?(configAt(stage).layout||'cross'):'engine-default',clock,health,score,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
  };
  $('control-help').textContent=genre==='fps'?(combatStore?'WASD: mover · Espaço: atirar · R: recarregar · B: loja de armas/vida':'WASD / setas: mover · Q/E ou arrastar: mirar · Espaço/clique: atirar'):genre==='racing'?'W / ↑ acelerar · S / ↓ frear · A/D virar · Espaço turbo':genre==='platform'?'A/D ou ←/→: mover · W/↑/Espaço: saltar · Q/S: profundidade':genre==='rpg'?'WASD: explorar · Espaço: magia · H: poção · P: pausa':'WASD / setas: mover · Espaço/clique: ataque · P: pausa';
  $('overlay-sub').textContent=genre==='fps'?(combatStore?'FPS com economia: elimine guardas para ganhar créditos, compre munição, kits médicos e melhorias de armas na loja [B].':'Explore em primeira pessoa, elimine os guardiões, colete 3 cristais e atravesse o portal. Mire com Q/E ou arrastando no cenário.'):genre==='racing'?'Complete as voltas atravessando os portais em ordem. Evite o tráfego e as barreiras.':genre==='platform'?'Salte entre as ilhas, colete cristais e alcance o portal. Cada plataforma alcançada salva seu retorno.':genre==='rpg'?'RPG 3D: explore, derrote guardiões para ganhar XP, aumente sua magia e use H para beber poções.':'Explore o mundo, enfrente os guardiões e reúna os cristais para abrir o portal.';

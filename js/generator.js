@@ -125,6 +125,10 @@
       ...(spec.actionModel?{'MODELO_ACOES.json':JSON.stringify(spec.actionModel,null,2),
         'PLANO_ACOES.md':(root.GameForgeMissionSemantics||(typeof require==='function'?require('./mission-semantics'):null))?.report(spec.actionModel)||''}:{}),
       'RELATORIO_GERACAO.md':generationReport(spec),
+      ...(Array.isArray(spec.stageSpecs)?{
+        'FASES_EXECUTAVEIS.json':JSON.stringify({version:1,engine:spec.genre+'-'+spec.dimension,stages:spec.stageSpecs},null,2),
+        'PLANO_FASES.md':(root.GameForgeStageSpec||(typeof require==='function'?require('./stage-spec'):null))?.report(spec)||''
+      }:{}),
       ...(root.GameForgeDesignIR?{'PLANO_REQUISITOS.md':root.GameForgeDesignIR.report(spec.designIR)}:{}),
       ...(capabilityApi?{
         'CONTRATO_CAPACIDADES.md':capabilityApi.report(spec),

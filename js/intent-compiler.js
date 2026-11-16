@@ -6,6 +6,7 @@
 'use strict';
 const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const capabilities=root.GameForgeCapabilities||(typeof require==='function'?require('./game-capabilities'):null);
+const stageSpec=root.GameForgeStageSpec||(typeof require==='function'?require('./stage-spec'):null);
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const words={um:1,uma:1,dois:2,duas:2,tres:3,quatro:4,cinco:5,seis:6,sete:7,oito:8,nove:9,dez:10,quinze:15,vinte:20,trinta:30};
 const DIG='(?:\\d{1,3}|uma?|duas?|dois|tres|quatro|cinco|seis|sete|oito|nove|dez|quinze|vinte|trinta)';
@@ -305,6 +306,7 @@ function compile(spec,gdd,instruction='',options={}){
  }
  // Separar intenção de evidencia: configuracoes serializadas no código sao verificaveis.
  parsed.stageConfig=stageConfig;
+ if(stageSpec)stageSpec.compile(parsed,source,extra);
  implementation.requirements=[...implementation.applied,...implementation.pending].slice(0,120);
  implementation.summary=implementation.applied.length+' configuração(ões) aplicadas; '+implementation.pending.length+' requisito(s) pendente(s)';
  parsed.implementation=implementation;

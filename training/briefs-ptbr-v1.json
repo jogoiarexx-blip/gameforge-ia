@@ -1,0 +1,1022 @@
+{
+  "version": 1,
+  "name": "GameForge — treino supervisionado de comandos leigos PT-BR",
+  "scope": "avaliação determinística offline, não fine-tuning de modelo",
+  "cases": [
+    {
+      "instruction": "Crie uma navinha 3D com inimigos no espaço",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "quero nave espacial 3d com onda de inimigos",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "shoot em up 3d e chefão",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "combate espacial 3d com nave que atira",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "faz um shmup 3D pra computador",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "navinha 3d com cinco fases e power-ups",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "nave de combate 3D com lasers",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de naves espaciais 3d com chefes",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "quero um jogo de navinha 2d",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "shoot em up vertical 2d no celular",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de naves espaciais 2d",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "tiro vertical 2d com monstros",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "shmup 2d com 4 fases",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "navinha 2d com power up",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "combate espacial 2d com 3 mundos",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "ataque espacial 2d estilo arcade",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "Crie FPS tático em 3D",
+      "expect": {
+        "genre": "fps",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "quero tiro em primeira pessoa 3d",
+      "expect": {
+        "genre": "fps",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo fps 3d de infiltração",
+      "expect": {
+        "genre": "fps",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "camera em primeira pessoa 3d com monstros",
+      "expect": {
+        "genre": "fps",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "first person shooter 3d",
+      "expect": {
+        "genre": "fps",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "visao pelos olhos do personagem 3d",
+      "expect": {
+        "genre": "fps",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "FPS de ação 3d com 6 fases",
+      "expect": {
+        "genre": "fps",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo 3d com tiros em primeira pessoa e inimigos",
+      "expect": {
+        "genre": "fps",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de corrida 3d com tres pistas",
+      "expect": {
+        "genre": "racing",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "corrida de carros 3d e voltas",
+      "expect": {
+        "genre": "racing",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "corrida de motos 3d com turbo",
+      "expect": {
+        "genre": "racing",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "simulador de corrida 3d",
+      "expect": {
+        "genre": "racing",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo 3d com pista de corrida",
+      "expect": {
+        "genre": "racing",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "circuito automobilistico 3d",
+      "expect": {
+        "genre": "racing",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "racing game 3d com oponentes",
+      "expect": {
+        "genre": "racing",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de corrida 3d com chuva e pit stop",
+      "expect": {
+        "genre": "racing",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de corrida 2d visto de cima",
+      "expect": {
+        "genre": "racing",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "corrida de carros 2d para celular",
+      "expect": {
+        "genre": "racing",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "racing game 2d com recordes",
+      "expect": {
+        "genre": "racing",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "pista de corrida 2d e moedas",
+      "expect": {
+        "genre": "racing",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "simulador de corrida 2d arcade",
+      "expect": {
+        "genre": "racing",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de corrida 2d com musica",
+      "expect": {
+        "genre": "racing",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "corrida de motos 2d em circuito",
+      "expect": {
+        "genre": "racing",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de corrida 2d com garagem",
+      "expect": {
+        "genre": "racing",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de plataforma 2d com pulos",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "platformer 2d com chefes",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "metroidvania 2d e mapa de salas",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "saltos entre plataformas em 2d",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de plataforma 2d no celular",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "exploracao lateral com saltos 2d",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de plataforma 2d e coletar moedas",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "plataforma 2d com salto duplo",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de plataforma 3d e checkpoints",
+      "expect": {
+        "genre": "platform",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "platformer 3d com camera livre",
+      "expect": {
+        "genre": "platform",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo 3d de plataforma com pulos",
+      "expect": {
+        "genre": "platform",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "saltos entre plataformas 3d",
+      "expect": {
+        "genre": "platform",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "crie jogo de plataforma 3d com chefes",
+      "expect": {
+        "genre": "platform",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de plataforma 3d leve para pc",
+      "expect": {
+        "genre": "platform",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de plataforma 3d com mundo floresta",
+      "expect": {
+        "genre": "platform",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "plataforma 3d com salto duplo e fase final",
+      "expect": {
+        "genre": "platform",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D com magias",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "rpg de aventura 3d com criaturas",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de RPG 3d com experiencia",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "RPG 3d com inventario e dialogos",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "rpg 3d com 5 fases",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "rpg 3d com mundo medieval",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "rpg 3d com classes de personagem",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "rpg 3d com monstros e chefe",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "rpg 2d com sistema de niveis",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo RPG 2d de fantasia",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "rpg 2d com poções e loja",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "RPG 2d com missões",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "rpg 2d visto de cima",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "criar rpg 2d com 4 fases",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "rpg 2d com inimigos e magia",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "rpg 2d e arvore de habilidades",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de arena 3d com monstros",
+      "expect": {
+        "genre": "arena",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "arena de combate 3d e ondas",
+      "expect": {
+        "genre": "arena",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de aventura 3d com exploração",
+      "expect": {
+        "genre": "arena",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "aventura em terceira pessoa 3d com animais",
+      "expect": {
+        "genre": "arena",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "survival horror 3d com inimigos",
+      "expect": {
+        "genre": "arena",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "combate e exploracao 3d numa ilha",
+      "expect": {
+        "genre": "arena",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de arena 3d com golpes",
+      "expect": {
+        "genre": "arena",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de aventura 3d com cavernas",
+      "expect": {
+        "genre": "arena",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de arena 2d com inimigos",
+      "expect": {
+        "genre": "arena",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "arena de combate 2d com poderes",
+      "expect": {
+        "genre": "arena",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de aventura 2d e monstrinhos",
+      "expect": {
+        "genre": "arena",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "survival horror 2d com puzzles",
+      "expect": {
+        "genre": "arena",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de arena 2d com quatro fases",
+      "expect": {
+        "genre": "arena",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de aventura 2d no computador",
+      "expect": {
+        "genre": "arena",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "arena de combate 2d para celular",
+      "expect": {
+        "genre": "arena",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de aventura 2d com pontos",
+      "expect": {
+        "genre": "arena",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "tower defense 2d com ondas",
+      "expect": {
+        "genre": "tower-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "defesa de torres 2d com inimigos",
+      "expect": {
+        "genre": "tower-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "construir torres para defender a base 2d",
+      "expect": {
+        "genre": "tower-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "tower defense 2d com torres de gelo",
+      "expect": {
+        "genre": "tower-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo defesa de torres 2d simples",
+      "expect": {
+        "genre": "tower-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "tower defense 2d com 3 mapas",
+      "expect": {
+        "genre": "tower-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "defesa de torres 2d e upgrade",
+      "expect": {
+        "genre": "tower-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "tower defense 2d com chefe final",
+      "expect": {
+        "genre": "tower-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "defesa por linhas 2d com zumbis",
+      "expect": {
+        "genre": "lane-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "defesa do jardim 2d com unidades",
+      "expect": {
+        "genre": "lane-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jardim contra zumbis 2d",
+      "expect": {
+        "genre": "lane-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "defesa por linhas 2d com 5 faixas",
+      "expect": {
+        "genre": "lane-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "plants vs zombies 2d com unidades",
+      "expect": {
+        "genre": "lane-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo defesa por linhas 2d para celular",
+      "expect": {
+        "genre": "lane-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "defesa por linhas 2d com geradores",
+      "expect": {
+        "genre": "lane-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "defesa do jardim 2d com inimigos",
+      "expect": {
+        "genre": "lane-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "block tower td 2d",
+      "expect": {
+        "genre": "block-td",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "torres em blocos 2d com altura",
+      "expect": {
+        "genre": "block-td",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "defesa de blocos 2d com monstros",
+      "expect": {
+        "genre": "block-td",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "block tower defense 2d com economia",
+      "expect": {
+        "genre": "block-td",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "torres de blocos 2d e ondas",
+      "expect": {
+        "genre": "block-td",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "block tower td 2d com bosses",
+      "expect": {
+        "genre": "block-td",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "defesa de blocos 2d e upgrades",
+      "expect": {
+        "genre": "block-td",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo 2d de torres em blocos",
+      "expect": {
+        "genre": "block-td",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "Crie GTA 3D com cidade, carros, polícia e missões",
+      "expect": {
+        "genre": "urban-action",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de mafia 3d com carros, lojas, ruas e tiroteio",
+      "expect": {
+        "genre": "urban-action",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "quero jogo do padrinho 3d com cidade, negocios, policia e missoes",
+      "expect": {
+        "genre": "urban-action",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "game estilo gta 3d com bairros, carros, lojas e policia",
+      "expect": {
+        "genre": "urban-action",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de godfather 3d com ruas, faccoes, carros e negocios",
+      "expect": {
+        "genre": "urban-action",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "mafia 3d com camera em terceira pessoa, ruas, guardas e propriedades",
+      "expect": {
+        "genre": "urban-action",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo tipo gta 3d com negocios, viaturas, missões e carros",
+      "expect": {
+        "genre": "urban-action",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de crime urbano 3d em terceira pessoa com ruas, carros e lojas",
+      "expect": {
+        "genre": "urban-action",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "navezinha 3d com inimigos",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "navina 2d com ondas",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "platafoma 2d com pulos",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "platafomra 3d com inimigos",
+      "expect": {
+        "genre": "platform",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de corrda 3d com pistas",
+      "expect": {
+        "genre": "racing",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "jogo de corida 2d com carros",
+      "expect": {
+        "genre": "racing",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "quero um jogo em primera pessoa 3d com tiros",
+      "expect": {
+        "genre": "fps",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "quero um jogo em prmeira pessoa 3d com armas",
+      "expect": {
+        "genre": "fps",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "torre defense 2d com inimigos",
+      "expect": {
+        "genre": "tower-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "defesa por linha 2d com monstros",
+      "expect": {
+        "genre": "lane-defense",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "crie navinha 3 d com tiros",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "crie plataforma 2 d com pulos",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "qro um jogo de navinha 3d",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "keru um jogo de corrida 3d",
+      "expect": {
+        "genre": "racing",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "qro RPG 2d com habilidades",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "qro jogo de arena 3d e inimigos",
+      "expect": {
+        "genre": "arena",
+        "dimension": "3d"
+      }
+    },
+    {
+      "instruction": "n quero 3d, jogo de plataforma 2d",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d"
+      }
+    },
+    {
+      "instruction": "jogo de navinha 2d com treis fases",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "2d",
+        "stages": 3
+      }
+    },
+    {
+      "instruction": "jogo de plataforma 2d com 5 fases",
+      "expect": {
+        "genre": "platform",
+        "dimension": "2d",
+        "stages": 5
+      }
+    },
+    {
+      "instruction": "jogo de corrida 3d com 4 fases",
+      "expect": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 4
+      }
+    },
+    {
+      "instruction": "rpg 2d com 3 fases e inventario",
+      "expect": {
+        "genre": "rpg",
+        "dimension": "2d",
+        "stages": 3
+      }
+    },
+    {
+      "instruction": "fps 3d com 5 fases e guardas",
+      "expect": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 5
+      }
+    },
+    {
+      "instruction": "defesa de torres 2d com 6 fases",
+      "expect": {
+        "genre": "tower-defense",
+        "dimension": "2d",
+        "stages": 6
+      }
+    },
+    {
+      "instruction": "jogo de navinha 3d com 7 fases",
+      "expect": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 7
+      }
+    }
+  ]
+}

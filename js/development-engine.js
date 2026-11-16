@@ -2,7 +2,7 @@
    Reconhece somente alterações declaradas. NUNCA finge suportar novos sistemas. */
 (function(root){
 'use strict';
-const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const norm=x=>intent?.normalize?intent.normalize(x):String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const specPattern=/\bconst GAME_SPEC = (\{[^\n]*\});/;
 const intent=root.GameForgeIntent||(typeof require==='function'?require('./intent-compiler'):null);
@@ -75,11 +75,13 @@ function analyze(instruction, spec){
     if(/(grafico|qualidade).*(leve|baix|low)/.test(t))add('quality','low','Reduzir resolução e sombras');
     else if(/(grafico|qualidade).*(alt|melhor|high)/.test(t))add('quality','high','Aumentar qualidade dentro dos limites do motor');
   }
-  const phase=/(?:\b(?:na|no|para|da|do)\s+)?\bfase\s*(\d{1,2})\b/.exec(t);
+  const phase=/(?:\b(?:na|no|para|da|do)\s+)?\bfase\s*(\d{1,2}|um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\b/.exec(t);
+  const phaseWords={um:1,uma:1,dois:2,duas:2,tres:3,quatro:4,cinco:5,seis:6,sete:7,oito:8,nove:9,dez:10};
+  const phaseNumber=phase?(phaseWords[phase[1]]||Number(phase[1])):null;
   const missionMode=/\bsobreviv|\bresist\w*\s+por\b/.test(t)?'survive':/\b(eliminar?|elimine|derrotar?|derrote|matar?)\b.*\b(inimig\w*|todos\b|guardi\w*)/.test(t)?'eliminate':/\b(coletar?|coletem?|recolher|recolha|pegar?)\b.*\b(crista\w*|reliquia\w*)/.test(t)?'collect':null;
   if(missionMode){
     const duration=/(\d{1,3})\s*(?:segundos?|s\b)/.exec(t);
-    const value={index:phase?Number(phase[1])-1:-1,mode:missionMode,seconds:clamp(duration?Number(duration[1]):45,5,180)};
+    const value={index:phaseNumber!==null?phaseNumber-1:-1,mode:missionMode,seconds:clamp(duration?Number(duration[1]):45,5,180)};
     add('mission',value,'Configuração executável para a fase '+(value.index>=0?value.index+1:'não especificada'));
   }
   if(/(adicion\w*|criar|incluir|nova|mais uma|proxima)\s+(\w+\s+){0,2}(fase|missao)|\b(fase|missao)\s+nova/.test(t) && !missionMode){

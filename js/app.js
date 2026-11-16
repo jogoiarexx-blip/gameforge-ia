@@ -179,6 +179,22 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       warning.textContent='⚠ '+message;
       $('analysis').appendChild(warning);
     }
+    if(spec.referenceGame){
+      const reference=document.createElement('p');
+      reference.className='muted tiny';
+      const prefix=document.createTextNode('Exemplo técnico reconhecido: '+spec.referenceGame.repository+' · ');
+      const link=document.createElement('a');
+      link.textContent='Ver fonte no GitHub';
+      link.href=spec.referenceGame.url;link.target='_blank';link.rel='noopener noreferrer';
+      reference.append(prefix,link,document.createTextNode(' — referência de arquitetura; o código e os assets não foram copiados automaticamente.'));
+      $('analysis').appendChild(reference);
+    }
+    if(spec.genreInference?.ambiguous){
+      const warning=document.createElement('p');
+      warning.setAttribute('role','status');
+      warning.textContent='⚠ O texto mistura gêneros com sinais próximos. Confira gênero e dimensão antes de gerar; a seleção manual continua disponível.';
+      $('analysis').appendChild(warning);
+    }
     if(spec.genreInference){
       const explanation=document.createElement('p');
       explanation.className='muted tiny';

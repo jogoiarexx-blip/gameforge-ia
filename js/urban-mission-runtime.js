@@ -62,7 +62,20 @@ function gameForgeUrbanMissionBoot(){
   for(const x of [-.52,.52])legs.push(box(x,1.37,-.04,.23,.77,.29,shirt,g));
   g.userData.legs=legs;scene.add(g);return g;
  }
- const hero=actor(0x3e5966);
+ const actorAssets=typeof GF_SCENE_ASSETS!=='undefined'&&Array.isArray(GF_SCENE_ASSETS)?GF_SCENE_ASSETS:[];
+ const actorImportErrors=[];
+ function applyGLB(role,target){
+  const asset=actorAssets.find(a=>a.role===role);
+  if(!asset||typeof gameForgeDecodeGLB!=='function')return null;
+  try{
+   const model=gameForgeDecodeGLB(T,asset.base64);
+   model.scale.multiplyScalar(.65*(Number(asset.scale)||1));
+   const procedural=target.children.slice();target.add(model);
+   for(const mesh of procedural)mesh.visible=false;
+   return GameForgeActorAnimations.create(T,model);
+  }catch(error){actorImportErrors.push(role+': '+String(error?.message||error).slice(0,160));return null;}
+ }
+ const hero=actor(0x3e5966),heroAnimation=applyGLB('player',hero);
  const guardGroup=new T.Group(),itemGroup=new T.Group();scene.add(guardGroup);scene.add(itemGroup);
  const marker=new T.Mesh(new T.ConeGeometry(.4,.9,6),material(0xffd36b));scene.add(marker);
  let sim=F.initial(plan),gameState='menu',paused=false,frames=0,simSteps=0,clock=0,walk=0;
@@ -83,6 +96,7 @@ function gameForgeUrbanMissionBoot(){
   const active=F.nextStep(plan,sim);
   const stepId=active?.id||null;
   if(stepId===lastStepId)return;
+  for(const g of guards)g.animation?.dispose();
   lastStepId=stepId;guards=[];items=[];clearObjects(guardGroup);clearObjects(itemGroup);
   if(!active)return;
   const done=sim.counts[active.id]||0;
@@ -90,7 +104,7 @@ function gameForgeUrbanMissionBoot(){
    for(let i=done;i<active.quantity;i++){
     const mesh=actor(0x9d564a);scene.remove(mesh);guardGroup.add(mesh);
     mesh.position.set(active.quantity===1?0:(i-(active.quantity-1)/2)*1.0,0,1.5-i*.7);
-    guards.push({mesh,hp:75,id:i,alive:true,brain:{x:mesh.position.x,z:mesh.position.z,homeX:mesh.position.x,homeZ:mesh.position.z,mode:'patrol'}});
+    guards.push({mesh,animation:applyGLB('enemy',mesh),hp:75,id:i,alive:true,brain:{x:mesh.position.x,z:mesh.position.z,homeX:mesh.position.x,homeZ:mesh.position.z,mode:'patrol'}});
    }
   }
   if(active.action==='collect'){
@@ -190,7 +204,7 @@ function gameForgeUrbanMissionBoot(){
   const target=targets[0];
   if(target){
    target.hp=Math.max(0,target.hp-25);
-   if(target.hp===0){target.alive=false;target.mesh.visible=false;
+   if(target.hp===0){target.alive=false;target.animation?.setState('death');target.mesh.visible=false;
     signal({type:'kill',target:'guard'});notice('Inimigo neutralizado.');}
    else notice('Guarda atingido.');
   }else notice('Tiro sem alvo na mira.');
@@ -274,6 +288,8 @@ function gameForgeUrbanMissionBoot(){
   const stride=len?Math.sin(walk)*.38:0;
   hero.userData.legs[0].rotation.x=stride;hero.userData.legs[1].rotation.x=-stride;
   hero.userData.legs[2].rotation.x=-stride*.6;hero.userData.legs[3].rotation.x=stride*.6;
+  heroAnimation?.setState(shotNoise>0?'attack':len>0?'walk':'idle');
+  heroAnimation?.update(dt);
   const active=F.nextStep(plan,sim);
   if(active?.action==='collect'){
    for(const item of items){
@@ -291,6 +307,8 @@ function gameForgeUrbanMissionBoot(){
    g.brain=R.guardStep(g.brain,{...sim.position,noise:len>0||shotNoise>0},dt,blockers);
    g.mesh.position.x=g.brain.x;g.mesh.position.z=g.brain.z;
    g.mesh.rotation.y=-g.brain.heading;
+   g.animation?.setState(g.brain.canAttack?'attack':g.brain.mode==='patrol'?'idle':'walk');
+   g.animation?.update(dt);
    if(g.brain.canAttack&&attackCooldown===0&&invuln===0){
     sim.health=Math.max(1,sim.health-8);attackCooldown=1.4;invuln=.5;save();
     notice('Guarda atacou! '+sim.health+' de vida.');
@@ -332,6 +350,8 @@ function gameForgeUrbanMissionBoot(){
   health:sim.health,score:sim.cash,ammo:sim.ammo,reserve:sim.reserve,
   player:{x:sim.position.x,y:0,z:sim.position.z,heading},enemies:guards.filter(g=>g.alive).length,
   gamepadConnected:padState.connected,guardModes:guards.filter(g=>g.alive).map(g=>g.brain.mode),
+  actorAnimations:{player:heroAnimation?.state||'static',enemies:guards.filter(g=>g.alive).map(g=>g.animation?.state||'static')},
+  actorClipCount:{player:heroAnimation?.clips?.length||0,enemies:guards.filter(g=>g.alive).map(g=>g.animation?.clips?.length||0)},
   guardWaypoints:guards.filter(g=>g.alive).map(g=>g.brain.navRoute?.length||0),
   mission:{complete:gameState==='victory',step:F.nextStep(plan,sim)?.action||null,
    progress:F.progress(plan,sim).steps,stage:sim.stage+1,rewards:[...sim.rewards]},

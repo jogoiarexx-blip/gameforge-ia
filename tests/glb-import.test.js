@@ -142,3 +142,42 @@ test('pré-validação segura detecta vértices não finitos antes de salvar',()
  assert.throws(()=>GLB.decode(null,bytes),/não finita/);
  assert.throws(()=>GLB.decode(three(),bytes),/não finita/);
 });
+
+
+test('GLB usa buffers tipados e compartilha materiais e texturas entre primitivas',()=>{
+  let loads=0;
+  const threeSource=three();
+  const T={...threeSource,TextureLoader:class{
+    load(){loads++;return new threeSource.Texture();}
+  }};
+  const source=fixture({
+    meshes:[{primitives:[
+      {attributes:{POSITION:0},indices:1,material:0},
+      {attributes:{POSITION:0},indices:1,material:1},
+      {attributes:{POSITION:0},indices:1,material:0}
+    ]}],
+    materials:[
+      {pbrMetallicRoughness:{baseColorTexture:{index:0}}},
+      {pbrMetallicRoughness:{baseColorTexture:{index:0},roughnessFactor:.7}}
+    ],
+    textures:[{source:0}],
+    images:[{uri:'data:image/png;base64,AAAA'}]
+  });
+  const root=GLB.decode(T,source),meshes=[];
+  root.traverse(obj=>{if(obj.isMesh)meshes.push(obj);});
+  assert.equal(meshes.length,3);
+  assert.ok(meshes[0].geometry.getAttribute('position').array instanceof Float32Array);
+  assert.ok(meshes[0].geometry.index.array instanceof Uint16Array);
+  assert.equal(meshes[0].material,meshes[2].material);
+  assert.notEqual(meshes[0].material,meshes[1].material);
+  assert.equal(meshes[0].material.map,meshes[1].material.map);
+  assert.equal(loads,1);
+  assert.equal(GLB.decode(null,source).primitives,3);
+});
+test('GLB rejeita indices normalizados antes de construir buffers',()=>{
+  const source=fixture({accessors:[
+    {bufferView:0,componentType:5126,type:'VEC3',count:3},
+    {bufferView:1,componentType:5123,type:'SCALAR',count:3,normalized:true}
+  ]});
+  assert.throws(()=>GLB.decode(three(),source),/indices GLB invalido/);
+});

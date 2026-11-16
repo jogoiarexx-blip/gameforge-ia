@@ -4,7 +4,7 @@ const GLB=require('../js/glb-runtime.js');
 const Animator=require('../js/actor-animations.js')();
 const Assets=require('../js/asset-library.js');
 function three(){
- const env={};vm.createContext(env);
+ const env={console,AbortController,AbortSignal,TextDecoder,TextEncoder,Uint8Array,Uint8ClampedArray};vm.createContext(env);
  vm.runInContext(fs.readFileSync(require.resolve('../vendor/three-source.js'),'utf8'),env);
  vm.runInContext(env.GameForgeThreeSource,env);
  return env.THREE;

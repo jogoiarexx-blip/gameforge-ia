@@ -34,11 +34,20 @@ function gameForgeThreeBoot(){
  const keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
  let pointerDown=false,dragX=null,jumpHeld=false,lastDraw=-1000;
  const vec=new T.Vector3(),look=new T.Vector3(),camTarget=new T.Vector3();
- let importedSceneModel=null,importedSceneError='';
+ const importedSceneModels=[],importedSceneErrors=[];
  if(typeof GF_SCENE_GLB_BASE64==='string' && typeof gameForgeDecodeGLB==='function'){
-  try{importedSceneModel=gameForgeDecodeGLB(T,GF_SCENE_GLB_BASE64);}
-  catch(err){importedSceneError=String(err?.message||err);console.warn('[GameForge GLB] Falha no asset de cenário:',importedSceneError);}
+  try{importedSceneModels.push({id:'legacy',model:gameForgeDecodeGLB(T,GF_SCENE_GLB_BASE64),placement:typeof GF_SCENE_GLB_OPTIONS==='object'?GF_SCENE_GLB_OPTIONS:{}});}
+  catch(err){importedSceneErrors.push(String(err?.message||err));}
  }
+ if(typeof GF_SCENE_ASSETS!=='undefined' && Array.isArray(GF_SCENE_ASSETS) && typeof gameForgeDecodeGLB==='function'){
+  for(const a of GF_SCENE_ASSETS){
+   try{
+    if(!a||typeof a.id!=='string'||typeof a.base64!=='string')throw Error('Entrada de GLB invalida.');
+    importedSceneModels.push({id:a.id,model:gameForgeDecodeGLB(T,a.base64),placement:a});
+   }catch(err){importedSceneErrors.push(String(err?.message||err));}
+  }
+ }
+ if(importedSceneErrors.length)console.warn('[GameForge GLB] '+importedSceneErrors.join('; ').slice(0,400));
  const combatGoal=()=>({enemies:enemies.length,collected,required,elapsed:stageClock,seconds:configAt(stage).seconds});
  const combatReady=()=>R.missionReady(missionAt(stage),combatGoal());
  function combatObjective(){
@@ -148,12 +157,12 @@ function gameForgeThreeBoot(){
     const sightMaterial=new T.MeshBasicMaterial({color:0xffffff,depthTest:false,depthWrite:false});materials.push(sightMaterial);const sight=new T.Mesh(geometry(new T.RingGeometry(.003,.005,12)),sightMaterial);sight.position.z=-.5;sight.renderOrder=1000;camera.add(sight);
    }
   }
-  if(importedSceneModel){
-   const model=importedSceneModel.clone(true),anchor=new T.Group(),p=typeof GF_SCENE_GLB_OPTIONS==='object'?GF_SCENE_GLB_OPTIONS:{};
+  for(const entry of importedSceneModels){
+   const model=entry.model.clone(true),anchor=new T.Group(),p=entry.placement;
    const coordinate=(v,def)=>Number.isFinite(Number(v))?R.clamp(Number(v),-size*.4,size*.4):def;
    anchor.position.set(coordinate(p.x,5),0,coordinate(p.z,5));
    anchor.scale.setScalar(Number.isFinite(Number(p.scale))?R.clamp(Number(p.scale),.2,4):1);
-   anchor.add(model);anchor.userData.gameForgeImported=true;world.add(anchor);
+   anchor.add(model);anchor.userData.gameForgeImported=true;anchor.userData.gameForgeAssetId=entry.id;world.add(anchor);
   }
   if(genre!=='racing')hero=humanoid(0x508da2);
   hero.visible=genre!=='fps';hero.position.set(player.x,player.y,player.z);
@@ -262,7 +271,7 @@ function gameForgeThreeBoot(){
  };
  $('control-help').textContent=genre==='fps'?'WASD / setas: mover · Q/E ou arrastar: mirar · Espaço/clique: atirar':genre==='racing'?'W / ↑ acelerar · S / ↓ frear · A/D virar · Espaço turbo':genre==='platform'?'A/D ou ←/→: mover · W/↑/Espaço: saltar · Q/S: profundidade':'WASD / setas: mover · Espaço/clique: ataque · P: pausa';
  $('overlay-sub').textContent=genre==='fps'?'Explore em primeira pessoa, elimine os guardiões, colete 3 cristais e atravesse o portal. Mire com Q/E ou arrastando no cenário.':genre==='racing'?'Complete as voltas atravessando os portais em ordem. Evite o tráfego e as barreiras.':genre==='platform'?'Salte entre as ilhas, colete cristais e alcance o portal. Cada plataforma alcançada salva seu retorno.':'Explore o mundo, enfrente os guardiões e reúna os cristais para abrir o portal.';
- if(importedSceneError)$('overlay-sub').textContent+=' Modelo GLB não carregado: '+importedSceneError.slice(0,140);
+ if(importedSceneErrors.length)$('overlay-sub').textContent+=' GLB com problema: '+importedSceneErrors[0].slice(0,140);
  if(software){$('control-help').textContent+=' · Modo compatível (CPU)';$('overlay-sub').textContent+=' Renderização compatível por CPU ativada.';}
  $('start').addEventListener('click',()=>{if(state==='play'&&paused)togglePause();else start();});$('restart').addEventListener('click',start);$('pause').addEventListener('click',togglePause);
  addEventListener('keydown',e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','w','a','s','d','q','e'].includes(k))e.preventDefault();if((k==='p'||k==='Escape')&&!e.repeat)togglePause();keys.add(k);});

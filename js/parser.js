@@ -95,7 +95,7 @@
       const other=dimension==='3d'?'2d':'3d';
       // Quando a dimensão não foi especificada, usar o motor compatível
       // em vez de trocar silenciosamente o gênero identificado por "arena".
-      if((!options.dimension||options.dimension==='auto')&&!recentDimension&&genre!=='arena'&&styles[other].includes(genre)){
+      if((!options.dimension||options.dimension==='auto')&&!recentDimension&&!inferred3d&&genre!=='arena'&&styles[other].includes(genre)){
         dimension=other;
       }else{
         throw Error('O GDD foi identificado como '+(labels[genre]||genre)+', mas esse estilo não é compatível com '+dimension.toUpperCase()+': ainda não possui motor '+dimension.toUpperCase()+'. Altere a dimensão nas opções ou escolha outro motor manualmente.');

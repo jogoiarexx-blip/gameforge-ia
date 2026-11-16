@@ -72,7 +72,9 @@
     if(typeof runtime!=='function')throw Error('Motor '+spec.genre+' '+(spec.dimension||'2d')+' não carregado. Atualize o Studio.');
     if(three&&!root.GameForgeThreeSource)throw Error('Biblioteca 3D local ausente. Atualize o Studio.');
     if(advanced&&typeof root.gameForgeTDRulesFactory!=='function')throw Error('Motor de regras Tower Defense não carregado. Atualize o Studio.');
-    const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n'+(spec.genre==='urban-action'?'const GameForgeUrbanRules = ('+root.gameForgeUrbanRulesFactory.toString()+')();\n'+(spec.urbanMissions?.length?'const GameForgeUrbanMissionFlow = ('+root.gameForgeUrbanMissionFlowFactory.toString()+')();\n':''):''):advanced?'const GameForgeTDRules = ('+root.gameForgeTDRulesFactory.toString()+')();\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
+    const urbanInputFactory=root.gameForgeUrbanInputFactory||(typeof require==='function'?require('./urban-input'):null);
+    if(three&&spec.genre==='urban-action'&&typeof urbanInputFactory!=='function')throw Error('Controle urbano offline ausente. Atualize o Studio.');
+    const rules=three?'const gameForgeWorldRules = '+root.gameForgeWorldRules.toString()+';\nconst gameForgeSoftwareRenderer = '+root.gameForgeSoftwareRenderer.toString()+';\n'+(spec.genre==='urban-action'?'const GameForgeUrbanRules = ('+root.gameForgeUrbanRulesFactory.toString()+')();\nconst GameForgeUrbanInput = ('+urbanInputFactory.toString()+')();\n'+(spec.urbanMissions?.length?'const GameForgeUrbanMissionFlow = ('+root.gameForgeUrbanMissionFlowFactory.toString()+')();\n':''):''):advanced?'const GameForgeTDRules = ('+root.gameForgeTDRulesFactory.toString()+')();\n':expanded?'const GameForgeStrategyRules = ('+root.gameForgeStrategyRulesFactory.toString()+')();\n':'';
     // Incluído no FPS para permitir loja por comandos futuros sem reconstruir o motor.
     if(spec.genre==='urban-action'&&typeof root.gameForgeUrbanRulesFactory!=='function')throw Error('Regras urbanas URB-01 não carregadas. Atualize o Studio.');
     if(spec.genre==='urban-action'&&spec.urbanMissions?.length&&typeof root.gameForgeUrbanMissionFlowFactory!=='function')throw Error('Regras das missões não carregadas. Atualize o Studio.');
@@ -95,7 +97,7 @@
       'SLICE_URBAN_3D.md':'# URB-01 — Primeiro bairro jogável em Three.js\n\n'+
        '**É um protótipo parcial e não a conversão do GDD inteiro.**\n\n'+
        '- Jogável: personagem 3D com câmera terceira pessoa, ruas e colisões em XZ, pistola/recarga, um guarda, uma porta capturável, uma missão e salvamento local.\n'+
-       '- Controles: WASD/setas mover, espaço atirar, R recarregar, E capturar perto da porta, P pausar; reiniciar começa nova demonstração.\n'+
+       '- Controles: WASD/setas mover, espaço atirar, R recarregar, E capturar perto da porta, P pausar; reiniciar começa nova demonstração. Gamepad padrão: analógico esquerdo mover, direito mirar, RT atirar, A interagir, X recarga e Menu pausa.\n'+
        '- Recompensa única de exemplo: $450. Este valor não altera a economia dos GDDs originais.\n'+
        '- Salve versionado em chave gameforge-urban-v1-<titulo>, separado dos saves do Godfather 2D.\n'+
        '- Pendente: carros dirigíveis, polícia, guardas com IA avançada, interiores, 18 distritos, 36 negócios, 24 missões, 3 chefes, GLB animado, compatibilidade com campanhas antigas e testes físicos mobile.\n'+

@@ -179,3 +179,31 @@ test('URB-02 cache de rota reduz recalculo continuo e nao muda estado parado',()
  assert.equal(frozen.z,b.z);
  assert.equal(frozen.navCooldown,b.navCooldown);
 });
+
+test('URB-02 som faz guarda investigar atras de predio por caminho sem atacar atraves da parede',()=>{
+ const building={x:0,z:2,w:3,d:1};
+ const start={x:0,z:0,homeX:0,homeZ:0},player={x:0,z:4,noise:true};
+ assert.equal(R.clearShot(start,player,[building]),false);
+ const silent=R.guardStep(start,{...player,noise:false},1/60,[building]);
+ assert.equal(silent.mode,'patrol','jogador parado nao e localizado por som inventado');
+ const heard=R.guardStep(start,player,1/60,[building]);
+ assert.equal(heard.mode,'search');
+ assert.equal(heard.hearsPlayer,true);
+ assert.equal(heard.seesPlayer,false);
+ assert.equal(heard.canAttack,false);
+ assert.ok(heard.navRoute.length>=2,'guarda planejou desvio real a partir de som');
+ assert.ok(heard.memory>=4);
+ let current=heard,advanced=false;
+ for(let i=0;i<250;i++){
+  current=R.guardStep(current,{...player,noise:false},1/60,[building]);
+  assert.equal(current.canAttack,false,'muro nao permite ataque');
+  assert.equal(R.intersects(current.x,current.z,.36,building),false);
+  if(Math.abs(current.x)>.65)advanced=true;
+ }
+ assert.equal(advanced,true,'guarda contorna lateralmente em vez de ficar parado');
+ const fs=require('node:fs'),path=require('node:path');
+ for(const file of ['urban-runtime.js','urban-mission-runtime.js']){
+  const source=fs.readFileSync(path.join(__dirname,'../js',file),'utf8');
+  assert.match(source,/R\.guardStep\([^;\n]+noise:len>0\|\|shotNoise>0/);
+ }
+});

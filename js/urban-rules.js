@@ -75,6 +75,77 @@ function gameForgeUrbanRulesFactory(){
   return (facingX*dx+facingZ*dz)/distance>=Math.cos(halfAngle)
    &&clearShot(player,target,solids);
  }
+ // Planejador de rotas 2D para NPCs: grafo de visibilidade em torno das
+ // esquinas dos edificios (sem malha de navegacao, sem Three.js).
+ // Crescimento limitado: quatro pontos por obstaculo e recalculo com cooldown.
+ function routeClear(a,b,solids=[],radius=.42){
+  if(!Number.isFinite(a?.x)||!Number.isFinite(a?.z)||
+     !Number.isFinite(b?.x)||!Number.isFinite(b?.z))return false;
+  const dx=b.x-a.x,dz=b.z-a.z;
+  for(const rect of solids){
+   if(!Number.isFinite(rect?.x)||!Number.isFinite(rect?.z)||
+      !Number.isFinite(rect?.w)||!Number.isFinite(rect?.d))continue;
+   let near=0,far=1;
+   let intersectsSegment=true;
+   for(const axis of ['x','z']){
+    const center=rect[axis],half=(axis==='x'?rect.w:rect.d)/2+radius;
+    const start=a[axis],velocity=axis==='x'?dx:dz;
+    if(Math.abs(velocity)<1e-9){
+     if(start<center-half||start>center+half){intersectsSegment=false;break;}
+    }else{
+     let t0=(center-half-start)/velocity,t1=(center+half-start)/velocity;
+     if(t0>t1){const tmp=t0;t0=t1;t1=tmp;}
+     near=Math.max(near,t0);far=Math.min(far,t1);
+     if(near>far){intersectsSegment=false;break;}
+    }
+   }
+   if(intersectsSegment&&near<=far)return false;
+  }
+  return true;
+ }
+ function planGuardRoute(start,goal,solids=[],radius=.42){
+  if(!Number.isFinite(start?.x)||!Number.isFinite(start?.z)||
+     !Number.isFinite(goal?.x)||!Number.isFinite(goal?.z))return [];
+  const edge=16.5;
+  if(Math.abs(goal.x)>edge||Math.abs(goal.z)>edge||
+     solids.some(b=>intersects(goal.x,goal.z,radius,b)))return [];
+  if(routeClear(start,goal,solids,radius))return [{x:goal.x,z:goal.z}];
+  const corners=[],pad=radius+.18;
+  for(const b of solids){
+   if(!Number.isFinite(b?.x)||!Number.isFinite(b?.z)||
+      !Number.isFinite(b?.w)||!Number.isFinite(b?.d))continue;
+   const ex=b.w/2+pad,ez=b.d/2+pad;
+   for(const sx of [-1,1])for(const sz of [-1,1]){
+    const point={x:b.x+sx*ex,z:b.z+sz*ez};
+    if(Math.abs(point.x)>edge||Math.abs(point.z)>edge||
+       solids.some(other=>intersects(point.x,point.z,radius,other)))continue;
+    corners.push(point);
+   }
+  }
+  const nodes=[{x:start.x,z:start.z},{x:goal.x,z:goal.z},...corners];
+  const scores=nodes.map(()=>Infinity),parent=nodes.map(()=>-1),visited=new Set();
+  scores[0]=0;
+  for(let round=0;round<nodes.length;round++){
+   let current=-1;
+   for(let i=0;i<nodes.length;i++){
+    if(!visited.has(i)&&(current<0||scores[i]<scores[current]))current=i;
+   }
+   if(current<0||!Number.isFinite(scores[current]))break;
+   if(current===1)break;
+   visited.add(current);
+   for(let i=1;i<nodes.length;i++){
+    if(i===current||visited.has(i)||!routeClear(nodes[current],nodes[i],solids,radius))continue;
+    const cost=scores[current]+Math.hypot(nodes[i].x-nodes[current].x,nodes[i].z-nodes[current].z);
+    if(cost+1e-9<scores[i]){scores[i]=cost;parent[i]=current;}
+   }
+  }
+  if(!Number.isFinite(scores[1]))return [];
+  const route=[],seen=new Set();
+  for(let i=1;i>0&&i<nodes.length&&!seen.has(i);i=parent[i]){
+   seen.add(i);route.unshift({x:nodes[i].x,z:nodes[i].z});
+  }
+  return route.length&&route.length<=nodes.length?route:[];
+ }
  // IA deterministica para guardas: patrulha, alerta, busca e combate.
  // Nenhum temporizador global: apenas dt, geometria e estado serializavel.
  function guardStep(guard,player,dt,solids=[]){
@@ -94,16 +165,37 @@ function gameForgeUrbanRulesFactory(){
   const goal=mode==='patrol'?{x:homeX+Math.sin(patrolClock*.7)*1.6,z:homeZ}:
    mode==='search'?{x:lastSeenX,z:lastSeenZ}:{x:player.x,z:player.z};
   let x=guard.x,z=guard.z,heading=guard.heading||0;
-  const gx=goal.x-x,gz=goal.z-z,remaining=Math.hypot(gx,gz);
   const minDistance=mode==='combat'?1.65:mode==='alert'?1.55:.08;
-  if(remaining>minDistance&&delta>0){
-   const speed=mode==='alert'?1.4:mode==='search'?1.1:.85;
-   const stride=Math.min(remaining-minDistance,speed*delta);
-   const moved=move({x,z},gx/remaining*stride,gz/remaining*stride,solids,17,.36);
-   x=moved.x;z=moved.z;
-   if(Math.hypot(x-guard.x,z-guard.z)>1e-5)heading=Math.atan2(gx,-gz);
+  const remaining=Math.hypot(goal.x-x,goal.z-z);
+  let navRoute=Array.isArray(guard.navRoute)?guard.navRoute.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.z)).slice(0,30):[];
+  let navCooldown=Math.max(0,(guard.navCooldown||0)-delta);
+  const goalChanged=Math.hypot(goal.x-(guard.navGoalX??goal.x),goal.z-(guard.navGoalZ??goal.z))>1.25;
+  const direct=routeClear({x,z},goal,solids);
+  // Reutilizar caminho entre frames para nao executar busca de grafo a 60 FPS.
+  // Se a rota fica livre, elimina desvios e volta a caminhar diretamente.
+  if(direct){navRoute=[];navCooldown=0;}
+  else if(!navRoute.length||guard.navMode!==mode||goalChanged||navCooldown<=0){
+   navRoute=planGuardRoute({x,z},goal,solids);
+   navCooldown=.65;
+  }
+  let waypoint=direct?goal:navRoute[0];
+  while(!direct&&navRoute.length&&
+        Math.hypot(navRoute[0].x-x,navRoute[0].z-z)<.22){
+   navRoute=navRoute.slice(1);
+   waypoint=navRoute[0];
+  }
+  if(remaining>minDistance&&delta>0&&waypoint){
+   const gx=waypoint.x-x,gz=waypoint.z-z,distance=Math.hypot(gx,gz);
+   if(distance>.01){
+    const speed=mode==='alert'?1.4:mode==='search'?1.1:.85;
+    const stride=Math.min(Math.max(0,remaining-minDistance),distance,speed*delta);
+    const moved=move({x,z},gx/distance*stride,gz/distance*stride,solids,17,.36);
+    x=moved.x;z=moved.z;
+    if(Math.hypot(x-guard.x,z-guard.z)>1e-5)heading=Math.atan2(gx,-gz);
+   }
   }
   return {x,z,homeX,homeZ,heading,mode,patrolClock,lastSeenX,lastSeenZ,memory,
+   navRoute,navCooldown,navGoalX:goal.x,navGoalZ:goal.z,navMode:mode,
    seesPlayer,canAttack:mode==='combat'&&seesPlayer};
  }
  function capture(state,nearBusiness){
@@ -127,7 +219,7 @@ function gameForgeUrbanRulesFactory(){
    heading:finite(raw.heading,0,-Math.PI*4,Math.PI*4)
   };
  }
- return {clamp,intersects,move,clearShot,canHit,cameraPosition,guardStep,capture,load};
+ return {clamp,intersects,move,clearShot,canHit,cameraPosition,routeClear,planGuardRoute,guardStep,capture,load};
 }
 root.gameForgeUrbanRulesFactory=gameForgeUrbanRulesFactory;
 if(typeof module!=='undefined')module.exports=gameForgeUrbanRulesFactory;

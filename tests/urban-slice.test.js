@@ -180,6 +180,17 @@ test('URB-02 cache de rota reduz recalculo continuo e nao muda estado parado',()
  assert.equal(frozen.navCooldown,b.navCooldown);
 });
 
+test('URB-02 falha de rota nao causa replanejamento 60 vezes por segundo',()=>{
+ const block={x:0,z:2,w:3,d:2},target={x:0,z:2,noise:true};
+ const start={x:0,z:0,homeX:0,homeZ:0};
+ const first=R.guardStep(start,target,1/60,[block]);
+ assert.deepEqual(first.navRoute,[],'destino dentro de predio e inalcancavel');
+ assert.ok(first.navCooldown>.6);
+ const second=R.guardStep(first,{...target,noise:false},1/60,[block]);
+ assert.ok(second.navCooldown<first.navCooldown,'falha e armazenada ate o proximo intervalo');
+ assert.equal(R.intersects(second.x,second.z,.36,block),false);
+});
+
 test('URB-02 som faz guarda investigar atras de predio por caminho sem atacar atraves da parede',()=>{
  const building={x:0,z:2,w:3,d:1};
  const start={x:0,z:0,homeX:0,homeZ:0},player={x:0,z:4,noise:true};

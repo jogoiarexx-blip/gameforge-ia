@@ -175,7 +175,7 @@ function compile(spec,gdd,instruction='',options={}){
   const t=line.normal,where=line.stage, origin=line.origin+' linha '+line.line;
   // Negação localizada: "sem chefe, com 7 inimigos" ainda pede 7 inimigos.
   const enemyMention=/\b(?:inimigos?|adversarios?|monstros?)\b/.exec(t);
-  const enemyClause=enemyMention?t.slice(0,enemyMention.index).split(/[,.!?;]|\b(?:mas|porem)\b/).pop():'';
+  const enemyClause=enemyMention?t.slice(0,enemyMention.index).split(/[,.!?;]|\b(?:mas|porem|com)\b/).pop():'';
   const negated=/\b(sem|nao quero|nenhum|nenhuma|remova|retire|elimine o sistema de)\b/.test(enemyClause);
   const wave=quantity(t,'ondas|waves');
   if(wave!==null&&/\b(onda|wave)/.test(t)){

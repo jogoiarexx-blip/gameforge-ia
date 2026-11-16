@@ -167,7 +167,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     state.spec=generatedGdd===md?GameForgeProject.activeSpec(state.files,spec):spec;
     const urbanOnly=spec.genre==='urban-action';
     $('download-urban-plan').classList.toggle('hidden',!urbanOnly);
-    $('generate').disabled=urbanOnly&&spec.engineAvailability?.status==='planned';
+    $('generate').disabled=(urbanOnly&&spec.engineAvailability?.status==='planned')||!!spec.designIR?.blocked?.length;
     renderReferences();
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');
     const plan=spec.implementation||{applied:[],pending:[],warnings:[]};
@@ -182,10 +182,16 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         '<small> · '+esc(source+line+technical)+'</small></li>';
     }).join('');
     const auditSummary=Object.entries(auditNames).map(([key,name])=>name+': '+(audit.counts[key]||0)).join(' · ');
+    const ir=spec.designIR||{requirements:[],constraints:[],blocked:[],counts:{}};
+    const irRows=ir.requirements.slice(0,25).map(item=>
+      '<li><b>'+esc(item.status)+'</b> — '+esc(item.label)+' <small>('+esc(item.origin?.document||'')+' linha '+esc(item.origin?.line||'?')+')</small></li>').join('');
+    const constraintRows=ir.constraints.slice(0,12).map(item=>
+      '<li><b>'+esc(item.status)+'</b> — '+esc(item.label)+' <small>('+esc(item.reason||'')+')</small></li>').join('');
     const sourceLabel=md?'Documento: '+spec.sourceLength.toLocaleString('pt-BR')+' caracteres e '+spec.sectionCount+' títulos':'Comando direto, sem GDD obrigatório';
     $('analysis').innerHTML=`<strong>${esc(spec.title)}</strong><div class="tags">${tags}</div><div class="muted">Fases: ${spec.stages.map(esc).join(' • ')}</div><p class="muted">${esc(sourceLabel)}. ${plan.applied.length} configurações compiladas; ${plan.pending.length} requisitos adicionais pendentes.</p>`+
       `<details><summary>Entendimento do pedido: ${plan.applied.length} aplicado(s) / ${plan.pending.length} pendente(s)</summary><p>Configurações adicionadas ao código:</p><ul>${section(plan.applied,25)||'<li>Motor padrão do gênero selecionado.</li>'}</ul><p>O que ainda não foi programado:</p><ul>${section(plan.pending,15)||'<li>Nenhum pedido adicional reconhecido como pendente.</li>'}</ul></details>`+
       `<details><summary>Contrato de capacidades — ${esc(auditSummary)}</summary><ul>${auditRows||'<li>Nenhuma regra adicional reconhecida.</li>'}</ul><p>Configurações usam o motor existente. Mecânicas novas continuam pendentes até haver código e testes.</p></details>`+
+      `<details><summary>Requisitos detalhados do pedido — ${ir.requirements.length} mecânica(s), ${ir.constraints.length} restrição(ões)</summary><p>Solicitações reconhecidas com origem:</p><ul>${irRows||'<li>Nenhuma mecânica especial extraída.</li>'}</ul><p>Restrições e proibições:</p><ul>${constraintRows||'<li>Nenhuma restrição explícita.</li>'}</ul></details>`+
       `<p class="muted">Modo Sem IA: somente configurações e mecânicas suportadas são executadas. Regras inéditas requerem desenvolvimento específico.</p>`;
     for(const message of [spec.sourceConflict,spec.genreOverrideWarning,spec.engineAvailability?.reason].filter(Boolean)){
       const warning=document.createElement('p');
@@ -202,6 +208,13 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       link.href=spec.referenceGame.url;link.target='_blank';link.rel='noopener noreferrer';
       reference.append(prefix,link,document.createTextNode(' — referência de arquitetura; o código e os assets não foram copiados automaticamente.'));
       $('analysis').appendChild(reference);
+    }
+    if(ir.blocked?.length){
+      const warning=document.createElement('p');
+      warning.setAttribute('role','alert');
+      warning.textContent='⚠ Não é possível gerar este jogo como solicitado: '+ir.blocked.map(x=>x.label).join(', ')+
+        '. O motor atual entraria em conflito com uma proibição do seu pedido. Modifique a instrução ou escolha outro motor.';
+      $('analysis').appendChild(warning);
     }
     if(spec.genreInference?.ambiguous){
       const warning=document.createElement('p');

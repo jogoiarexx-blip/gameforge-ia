@@ -9,13 +9,13 @@
 ### Fila de execução — não avançar sem registrar resultado
 
 - [ ] **GF-001 · P0 — Gate de publicação (EM REVISÃO):** workflow, preflight, testes negativos e dupla verificação de SHA implementados; **ainda falta mudar Settings → Pages → Source para GitHub Actions** para remover a rota automática da branch.
-- [x] **GF-002 · P0 — Exportação e boot (VALIDADO em Chromium):** 14 ZIPs reais descompactados e jogados no Chromium, sem CDN; prévia, edição de game.js e exportação do Studio testadas; 247 testes Node + 15 cenários reais aprovados no run 43876450239. Testes físicos Android/iOS e desempenho ficam em GF-019.
+- [x] **GF-002 · P0 — Exportação e boot (VALIDADO em Chromium):** cobertura expandida para **15 pares gênero/dimensão**, incluindo URB-01 3D; 261 testes Node e 17 cenários Chromium aprovados no run 43887382720. QA em hardware real continua GF-019.
 - [ ] **GF-003 · P0 — Reconhecimento real de GDD:** corpus versionado de gêneros e casos longos (incluindo GoldenEye FPS 3D), incerteza e conflitos.
 - [ ] **GF-004 · P0 — Contrato de capacidades:** diferenciar requisito solicitado, parâmetro configurado e mecânica implementada/testada.
-- [ ] **GF-005 · P0 — Integridade de projeto:** trazer Playwright de backup/recarga/ZIP/IndexedDB para CI, incluindo GLB e restauração limpa.
-- [ ] **GF-028 · P1 — Ação urbana 3D (motor planejado):** GDD original/Three.js/skill integrados ao classificador e ao plano exportável; **URB-01** (bairro 3D jogável, câmera, combate, negócio, missão e save) continua pendente.
+- [x] **GF-005 · P0 — Integridade de projeto (VALIDADO em Chromium):** continuidade, backup, ZIP e GLB testados em browser limpo; ver seção Encerramento GF-005. Testes físicos/mobile seguem em aberto.
+- [ ] **GF-028 · P1 — Ação urbana 3D (EM EXECUÇÃO):** **URB-01 VALIDADO** — bairro 3D jogável, câmera em terceira pessoa, colisões, combate, negócio, missão e save; **URB-02 a URB-05 pendentes** (IA/câmera avançadas, economia, veículos, GLB).
 
-**Bloqueio externo:** GF-001 precisa da mudança administrativa na origem de publicação do Pages. **Próxima tarefa técnica prioritária: GF-005**, continuidade, backup e recuperação em navegador real, incluindo GLB e persistência. GF-003 e GF-004 seguem em revisão; GF-019 mantém QA em hardware Android/iOS. Os **22 itens P1/P2** (interface, evolução de motores, campanhas, assets, animações, performance, segurança, backend e editor) estão detalhados no plano mestre. Manter IDs estáveis e alterar o estado para `VALIDADO` somente com código publicado, testes e CI no mesmo commit; QA visual requer navegador real.
+**Bloqueio externo:** GF-001 ainda depende da mudança administrativa da origem de publicação do Pages. **Próxima tarefa de motor: URB-02** (câmera com oclusão, mira e guardas com IA aprimorada). GF-005 já foi validado em Chromium; GF-019 mantém QA em dispositivos físicos. Os **22 itens P1/P2** (interface, evolução de motores, campanhas, assets, animações, performance, segurança, backend e editor) estão detalhados no plano mestre. Manter IDs estáveis e alterar o estado para `VALIDADO` somente com código publicado, testes e CI no mesmo commit; QA visual requer navegador real.
 
 **Escopo desta auditoria:** análise estática de código, documentação, testes e GitHub Actions. **Não** foi feito teste manual real em Android/iPhone, nem auditoria do servidor opcional (código backend não está neste repositório).
 

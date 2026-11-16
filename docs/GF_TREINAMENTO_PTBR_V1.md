@@ -2,7 +2,7 @@
 
 ## O que foi treinado
 
-O GameForge **não hospeda um modelo de IA que possa ser retreinado neste repositório estático**. O treinamento desta etapa é um conjunto supervisionado de **144 pedidos rotulados**, com um interpretador determinístico aprimorado e testes de regressão. Cada caso descreve um jogo com gênero e dimensão esperados; seis pedidos também verificam quantidade de fases. O texto que a pessoa escreveu permanece íntegro no projeto.
+O GameForge **não hospeda um modelo de IA que possa ser retreinado neste repositório estático**. O treinamento desta etapa é um conjunto supervisionado de **144 pedidos rotulados**, com um interpretador determinístico aprimorado e testes de regressão. Cada caso descreve um jogo com gênero e dimensão esperados; sete pedidos também verificam quantidade de fases. O texto que a pessoa escreveu permanece íntegro no projeto.
 
 - Corpus: `training/briefs-ptbr-v1.json`
 - Interpretador: `js/intent-compiler.js` e `js/parser.js`

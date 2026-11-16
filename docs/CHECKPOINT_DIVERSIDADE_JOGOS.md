@@ -9,12 +9,12 @@
 ### Fila de execução — não avançar sem registrar resultado
 
 - [ ] **GF-001 · P0 — Gate de publicação (EM REVISÃO):** workflow, preflight, testes negativos e dupla verificação de SHA implementados; **ainda falta mudar Settings → Pages → Source para GitHub Actions** para remover a rota automática da branch.
-- [ ] **GF-002 · P0 — Matriz de exportação e boot (EM REVISÃO):** 14 motores + FPS com loja iniciam após exportação real de game.js; ZIP preserva binários e GLB é carregado em cena 3D simulada; falta QA em navegador real e interface de edição.
+- [x] **GF-002 · P0 — Exportação e boot (VALIDADO em Chromium):** 14 ZIPs reais descompactados e jogados no Chromium, sem CDN; prévia, edição de game.js e exportação do Studio testadas; 247 testes Node + 15 cenários reais aprovados no run 43876450239. Testes físicos Android/iOS e desempenho ficam em GF-019.
 - [ ] **GF-003 · P0 — Reconhecimento real de GDD:** corpus versionado de gêneros e casos longos (incluindo GoldenEye FPS 3D), incerteza e conflitos.
 - [ ] **GF-004 · P0 — Contrato de capacidades:** diferenciar requisito solicitado, parâmetro configurado e mecânica implementada/testada.
 - [ ] **GF-005 · P0 — Integridade de projeto:** trazer Playwright de backup/recarga/ZIP/IndexedDB para CI, incluindo GLB e restauração limpa.
 
-**Bloqueio externo:** GF-001 precisa da mudança administrativa na origem de publicação do Pages. **Próxima tarefa técnica:** concluir GF-002 com QA em navegador real; GF-003 segue em revisão. Os **22 itens P1/P2** (interface, evolução de motores, campanhas, assets, animações, performance, segurança, backend e editor) estão detalhados no plano mestre. Manter IDs estáveis e alterar o estado para `VALIDADO` somente com código publicado, testes e CI no mesmo commit; QA visual requer navegador real.
+**Bloqueio externo:** GF-001 precisa da mudança administrativa na origem de publicação do Pages. **Próxima tarefa técnica prioritária: GF-005**, continuidade, backup e recuperação em navegador real, incluindo GLB e persistência. GF-003 e GF-004 seguem em revisão; GF-019 mantém QA em hardware Android/iOS. Os **22 itens P1/P2** (interface, evolução de motores, campanhas, assets, animações, performance, segurança, backend e editor) estão detalhados no plano mestre. Manter IDs estáveis e alterar o estado para `VALIDADO` somente com código publicado, testes e CI no mesmo commit; QA visual requer navegador real.
 
 **Escopo desta auditoria:** análise estática de código, documentação, testes e GitHub Actions. **Não** foi feito teste manual real em Android/iPhone, nem auditoria do servidor opcional (código backend não está neste repositório).
 
@@ -702,3 +702,21 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Progresso/limites:** `implementada` é reservado a módulo conhecido com teste, `configurada` a parâmetros existentes, `pendente` a código novo faltante e `incompatível` a opção não suportada. A origem é marcada "Não localizada" se não houver evidência. Conferir CI do último SHA antes de promover a etapa a VALIDADO. GF-001 ainda depende da escolha administrativa GitHub Actions como origem do Pages.
 
 **Próximo:** GF-005 (persistência, GLB e backup em navegador real) após GF-002; novas mecânicas baseadas no acervo deverão seguir esse contrato.
+
+## GF-002 — Fechamento: HTML e ZIP reais em Chromium (16/11/2026)
+
+**Estado: VALIDADO no escopo de CI/Chromium.** Esta seção substitui o estado "EM REVISÃO" das etapas anteriores de GF-002; as limitações externas seguem como tarefas separadas.
+
+**Arquivos publicados:**
+- `tools/build-browser-fixtures.cjs` prepara cada um dos 14 projetos exportados, seus HTML/JS/CSS, bibliotecas 3D e ZIPs criados por `GameForgeZip`.
+- `tests/browser-export-matrix.py` extrai cada ZIP com `zipfile`, compara todos os arquivos byte a byte e abre os 14 `index.html` **reimportados** em Chromium por HTTP local. Verifica menu, Jogar, frames, teclado, pausa, ausência de erros JavaScript e ausência de downloads remotos. Executa `2d-arena` e `3d-fps` também a 390 px e rejeita rolagem horizontal.
+- No Studio real, importa um GDD de teste, seleciona motor na seção expansível, cria, abre a prévia no iframe, inicia o jogo, edita `game.js`, aplica alteração e confirma a presença do novo texto no ZIP baixado.
+- `.github/workflows/verify.yml` ganhou job `browser` obrigatório no mesmo workflow que os testes Node, com Playwright em Ubuntu 24.04. Capturas de `2d-arena`, `3d-fps`, `3d-shooter` e do Studio são anexadas como artefato `gf002-browser-screenshots` por 7 dias, inclusive em execuções com falha.
+
+**Incidentes e reparos:** runner Ubuntu 26.04 incompatível com Playwright 1.56; fixado Ubuntu 24.04. Primeiro teste do editor tentou selecionar um campo dentro de `<details>` fechado; agora abre corretamente o menu. Não foram problemas do runtime. Os 14 jogos passaram em todas as rodadas reais concluídas após a instalação do navegador.
+
+**Prova final:** GitHub Actions run **[43876450239](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43876450239)**, SHA **`08f8aa0307c942326bc08cc32b221fc99762872d`**, ambos os jobs verdes: **247 testes Node** e **15 cenários Chromium** (14 gêneros + Studio editor/prévia/ZIP), **zero falhas**. Artefato de screenshots anexado (ID 14229968310).
+
+**Limitações honestas:** Chromium headless em Linux não é dispositivo físico Android/iOS; nem valida 1% lows, consumo real de GPU, APIs gráficas de todo fabricante ou animações complexas GLB. O teste GLB em VM cobre modelo estático, não rig/AnimationMixer. Há edição real no Studio com arena 2D; a matriz de navegador cobre a execução de todos os gêneros, mas não o editor de cada um separadamente. Essas expansões permanecem em GF-005, GF-015/016 e GF-019. O Pages por branch ainda pode ignorar falhas da CI: GF-001 continua **EM REVISÃO** até alteração administrativa.
+
+**Próxima tarefa única:** **GF-005** — automatizar restauração/recarga/edição/undo em navegador limpo, ZIP e GLB com IndexedDB e falhas de quota; reutilizar job browser existente. GF-003/004 seguem em revisão e precisam de checagem de suas evidências antes de validação.

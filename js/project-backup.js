@@ -1,7 +1,7 @@
 /* Backups portáteis do Studio. Validação de dados sem executar código. */
 (function(root){
 'use strict';
-const allowedFiles=['index.html','style.css','game.js','engine-3d.js','THREE-LICENSE.txt','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json','CAMPANHA_EDITOR.md','ASSET_CENARIO.b64','ASSET_CENARIO.json'];
+const allowedFiles=['index.html','style.css','game.js','engine-3d.js','THREE-LICENSE.txt','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json','CAMPANHA_EDITOR.md','ASSET_CENARIO.b64','ASSET_CENARIO.json','ASSET_LIBRARY.json'];
 const states=['pendente','em andamento','aguardando revisão','validada','bloqueada'];
 const bytes=s=>new TextEncoder().encode(s).length;
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -15,7 +15,7 @@ function files(value){
  const result={};
  for(const [name,source] of Object.entries(value)){
   if(!allowedFiles.includes(name))throw Error('Arquivo não permitido no backup: '+name);
-  result[name]=text(source,name==='GDD_original.md'?1000000:2000000,'Arquivo '+name);
+  result[name]=text(source,name==='GDD_original.md'?1000000:name==='ASSET_LIBRARY.json'?10000:2000000,'Arquivo '+name);
  }
  if(Boolean(result['game.js'])!==Boolean(result['style.css']))throw Error('O jogo precisa de game.js e style.css completos.');
  return result;
@@ -32,6 +32,7 @@ function normalize(snap){
  const history=snap.history??[];
  if(!Array.isArray(history)||history.length>4)throw Error('Histórico inválido; limite de quatro versões.');
  const result={name:text(snap.name,360,'Nome'),gdd:text(snap.gdd,1000000,'GDD'),instruction:text(snap.instruction,40000,'Instrução'),files:files(snap.files),
+  assetProjectId:typeof snap.assetProjectId==='string'&&/^[a-z0-9][a-z0-9_-]{7,99}$/i.test(snap.assetProjectId)?snap.assetProjectId:'',
   selected:allowedFiles.includes(snap.selected)?snap.selected:'game.js',
   roadmapRecords:records(snap.roadmapRecords),selectedTaskId:text(snap.selectedTaskId??'',160,'Tarefa selecionada'),
   pinnedReferences:Array.isArray(snap.pinnedReferences)?snap.pinnedReferences.filter(x=>typeof x==='string'&&x.length<160).slice(0,5):[],

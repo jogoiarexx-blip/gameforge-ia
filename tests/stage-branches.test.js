@@ -44,3 +44,30 @@ test('GF-010 checkpoint so restaura escolha valida sem injetar dinheiro ou fase'
  assert.equal(Branches.validateCheckpoint(opts,{...raw,route:'secret',kills:2},3),null);
  assert.ok(Branches.validateCheckpoint(opts,{...raw,route:'secret',kills:11},3));
 });
+
+test('GF-010 v2 cada caminho possui cenário e evento diferentes com ID persistente por fase',()=>{
+ const d=Branches.parse('3 caminhos diferentes e passagem secreta');
+ const paths=Branches.options(d,true);
+ assert.deepEqual(paths.map(p=>p.scene.id),['sky-bridges','central-outpost','canyon-ruins','hidden-rift']);
+ assert.equal(new Set(paths.map(p=>p.scene.bg)).size,4);
+ assert.deepEqual(paths.map(p=>Branches.events(p,0)[0].type),['supply','ambush','hazard','cache']);
+ const events=paths.map(p=>Branches.events(p,2)[0]);
+ assert.equal(new Set(events.map(e=>e.id)).size,4);
+ assert.ok(events.every(e=>e.id.startsWith('s2:')));
+ assert.deepEqual(Branches.events(null,0),[]);
+ assert.deepEqual(Branches.events(paths[0],99),[]);
+});
+test('GF-010 v2 checkpoint de evento exclusivo impede recompensas duplicadas e rejeita IDs externos',()=>{
+ const config=Branches.parse('3 caminhos diferentes e rota secreta');
+ const route=Branches.choose(config,'high'),event=Branches.events(route,1)[0];
+ const base={version:1,stage:1,route:'high',health:86,score:2400,weapon:1,kills:6};
+ const old=Branches.validateCheckpoint(config,base,3);
+ assert.deepEqual(old.claimed,[],'saves anteriores sem o novo campo continuam legíveis');
+ const saved=Branches.validateCheckpoint(config,{...base,claimed:[event.id]},3);
+ assert.deepEqual(saved.claimed,[event.id]);
+ assert.equal(Branches.validateCheckpoint(config,{...base,claimed:[event.id,event.id]},3),null);
+ assert.equal(Branches.validateCheckpoint(config,{...base,claimed:['s2:high:supply']},3),null);
+ assert.equal(Branches.validateCheckpoint(config,{...base,claimed:['s1:low:hazard']},3),null);
+ assert.equal(Branches.validateCheckpoint(config,{...base,claimed:['hacked']},3),null);
+ assert.deepEqual(Branches.validateCheckpoint(config,{...base,route:null,claimed:[]},3).claimed,[]);
+});

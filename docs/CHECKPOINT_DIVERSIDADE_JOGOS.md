@@ -604,3 +604,25 @@ Critério: cada motor só avança após testes, exportação, backup e revisão 
 **Validação automatizada:** GitHub Actions `43860904541` completou com **203 testes aprovados e 0 falhas**. Foi encontrada e corrigida uma regressão no serializador que havia escrito escapes de quebra de linha incorretos; suíte geral voltou a verde após a correção. No teste funcional novo, a reserva consumida é proporcional às balas faltantes, e não um pente fixo.
 
 **Limitações e próximos passos:** sem persistência após refresh, salvamento só no estado da campanha; modelos procedurais e três níveis de dano, não três armas físicas diferentes. A economia é um exemplo de módulo suportado, não IA geradora ilimitada. Foi acrescentado um mecanismo anti-softlock: se pente e reserva estiverem vazios e o jogador não puder comprar munição, o motor libera 6 tiros emergenciais a cada 20 segundos de simulação, sem criar créditos; o inventário contabiliza as concessões. Ainda é preciso realizar QA visual real no navegador/celular e validar o equilíbrio de recursos. Futuro: geração opcional de módulos novos por backend IA com `proposal/diff`, build isolado, testes de sintaxe, smoke tests e aceite explícito, seguido de integração com assets animados de armas/itens.
+
+
+## Engenharia — etapa 16 / GF-001: gate de publicação GitHub Pages (16/11/2026)
+
+**Status: EM REVISÃO, não VALIDADO.** O plano mestre `docs/PLANO_MESTRE_GAMEFORGE.md` marcou GF-001 como P0 porque o Pages vinha publicando commits mesmo com testes em vermelho. Uma mudança de workflow não altera a configuração anterior do Pages automaticamente.
+
+**Implementado:**
+- `tools/pages-gate.cjs`: autoriza somente `workflow_run` concluído com sucesso, disparado por push em main do mesmo repositório, sem PR/fork e com SHA idêntico ao checkout.
+- `.github/workflows/publish-verified.yml`: workflow de publicação acionado pela conclusão de `Validar GameForge Studio`, com guarda redundante, checkout de SHA verificado, comparação com HEAD atual da main, empacotamento somente dos arquivos estáticos, publicação com `actions/deploy-pages`.
+- `tools/verify-exports.cjs`: valida todos os gêneros 2D/3D previstos em `parser.styles` e FPS com loja; verifica script principal, dependências locais, ausência de URLs de script remoto e sintaxe de `game.js`.
+- `.github/workflows/verify.yml` e `package.json`: `npm run verify:exports` agora obrigatório na CI antes de concluir validação.
+- `tests/pages-gate.test.js`: rejeição de CI falha, PR/fork, SHA incorreto, script remoto, dependência ausente e JS inválido; teste de ordem das etapas.
+- `docs/PUBLICACAO_VERIFICADA.md`: guia de migração obrigatória, como verificar e como reverter uma versão ruim sem contornar testes.
+
+**Evidência:**
+- Run `43869508568` para o commit `d69f34e7`: **210 testes aprovados, 0 falhas**, `verify:exports` confirmou **15 variantes e 623.744 bytes de JS compiláveis**.
+- O workflow `Publicar GameForge verificado` já concluiu uma publicação verde na run `43869000500` (commit `14eadf15`). Execuções para SHA que deixou de ser o HEAD da main foram intencionalmente barradas, por exemplo run `43868905493`.
+- Os testes negativos locais simulam falhas de CI e export sem enviar JS quebrado à main. O fluxo **ainda não foi provado como gate exclusivo** porque a rota anterior `pages build and deployment` continuou publicando durante testes vermelhos (ex.: commit `ea865845`).
+
+**Dependência de configuração externa para conclusão:** em **Settings → Pages → Build and deployment → Source**, selecionar **GitHub Actions** em lugar de publicação direta da branch. As ferramentas GitHub disponíveis não permitem mudar a configuração Pages. Só marcar GF-001 como VALIDADO depois de confirmar que a rota antiga deixou de promover commits e que um commit com falha fica fora do site. Consulte `docs/PUBLICACAO_VERIFICADA.md`.
+
+**Próximo ID:** GF-002 (matriz de inicialização, preview e exportação de todos os gêneros, incluindo GLB/ZIP em ambiente de browser), depois GF-003/004. A geração de novos módulos por IA permanece dependente de auditoria do backend real e revisão de alterações antes de execução.

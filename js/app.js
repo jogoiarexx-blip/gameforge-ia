@@ -160,6 +160,12 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     renderReferences();
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');
     $('analysis').innerHTML=`<strong>${esc(spec.title)}</strong><div class="tags">${tags}</div><div class="muted">Fases: ${spec.stages.map(esc).join(' • ')}</div><p class="muted">Documento inteiro analisado: ${spec.sourceLength.toLocaleString('pt-BR')} caracteres e ${spec.sectionCount} títulos. O protótipo utiliza até ${spec.stages.length} fases reconhecidas. </p><p class="muted">Sem IA: será gerado um protótipo nas mecânicas disponíveis, não uma reprodução integral do GDD.</p>`;
+    if(spec.sourceConflict){
+      const warning=document.createElement('p');
+      warning.setAttribute('role','status');
+      warning.textContent='⚠ '+spec.sourceConflict;
+      $('analysis').appendChild(warning);
+    }
     return spec;
   }
   function projectName(){return ($('project-name').value.trim()||'gameforge-jogo').replace(/[\\/:*?"<>|]+/g,'-').slice(0,70);}
@@ -934,6 +940,23 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('knowledge-refresh').addEventListener('click',renderReferences);
   $('knowledge-clear').addEventListener('click',()=>{pinnedReferences=[];renderReferences();saveState();});
   $('analyze').addEventListener('click',analyze);
+  $('idea-to-gdd').addEventListener('click',()=>{
+    const idea=$('instruction').value.trim();
+    if(!idea){feedback('Digite a ideia do novo jogo antes de criar o GDD.',true);return;}
+    if($('gdd').value.trim().length>1000 && !window.confirm('O GDD atual sera substituido pela nova ideia. Se quiser preserva-lo, baixe um backup antes. Continuar?'))return;
+    const genre=GameForgeParser.detectGenre(idea);
+    const dim=$('game-dimension').value==='3d'||($('game-dimension').value==='auto'&&/\\b3d\\b/i.test(idea))?'3d':'2d';
+    const name=genre==='shooter'?'ARMADA ESTELAR':genre==='rpg'?'CRÔNICAS DO VALE':genre==='fps'?'OPERAÇÃO HORIZONTE':'NOVO PROJETO';
+    const gdd='# '+name+'\\n\\n## Conceito\\n'+idea+'\\n\\n## Controles e sistemas\\nImplementar os controles e as mecanicas disponiveis deste estilo.\\n\\n## Fase 1 — Início\\nIntroduzir as mecânicas básicas.\\n\\n## Fase 2 — Desafio\\nAumentar o desafio.\\n\\n## Fase 3 — Confronto\\nObjetivo final da campanha.\\n';
+    $('gdd').value=gdd;$('instruction').value='';$('project-name').value=name;
+    if($('game-dimension').value==='auto')$('game-dimension').value=dim;
+    renderStyles();
+    if([...$('game-style').options].some(x=>x.value===genre))$('game-style').value=genre;
+    unrestoredProject=false;
+    $('file-indicator').textContent='Novo GDD criado a partir da sua ideia';
+    analyze();saveState();feedback('Novo GDD criado. Clique em Criar jogo para gerar o motor '+dim.toUpperCase()+'.');
+  });
+
   $('example').addEventListener('click',()=>{unrestoredProject=false;$('gdd').value=example;$('instruction').value='';$('project-name').value='Sombras do Vale';analyze();saveState();});
   $('md-file').addEventListener('change',async e=>{
     const file=e.target.files&&e.target.files[0];if(!file)return;

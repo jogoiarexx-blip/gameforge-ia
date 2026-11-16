@@ -110,6 +110,20 @@ function gameForgeUrban3DBoot(){
  hero=character(0x334a5e,0xd5b093,0x272e37);
  guard=character(0x824f42,0xbd927b,0x3d4345);
  scene.add(hero);scene.add(guard);
+ const actorAnimation={player:null,enemy:null},actorImportErrors=[];
+ function loadActorAsset(role,target){
+  const list=typeof GF_SCENE_ASSETS!=='undefined'&&Array.isArray(GF_SCENE_ASSETS)?GF_SCENE_ASSETS:[];
+  const asset=list.find(a=>a.role===role);
+  if(!asset||typeof gameForgeDecodeGLB!=='function')return;
+  try{
+   const model=gameForgeDecodeGLB(T,asset.base64);
+   model.scale.multiplyScalar(.65*(Number(asset.scale)||1));
+   const old=target.children.slice();target.add(model);
+   for(const child of old)child.visible=false;
+   actorAnimation[role]=GameForgeActorAnimations.create(T,model);
+  }catch(error){actorImportErrors.push(role+': '+String(error?.message||error).slice(0,160));}
+ }
+ loadActorAsset('player',hero);loadActorAsset('enemy',guard);
  const initial=()=>({
   x:0,z:9,heading:0,health:100,cash:1000,ammo:12,reserve:48,
   guardHp:75,guardDefeated:false,captured:false,
@@ -117,7 +131,7 @@ function gameForgeUrban3DBoot(){
  });
  let progress=initial(),state='menu',paused=false,frames=0,simulationSteps=0;
  let last=0,acc=0,walkPhase=0,clock=0,attackCooldown=0,invulnerable=0,
-     fireCooldown=0,reloadRemaining=0,saveCooldown=0,guardAttack=0,guardPhase=0,shotNoise=0;
+     fireCooldown=0,reloadRemaining=0,saveCooldown=0,guardAttack=0,guardPhase=0,shotNoise=0,deathRemaining=0;
  let saveEnabled=true,saveStatus='novo',cameraOccluded=false;
  let guardBrain={x:0,z:1.5,homeX:0,homeZ:1.5,mode:'patrol'};
  function readSave(){return saveStore.read();}
@@ -134,9 +148,9 @@ function gameForgeUrban3DBoot(){
   if(newGame){progress=initial();saveStore.remove();}
   state='play';paused=false;acc=0;last=0;keys.clear();clearTouches();
   $('pause').textContent='Pausar';
-  fireCooldown=0;attackCooldown=0;reloadRemaining=0;invulnerable=0;shotNoise=0;
+  fireCooldown=0;attackCooldown=0;reloadRemaining=0;invulnerable=0;shotNoise=0;deathRemaining=0;
   hero.position.set(progress.x,0,progress.z);
-  guard.visible=!progress.guardDefeated;
+  guard.visible=!progress.guardDefeated||deathRemaining>0;
   guard.position.set(0,0,1.5);
   guardBrain={x:0,z:1.5,homeX:0,homeZ:1.5,mode:'patrol'};
   $('overlay').classList.add('hidden');
@@ -206,7 +220,8 @@ function gameForgeUrban3DBoot(){
    progress.guardHp=Math.max(0,progress.guardHp-25);
    guardPhase=1;notice('Guarda atingido! '+progress.guardHp+' HP');
    if(progress.guardHp===0){
-    progress.guardDefeated=true;guard.visible=false;
+    progress.guardDefeated=true;deathRemaining=actorAnimation.enemy?.map?.death?.9:0;
+    actorAnimation.enemy?.setState('death');guard.visible=deathRemaining>0;
     notice('Guarda neutralizado. Interaja com o armazém (E).');
    }
   }else notice('Disparo efetuado — sem alvo na mira.');
@@ -269,7 +284,7 @@ function gameForgeUrban3DBoot(){
  function simulate(dt){
   clock+=dt;
   fireCooldown=Math.max(0,fireCooldown-dt);invulnerable=Math.max(0,invulnerable-dt);
-  shotNoise=Math.max(0,shotNoise-dt);
+  shotNoise=Math.max(0,shotNoise-dt);deathRemaining=Math.max(0,deathRemaining-dt);
   attackCooldown=Math.max(0,attackCooldown-dt);guardPhase=Math.max(0,guardPhase-dt);
   if(reloadRemaining>0){
    reloadRemaining=Math.max(0,reloadRemaining-dt);
@@ -302,10 +317,13 @@ function gameForgeUrban3DBoot(){
   hero.userData.legs[1].rotation.x=-stride;
   hero.userData.legs[2].rotation.x=-stride*.6;
   hero.userData.legs[3].rotation.x=stride*.6;
+  actorAnimation.player?.setState(shotNoise>0?'attack':len>0?'walk':'idle');
+  actorAnimation.player?.update(dt);
   if(!progress.guardDefeated){
    guardBrain=R.guardStep(guardBrain,{x:progress.x,z:progress.z,noise:len>0||shotNoise>0},dt,blockers);
    guard.position.x=guardBrain.x;guard.position.z=guardBrain.z;
    guard.rotation.y=-guardBrain.heading;
+   actorAnimation.enemy?.setState(guardBrain.canAttack?'attack':guardBrain.mode==='patrol'?'idle':'walk');
    if(guardBrain.canAttack&&attackCooldown===0&&invulnerable===0){
     progress.health=Math.max(0,progress.health-12);
     attackCooldown=1.15;invulnerable=.4;
@@ -319,6 +337,7 @@ function gameForgeUrban3DBoot(){
     }
    }
   }
+  actorAnimation.enemy?.update(dt);
   if(saveCooldown>0)saveCooldown-=dt;
   if(len>0&&saveCooldown<=0){saveCooldown=1.5;save();}
   updateHud();
@@ -367,6 +386,8 @@ function gameForgeUrban3DBoot(){
   mission:{guardDefeated:progress.guardDefeated,captured:progress.captured,
    complete:progress.missionComplete,rewardGranted:progress.rewardGranted},
   colliders:blockers.length,cameraOccluded,saveStatus,saveEnabled,saveKey,
+  actorAnimations:{player:actorAnimation.player?.state||'static',enemy:actorAnimation.enemy?.state||'static'},
+  actorClipCount:{player:actorAnimation.player?.clips?.length||0,enemy:actorAnimation.enemy?.clips?.length||0},
   prototype:true
  });
  requestAnimationFrame(frame);

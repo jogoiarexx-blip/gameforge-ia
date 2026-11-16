@@ -59,7 +59,7 @@
 | **GF-020** | Preview iframe, exportação de HTML/ZIP, comunicação de QA, servidor opcional e entradas de projeto. | Revisão de segurança: CSP, mensagens `postMessage`, URLs e tokens, importações ZIP/GLB, limites de arquivos, scripts editáveis e isolamento do backend. | Checklist adversarial e testes negativos; segredo não entra no export/backup/logs; aceitar candidatos só após revisão. | PENDENTE |
 | **GF-021** | `repository-knowledge.js` referencia projetos; reutilização de código/arte não é sempre licenciada. | Catálogo de **licenças, origem, compatibilidade e atribuições** antes de copiar dependências/assets; distinguir inspiração técnica de reutilização literal. | Todo pacote de código/asset incorporado possui procedência e licença documentadas; conteúdo comercial sem permissão é excluído. | PENDENTE |
 
-| **GF-028** | GDD Godfather original 2D + GDD alvo Three.js 3D + skill Urban Action. O gênero `urban-action` agora é identificado sem fallback para FPS/arena. | **URB-01 publicado:** `urban-rules.js` + `urban-runtime.js` com bairro procedural 3D, terceira pessoa, colisões XZ, combate, guarda, armazém capturável, missão com recompensa única e save local; plano e GDD original preservados. Próximo: URB-02 (câmera/IA/movimento avançados), URB-03 (economia), URB-04 (veículos/polícia/interiores), URB-05 (GLB/animação/performance). | Evidência [Actions 43887382720](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43887382720): 261 testes Node, 17 cenários Chromium com 15 engines + Studio; gameplay urbano no navegador, captura e restore sem duplicar dinheiro. **Não** equivale à campanha original. | EM EXECUÇÃO — URB-01 VALIDADO (slice); URB-02..05 PENDENTES |
+| **GF-028** | GDD Godfather 2D → ação urbana Three.js 3D, gênero inicialmente ignorado. URB-01 agora implementa um **bairro jogável** com câmera, guarda, tiro, captura de negócio, missão e save, sem corresponder à campanha completa. | `js/urban-design.js`, `js/urban-rules.js`, `js/urban-runtime.js`, `js/generator.js`, exportação, testes Node e Chromium. **Próxima evolução:** gerar LevelSpec/objetivos a partir de GDDs distintos; ampliar carro/polícia/interiores de modo incremental. | Run [43887382720](https://github.com/jogoiarexx-blip/gameforge-ia/actions/runs/43887382720): 261 testes Node e 17 cenários Chromium aprovados (15 jogos+Studio+urbano). Só considerar jogo completo quando campanhas/mecânicas reais forem testadas de ponta a ponta. | EM REVISÃO — URB-01 demonstrativo validado, motor completo pendente |
 
 ## 5. P2 — Expansões controladas (não antecipar antes das bases)
 
@@ -101,3 +101,12 @@
 - **Código:** `js/urban-rules.js`, `js/urban-runtime.js`, `js/parser.js`, `js/generator.js`, `js/app.js` e `index.html`.
 - **Testes:** `tests/urban-slice.test.js`, `tests/urban-design.test.js`, `tests/export-boot-matrix.test.js`, `tests/browser-export-matrix.py`; CI 43887382720 com 261 Node e 17 cenários Chromium aprovados, além de GF-005.
 - **Próximo ID:** URB-02. A fila de P0 (GF-001 pendente de configuração de Pages, e outros itens do plano) permanece registrada.
+
+
+## 8. Auditoria estrutural atualizada — diagnóstico e ordem (16/11/2026)
+
+Leia [AUDITORIA_ESTRUTURAL_GAMEFORGE_2026-11-16.md](./AUDITORIA_ESTRUTURAL_GAMEFORGE_2026-11-16.md) antes de iniciar uma nova etapa. O relatório contém **14 achados** com evidências, impacto, prioridade, testes e aceite. No ensaio exploratório, **3 de 10 pedidos com gênero esperado** (todos ação urbana curta em português) foram classificados como `arena/3d`, indicando problema de fidelidade mesmo com o URB-01 jogável.
+
+**Ordem operacional:** GF-001 (dependência administrativa de Pages) → GF-003/004 (IR semântico + benchmark de briefs infantis, negativos e híbridos) → GF-028/GF-010 (LevelSpec e missões derivadas do GDD) → GF-007/008/009 (refatoração, diff e salvamento isolado) → GF-015/016/017/019 (GLB animado, performance e QA). GF-006 simplifica o fluxo visual, mas não deve substituir a implementação dos sistemas de jogo.
+
+**Auditoria não é implementação:** itens permanecem PENDENTE/EM REVISÃO até código, testes de gameplay e CI do SHA publicado. CI verde do protótipo urbano confirma apenas o vertical slice existente.

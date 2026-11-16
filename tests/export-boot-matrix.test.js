@@ -49,7 +49,7 @@ function environment(files,dimension){
   return elements.get(id);
  }
  const doc={
-  getElementById:element,createElement:()=>element('created-'+elements.size),
+  body:element('body'),getElementById:element,createElement:()=>element('created-'+elements.size),
   querySelector:()=>element('first-query'),querySelectorAll:()=>[],
   addEventListener(type,cb){(handlers[type]??=[]).push(cb);}
  };
@@ -124,6 +124,7 @@ for(const {dimension,genre} of combinations){
   if(dimension==='3d')assert.ok(h.draws()>0,genre+': renderer não recebeu cena');
   if(after.state==='play'){
    h.element('pause').click();
+   h.tick(1); // Alguns motores publicam telemetria apenas no próximo quadro.
    assert.equal(h.telemetry().paused,true,genre+': pausa');
    h.tick(8);
    assert.equal(h.telemetry().paused,true,genre+': pausa persistente');

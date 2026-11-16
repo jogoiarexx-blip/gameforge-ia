@@ -5,6 +5,7 @@
   const intentCompiler=root.GameForgeIntent||(typeof require==='function'?require('./intent-compiler'):null);
   const sourceCorpus=root.GameForgeGameCorpus||(typeof require==='function'?require('./game-corpus'):null);
   const urbanDesign=root.GameForgeUrbanDesign||(typeof require==='function'?require('./urban-design'):null);
+  const designIR=root.GameForgeDesignIR||(typeof require==='function'?require('./design-ir'):null);
   // Classificação semântica determinística. Sinais de jogabilidade são mais fortes
   // do que palavras ocasionais em capítulos longos de um GDD.
   function detectGenreInfo(text) {
@@ -249,9 +250,10 @@
       };
       compiled.limitations.unshift(compiled.engineAvailability.reason);
       compiled.detected.push('Câmera: terceira pessoa','Motor urbano 3D: vertical slice URB-01 (1 bairro)');
-      return compiled;
+      return designIR?designIR.enrich(compiled,source,extra):compiled;
     }
-    return intentCompiler?intentCompiler.compile(compiled,source,extra,options):compiled;
+    const interpreted=intentCompiler?intentCompiler.compile(compiled,source,extra,options):compiled;
+    return designIR?designIR.enrich(interpreted,source,extra):interpreted;
   }
   function creationInstruction(spec,instruction=''){
     const plan=spec.implementation||{applied:[],pending:[],warnings:[]};

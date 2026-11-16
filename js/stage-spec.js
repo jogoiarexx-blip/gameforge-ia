@@ -135,23 +135,23 @@ function zoneEvents(rows){
 
 // GF-009: um NPC de missão por fase, com origem e contrato restrito.
 function npcQuest(rows,index){
- let current=null,origin=null,pending=false;
+ let current=null,origin=null,pending=false,removed=false;
  const parseLine=t=>t.replace(/^[-*+]\s*/,'')
   .replace(/^(?:(?:na|no|para a|para o)\s+)?(?:fase|missao|etapa|stage|level)\s*\d{1,2}\s*[:,-]?\s*/i,'');
  for(const row of rows){
   const normalized=parseLine(row.normal);
   const raw=parseLine(row.text);
   if(/^(?:sem|remover|retirar|nao quero)\s+(?:o\s+)?npc\b/.test(normalized)){
-   current=null;pending=false;origin=null;continue;
+   current=null;pending=false;origin=null;removed=true;continue;
   }
-  const npc=/^npc\s*:\s*([\p{L}\p{N}][\p{L}\p{N} \-]{0,37})\s+(?:no|na|ao)\s+(norte|sul|leste|oeste|centro)\s*$/u.exec(normalized);
+  const npc=/^npc\s*:\s*([\p{L}\p{N}][\p{L}\p{N} \-]{0,37})\s+(?:no|na|ao)\s+(norte|sul|leste|oeste|centro)\s*$/iu.exec(raw);
   if(npc){
    current={id:'npc-stage-'+String(index+1).padStart(2,'0'),
     name:safeTitle(npc[1].trim().replace(/\s+/g,' ')),
-    zone:ZONE_IDS[npc[2]],dialogue:'',steps:null,
+    zone:ZONE_IDS[normalize(npc[2])],dialogue:'',steps:null,
     reward:{score:0,health:0,ammo:0}};
    origin={document:row.document,line:row.line};
-   pending=false;continue;
+   pending=false;removed=false;continue;
   }
   if(!current)continue;
   if(/^fala do npc\s*[:\-]/.test(normalized)){
@@ -178,7 +178,7 @@ function npcQuest(rows,index){
    }else current.reward=amounts;
   }
  }
- if(!current)return {status:'nao_solicitado',quest:null,origin:null};
+ if(!current)return {status:'nao_solicitado',quest:null,origin:null,removed};
  if(!current.steps||pending)return {status:'pendente',quest:null,origin};
  return {status:'implementado',quest:current,origin};
 }
@@ -248,7 +248,7 @@ function compile(spec,gdd='',command=''){
   // Sem gatilho declarado, deixa a configuração original intacta.
   const npc=combat?npcQuest(rows,index):null;
   if(combat&&npc?.status==='implementado')c.npcQuest=npc.quest;
-  else if(combat&&npc?.status==='pendente')delete c.npcQuest;
+  else if(combat&&(npc?.status==='pendente'||npc?.removed))delete c.npcQuest;
   configs[index]=c;
   const mapLayout=combat?(LAYOUTS.some(x=>x.id===c.layout)?c.layout:'cross'):null;
   const configuredTheme=['forest','desert','neon','ruins'].includes(c.theme)?c.theme:

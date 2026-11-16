@@ -165,6 +165,9 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     // Um GDD recém-importado não deve herdar o GAME_SPEC de outro jogo salvo.
     const generatedGdd=typeof state.files['GDD_original.md']==='string'?state.files['GDD_original.md'].trim():null;
     state.spec=generatedGdd===md?GameForgeProject.activeSpec(state.files,spec):spec;
+    const urbanOnly=spec.genre==='urban-action';
+    $('download-urban-plan').classList.toggle('hidden',!urbanOnly);
+    $('generate').disabled=urbanOnly;
     renderReferences();
     const tags=spec.detected.slice(0,13).map(x=>`<span class="tag">${esc(x)}</span>`).join('');
     const plan=spec.implementation||{applied:[],pending:[],warnings:[]};
@@ -184,7 +187,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       `<details><summary>Entendimento do pedido: ${plan.applied.length} aplicado(s) / ${plan.pending.length} pendente(s)</summary><p>Configurações adicionadas ao código:</p><ul>${section(plan.applied,25)||'<li>Motor padrão do gênero selecionado.</li>'}</ul><p>O que ainda não foi programado:</p><ul>${section(plan.pending,15)||'<li>Nenhum pedido adicional reconhecido como pendente.</li>'}</ul></details>`+
       `<details><summary>Contrato de capacidades — ${esc(auditSummary)}</summary><ul>${auditRows||'<li>Nenhuma regra adicional reconhecida.</li>'}</ul><p>Configurações usam o motor existente. Mecânicas novas continuam pendentes até haver código e testes.</p></details>`+
       `<p class="muted">Modo Sem IA: somente configurações e mecânicas suportadas são executadas. Regras inéditas requerem desenvolvimento específico.</p>`;
-    for(const message of [spec.sourceConflict,spec.genreOverrideWarning].filter(Boolean)){
+    for(const message of [spec.sourceConflict,spec.genreOverrideWarning,spec.engineAvailability?.reason].filter(Boolean)){
       const warning=document.createElement('p');
       warning.setAttribute('role','status');
       warning.textContent='⚠ '+message;
@@ -540,6 +543,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   async function generate(){
     if(qaState.candidate){feedback('Aceite ou descarte a correção candidata antes de gerar outro jogo.',true);return;}
     const spec=analyze();if(!spec)return;
+    if(spec.engineAvailability?.status==='planned'){
+      feedback('O GDD exige um motor urbano 3D ainda não implementado. Baixe o contrato e o plano do vertical slice; não será gerado um jogo errado.',true);
+      return;
+    }
     const mode=state.mode;
     const retainedAsset=spec.dimension==='3d'?Object.fromEntries(['ASSET_CENARIO.b64','ASSET_CENARIO.json','ASSET_LIBRARY.json'].filter(k=>state.files[k]).map(k=>[k,state.files[k]])):{};
     $('generate').disabled=true;
@@ -1001,6 +1008,25 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('knowledge-refresh').addEventListener('click',renderReferences);
   $('knowledge-clear').addEventListener('click',()=>{pinnedReferences=[];renderReferences();saveState();});
   $('analyze').addEventListener('click',analyze);
+  $('download-urban-plan').addEventListener('click',()=>{
+    const spec=analyze();
+    if(!spec||spec.genre!=='urban-action'||!spec.urbanProfile){
+      feedback('Importe primeiro um GDD de ação urbana 3D em terceira pessoa.',true);return;
+    }
+    const contract={
+      version:1,genre:'urban-action',dimension:'3d',camera:'third-person',
+      engineAvailability:spec.engineAvailability,confidence:spec.urbanProfile.confidence,
+      evidence:spec.urbanProfile.evidence,contentCounts:spec.urbanProfile.contentCounts,
+      requirements:spec.urbanProfile.requirements
+    };
+    const files={
+      'GAME_DESIGN_CONTRACT.json':JSON.stringify(contract,null,2),
+      'PLANO_URBAN_ACTION.md':GameForgeUrbanDesign.report(spec.urbanProfile),
+      'GDD_original.md':$('gdd').value
+    };
+    fileBlob(GameForgeZip.zipFiles(files),'gameforge-plano-urbano-3d.zip');
+    feedback('Contrato, plano de implementação e GDD original exportados; jogo 3D ainda não gerado.');
+  });
   $('idea-to-gdd').addEventListener('click',()=>{
     const idea=$('instruction').value.trim();
     if(!idea){feedback('Digite a ideia do novo jogo antes de criar o GDD.',true);return;}

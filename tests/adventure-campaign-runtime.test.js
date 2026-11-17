@@ -58,7 +58,12 @@ function boot(genre,shared=null,overrides={}){
   'boostRpg(count){for(let i=0;i<count;i++)rpgReward(false);},',
   'setHealth(n){health=n;},',
   'defeat(){damage(200);},',
-  'nearCrystal(){const c=coins.find(x=>!x.taken);',
+  'alignEnemy(){const e=enemies.find(x=>x.id===0);if(!e)return -1;',
+  'for(const other of enemies)if(other!==e){other.x=20;other.z=-20;other.speed=0;}',
+  'e.x=player.x;e.z=player.z-4;e.hp=1;e.speed=0;return e.id;},',
+  'landOnPlatform(index){const p=platforms[index];if(!p)return false;',
+  'player.x=p.x;player.z=p.z;player.y=p.y+.025;player.vy=-3;player.grounded=false;return true;},',
+  'nearCrystal(){const c=coins.find(x=>!x.taken);'
   'if(c){player.x=c.x;player.y=c.y-.9;player.z=c.z;}},',
   'inspect(){return {stage,score,health,ammo,rpgLevel,rpgXP,rpgPotions,required,collected};}',
   '};'
@@ -166,7 +171,8 @@ test('GF-TRAIN-07 plataforma: portal exige cristais, checkpoint salvo no começo
  const picked=game.telemetry();
  assert.equal(picked.collected,preCrystal.collected+1,'colisão real deve coletar um cristal adicional');
  assert.equal(picked.score,preCrystal.score+80,'cada cristal coletado acrescenta 80 pontos');
- assert.equal(picked.campaignCheckpoint,null);
+ assert.equal(picked.campaignCheckpoint,0,'novo save parcial já existe dentro da fase um');
+ assert.ok(picked.campaignProgress?.crystals.length>=1);
  finishStage(game);
  const advanced=game.telemetry();
  assert.equal(advanced.stage,2);
@@ -201,4 +207,123 @@ test('GF-TRAIN-07 nenhum checkpoint é introduzido em arena, FPS ou corrida 3D',
   game.restart();game.tick(2);
   assert.equal(game.telemetry().state,'play');
  }
+});
+
+
+test('GF-TRAIN-08: cristal da fase 1 é salvo, reaberto e não paga pontos duas vezes',()=>{
+ const db=makeStorage(),g=boot('platform',db);
+ g.start();g.tick(2);
+ assert.equal(g.telemetry().campaignCheckpoint,null);
+ const before=g.telemetry();
+ g.probe.nearCrystal();g.tick(2);
+ const earned=g.telemetry();
+ assert.equal(earned.collected,before.collected+1,'coleta executada no motor físico');
+ assert.equal(earned.score,before.score+80);
+ assert.equal(earned.campaignCheckpoint,0,'checkpoint parcial da primeira fase');
+ assert.ok(earned.campaignProgress.crystals.length===1);
+ const saved=JSON.parse(db.getItem(earned.campaignSaveKey));
+ assert.equal(saved.score,earned.score);
+ const resumed=boot('platform',db);
+ assert.equal(resumed.item('start').textContent,'Continuar · Fase 1');
+ resumed.start();resumed.tick(2);
+ const current=resumed.telemetry();
+ assert.equal(current.stage,1);
+ assert.equal(current.score,earned.score,'restaurar não concede mais 80 pontos');
+ assert.equal(current.collected,earned.collected,'cristal não retorna');
+ assert.deepEqual(JSON.parse(JSON.stringify(current.campaignProgress)),saved.progress);
+ resumed.tick(24);
+ assert.equal(resumed.telemetry().score,earned.score,'cristal já coletado não recompensa outra vez');
+ resumed.probe.defeat();
+ assert.equal(resumed.telemetry().state,'defeat');
+ resumed.start();resumed.tick(2);
+ assert.equal(resumed.telemetry().collected,earned.collected);
+ assert.equal(resumed.telemetry().score,earned.score,'derrota não duplica recompensa');
+ resumed.restart();resumed.tick(2);
+ assert.equal(resumed.telemetry().campaignCheckpoint,null);
+ assert.equal(db.getItem(earned.campaignSaveKey),null);
+ assert.equal(db.getItem(earned.campaignSaveKey+':backup'),null);
+ const fresh=boot('platform',db);fresh.start();fresh.tick(2);
+ assert.equal(fresh.telemetry().score,0);
+ assert.equal(fresh.telemetry().collected,0);
+});
+
+test('GF-TRAIN-08: RPG salva abate por disparo real, preserva XP e remove inimigo derrotado',()=>{
+ const db=makeStorage(),g=boot('rpg',db);g.start();g.tick(2);
+ const initial=g.telemetry();
+ assert.ok(initial.enemies>=3);
+ assert.equal(g.probe.alignEnemy(),0);
+ g.key('keydown',' ');
+ let tries=0;
+ while(g.telemetry().defeatedObjectives<1&&tries++<140)g.tick(1);
+ g.key('keyup',' ');
+ const dead=g.telemetry();
+ assert.equal(dead.defeatedObjectives,1,'projétil real derrubou guarda');
+ assert.equal(dead.score,70,'recompensa do primeiro guarda é 70');
+ assert.equal(dead.rpg.xp,25,'XP do guarda foi calculado pelo RPG');
+ assert.equal(dead.enemies,initial.enemies-1);
+ assert.equal(dead.campaignCheckpoint,0);
+ assert.deepEqual(JSON.parse(JSON.stringify(dead.campaignProgress.defeated)),[0]);
+ const key=dead.campaignSaveKey,snapshot=JSON.parse(db.getItem(key));
+ assert.equal(snapshot.score,70);
+ assert.equal(snapshot.rpg.xp,25);
+ const resumed=boot('rpg',db);resumed.start();resumed.tick(2);
+ const recovered=resumed.telemetry();
+ assert.equal(recovered.stage,1);
+ assert.equal(recovered.enemies,initial.enemies-1,'inimigo não ressuscita');
+ assert.equal(recovered.score,70,'restaurar inimigo derrotado não concede pontos');
+ assert.equal(recovered.rpg.xp,25,'XP não é pago duas vezes');
+ assert.equal(recovered.ammo,snapshot.ammo);
+ resumed.tick(10);
+ assert.equal(resumed.telemetry().score,70);
+ resumed.probe.defeat();
+ assert.equal(resumed.telemetry().state,'defeat');
+ resumed.start();resumed.tick(2);
+ assert.equal(resumed.telemetry().enemies,initial.enemies-1);
+ assert.equal(resumed.telemetry().rpg.xp,25);
+ assert.equal(resumed.telemetry().score,70);
+});
+
+test('GF-TRAIN-08: pousar numa ilha nova salva posição segura sem liberar portal',()=>{
+ const db=makeStorage(),g=boot('platform',db);g.start();g.tick(2);
+ assert.equal(g.probe.landOnPlatform(3),true);
+ g.tick(2);
+ const checkpoint=g.telemetry();
+ assert.ok(checkpoint.platformCheckpoint>=1,'mecânica real marcou pouso');
+ assert.equal(checkpoint.campaignCheckpoint,0,'pouso salva ainda na fase 1');
+ assert.equal(checkpoint.campaignProgress.platformCheckpoint,checkpoint.platformCheckpoint);
+ assert.equal(checkpoint.score,0,'pouso não cria prêmio monetário');
+ const revived=boot('platform',db);revived.start();revived.tick(2);
+ const restored=revived.telemetry();
+ assert.equal(restored.platformCheckpoint,checkpoint.platformCheckpoint);
+ assert.equal(restored.stage,1);
+ assert.equal(restored.score,0);
+ assert.ok(restored.player.x>100,'retomada aparece na última plataforma segura');
+ assert.equal(restored.campaignSaveStatus,'recovered');
+ assert.ok(restored.collected<restored.required,'checkpoint intermediário não desbloqueia portal');
+});
+
+test('GF-TRAIN-08: save parcial preserva versão antiga da fase 2 e reinício elimina backups',()=>{
+ const db=makeStorage(),g=boot('rpg',db);g.start();g.tick(2);
+ g.arrangeClear();g.tick(112);
+ assert.equal(g.telemetry().stage,2);
+ const key=g.telemetry().campaignSaveKey;
+ const previous=JSON.parse(db.getItem(key));
+ assert.equal(previous.stage,1);
+ assert.equal(previous.progress,undefined,'checkpoint entre fases ainda é compatível com v7');
+ const restarted=boot('rpg',db);restarted.start();restarted.tick(2);
+ assert.equal(restarted.telemetry().stage,2);
+ restarted.probe.nearCrystal();restarted.tick(2);
+ const partial=JSON.parse(db.getItem(key));
+ assert.equal(partial.stage,1);
+ assert.ok(partial.progress?.crystals.length>=1,'marco da segunda fase foi salvo');
+ assert.equal(partial.score,previous.score+80);
+ const reopen=boot('rpg',db);reopen.start();reopen.tick(2);
+ assert.equal(reopen.telemetry().stage,2);
+ assert.equal(reopen.telemetry().score,partial.score);
+ assert.equal(reopen.telemetry().collected,partial.progress.crystals.length);
+ reopen.restart();reopen.tick(2);
+ assert.equal(reopen.telemetry().stage,1);
+ assert.equal(reopen.telemetry().score,0);
+ assert.equal(db.getItem(key),null);
+ assert.equal(db.getItem(key+':backup'),null,'backup de fase 2 não pode ressuscitar');
 });

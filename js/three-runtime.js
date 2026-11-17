@@ -34,6 +34,7 @@ function gameForgeThreeBoot(){
  let player={x:0,y:0,z:0,yaw:0,vy:0,speed:0,grounded:true},collected=0,required=0,race={next:0,lap:0,complete:false},checkpoint=0;
  let random=R.rng(opts.seed),raceRx=0,raceRz=0,lapTarget=2,frameCost=0,perfSamples=0;
  let rpgLevel=1,rpgXP=0,rpgPotions=2,rpgHealHeld=false;
+ let claimedCrystals=new Set(),defeatedEnemies=new Set(),pendingObjectiveSave=false;
  // Só RPG e plataforma 3D gravam a fase seguinte; nunca a luta incompleta.
  const campaignSave=['rpg','platform'].includes(genre)&&stages.length>1&&
   typeof GameForgeUrbanSave!=='undefined'&&typeof GameForgeAdventureCampaignSave!=='undefined'
@@ -47,6 +48,40 @@ function gameForgeThreeBoot(){
    stage,score,health,ammo,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions}
   });
   campaignSaveStatus=payload&&campaignSave.write(payload)?'saved':'unavailable';
+ }
+ function savePartialCheckpoint(){
+  if(!campaignSave||state!=='play'||transition>0||health<=0)return;
+  const progress={
+   crystals:[...claimedCrystals].sort((a,b)=>a-b),
+   defeated:[...defeatedEnemies].sort((a,b)=>a-b),
+   platformCheckpoint:genre==='platform'?checkpoint:0
+  };
+  const payload=GameForgeAdventureCampaignSave.make(spec,{
+   stage,health,score,ammo,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},progress
+  });
+  campaignSaveStatus=payload&&campaignSave.write(payload)?'saved':'unavailable';
+ }
+ function applyPartialCheckpoint(data){
+  if(!data?.progress)return;
+  for(const id of data.progress.crystals){
+   const coin=coins[id];
+   if(!coin||coin.taken)continue;
+   coin.taken=true;coin.mesh.visible=false;claimedCrystals.add(id);collected++;
+  }
+  if(genre==='rpg'){
+   const ids=new Set(data.progress.defeated);
+   enemies=enemies.filter(e=>{
+    if(!ids.has(e.id))return true;
+    world.remove(e.mesh);defeatedEnemies.add(e.id);return false;
+   });
+  }
+  if(genre==='platform'&&data.progress.platformCheckpoint>0){
+   checkpoint=Math.min(data.progress.platformCheckpoint,platforms.length-1);
+   const spot=platforms[checkpoint];
+   player.x=spot.x;player.y=spot.y;player.z=spot.z;
+   player.vy=0;player.grounded=true;
+  }
+  updateHUD();
  }
  const keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
  let pointerDown=false,dragX=null,jumpHeld=false,lastDraw=-1000;
@@ -165,7 +200,7 @@ function gameForgeThreeBoot(){
   const sun=new T.DirectionalLight(0xffeccb,2.6);sun.position.set(-14,26,16);sun.castShadow=renderer.shadowMap.enabled;sun.shadow.mapSize.set(opts.quality==='high'?2048:1024,opts.quality==='high'?2048:1024);sun.shadow.camera.left=-30;sun.shadow.camera.right=30;sun.shadow.camera.top=30;sun.shadow.camera.bottom=-30;sun.shadow.camera.far=90;sun.shadow.normalBias=.05;scene.add(sun);scene.add(sun.target);
   mats={ground:material(palette.ground),road:material(palette.road),leaf:material(palette.grass),leafLight:material(palette.grass+0x081008),wood:material(palette.wood),stone:material(palette.stone),trim:material(0x2e4950),crystal:material(palette.accent,palette.accent),portal:material(0x8b5867,0x5e354a),gold:material(0xf8cf77,0x755521)};
   bulletGeometry=geometry(new T.SphereGeometry(.12,6,4));
-  random=R.rng((Number(opts.seed)||12345)+stage*907);collected=0;stageClock=0;invulnerable=0;fireDelay=0;reloadDelay=0;transition=0;jumpHeld=false;checkpoint=0;
+  random=R.rng((Number(opts.seed)||12345)+stage*907);claimedCrystals=new Set();defeatedEnemies=new Set();pendingObjectiveSave=false;collected=0;stageClock=0;invulnerable=0;fireDelay=0;reloadDelay=0;transition=0;jumpHeld=false;checkpoint=0;
   if(genre==='platform'){
    platforms=R.platformRoute(Number(opts.seed)||12345,stage,size);
    for(let i=0;i<platforms.length;i++){const p=platforms[i];box(p.w,.8,p.d,mats.stone,world,p.x,p.y-.4,p.z);box(p.w+.05,.08,p.d+.05,mats.leaf,world,p.x,p.y+.015,p.z);if(i>0)coinAt(p.x,p.y+1,p.z);if(i%3===1){box(.15,2,.15,mats.wood,world,p.x-1.7,p.y+1,p.z-1.7);mesh(new T.OctahedronGeometry(.22),mats.crystal,world,p.x-1.7,p.y+2,p.z-1.7);}}
@@ -227,7 +262,8 @@ function gameForgeThreeBoot(){
   }
   clock=0;simulationAccumulator=0;simulationSteps=0;state='play';paused=false;
   keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);pointerDown=false;
-  buildStage();$('overlay').classList.add('hidden');$('pause').textContent='Pausar';
+  buildStage();if(restored)applyPartialCheckpoint(restored);
+  $('overlay').classList.add('hidden');$('pause').textContent='Pausar';
   canvas.focus();
   if(restored)notice('Checkpoint recuperado · Fase '+(stage+1)+'/'+stages.length,3);
  }
@@ -316,23 +352,38 @@ function gameForgeThreeBoot(){
    const steps=Math.ceil(27*dt/.28);for(let i=0;i<steps&&!b.dead;i++){
     b.x+=b.dx*27*dt/steps;b.z+=b.dz*27*dt/steps;
     if(solids.some(o=>Math.abs(b.x-o.x)<o.w/2+.1&&Math.abs(b.z-o.z)<o.d/2+.1)){b.dead=true;break;}
-    for(const e of enemies)if(e.hp>0&&distance(e,b)<(e.boss?.95:.65)){e.hp-=genre==='rpg'?1+Math.floor((rpgLevel-1)/2):combatStore?combatStore.state().damage:1;e.stagger=Math.max(e.stagger||0,e.boss?.06:.13);if(e.mesh?.userData)e.mesh.userData.hurt=1;b.dead=true;if(e.hp<=0){score+=e.boss?250:70;rpgReward(e.boss);if(combatStore)combatStore.earn(e.boss);world.remove(e.mesh);if(!combatStore)ammo+=7;}break;}
+    for(const e of enemies)if(e.hp>0&&distance(e,b)<(e.boss?.95:.65)){e.hp-=genre==='rpg'?1+Math.floor((rpgLevel-1)/2):combatStore?combatStore.state().damage:1;e.stagger=Math.max(e.stagger||0,e.boss?.06:.13);if(e.mesh?.userData)e.mesh.userData.hurt=1;b.dead=true;if(e.hp<=0){score+=e.boss?250:70;rpgReward(e.boss);if(combatStore)combatStore.earn(e.boss);world.remove(e.mesh);if(!combatStore)ammo+=7;if(genre==='rpg'){defeatedEnemies.add(e.id);pendingObjectiveSave=true;}}break;}
    }
    b.life-=dt;if(b.life<=0)b.dead=true;b.mesh.position.set(b.x,b.y,b.z);
   }
   enemies=enemies.filter(e=>e.hp>0);bullets=bullets.filter(b=>{if(b.dead){world.remove(b.mesh);return false;}return true;});
-  collect();const ready=combatReady();goal.portal.material=ready?mats.crystal:mats.portal;if(ready&&distance(player,goal)<2)finishStage();
+  const picked=collect();
+  if(genre==='rpg'&&(picked||pendingObjectiveSave)){pendingObjectiveSave=false;savePartialCheckpoint();}
+  const ready=combatReady();goal.portal.material=ready?mats.crystal:mats.portal;if(ready&&distance(player,goal)<2)finishStage();
  }
- function collect(){for(const c of coins)if(!c.taken&&distance(c,player)<1.2&&Math.abs(player.y+.9-c.y)<1.6){c.taken=true;c.mesh.visible=false;collected++;score+=80;health=Math.min(100,health+8);notice('Cristal '+collected+' / '+required,1.5);}}
+ function collect(){
+  let changed=false;
+  for(let i=0;i<coins.length;i++){
+   const c=coins[i];
+   if(!c.taken&&distance(c,player)<1.2&&Math.abs(player.y+.9-c.y)<1.6){
+    c.taken=true;c.mesh.visible=false;collected++;claimedCrystals.add(i);
+    score+=80;health=Math.min(100,health+8);
+    notice('Cristal '+collected+' / '+required,1.5);changed=true;
+   }
+  }
+  return changed;
+ }
  function updatePlatform(dt){
   const a=axes();a.z=(down('s','ArrowDown','down')?1:0)-(down('q')?1:0);const mag=Math.max(1,Math.hypot(a.x,a.z)),speed=6.5*tuning.playerSpeedMultiplier;
   const jump=down(' ','w','ArrowUp','up','fire')||pointerDown;
   if(jump&&!jumpHeld&&player.grounded){player.vy=9;player.grounded=false;}jumpHeld=jump;
   const oldY=player.y;player.x+=a.x/mag*speed*dt;player.z+=a.z/mag*speed*dt;player.vy-=20*dt;player.y+=player.vy*dt;player.grounded=false;player.speed=Math.hypot(a.x,a.z)*speed;
   if(a.x||a.z)player.yaw=Math.atan2(a.x,a.z);
-  for(let i=0;i<platforms.length;i++){const p=platforms[i];if(player.vy<=0&&oldY>=p.y-.05&&player.y<=p.y&&Math.abs(player.x-p.x)<p.w/2+.3&&Math.abs(player.z-p.z)<p.d/2+.3){player.y=p.y;player.vy=0;player.grounded=true;checkpoint=Math.max(checkpoint,i);}}
+  let reachedNewPlatform=false;
+  for(let i=0;i<platforms.length;i++){const p=platforms[i];if(player.vy<=0&&oldY>=p.y-.05&&player.y<=p.y&&Math.abs(player.x-p.x)<p.w/2+.3&&Math.abs(player.z-p.z)<p.d/2+.3){player.y=p.y;player.vy=0;player.grounded=true;if(i>checkpoint){checkpoint=i;reachedNewPlatform=true;}}}
   if(player.y<-3.5){damage(20);const p=platforms[checkpoint];player.x=p.x;player.z=p.z;player.y=p.y;player.vy=0;player.grounded=true;}
-  collect();const ready=R.goalReady('platform',{collected,required});goal.portal.material=ready?mats.crystal:mats.portal;if(ready&&distance(player,goal)<1.7&&Math.abs(player.y-goal.y)<1)finishStage();
+  const picked=collect();if(picked||reachedNewPlatform)savePartialCheckpoint();
+  const ready=R.goalReady('platform',{collected,required});goal.portal.material=ready?mats.crystal:mats.portal;if(ready&&distance(player,goal)<1.7&&Math.abs(player.y-goal.y)<1)finishStage();
  }
  function updateRacing(dt){
   const a=axes(),accelerate=down('w','ArrowUp','up'),brake=down('s','ArrowDown','down'),boost=down(' ','fire')||pointerDown;
@@ -402,6 +453,7 @@ function gameForgeThreeBoot(){
   vec.set(player.x,player.y+1,player.z);if(camera)vec.project(camera);
   return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,clock,health,score,ammo,enemies:enemies.length,collected,required,
    campaignCheckpoint:campaignSave?.read()?.stage??null,campaignSaveStatus,campaignSaveKey:campaignSave?.key??null,
+   campaignProgress:campaignSave?.read()?.progress??null,defeatedObjectives:defeatedEnemies.size,platformCheckpoint:checkpoint,
    missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
  };
  $('control-help').textContent=genre==='fps'?(combatStore?'WASD: mover · Espaço: atirar · R: recarregar · B: loja de armas/vida':'WASD / setas: mover · Q/E ou arrastar: mirar · Espaço/clique: atirar'):genre==='racing'?'W / ↑ acelerar · S / ↓ frear · A/D virar · Espaço turbo':genre==='platform'?'A/D ou ←/→: mover · W/↑/Espaço: saltar · Q/S: profundidade':genre==='rpg'?'WASD: explorar · Espaço: magia · H: poção · P: pausa':'WASD / setas: mover · Espaço/clique: ataque · P: pausa';

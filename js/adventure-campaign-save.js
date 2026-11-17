@@ -1,6 +1,6 @@
-/* GF-TRAIN-07: checkpoints offline de fases para RPG e plataforma 3D.
- * Salva apenas a ENTRADA na próxima fase depois de completá-la.
- * Os itens/cristais da fase em andamento não são serializados.
+/* GF-TRAIN-08: checkpoint de fase + marcos de objetivos em andamento.
+ * Mantém a chave e compatibilidade com checkpoints da versão 7 (sem progress).
+ * O jogo só inclui IDs de cristais e inimigos efetivamente coletados/derrotados.
  */
 function gameForgeAdventureCampaignSaveFactory(){
  'use strict';
@@ -25,19 +25,43 @@ function gameForgeAdventureCampaignSaveFactory(){
   return 'gameforge-adventure-campaign-v1-'+slug+'-'+fingerprint(spec);
  }
  const integer=(value,min,max)=>Number.isSafeInteger(value)&&value>=min&&value<=max;
+ function ids(value,max=99,limit=99){
+  if(!Array.isArray(value)||value.length>limit)return null;
+  let previous=-1;
+  for(const item of value){
+   if(!integer(item,0,max)||item<=previous)return null;
+   previous=item;
+  }
+  return value.slice();
+ }
+ function progressOf(spec,data){
+  if(data===undefined)return undefined; // checkpoints v7 continuam legíveis
+  if(!data||typeof data!=='object'||Array.isArray(data))return null;
+  const crystals=ids(data.crystals,99,99),defeated=ids(data.defeated,99,32);
+  if(!crystals||!defeated||!integer(data.platformCheckpoint,0,40))return null;
+  if(spec.genre==='platform'&&defeated.length)return null;
+  if(spec.genre==='rpg'&&data.platformCheckpoint!==0)return null;
+  return {crystals,defeated,platformCheckpoint:data.platformCheckpoint};
+ }
  function validate(spec,data){
   const count=Array.isArray(spec?.stages)?spec.stages.length:0;
   if(!spec||spec.dimension!=='3d'||!genres.has(spec.genre)||count<2||
      !data||typeof data!=='object'||Array.isArray(data)||
      data.version!==version||data.fingerprint!==fingerprint(spec)||
-     !integer(data.stage,1,count-1)||
+     !integer(data.stage,0,count-1)||
      !integer(data.score,0,1000000000)||
      !integer(data.health,1,100)||
      !integer(data.ammo,0,1000000))return null;
+  const progress=progressOf(spec,data.progress);
+  if(progress===null)return null;
+  // Sem marco jogável, a fase zero não deve ter save: evita um 'save vazio'.
+  if(data.stage===0&&(!progress||(!progress.crystals.length&&!progress.defeated.length&&
+     progress.platformCheckpoint===0)))return null;
   const state={
    version,fingerprint:data.fingerprint,stage:data.stage,
    score:data.score,health:data.health,ammo:data.ammo
   };
+  if(progress)state.progress=progress;
   if(spec.genre==='rpg'){
    if(!data.rpg||typeof data.rpg!=='object'||Array.isArray(data.rpg)||
       !integer(data.rpg.level,1,30)||!integer(data.rpg.xp,0,1000000)||
@@ -51,6 +75,7 @@ function gameForgeAdventureCampaignSaveFactory(){
   return validate(spec,{version,fingerprint:fingerprint(spec),
    stage:state.stage,score:state.score,health:Math.round(state.health),ammo:state.ammo,
    ...(spec.genre==='rpg'?{rpg:state.rpg}:{}),
+   ...(state.progress!==undefined?{progress:state.progress}:{}),
   });
  }
  return {version,key,fingerprint,validate,make};

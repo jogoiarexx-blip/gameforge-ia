@@ -113,3 +113,62 @@ test('GF-TRAIN-07: RPG e plataforma geram arquivos offline com dependências e s
  const build=fs.readFileSync(path.join(__dirname,'../tools/build-browser-fixtures.cjs'),'utf8');
  assert.match(build,/'adventure-campaign-save'/);
 });
+
+
+test('GF-TRAIN-08: checkpoint da primeira fase só existe após objetivo verificado',()=>{
+ const empty={stage:0,score:0,health:100,ammo:80,
+  rpg:{level:1,xp:0,potions:2},progress:{crystals:[],defeated:[],platformCheckpoint:0}};
+ assert.equal(Adventure.make(rpg,empty),null,'não salvar apenas por abrir jogo novo');
+ const crystal=Adventure.make(rpg,{...empty,score:80,progress:{...empty.progress,crystals:[1]}});
+ assert.ok(crystal);
+ assert.equal(crystal.stage,0,'fase um é indice zero');
+ assert.deepEqual(crystal.progress,{crystals:[1],defeated:[],platformCheckpoint:0});
+ assert.deepEqual(Adventure.validate(rpg,crystal),crystal);
+ const defeat=Adventure.make(rpg,{...empty,score:70,rpg:{level:1,xp:25,potions:2},
+  progress:{...empty.progress,defeated:[0]}});
+ assert.ok(defeat,'abate real pode registrar checkpoint mesmo sem cristal');
+ const landing=Adventure.make(platform,{stage:0,score:0,health:90,ammo:80,
+  progress:{crystals:[],defeated:[],platformCheckpoint:2}});
+ assert.ok(landing,'pousar numa ilha segura permite continuar na fase um');
+});
+
+test('GF-TRAIN-08: IDs repetidos, fora de ordem, contagem excessiva ou gênero errado são rejeitados',()=>{
+ const base={...data,stage:0,progress:{crystals:[0,2],defeated:[1],platformCheckpoint:0}};
+ assert.ok(Adventure.make(rpg,base));
+ for(const progress of [
+  {crystals:[0,0],defeated:[1],platformCheckpoint:0},
+  {crystals:[2,1],defeated:[1],platformCheckpoint:0},
+  {crystals:[-1],defeated:[1],platformCheckpoint:0},
+  {crystals:[100],defeated:[1],platformCheckpoint:0},
+  {crystals:[0],defeated:[1,1],platformCheckpoint:0},
+  {crystals:[],defeated:[0.5],platformCheckpoint:0},
+  {crystals:[0],defeated:[],platformCheckpoint:41},
+  {crystals:[0],defeated:[],platformCheckpoint:1},
+  {crystals:Array.from({length:101},(_,i)=>i),defeated:[],platformCheckpoint:0},
+  {crystals:[0],defeated:[],platformCheckpoint:'2'},
+  {crystals:[0],defeated:[],platformCheckpoint:-2}
+ ]){
+  assert.equal(Adventure.make(rpg,{...base,progress}),null,
+   'checkpoint inválido aceito: '+JSON.stringify(progress).slice(0,120));
+ }
+ assert.equal(Adventure.make(platform,{
+  stage:0,score:50,health:90,ammo:80,
+  progress:{crystals:[],defeated:[0],platformCheckpoint:1}
+ }),null,'plataforma não possui inimigos abatidos no runtime');
+ assert.equal(Adventure.validate(rpg,{...Adventure.make(rpg,base),progress:null}),null);
+});
+
+test('GF-TRAIN-08: save da versão 7 sem progress continua recuperável',()=>{
+ const older=Adventure.make(rpg,data);
+ assert.ok(older&&!('progress' in older));
+ assert.equal(Adventure.validate(rpg,older).stage,1);
+ const db=storage(),key=Adventure.key(rpg),store=Save.create(db,key,x=>Adventure.validate(rpg,x));
+ assert.equal(store.write(older),true);
+ const mid=Adventure.make(rpg,{...data,stage:1,
+  progress:{crystals:[0,1],defeated:[0,2],platformCheckpoint:0}});
+ assert.equal(store.write(mid),true);
+ assert.deepEqual(store.read().progress,mid.progress);
+ db.setItem(key,'{');
+ assert.equal(store.read().stage,1);
+ assert.equal(store.read().progress,undefined,'backup v7 não é invalidado pelo GF-TRAIN-08');
+});

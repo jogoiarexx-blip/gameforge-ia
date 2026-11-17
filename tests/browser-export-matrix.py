@@ -80,6 +80,7 @@ def run():
                     assert graphics.get('finishes', 0) > 0 if item['dimension'] == '2d' else graphics.get('scenes', 0) > 0, (label, graphics)
                     assert active.get('state') in ('play', 'victory', 'intermission'), (label, active)
                     assert active.get('player') and isinstance(active['player'].get('x'), (float, int)), label
+                    page.screenshot(path=str(screenshots / (label + '-gameplay.png')), full_page=True)
                     page.locator('#pause').click()
                     page.wait_for_function(
                         "window.__gameforgeTelemetry().paused === true", timeout=5000
@@ -361,9 +362,30 @@ def run():
             finally:
                 semantic_page.close()
 
+            graphics_matrix = json.loads((OUTPUT / 'graphics-matrix.json').read_text())
+            for item in graphics_matrix:
+                page = browser.new_page(viewport={'width': 960, 'height': 720})
+                errors = []
+                page.on('pageerror', lambda error: errors.append(str(error)))
+                try:
+                    page.goto(f"{origin}/tests/_browser_output/{item['slug']}/index.html", wait_until='load')
+                    page.locator('#start').click()
+                    page.wait_for_function('window.__gameforgeTelemetry().frames >= 8')
+                    info = page.evaluate('window.__gameforgeTelemetry().graphics')
+                    assert info['style'] == item['style'], info
+                    assert info['effectiveQuality'] == 'high', info
+                    assert info['finishes'] > 0 if item['dimension'] == '2d' else info['materials'] > 0, info
+                    assert not errors, errors
+                    page.screenshot(path=str(screenshots / (item['slug'] + '.png')), full_page=True)
+                    results.append(item['slug'])
+                except Exception as exc:
+                    failures.append((item['slug'], str(exc), errors, []))
+                finally:
+                    page.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 3
+            assert len(results) == len(matrix) + 3 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

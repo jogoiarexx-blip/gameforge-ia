@@ -21,7 +21,7 @@ const matrix=[];
 async function main(){
 for(const [dimension,genres] of Object.entries(parser.styles)){
  for(const genre of genres){
-  const source='# Navegação e exportação\n## Primeira fase\nControles, objetivos e desafios.\n';
+  const source=genre==='simulation'?'# Fazendinha de teste\nCuidar de fazenda, crescer em 2 segundos, meta de 10 moedas.':'# Navegação e exportação\n## Primeira fase\nControles, objetivos e desafios.\n';
   const spec=parser.parseGdd(source,'',{dimension,genre});
   const files=generator.generate(spec,source);
   validateFiles(files,dimension,genre);

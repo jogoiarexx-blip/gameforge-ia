@@ -3,6 +3,7 @@
   'use strict';
   const intentCompiler=root.GameForgeIntent||(typeof require==='function'?require('./intent-compiler'):null);
   const normalize = s => intentCompiler?.normalize ? intentCompiler.normalize(s) : String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const simulationDesign=root.GameForgeSimulationDesign||(typeof require==='function'?require('./simulation-design'):null);
   const sourceCorpus=root.GameForgeGameCorpus||(typeof require==='function'?require('./game-corpus'):null);
   const urbanDesign=root.GameForgeUrbanDesign||(typeof require==='function'?require('./urban-design'):null);
   const designIR=root.GameForgeDesignIR||(typeof require==='function'?require('./design-ir'):null);
@@ -10,6 +11,8 @@
   // Classificação semântica determinística. Sinais de jogabilidade são mais fortes
   // do que palavras ocasionais em capítulos longos de um GDD.
   function detectGenreInfo(text) {
+    const simulation=simulationDesign?.inspect(text);
+    if(simulation?.identified&&!simulation.unsupported3d)return {genre:'simulation',confidence:'alta',signals:['Ciclo de simulação: '+simulation.domain],score:80,runnerUp:0,ambiguous:false,sourceGame:null};
     const urban=urbanDesign?.inspect(text);
     if(urban?.identified)return {genre:'urban-action',confidence:urban.confidence,
       signals:urban.evidence.map(item=>item.description),score:90,runnerUp:0,
@@ -69,8 +72,8 @@
   }
   function detectGenre(text) { return detectGenreInfo(text).genre; }
   function unique(items) { return [...new Set(items.map(x => x.trim()).filter(Boolean))]; }
-  const labels={'urban-action':'Ação urbana 3D — bairro jogável (protótipo)',arena:'Aventura / ação',shooter:'Nave / shoot’em up vertical',racing:'Corrida',platform:'Plataforma',rpg:'RPG de ação',fps:'FPS / primeira pessoa','tower-defense':'Defesa de torres (caminhos)','lane-defense':'Defesa por linhas / Jardim','block-td':'Defesa de torres em blocos'};
-  const styles={'2d':['arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','shooter','rpg','racing','platform','urban-action']};
+  const labels={simulation:'Simulação 2D — fazenda, aquário ou loja (protótipo)','urban-action':'Ação urbana 3D — bairro jogável (protótipo)',arena:'Aventura / ação',shooter:'Nave / shoot’em up vertical',racing:'Corrida',platform:'Plataforma',rpg:'RPG de ação',fps:'FPS / primeira pessoa','tower-defense':'Defesa de torres (caminhos)','lane-defense':'Defesa por linhas / Jardim','block-td':'Defesa de torres em blocos'};
+  const styles={'2d':['simulation','arena','shooter','racing','platform','rpg','tower-defense','lane-defense','block-td'],'3d':['arena','fps','shooter','rpg','racing','platform','urban-action']};
   // Catálogo declarativo: pedido no GDD não equivale a mecânica implementada.
   const mechanicCatalog = Object.freeze({
     combat: { label:'Combate', pattern:/\b(combate|atacar|ataque|luta|espada|tiro|inimigos?|boss|chefe)\b/, supported:['arena','shooter','rpg','fps'] },
@@ -100,7 +103,7 @@
     const norm = normalize(combined);
     // Um comando novo que descreve outro jogo tem precedência sobre o GDD antigo.
     const direct=normalize(extra);
-    const createsNew=/\b(crie|cria|criar|quero|faca|fazer|gere|gerar|desenvolva|novo|transforme|jogo|game)\b.{0,110}\b(navinha|nave espacial|jogo de nave|shoot.?em.?up|shmup|rpg|fps|primeira pessoa|corrida|carro|plataforma|platformer|tower defense|defesa de torres|aventura)\b/.test(direct);
+    const createsNew=/\b(crie|cria|criar|quero|faca|fazer|gere|gerar|desenvolva|novo|transforme|jogo|game)\b.{0,110}\b(navinha|nave espacial|jogo de nave|shoot.?em.?up|shmup|rpg|fps|primeira pessoa|corrida|carro|plataforma|platformer|tower defense|defesa de torres|aventura|simulacao|simulador|fazenda|aquario|loja)\b/.test(direct);
     const requestedGenre=createsNew?detectGenre(direct):null;
     const urbanProfile=urbanDesign?.inspect(source,extra)||null;
     const sourceInference=detectGenreInfo(source.trim()?source:combined);
@@ -284,6 +287,21 @@
       return designIR?designIR.enrich(compiled,source,extra):compiled;
     }
     const interpreted=intentCompiler?intentCompiler.compile(compiled,source,extra,options):compiled;
+    if(genre==='simulation'){
+      const sim=simulationDesign.compile(combined,extra);
+      interpreted.simulation=sim.config;
+      interpreted.stages=['Ciclo econômico — '+sim.config.label];
+      interpreted.stageConfig=[{}];
+      delete interpreted.stageSpecs;
+      interpreted.campaign={maxStages:1,detectedStages:allLevels.length,omittedStages:Math.max(0,allLevels.length-1),prototype:true};
+      interpreted.implementation.applied=interpreted.implementation.applied.filter(x=>!['stage-count','difficulty'].includes(x.id));
+      interpreted.implementation.applied.push({id:'simulation-cycle',description:sim.config.label+': '+sim.config.start+', '+sim.config.care+', '+sim.config.finish+(sim.config.domain==='farm'?' e vender colheita':''),where:'Ciclo econômico 2D'});
+      interpreted.implementation.pending.push(...sim.pending);
+      interpreted.implementation.warnings.push(...sim.warnings);
+      if(allLevels.length>1||/\b(?:[2-9]|[1-9][0-9]|duas|dois|tres|quatro|cinco)\s+fases\b/.test(norm))interpreted.implementation.pending.push({id:'simulation-campaign',description:'Campanha de simulação: somente um ciclo econômico está implementado',where:'Jogo inteiro'});
+      interpreted.limitations.unshift('Simulação 2D inicial com seleção de espaços e botões. Sem caminhada, salvamento, construção livre ou simulação 3D. Meta medida em receita de vendas.');
+      interpreted.detected.push('Simulação: '+sim.config.label+' · '+sim.config.slots+' espaços · meta '+sim.config.target);
+    }
     return designIR?designIR.enrich(interpreted,source,extra):interpreted;
   }
   function creationInstruction(spec,instruction=''){

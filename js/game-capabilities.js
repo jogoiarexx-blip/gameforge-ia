@@ -7,6 +7,7 @@
 const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const dims=(genre,dim)=>genre+'-'+dim;
 const support={
+ 'simulation-cycle':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation + gameForgeSimulationRulesFactory',test:'tests/simulation.test.js',pattern:/aquario|fazenda|loja|plantar|vender|estoque/},
  'stage-count':{all:true,contract:'GAME_SPEC.stages',test:'tests/intent-compiler.test.js',pattern:/\b(fases|missoes|niveis|levels)\b/},
  'waves':{engines:['shooter-3d','tower-defense-2d','lane-defense-2d','block-td-2d'],contract:'GAME_SPEC.stageConfig[].waves',test:'tests/intent-compiler.test.js',pattern:/\b(onda|wave)/},
  'enemies':{engines:['arena-2d','arena-3d','shooter-2d','fps-3d','rpg-2d','rpg-3d','platform-2d','racing-3d'],contract:'GAME_SPEC.stageConfig[].enemies',test:'tests/intent-compiler.test.js',pattern:/\b(inimigo|adversario|monstro)/},
@@ -48,7 +49,7 @@ function capability(id,spec){
  const key=normalizeId(id),definition=support[key];
  if(!definition)return {id:key,allowed:false,implemented:false,reason:'Sem contrato executável catalogado para este requisito.'};
  const allowed=!!(definition.all||definition.engines.includes(physicalEngine(spec)));
- return {id:key,allowed,implemented:key==='combat-store',contract:definition.contract,test:definition.test,
+ return {id:key,allowed,implemented:['combat-store','simulation-cycle'].includes(key),contract:definition.contract,test:definition.test,
    reason:allowed?'Mecânica do motor identificada; verificar GAME_SPEC e testes.':'O motor '+physicalEngine(spec)+' não implementa este parâmetro.'};
 }
 function provenance(item,source,command){
@@ -84,7 +85,7 @@ function audit(spec,gdd='',instruction=''){
   const cap=capability(entry.id,spec);
   // "Pendente" não é promovido só porque há uma capacidade com nome semelhante.
   const status=kind==='pending'?(cap.contract&&!cap.allowed?'incompativel':'pendente'):
-    !cap.allowed?'incompativel':cap.implemented&&entry.id==='combat-store'?'implementada':'configurada';
+    !cap.allowed?'incompativel':cap.implemented&&['combat-store','simulation-cycle'].includes(entry.id)?'implementada':'configurada';
   const where=String(entry.where||'Jogo inteiro');
   const origin=provenance(entry,gdd,instruction);
   const reason=status==='implementada'?'Módulo funcional existente no runtime com teste automatizado.':
@@ -108,6 +109,14 @@ function check(spec){
  const errors=[];
  if(!spec||typeof spec!=='object')return ['GAME_SPEC não é objeto.'];
  const engine=physicalEngine(spec),stages=spec.stages||[];
+ if(spec.genre==='simulation'){
+  const c=spec.simulation;
+  if(spec.dimension!=='2d'||!c||!['farm','aquarium','shop'].includes(c.domain))errors.push('Contrato de simulação 2D ausente ou inválido.');
+  else for(const [key,min,max] of [['slots',1,12],['startingMoney',1,9999],['target',10,99999],['seconds',2,300],['cost',1,500],['price',1,2000]]){
+   if(!Number.isFinite(c[key])||c[key]<min||c[key]>max||(key==='slots'&&!Number.isInteger(c[key])))errors.push('Simulação: '+key+' fora do limite.');
+  }
+ }
+
  if(!Array.isArray(stages)||stages.length<1||stages.length>(spec.genre==='lane-defense'?40:30))
   errors.push('Número de fases fora do limite do motor.');
  if(Array.isArray(spec.stageConfig))spec.stageConfig.forEach((s,i)=>{

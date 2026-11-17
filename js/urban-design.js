@@ -56,7 +56,7 @@ function inspect(gdd='',command=''){
  const shooterOnly=/\b(?:navinha|nave espacial|shoot.?em.?up|shmup)\b/.test(first);
  const espionage=/\b(?:goldeneye|007|espionagem|agente secreto|medal of honor)\b/.test(first);
  const identified=urbanTheme&&threeD&&!firstPerson&&!drivingOnly&&!shooterOnly&&!espionage&&
-   (thirdPerson?relevant.length>=2:strongUrban&&relevant.length>=3);
+   (thirdPerson?relevant.length>=2:strongUrban&&relevant.length>=2);
  const confidence=identified?(thirdPerson&&relevant.length>=4?'alta':'media'):'baixa';
  const evidence=[];
  for(const [description,pattern] of [

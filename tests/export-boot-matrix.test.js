@@ -108,7 +108,7 @@ function filesFor(dimension,genre,extra=''){
  return files;
 }
 const combinations=Object.entries(parser.styles).flatMap(([dimension,genres])=>genres.map(genre=>({dimension,genre})));
-assert.equal(combinations.length,15,'A matriz deve ser atualizada quando um motor novo aparecer');
+assert.equal(combinations.length,16,'A matriz deve ser atualizada quando um motor novo aparecer');
 
 for(const {dimension,genre} of combinations){
  test('GF-002 exportação e inicialização offline '+dimension+'/'+genre,()=>{
@@ -276,4 +276,26 @@ test('GF-002 reexportação após editar fases mantém especificação e jogo in
  assert.equal(ctx.telemetry().state,'play');
  assert.equal(JSON.parse(files['game.js'].match(/const GAME_SPEC = ([^\n]+);/)?.[1]).stages.length,3);
  assert.deepEqual(Array.from(revised.stages),['Fase Um','Fase Dois','Fase Final']);
+});
+
+test('GF-TRAIN-03 exportação executa os três ciclos até vitória, pausa tempo e não duplica receitas',()=>{
+ for(const [domain,idea] of [['farm','cuidar de fazenda'],['aquarium','cuidar de aquário'],['shop','administrar uma loja']]){
+  const spec=parser.parseGdd('','Quero '+idea+', crescer em 2 segundos, meta de 10 moedas.');
+  const files=generator.generate(spec,'');
+  validateFiles(files,'2d','simulation');
+  const h=environment(files,'2d');h.element('start').click();
+  const key=k=>{h.input('keydown',k);h.input('keyup',k);};
+  key('1');key('2');
+  h.element('pause').click();h.tick(180);
+  assert.equal(h.telemetry().simulation.slots[0].age,0,'pausa não produz');
+  h.element('pause').click();h.tick(130);key('3');
+  if(domain==='farm'){
+   assert.equal(h.telemetry().simulation.inventory,1);assert.equal(h.telemetry().simulation.earned,0);
+   key('4');
+  }
+  assert.equal(h.telemetry().domain,domain);
+  assert.equal(h.telemetry().state,'victory',domain);
+  assert.equal(h.telemetry().simulation.sales,1);
+  key('3');key('4');assert.equal(h.telemetry().simulation.sales,1);
+ }
 });

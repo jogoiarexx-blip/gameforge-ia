@@ -374,6 +374,8 @@ def run():
                     info = page.evaluate('window.__gameforgeTelemetry().graphics')
                     assert info['style'] == item['style'], info
                     assert info['effectiveQuality'] == 'high', info
+                    if item['style'] == 'pixel':
+                        assert page.evaluate("getComputedStyle(document.getElementById('game')).imageRendering") == 'pixelated'
                     assert info['finishes'] > 0 if item['dimension'] == '2d' else info['materials'] > 0, info
                     assert not errors, errors
                     page.screenshot(path=str(screenshots / (item['slug'] + '.png')), full_page=True)

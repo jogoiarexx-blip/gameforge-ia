@@ -93,6 +93,7 @@ function gameForgeGraphicsFactory(spec){
  function finish(c,w,h){
   stats.finishes++;c.save();
   if(profile.style==='pixel'){
+   if(c.canvas?.style)c.canvas.style.imageRendering='pixelated';
    if(!scratch&&typeof document!=='undefined'){scratch=document.createElement('canvas');scratch.width=Math.round(w/2);scratch.height=Math.round(h/2);}
    if(scratch){const s=scratch.getContext('2d');s.imageSmoothingEnabled=false;s.drawImage(c.canvas||document.getElementById('game'),0,0,scratch.width,scratch.height);c.imageSmoothingEnabled=false;c.drawImage(scratch,0,0,w,h);}
   }else{

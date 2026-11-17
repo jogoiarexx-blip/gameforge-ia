@@ -378,6 +378,8 @@ def run():
                     page.wait_for_function('window.__gameforgeTelemetry().frames >= 8')
                     info = page.evaluate('window.__gameforgeTelemetry().graphics')
                     assert info['style'] == item['style'], info
+                    assert info['shadows'] == item['shadows'], info
+                    assert info['particles'] == item['particles'], info
                     assert info['effectiveQuality'] == 'high', info
                     if item['style'] == 'pixel':
                         assert page.evaluate("getComputedStyle(document.getElementById('game')).imageRendering") == 'pixelated'

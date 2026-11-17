@@ -1,3 +1,9 @@
+# GameForge Studio v0.26 — correções de pedidos visuais
+
+O interpretador gráfico entende retirada e reativação de estilos/efeitos, separa negação de novos comandos e revoga requisitos avançados removidos pelo usuário. A revisão preserva gênero, dimensão, campanha e regras econômicas nos 16 modelos. A exportação inclui INTERPRETACAO_VISUAL.json com origem por campo e exclusões.
+
+Leia o [treinamento de revisões visuais](docs/TREINAMENTO_VISUAL_GF_TRAIN_08.md).
+
 # GameForge Studio v0.25 — salvar e continuar simulações
 
 Aquário, fazenda e loja agora salvam o progresso neste navegador, com gravação automática, botão Salvar progresso e Continuar. O tempo fechado não avança. Pedidos como “sem salvar” desativam a persistência. Novo jogo substitui o progresso anterior.

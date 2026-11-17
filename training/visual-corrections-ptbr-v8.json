@@ -1,0 +1,902 @@
+{
+  "version": 8,
+  "purpose": "64 regressões de revisão visual nos 16 modelos; não fine-tuning nem prova de compreensão universal",
+  "cases": [
+    {
+      "gdd": "# Perfil em revisão\nQuero cuidar de aquário 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero cuidar de aquário 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero cuidar de aquário 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero cuidar de aquário 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero jogo de arena 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero jogo de arena 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero jogo de arena 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero jogo de arena 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie um jogo de plataforma 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie um jogo de plataforma 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie um jogo de plataforma 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie um jogo de plataforma 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero jogo de corrida 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero jogo de corrida 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero jogo de corrida 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero jogo de corrida 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero RPG 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero RPG 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero RPG 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nQuero RPG 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie navinha espacial 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie navinha espacial 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie navinha espacial 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie navinha espacial 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa de torres 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "tower-defense",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa de torres 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "tower-defense",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa de torres 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "tower-defense",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa de torres 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "tower-defense",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa por linhas 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "lane-defense",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa por linhas 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "lane-defense",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa por linhas 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "lane-defense",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa por linhas 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "lane-defense",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa de blocos 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "block-td",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa de blocos 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "block-td",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa de blocos 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "block-td",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie defesa de blocos 2D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "block-td",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de arena 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de arena 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de arena 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de arena 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie FPS 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie FPS 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie FPS 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie FPS 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie RPG 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie RPG 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie RPG 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie RPG 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de corrida 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de corrida 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de corrida 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de corrida 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de plataforma 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de plataforma 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de plataforma 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie jogo de plataforma 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie navinha espacial 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie navinha espacial 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie navinha espacial 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie navinha espacial 3D.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie GTA 3D com carros, lojas e polícia.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Agora sem pixel art. Não ativar sombras e com partículas.",
+      "expected": {
+        "genre": "urban-action",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie GTA 3D com carros, lojas e polícia.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Tira as sombras e desliga as partículas. Agora cartoon, qualidade leve.",
+      "expected": {
+        "genre": "urban-action",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": false,
+        "advanced": true
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie GTA 3D com carros, lojas e polícia.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Sem ray tracing e sem texturas 4K. Sem sombras e partículas, mas depois ativar partículas.",
+      "expected": {
+        "genre": "urban-action",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset",
+        "shadows": false,
+        "particles": true,
+        "advanced": false
+      }
+    },
+    {
+      "gdd": "# Perfil em revisão\nCrie GTA 3D com carros, lojas e polícia.\nVisual pixel art, qualidade alta, pôr do sol, com sombras e partículas.\nRay tracing e texturas 4K.",
+      "instruction": "Não quero mais pixel art, quero low poly. Sem qualidade alta; qualidade automática. Luz do dia, depois cenário noturno. Desativar sombras, depois ligar sombras.",
+      "expected": {
+        "genre": "urban-action",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "auto",
+        "atmosphere": "night",
+        "shadows": true,
+        "particles": true,
+        "advanced": true
+      }
+    }
+  ]
+}

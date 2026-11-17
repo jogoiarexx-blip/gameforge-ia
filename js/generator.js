@@ -136,8 +136,9 @@
       'RELATORIO_GERACAO.md':generationReport(spec),
       ...(spec.learningPlan?{'PLANO_APRENDIZADO.json':JSON.stringify(spec.learningPlan,null,2),
         'FONTES_ESTUDADAS.md':(root.GameForgeRepoKnowledge||(typeof require==='function'?require('./repository-knowledge'):null)).learningReport(spec.learningPlan)}:{}),
+      'INTERPRETACAO_VISUAL.json':JSON.stringify(spec.renderInterpretation||{version:1,origins:{}},null,2),
       'PERFIL_VISUAL.json':JSON.stringify(spec.renderProfile||{version:1,style:'illustrated',quality:'auto'},null,2),
-      'GUIA_VISUAL.md':'# Perfil gráfico executável\n\nO perfil está em PERFIL_VISUAL.json e no GAME_SPEC. Renderização procedural offline com paletas, detalhes 2D e iluminação/materiais 3D. Fotorrealismo, texturas de alta resolução e modelos artísticos próprios exigem conteúdo adicional. Qualidade automática usa orçamento reduzido em telas estreitas.\n',
+      'GUIA_VISUAL.md':'# Perfil gráfico executável\n\nO perfil está em PERFIL_VISUAL.json e no GAME_SPEC. INTERPRETACAO_VISUAL.json registra origens e exclusões; opções manuais têm prioridade sobre o texto. Renderização procedural offline com paletas, detalhes 2D e iluminação/materiais 3D. Fotorrealismo, texturas de alta resolução e modelos artísticos próprios exigem conteúdo adicional. Qualidade automática usa orçamento reduzido em telas estreitas.\n',
       ...(Array.isArray(spec.stageSpecs)?{
         'FASES_EXECUTAVEIS.json':JSON.stringify({version:1,engine:spec.genre+'-'+spec.dimension,stages:spec.stageSpecs},null,2),
         'PLANO_FASES.md':(root.GameForgeStageSpec||(typeof require==='function'?require('./stage-spec'):null))?.report(spec)||''

@@ -39,10 +39,10 @@ for(const [dimension,genres] of Object.entries(parser.styles)){
 }
 const graphicsMatrix=[];
 for(const entry of [
- {slug:'graphics-pixel-2d',dimension:'2d',genre:'shooter',style:'pixel',instruction:'Visual pixel art, qualidade alta.'},
- {slug:'graphics-natural-3d',dimension:'3d',genre:'rpg',style:'natural',instruction:'Visual naturalista, qualidade alta, pôr do sol.'}
+ {slug:'graphics-pixel-2d',dimension:'2d',genre:'shooter',style:'pixel',shadows:false,particles:true,instruction:'Não quero mais cartoon, quero pixel art. Qualidade alta. Não ativar sombras, com partículas.'},
+ {slug:'graphics-natural-3d',dimension:'3d',genre:'rpg',style:'natural',shadows:false,particles:false,instruction:'Retire low poly. Quero naturalista, qualidade alta, pôr do sol. Não ativar sombras e desliga partículas.'}
 ]){
- const source='# Perfil gráfico '+entry.slug;
+ const source='# Perfil gráfico '+entry.slug+'\nVisual '+(entry.dimension==='2d'?'cartoon':'low poly')+', qualidade leve, com sombras e partículas.';
  const spec=parser.parseGdd(source,entry.instruction,{genre:entry.genre,dimension:entry.dimension});
  const files=generator.generate(spec,source);validateFiles(files,entry.dimension,entry.genre);
  const directory=path.join(output,entry.slug);fs.mkdirSync(directory);

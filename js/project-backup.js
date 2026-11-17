@@ -1,7 +1,7 @@
 /* Backups portáteis do Studio. Validação de dados sem executar código. */
 (function(root){
 'use strict';
-const allowedFiles=['PLANO_APRENDIZADO.json','FONTES_ESTUDADAS.md','PERFIL_VISUAL.json','GUIA_VISUAL.md','index.html','style.css','game.js','engine-3d.js','THREE-LICENSE.txt','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json','CAMPANHA_EDITOR.md','ASSET_CENARIO.b64','ASSET_CENARIO.json','ASSET_LIBRARY.json','COMANDO_ORIGINAL.md','PLANO_INTERPRETACAO.md','CONTRATO_CAPACIDADES.md','CAPACIDADES.json','PLANO_REQUISITOS.md','FASES_EXECUTAVEIS.json','PLANO_FASES.md','SLICE_URBAN_3D.md','MODELO_ACOES.json','PLANO_ACOES.md'];
+const allowedFiles=['INTERPRETACAO_VISUAL.json','PLANO_APRENDIZADO.json','FONTES_ESTUDADAS.md','PERFIL_VISUAL.json','GUIA_VISUAL.md','index.html','style.css','game.js','engine-3d.js','THREE-LICENSE.txt','GDD_original.md','RELATORIO_GERACAO.md','RELATORIO_QA.md','RELATORIO_VISUAL_IA.md','RELATORIO_REFERENCIAS.md','MANIFESTO_SHMUP.md','RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','RELATORIO_LEITURA_GDD.md','PLANO_TAREFAS_GDD.md','TAREFAS_GDD.json','CAMPANHA_EDITOR.md','ASSET_CENARIO.b64','ASSET_CENARIO.json','ASSET_LIBRARY.json','COMANDO_ORIGINAL.md','PLANO_INTERPRETACAO.md','CONTRATO_CAPACIDADES.md','CAPACIDADES.json','PLANO_REQUISITOS.md','FASES_EXECUTAVEIS.json','PLANO_FASES.md','SLICE_URBAN_3D.md','MODELO_ACOES.json','PLANO_ACOES.md'];
 const states=['pendente','em andamento','aguardando revisão','validada','bloqueada'];
 const bytes=s=>new TextEncoder().encode(s).length;
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -46,7 +46,7 @@ function normalize(snap){
  return result;
 }
 function encode(snap){
- const encoded=JSON.stringify({format:'gameforge-project',version:1,studioVersion:'0.25.0',savedAt:new Date().toISOString(),project:normalize(snap)});
+ const encoded=JSON.stringify({format:'gameforge-project',version:1,studioVersion:'0.26.0',savedAt:new Date().toISOString(),project:normalize(snap)});
  if(bytes(encoded)>20000000)throw Error('Backup acima de 20 MB. Reduza o histórico antes de exportar.');
  return encoded;
 }

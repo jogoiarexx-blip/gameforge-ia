@@ -11,6 +11,7 @@ test('GF-TRAIN-07: 40 pedidos de save e exclusões respeitam domínio e última 
   assert.equal(s.genre,'simulation',row.instruction);assert.equal(s.simulation.domain,row.domain,row.instruction);
   assert.equal(s.simulation.persistence.enabled,row.enabled,row.instruction);
   assert.ok(!s.implementation.pending.some(x=>x.id==='simulation-save'));
+  if(/salvamento automático/.test(row.instruction))assert.ok(!s.implementation.pending.some(x=>x.id==='simulation-automation'));
   assert.equal(s.implementation.audit.items.find(x=>x.id==='simulation-save').status,'implementada');
  }
 });

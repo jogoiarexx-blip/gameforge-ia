@@ -95,7 +95,7 @@ function compile(text,command=''){
  ['weather',/clima|estacoes do ano|chuva/,'Clima e estações'],
  ['automation',/automatic[oa]|automatizar/,'Automação de produção'],
  ['walk',/andar|caminhar|personagem andando/,'Personagem caminhando pelo cenário']];
- for(const [id,re,label] of unsupported)if(t.split(/[.!?;,\n]|\b(?:mas|com)\b/).some(clause=>{const m=re.exec(clause);return m&&!/\b(?:sem|nao quero|nao usar|evitar)\b.{0,70}$/.test(clause.slice(0,m.index));}))pending.push({id:'simulation-'+id,description:label+' — ainda não implementado',where:'Simulação 2D'});
+ for(const [id,re,label] of unsupported)if((id==='automation'?t.replace(/\b(?:salvamento|save|salvar|guardar (?:o )?progresso)\s+automatic(?:o|amente)\b/g,'salvar'):t).split(/[.!?;,\n]|\b(?:mas|com)\b/).some(clause=>{const m=re.exec(clause);return m&&!/\b(?:sem|nao quero|nao usar|evitar)\b.{0,70}$/.test(clause.slice(0,m.index));}))pending.push({id:'simulation-'+id,description:label+' — ainda não implementado',where:'Simulação 2D'});
  if(profile.matches.length>1)pending.push({id:'simulation-hybrid',description:'Combinação de domínios pendente; este protótipo executa somente '+d.label,where:'Simulação 2D'});
  return {config,pending,warnings,profile};
 }

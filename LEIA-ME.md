@@ -1,3 +1,9 @@
+# GameForge Studio v0.27 — revisões de simulações em linguagem simples
+
+Aquário, fazenda e loja entendem quantidades por extenso, minutos e alterações posteriores com negação local. O pedido “dois tanques, não quero dez tanques” mantém dois; retirar uma necessidade não desativa outra pedida explicitamente. Pendências retiradas pelo usuário também são atualizadas.
+
+Leia o [treinamento de revisões de simulação](docs/TREINAMENTO_SIMULACAO_GF_TRAIN_09.md).
+
 # GameForge Studio v0.26 — correções de pedidos visuais
 
 O interpretador gráfico entende retirada e reativação de estilos/efeitos, separa negação de novos comandos e revoga requisitos avançados removidos pelo usuário. A revisão preserva gênero, dimensão, campanha e regras econômicas nos 16 modelos. A exportação inclui INTERPRETACAO_VISUAL.json com origem por campo e exclusões.

@@ -1,0 +1,589 @@
+{
+  "version": 9,
+  "purpose": "72 cenários de revisão de simulações; regras determinísticas, sem fine-tuning externo",
+  "cases": [
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Agora dois tanques.",
+      "domain": "aquarium",
+      "expected": {
+        "slots": 2
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Quero três tanques, não quero 10 tanques.",
+      "domain": "aquarium",
+      "expected": {
+        "slots": 3
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Agora cinco tanques, depois quero duas tanques.",
+      "domain": "aquarium",
+      "expected": {
+        "slots": 2
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Crescer em um minuto.",
+      "domain": "aquarium",
+      "expected": {
+        "seconds": 60
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Crescer em dois minutos.",
+      "domain": "aquarium",
+      "expected": {
+        "seconds": 120
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Crescer em cinco segundos.",
+      "domain": "aquarium",
+      "expected": {
+        "seconds": 5
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Crescer em 9 segundos, mas não quero crescer em 2 segundos.",
+      "domain": "aquarium",
+      "expected": {
+        "seconds": 9
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Peixe custa dez, venda por vinte.",
+      "domain": "aquarium",
+      "expected": {
+        "cost": 10,
+        "price": 20
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Meta de cem moedas, mas não quero meta de 999 moedas.",
+      "domain": "aquarium",
+      "expected": {
+        "target": 100
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Começar com cem moedas, depois começar com cinquenta moedas.",
+      "domain": "aquarium",
+      "expected": {
+        "startingMoney": 50
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Não quero mais salvar.",
+      "domain": "aquarium",
+      "expected": {
+        "persistence.enabled": false
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de aquário com 4 tanques, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Sem salvar, mas agora quero guardar o progresso.",
+      "domain": "aquarium",
+      "expected": {
+        "persistence.enabled": true
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Agora dois canteiros.",
+      "domain": "farm",
+      "expected": {
+        "slots": 2
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Quero três canteiros, não quero 10 canteiros.",
+      "domain": "farm",
+      "expected": {
+        "slots": 3
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Agora cinco canteiros, depois quero duas canteiros.",
+      "domain": "farm",
+      "expected": {
+        "slots": 2
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Crescer em um minuto.",
+      "domain": "farm",
+      "expected": {
+        "seconds": 60
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Crescer em dois minutos.",
+      "domain": "farm",
+      "expected": {
+        "seconds": 120
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Crescer em cinco segundos.",
+      "domain": "farm",
+      "expected": {
+        "seconds": 5
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Crescer em 9 segundos, mas não quero crescer em 2 segundos.",
+      "domain": "farm",
+      "expected": {
+        "seconds": 9
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Semente custa dez, venda por vinte.",
+      "domain": "farm",
+      "expected": {
+        "cost": 10,
+        "price": 20
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Meta de cem moedas, mas não quero meta de 999 moedas.",
+      "domain": "farm",
+      "expected": {
+        "target": 100
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Começar com cem moedas, depois começar com cinquenta moedas.",
+      "domain": "farm",
+      "expected": {
+        "startingMoney": 50
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Não quero mais salvar.",
+      "domain": "farm",
+      "expected": {
+        "persistence.enabled": false
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero cuidar de fazenda com 4 canteiros, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Sem salvar, mas agora quero guardar o progresso.",
+      "domain": "farm",
+      "expected": {
+        "persistence.enabled": true
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Agora dois prateleiras.",
+      "domain": "shop",
+      "expected": {
+        "slots": 2
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Quero três prateleiras, não quero 10 prateleiras.",
+      "domain": "shop",
+      "expected": {
+        "slots": 3
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Agora cinco prateleiras, depois quero duas prateleiras.",
+      "domain": "shop",
+      "expected": {
+        "slots": 2
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Atendimento em um minuto.",
+      "domain": "shop",
+      "expected": {
+        "seconds": 60
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Atendimento em dois minutos.",
+      "domain": "shop",
+      "expected": {
+        "seconds": 120
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Atendimento em cinco segundos.",
+      "domain": "shop",
+      "expected": {
+        "seconds": 5
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Atendimento em 9 segundos, mas não quero atendimento em 2 segundos.",
+      "domain": "shop",
+      "expected": {
+        "seconds": 9
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Estoque custa dez, venda por vinte.",
+      "domain": "shop",
+      "expected": {
+        "cost": 10,
+        "price": 20
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Meta de cem moedas, mas não quero meta de 999 moedas.",
+      "domain": "shop",
+      "expected": {
+        "target": 100
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Começar com cem moedas, depois começar com cinquenta moedas.",
+      "domain": "shop",
+      "expected": {
+        "startingMoney": 50
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Não quero mais salvar.",
+      "domain": "shop",
+      "expected": {
+        "persistence.enabled": false
+      }
+    },
+    {
+      "gdd": "# Minha simulação\nQuero administrar uma loja com 4 prateleiras, começar com 80 moedas e meta de 120 moedas.\n",
+      "instruction": "Sem salvar, mas agora quero guardar o progresso.",
+      "domain": "shop",
+      "expected": {
+        "persistence.enabled": true
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Tirar fome e ativar água suja em vinte segundos.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerEnabled": false,
+        "aquariumCare.waterEnabled": true,
+        "aquariumCare.waterSeconds": 20
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Desativar fome e com água suja em um minuto.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerEnabled": false,
+        "aquariumCare.waterEnabled": true,
+        "aquariumCare.waterSeconds": 60
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Sem fome e sem água suja.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerEnabled": false,
+        "aquariumCare.waterEnabled": false
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Com fome em cinco segundos e sem água suja.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerEnabled": true,
+        "aquariumCare.hungerSeconds": 5,
+        "aquariumCare.waterEnabled": false
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Não desativar fome e não desativar água suja.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerEnabled": true,
+        "aquariumCare.waterEnabled": true
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Sem fome, depois ativar fome em quinze segundos.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerEnabled": true,
+        "aquariumCare.hungerSeconds": 15
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Sem água suja, mas depois ativar água suja em dois minutos.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.waterEnabled": true,
+        "aquariumCare.waterSeconds": 120
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Alimentar a cada um minuto.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerSeconds": 60
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Dar ração de dois em dois segundos.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerSeconds": 5
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Trocar água a cada dois minutos.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.waterSeconds": 120
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Filhote vale quatro e filhote vale nove.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.juvenilePrice": 9
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Jovem vale dez e jovem vale quinze.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.youngPrice": 15
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Adulto vale trinta e adulto vale quarenta.",
+      "domain": "aquarium",
+      "expected": {
+        "price": 40
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Filhote vale 6 e não quero filhote vale 1.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.juvenilePrice": 6
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Sem fome e quero vender filhotes.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerEnabled": false,
+        "aquariumCare.sellYoung": true
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Não quero vender filhotes, mas quero água suja em 20 segundos.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.sellYoung": false,
+        "aquariumCare.waterSeconds": 20
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Vender filhotes, mas vender somente adultos.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.sellYoung": false
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Vender somente adultos, depois vender filhotes.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.sellYoung": true
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Sem precisar alimentar, mas ativar alimentação.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerEnabled": true,
+        "aquariumCare.feedingRequired": true
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Não quero mais alimentar.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerEnabled": false,
+        "aquariumCare.feedingRequired": false
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "n quero mais salvar, mas com fome em dez segundos.",
+      "domain": "aquarium",
+      "expected": {
+        "persistence.enabled": false,
+        "aquariumCare.hungerSeconds": 10
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Tira fome, mas quero salvar.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.hungerEnabled": false,
+        "persistence.enabled": true
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Água suja em 999 minutos.",
+      "domain": "aquarium",
+      "expected": {
+        "aquariumCare.waterSeconds": 600
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\n",
+      "instruction": "Crescer em dez minutos.",
+      "domain": "aquarium",
+      "expected": {
+        "seconds": 300
+      }
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nCom reprodução.",
+      "instruction": "Sem reprodução.",
+      "domain": "aquarium",
+      "expected": {},
+      "absentPending": "simulation-breeding"
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nSem reprodução.",
+      "instruction": "Agora quero reprodução.",
+      "domain": "aquarium",
+      "expected": {},
+      "pending": "simulation-breeding"
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nCom doenças.",
+      "instruction": "Sem doenças.",
+      "domain": "aquarium",
+      "expected": {},
+      "absentPending": "simulation-health"
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nSem doenças.",
+      "instruction": "Agora quero doenças.",
+      "domain": "aquarium",
+      "expected": {},
+      "pending": "simulation-health"
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nCom personagem andando.",
+      "instruction": "Sem andar.",
+      "domain": "aquarium",
+      "expected": {},
+      "absentPending": "simulation-walk"
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nSem personagem andando.",
+      "instruction": "Agora quero personagem andando.",
+      "domain": "aquarium",
+      "expected": {},
+      "pending": "simulation-walk"
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nCom funcionários.",
+      "instruction": "Remover funcionários.",
+      "domain": "aquarium",
+      "expected": {},
+      "absentPending": "simulation-employees"
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nSem funcionários.",
+      "instruction": "Agora quero funcionários.",
+      "domain": "aquarium",
+      "expected": {},
+      "pending": "simulation-employees"
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nCom veículos.",
+      "instruction": "Não quero veículos.",
+      "domain": "aquarium",
+      "expected": {},
+      "absentPending": "simulation-vehicles"
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nSem veículos.",
+      "instruction": "Agora quero veículos.",
+      "domain": "aquarium",
+      "expected": {},
+      "pending": "simulation-vehicles"
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nCom clima.",
+      "instruction": "Tirar clima.",
+      "domain": "aquarium",
+      "expected": {},
+      "absentPending": "simulation-weather"
+    },
+    {
+      "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nSem clima.",
+      "instruction": "Agora quero clima.",
+      "domain": "aquarium",
+      "expected": {},
+      "pending": "simulation-weather"
+    }
+  ]
+}

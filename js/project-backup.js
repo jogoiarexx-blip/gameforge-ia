@@ -46,7 +46,7 @@ function normalize(snap){
  return result;
 }
 function encode(snap){
- const encoded=JSON.stringify({format:'gameforge-project',version:1,studioVersion:'0.26.0',savedAt:new Date().toISOString(),project:normalize(snap)});
+ const encoded=JSON.stringify({format:'gameforge-project',version:1,studioVersion:'0.27.0',savedAt:new Date().toISOString(),project:normalize(snap)});
  if(bytes(encoded)>20000000)throw Error('Backup acima de 20 MB. Reduza o histórico antes de exportar.');
  return encoded;
 }

@@ -49,12 +49,12 @@ for(const entry of [
  for(const [filename,contents] of Object.entries(files))fs.writeFileSync(path.join(directory,filename),contents);
  graphicsMatrix.push(entry);
 }
-const careInstruction='Quero cuidar de aquário com 2 tanques. Crescer em 12 segundos, fome em 5 segundos, água suja em 6 segundos. Filhote vale 4, jovem vale 12, adulto vale 24. Vender filhotes, meta de 10 moedas.';
-const careSpec=parser.parseGdd('# Aquário de cuidado',careInstruction);
+const careInstruction='Agora dois tanques, não quero dez tanques. Crescer em doze segundos, fome em cinco segundos, água suja em seis segundos. Filhote vale quatro, jovem vale doze, adulto vale vinte e quatro. Vender filhotes, meta de dez moedas.';
+const careSpec=parser.parseGdd('# Aquário de cuidado\nQuero cuidar de aquário com quatro tanques. Crescer em um minuto, fome em 15 segundos e água suja em 30 segundos.',careInstruction);
 const careFiles=generator.generate(careSpec,'');validateFiles(careFiles,'2d','simulation');
 const careDirectory=path.join(output,'aquarium-care');fs.mkdirSync(careDirectory);
 for(const [filename,contents] of Object.entries(careFiles))fs.writeFileSync(path.join(careDirectory,filename),contents);
-for(const [domain,instruction] of [['farm','Quero cuidar de fazenda, crescer em 2 segundos, meta de 10 moedas.'],['shop','Quero administrar uma loja, atendimento em 2 segundos, meta de 10 moedas.']]){
+for(const [domain,instruction] of [['farm','Quero cuidar de fazenda com dois canteiros, crescer em dois segundos, meta de dez moedas.'],['shop','Quero administrar uma loja com duas prateleiras, atendimento em dois segundos, meta de dez moedas.']]){
  const spec=parser.parseGdd('# Save '+domain,instruction),files=generator.generate(spec,'');
  const directory=path.join(output,'save-'+domain);fs.mkdirSync(directory);
  for(const [filename,contents] of Object.entries(files))fs.writeFileSync(path.join(directory,filename),contents);

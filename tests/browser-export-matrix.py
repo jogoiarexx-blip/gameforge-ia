@@ -399,6 +399,7 @@ def run():
             try:
                 care_page.goto(origin + '/tests/_browser_output/aquarium-care/index.html', wait_until='load')
                 care_page.locator('#start').click()
+                assert care_page.evaluate('window.__gameforgeTelemetry().simulation.slots.length') == 2
                 care_page.get_by_role('button', name='Comprar peixe', exact=True).click()
                 care_page.get_by_role('button', name='Alimentar', exact=True).click()
                 care_page.locator('[data-control="right"]').click()
@@ -462,6 +463,7 @@ def run():
                 try:
                     page.goto(origin + '/tests/_browser_output/save-' + domain + '/index.html', wait_until='load')
                     page.locator('#start').click()
+                    assert page.evaluate('window.__gameforgeTelemetry().simulation.slots.length') == 2
                     page.keyboard.press('1')
                     page.keyboard.press('2')
                     page.wait_for_function('window.__gameforgeTelemetry().simulation.slots[0].age >= 2')

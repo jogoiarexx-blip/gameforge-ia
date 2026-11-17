@@ -63,7 +63,7 @@ function boot(genre,shared=null,overrides={}){
   'e.x=player.x;e.z=player.z-4;e.hp=1;e.speed=0;return e.id;},',
   'landOnPlatform(index){const p=platforms[index];if(!p)return false;',
   'player.x=p.x;player.z=p.z;player.y=p.y+.025;player.vy=-3;player.grounded=false;return true;},',
-  'nearCrystal(){const c=coins.find(x=>!x.taken);'
+  'nearCrystal(){const c=coins.find(x=>!x.taken);',
   'if(c){player.x=c.x;player.y=c.y-.9;player.z=c.z;}},',
   'inspect(){return {stage,score,health,ammo,rpgLevel,rpgXP,rpgPotions,required,collected};}',
   '};'

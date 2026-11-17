@@ -78,6 +78,11 @@
     if(three&&spec.genre==='urban-action'&&typeof actorFactory!=='function')throw Error('Reprodutor de clips GLB ausente. Atualize o Studio.');
     const urbanSaveFactory=root.gameForgeUrbanSaveFactory||(typeof require==='function'?require('./urban-save'):null);
     if(three&&spec.genre==='urban-action'&&typeof urbanSaveFactory!=='function')throw Error('Modulo de salvamento urbano offline ausente. Atualize o Studio.');
+    const adventureSaveFactory=root.gameForgeAdventureCampaignSaveFactory||
+      (typeof require==='function'?require('./adventure-campaign-save'):null);
+    if(three&&['rpg','platform'].includes(spec.genre)&&
+       (typeof adventureSaveFactory!=='function'||typeof urbanSaveFactory!=='function'))
+      throw Error('Módulo de checkpoint de aventura 3D ausente. Atualize o Studio.');
     const shooterSaveFactory=root.gameForgeShooterCampaignSaveFactory||
       (typeof require==='function'?require('./shooter-campaign-save'):null);
     if(three&&spec.genre==='shooter'&&
@@ -102,7 +107,10 @@
       ?'const GameForgeUrbanSave = ('+urbanSaveFactory.toString()+')();\n'
        +'const GameForgeShooterCampaignSave = ('+shooterSaveFactory.toString()+')();\n':'';
 
-    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+rules+combatModule+branchModule+shooterSaveModule+'('+runtime.toString()+')();\n';
+    const adventureSaveModule=three&&['rpg','platform'].includes(spec.genre)
+      ?'const GameForgeUrbanSave = ('+urbanSaveFactory.toString()+')();\n'
+       +'const GameForgeAdventureCampaignSave = ('+adventureSaveFactory.toString()+')();\n':'';
+    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+rules+combatModule+branchModule+shooterSaveModule+adventureSaveModule+'('+runtime.toString()+')();\n';
     const css=BASE_CSS;
     const dependencies=three?{'engine-3d.js':root.GameForgeThreeSource,'THREE-LICENSE.txt':root.GameForgeThreeLicense}:{};
     const shooterManifest=spec.genre==='shooter' ? {'MANIFESTO_SHMUP.md':

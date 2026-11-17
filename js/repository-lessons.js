@@ -230,7 +230,7 @@ const entries=[
     "evidenceType": "source",
     "licenseStatus": "Licença geral de código não localizada na árvore consultada; uso conceitual sem redistribuição de fonte ou assets.",
     "relatedSources": [],
-    "application": "Referência estudada; não equivale a módulo implementado no GameForge."
+    "application": "Aplicado: saciedade e alimentação gratuita isoladas por tanque no aquário 2D. Não há entidades físicas de ração nem vários peixes por tanque."
   },
   {
     "id": "abyss-growth-study",
@@ -248,7 +248,7 @@ const entries=[
     "evidenceType": "source",
     "licenseStatus": "Licença geral de código não localizada na árvore consultada; uso conceitual sem redistribuição de fonte ou assets.",
     "relatedSources": [],
-    "application": "Referência estudada; não equivale a módulo implementado no GameForge."
+    "application": "Aplicado: crescimento para com saciedade zero ou água esgotada quando ativada, e retoma após cuidado. Genética e doenças continuam pendentes."
   },
   {
     "id": "abyss-value-study",
@@ -271,7 +271,7 @@ const entries=[
         "blob": "dfea3a56c0a4773c871d5211b750b933394db118"
       }
     ],
-    "application": "Referência estudada; não equivale a módulo implementado no GameForge."
+    "application": "Aplicado: cotação por idade e venda antecipada opcional no aquário 2D. Raridade, mutações e genética não estão implementadas."
   },
   {
     "id": "repair-feedback-study",

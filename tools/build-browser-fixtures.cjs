@@ -49,6 +49,11 @@ for(const entry of [
  for(const [filename,contents] of Object.entries(files))fs.writeFileSync(path.join(directory,filename),contents);
  graphicsMatrix.push(entry);
 }
+const careInstruction='Quero cuidar de aquário com 2 tanques. Crescer em 12 segundos, fome em 5 segundos, água suja em 6 segundos. Filhote vale 4, jovem vale 12, adulto vale 24. Vender filhotes, meta de 10 moedas.';
+const careSpec=parser.parseGdd('# Aquário de cuidado',careInstruction);
+const careFiles=generator.generate(careSpec,'');validateFiles(careFiles,'2d','simulation');
+const careDirectory=path.join(output,'aquarium-care');fs.mkdirSync(careDirectory);
+for(const [filename,contents] of Object.entries(careFiles))fs.writeFileSync(path.join(careDirectory,filename),contents);
 fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

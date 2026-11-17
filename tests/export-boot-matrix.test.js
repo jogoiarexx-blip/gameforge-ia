@@ -313,3 +313,18 @@ test('GF-GFX-01: todos os motores exportados executam perfis pixel e cartoon',()
   else assert.ok(info.scenes>0,genre+' prepara cena 3D');
  }
 });
+
+test('GF-TRAIN-06: aquário exportado cresce, pausa, retoma cuidados e vende sem duplicação',()=>{
+ const s=parser.parseGdd('','Quero cuidar de aquário com 2 tanques. Crescer em 20 segundos, fome em 5 segundos, água suja em 6 segundos. Filhote vale 4, jovem vale 14, adulto vale 30. Vender filhotes, meta de 10 moedas.');
+ const files=generator.generate(s,'');validateFiles(files,'2d','simulation');const h=environment(files,'2d');
+ h.element('start').click();const key=k=>{h.input('keydown',k);h.input('keyup',k);};
+ key('1');key('2');key('ArrowRight');key('1');key('ArrowLeft');h.tick(400);
+ const frozen=h.telemetry().simulation;
+ assert.ok(Math.abs(frozen.slots[0].age-5)<1e-6);assert.equal(frozen.slots[1].age,0);
+ assert.equal(frozen.slots[0].satiety,0);assert.equal(frozen.tanks[0].water,0);
+ h.element('pause').click();h.tick(120);assert.deepEqual(h.telemetry().simulation,frozen);
+ h.element('pause').click();key('2');key('4');h.tick(150);
+ assert.ok(h.telemetry().simulation.slots[0].age>7);assert.equal(h.telemetry().simulation.slots[1].age,0);
+ key('3');assert.equal(h.telemetry().state,'victory');assert.equal(h.telemetry().simulation.sales,1);
+ const sold=h.telemetry().simulation;key('3');assert.deepEqual(h.telemetry().simulation,sold);
+});

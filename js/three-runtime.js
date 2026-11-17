@@ -400,7 +400,7 @@ function gameForgeThreeBoot(){
  }
  window.__gameforgeTelemetry=()=>{
   vec.set(player.x,player.y+1,player.z);if(camera)vec.project(camera);
-  return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,clock,health,score,enemies:enemies.length,collected,required,
+  return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,clock,health,score,ammo,enemies:enemies.length,collected,required,
    campaignCheckpoint:campaignSave?.read()?.stage??null,campaignSaveStatus,campaignSaveKey:campaignSave?.key??null,
    missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
  };

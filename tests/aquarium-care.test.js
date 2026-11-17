@@ -74,6 +74,6 @@ test('GF-TRAIN-06: planos legados preservam ciclo v1 e custos não implementados
  const c=config();delete c.aquariumCare;c.version=1;const s=R.create(c);
  R.act(s,c,0,'start');R.act(s,c,0,'care');seconds(s,c,c.seconds);assert.equal(R.act(s,c,0,'finish'),true);assert.equal(s.earned,c.price);
  const spec=Parser.parseGdd('','Quero cuidar de aquário com ração custa 5, salvar progresso e doenças.');
- for(const id of ['simulation-paid-food','simulation-save','simulation-health'])assert.ok(spec.implementation.pending.some(x=>x.id===id),id);
+ for(const id of ['simulation-paid-food','simulation-health'])assert.ok(spec.implementation.pending.some(x=>x.id===id),id);
  assert.ok(spec.implementation.audit.items.some(x=>x.id==='aquarium-care'&&x.status==='implementada'));
 });

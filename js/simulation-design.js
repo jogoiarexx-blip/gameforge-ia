@@ -80,10 +80,14 @@ function compile(text,command=''){
   if(young!==cfg.youngPrice)warnings.push('Preço jovem ajustado entre filhote e adulto.');cfg.youngPrice=young;
   config.aquariumCare=cfg;
  }
+ config.persistence={version:1,enabled:true};
+ // Cada menção é interpretada na ordem; a última instrução prevalece.
+ const savePattern=/\b(?:(sem|nao quero|nao precisa|desativar|remover)\s+(?:precisar\s+)?(?:de\s+)?(?:salvar|salvamento|save|guardar(?: o)? progresso)|(?:salvar|salvamento|save|guardar(?: o)? progresso|continuar amanha|continuar de onde parei))\b/g;
+ for(const match of t.matchAll(savePattern))config.persistence.enabled=!match[1];
  const pending=[];
  const unsupported=[['paid-food',/comprar racao|racao (?:custa|paga)|comida (?:custa|paga)/,'Loja e cobrança de alimentação'],
  ['health',/doencas?|peixes? (?:morrem?|morrendo)|morte dos peixes|saude dos peixes/,'Saúde, doenças e morte de peixes'],
- ['save',/salvar|salvamento|continuar amanha|\bsave\b/,'Salvamento do progresso da simulação'],['breeding',/reproduzir|reproducao|cruzar peixes/,'Reprodução e genética'],
+ ['breeding',/reproduzir|reproducao|cruzar peixes/,'Reprodução e genética'],
  ['employees',/funcionarios?|empregados?/,'Funcionários autônomos'],
  ['construction',/construir|construcao|expandir (?:a loja|a fazenda)/,'Construção livre'],
  ['vehicles',/tratores?|dirigir|veiculos?/,'Veículos dirigíveis'],

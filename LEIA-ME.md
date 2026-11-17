@@ -1,6 +1,12 @@
+# GameForge Studio v0.25 — salvar e continuar simulações
+
+Aquário, fazenda e loja agora salvam o progresso neste navegador, com gravação automática, botão Salvar progresso e Continuar. O tempo fechado não avança. Pedidos como “sem salvar” desativam a persistência. Novo jogo substitui o progresso anterior.
+
+Leia o [treinamento de salvamento](docs/TREINAMENTO_SIMULACAO_GF_TRAIN_07.md).
+
 # GameForge Studio v0.24 — aquário com cuidado e valorização
 
-O motor de aquário 2D agora executa saciedade por tanque, pausa de crescimento por falta de alimento, qualidade/troca de água quando pedida e cotação por idade. O comando pode permitir venda de filhotes ou exigir idade adulta. Alimentação e limpeza são gratuitas; comércio de ração, reprodução, doenças e salvamento do progresso continuam pendentes. Projetos v1 preservam seu ciclo original.
+O motor de aquário 2D agora executa saciedade por tanque, pausa de crescimento por falta de alimento, qualidade/troca de água quando pedida e cotação por idade. O comando pode permitir venda de filhotes ou exigir idade adulta. Alimentação e limpeza são gratuitas; comércio de ração, reprodução, doenças continuam pendentes; salvamento foi acrescentado na v0.25. Projetos v1 preservam seu ciclo original.
 
 Leia o [treinamento de cuidados do aquário](docs/TREINAMENTO_AQUARIO_GF_TRAIN_06.md).
 

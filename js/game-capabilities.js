@@ -7,6 +7,7 @@
 const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const dims=(genre,dim)=>genre+'-'+dim;
 const support={
+ 'simulation-save':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.persistence + GameForgeSimulationRules.persistence',test:'tests/simulation-save.test.js',pattern:/salvar|salvamento|save|continuar|guardar progresso/},
  'aquarium-care':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.aquariumCare + GameForgeSimulationRules',test:'tests/aquarium-care.test.js',pattern:/aquario|peixe|fome|alimentar|crescer|agua/},
  'visual-profile':{all:true,contract:'GAME_SPEC.renderProfile + gameForgeGraphicsFactory',test:'tests/graphics.test.js',pattern:/pixel|cartoon|low.?poly|ilustrad|realista|qualidade|sombras|particulas|por do sol/},
  'simulation-cycle':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation + gameForgeSimulationRulesFactory',test:'tests/simulation.test.js',pattern:/aquario|fazenda|loja|plantar|vender|estoque/},
@@ -51,7 +52,7 @@ function capability(id,spec){
  const key=normalizeId(id),definition=support[key];
  if(!definition)return {id:key,allowed:false,implemented:false,reason:'Sem contrato executável catalogado para este requisito.'};
  const allowed=!!(definition.all||definition.engines.includes(physicalEngine(spec)));
- return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care'].includes(key),contract:definition.contract,test:definition.test,
+ return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care','simulation-save'].includes(key),contract:definition.contract,test:definition.test,
    reason:allowed?'Mecânica do motor identificada; verificar GAME_SPEC e testes.':'O motor '+physicalEngine(spec)+' não implementa este parâmetro.'};
 }
 function provenance(item,source,command){
@@ -87,7 +88,7 @@ function audit(spec,gdd='',instruction=''){
   const cap=capability(entry.id,spec);
   // "Pendente" não é promovido só porque há uma capacidade com nome semelhante.
   const status=kind==='pending'?(cap.contract&&!cap.allowed?'incompativel':'pendente'):
-    !cap.allowed?'incompativel':cap.implemented&&['combat-store','simulation-cycle','aquarium-care'].includes(entry.id)?'implementada':'configurada';
+    !cap.allowed?'incompativel':cap.implemented&&['combat-store','simulation-cycle','aquarium-care','simulation-save'].includes(entry.id)?'implementada':'configurada';
   const where=String(entry.where||'Jogo inteiro');
   const origin=provenance(entry,gdd,instruction);
   const reason=status==='implementada'?'Módulo funcional existente no runtime com teste automatizado.':
@@ -121,6 +122,8 @@ function check(spec){
 
  if(!Array.isArray(stages)||stages.length<1||stages.length>(spec.genre==='lane-defense'?40:30))
   errors.push('Número de fases fora do limite do motor.');
+ const persistence=spec.simulation?.persistence;
+ if(persistence&&(persistence.version!==1||typeof persistence.enabled!=='boolean'))errors.push('Salvamento de simulação inválido.');
  const ac=spec.simulation?.aquariumCare;
  if(ac?.enabled){
   if(engine!=='simulation-2d'||spec.simulation.domain!=='aquarium')errors.push('Cuidados de aquário exigem simulação de aquário 2D.');

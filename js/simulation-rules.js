@@ -92,7 +92,49 @@ function gameForgeSimulationRulesFactory(){
   s.complete=s.earned>=c.target;
   return true;
  }
- return {create,tick,act,quote,status,canCare,canClean,canFinish};
+ // Save local versionado: nunca avança relógio de parede nem aceita outro contrato.
+ function persistence(c,title,accessStorage){
+  const signature=JSON.stringify([String(title),c]),key='gameforge-simulation-v1-'+hash(signature);
+  const enabled=c.persistence?.enabled===true;
+  function hash(text){let h=2166136261;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16);}
+  const number=(v,min,max,integer=false)=>typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max&&(!integer||Number.isInteger(v));
+  function restore(raw){
+   try{
+    if(typeof raw!=='string'||raw.length>30000)return null;
+    const data=JSON.parse(raw),v=data.state,cfg=care(c);
+    if(data.version!==1||data.signature!==signature||!v||!number(data.selected,0,c.slots-1,true))return null;
+    for(const k of ['money','earned','inventory','sales'])if(!number(v[k],0,1e9,true))return null;
+    if(v.money>c.startingMoney+v.earned||v.earned>v.sales*c.price||v.sales>1e6||v.inventory>1e6)return null;
+    if(c.domain!=='aquarium'&&v.earned!==v.sales*c.price||c.domain!=='farm'&&v.inventory!==0)return null;
+    if(!Array.isArray(v.slots)||v.slots.length!==c.slots)return null;
+    const result=create(c);
+    for(let i=0;i<c.slots;i++){
+     const item=v.slots[i];if(item===null)continue;
+     if(!item||!number(item.age,0,c.seconds)||typeof item.cared!=='boolean'||!item.cared&&item.age!==0)return null;
+     result.slots[i]={age:item.age,cared:item.cared};
+     if(cfg){if(!number(item.satiety,0,100))return null;result.slots[i].satiety=item.satiety;}
+    }
+    if(cfg){
+     if(!Array.isArray(v.tanks)||v.tanks.length!==c.slots)return null;
+     for(let i=0;i<c.slots;i++){if(!number(v.tanks[i]?.water,0,100))return null;result.tanks[i].water=v.tanks[i].water;}
+    }
+    for(const k of ['money','earned','inventory','sales'])result[k]=v[k];
+    result.complete=result.earned>=c.target;
+    return {state:result,selected:data.selected};
+   }catch(_){return null;}
+  }
+  const target=()=>typeof accessStorage==='function'?accessStorage():accessStorage;
+  function read(){if(!enabled)return null;try{return restore(target()?.getItem(key));}catch(_){return null;}}
+  function write(state,selected){
+   if(!enabled)return false;
+   try{
+    const raw=JSON.stringify({version:1,signature,state,selected});if(!restore(raw))return false;
+    const storage=target();storage.setItem(key,raw);return storage.getItem(key)===raw;
+   }catch(_){return false;}
+  }
+  return {enabled,key,read,write,restore};
+ }
+ return {create,tick,act,quote,status,canCare,canClean,canFinish,persistence};
 }
 root.gameForgeSimulationRulesFactory=gameForgeSimulationRulesFactory;
 if(typeof module!=='undefined')module.exports=gameForgeSimulationRulesFactory;

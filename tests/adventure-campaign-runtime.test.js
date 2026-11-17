@@ -57,6 +57,7 @@ function boot(genre,shared=null,overrides={}){
   'arrangeClear(){enemies=[];collected=required;player.x=goal.x;player.y=goal.y;player.z=goal.z;},',
   'boostRpg(count){for(let i=0;i<count;i++)rpgReward(false);},',
   'setHealth(n){health=n;},',
+  'defeat(){damage(200);},',
   'nearCrystal(){const c=coins.find(x=>!x.taken);',
   'if(c){player.x=c.x;player.y=c.y-.9;player.z=c.z;}},',
   'inspect(){return {stage,score,health,ammo,rpgLevel,rpgXP,rpgPotions,required,collected};}',
@@ -126,6 +127,13 @@ test('GF-TRAIN-07 RPG: XP/poções/magia persistem entre 3 fases e reload',()=>{
  assert.equal(restored.rpg.xp,10);
  assert.equal(restored.rpg.potions,2);
  assert.equal(restored.campaignSaveStatus,'recovered');
+ resumed.probe.defeat();
+ assert.equal(resumed.telemetry().state,'defeat','dano real deve causar derrota');
+ assert.equal(JSON.parse(db.getItem(key)).stage,1,'morrer não apaga o checkpoint');
+ resumed.start();resumed.tick(2);
+ assert.equal(resumed.telemetry().stage,2,'Tentar novamente inicia a última fase desbloqueada');
+ assert.equal(resumed.telemetry().score,300,'derrota não duplica pontos');
+ assert.deepEqual(JSON.parse(JSON.stringify(resumed.telemetry().rpg)),{level:2,xp:10,potions:2});
  // Iniciar uma nova fase não duplica prêmio anterior.
  assert.equal(JSON.parse(db.getItem(key)).stage,1);
  finishStage(resumed);

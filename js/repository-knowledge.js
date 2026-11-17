@@ -57,9 +57,24 @@
      keywords:'grim grove survivor mapa tiles boss stage assets atlas sprite inimigo fase bioma webp',
      verified:'Código-fonte conferido via GitHub em 16/11/2026'}
   );
+  const studied=root.GameForgeRepositoryLessons||(typeof require==='function'?require('./repository-lessons'):null);
+  if(studied)rows.push(...studied.entries);
   const stop=new Set('para como com que uma uns umas por seu sua seus suas meu meus jogo jogos criar crie faca fazer colocar quero vamos mais menos de do da das dos em no na nos nas o a os as um e ou ser ter ele ela'.split(' '));
   const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  const words=s=>new Set((norm(s).match(/[a-z0-9]+/g)||[]).filter(w=>w.length>=3&&!stop.has(w)));
+  const aliasGroups=[
+   ['peixinho','peixinhos','peixe','peixes'],['racao','comida','alimentacao','alimentar'],
+   ['cresce','crescer','crescimento'],['preco','valor'],['vender','venda'],
+   ['boneco','bonecos','personagem','personagens'],['frames','frame','quadro','quadros'],
+   ['guardar','reaproveitar','reutilizar','cache'],['ferrugem','enferrujado'],
+   ['salvar','salvamento','save'],['recuperar','restaurar','recuperacao'],
+   ['missao','missoes','quest','quests'],['peca','pecas'],['equipar','equipamento','equipamentos'],
+   ['travando','lento','desempenho'],['distante','distancia'],['turno','turnos']
+  ];
+  const words=s=>{
+   const result=new Set((norm(s).match(/[a-z0-9]+/g)||[]).filter(w=>w.length>=3&&!stop.has(w)));
+   for(const group of aliasGroups)if(group.some(w=>result.has(w)))for(const w of group)result.add(w);
+   return result;
+  };
   function rank(query,limit=5,pinned=[]){
     const text=norm(String(query||'').slice(0,70000));const q=words(text);
     const pinnedIds=[...new Set((Array.isArray(pinned)?pinned:[]).filter(x=>typeof x==='string'))].slice(0,8);
@@ -76,9 +91,23 @@
     }
     return chosen.concat(rows.filter(p=>!used.has(p.id)).map(p=>({p,score:score(p)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score||a.p.id.localeCompare(b.p.id)).slice(0,Math.max(0,limit-chosen.length)).map(x=>x.p));
   }
-  function report(references){
-    return '# Referências de projetos reais\n\nCatálogo curado a partir de arquivos dos seus repositórios públicos (12/11/2026). Não significa que o código foi importado ou executado.\n\n'+(references||[]).map(r=>'## '+r.title+'\n- Origem: '+r.repository+' / '+r.path+'\n- Link: '+r.url+'\n- Técnica: '+r.guidance+'\n- Teste recomendado: '+r.verify+'\n').join('\n');
+  function learningPlan(query,limit=4){
+    return {version:1,method:'Catálogo curado e busca lexical; não fine-tuning de modelo externo',
+      references:rank(query,Math.max(1,Math.min(6,limit))).map(r=>({id:r.id,repository:r.repository,path:r.path,url:r.url,
+       title:r.title,lesson:r.guidance,verify:r.verify,evidence:r.evidenceType||'legacy-reference',
+       sourceBlob:r.sourceBlob||null,license:r.licenseStatus||'Licença não revalidada nesta revisão',
+       status:'reference',application:r.application||'Referência de arquitetura; exige implementação e teste próprios.'})),
+      note:'Selecionar uma técnica não importa código ou assets e não comprova execução da mecânica no jogo.'};
   }
-  root.GameForgeRepoKnowledge={entries:rows,rank,report};
+  function learningReport(plan){
+    return '# Técnicas selecionadas para o pedido\n\n'+plan.note+'\n\n'+plan.references.map(r=>
+     '## '+r.title+'\n- Fonte: '+r.repository+' / '+r.path+'\n- Link: '+r.url+'\n- Tipo de evidência: '+r.evidence+
+     '\n- Blob conferido: '+(r.sourceBlob||'referência anterior')+'\n- Técnica: '+r.lesson+'\n- Testar: '+r.verify+
+     '\n- Aplicação: '+r.application+'\n- Licença: '+r.license+'\n').join('\n');
+  }
+  function report(references){
+    return '# Referências de projetos reais\n\nCatálogo curado de projetos públicos, incluindo revisão seletiva de duas contas em 17/11/2026. Não significa que o código foi importado ou executado.\n\n'+(references||[]).map(r=>'## '+r.title+'\n- Origem: '+r.repository+' / '+r.path+'\n- Link: '+r.url+'\n- Técnica: '+r.guidance+'\n- Teste recomendado: '+r.verify+'\n').join('\n');
+  }
+  root.GameForgeRepoKnowledge={entries:rows,rank,report,learningPlan,learningReport};
   if(typeof module!=='undefined')module.exports=root.GameForgeRepoKnowledge;
 })(typeof globalThis!=='undefined'?globalThis:this);

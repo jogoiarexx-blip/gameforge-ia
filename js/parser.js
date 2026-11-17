@@ -3,6 +3,7 @@
   'use strict';
   const intentCompiler=root.GameForgeIntent||(typeof require==='function'?require('./intent-compiler'):null);
   const normalize = s => intentCompiler?.normalize ? intentCompiler.normalize(s) : String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const repoKnowledge=root.GameForgeRepoKnowledge||(typeof require==='function'?require('./repository-knowledge'):null);
   const graphicsDesign=root.GameForgeGraphicsDesign||(typeof require==='function'?require('./graphics-design'):null);
   const simulationDesign=root.GameForgeSimulationDesign||(typeof require==='function'?require('./simulation-design'):null);
   const sourceCorpus=root.GameForgeGameCorpus||(typeof require==='function'?require('./game-corpus'):null);
@@ -308,6 +309,7 @@
     return designIR?designIR.enrich(interpreted,source,extra):interpreted;
   }
   function applyGraphics(spec,source,extra,options){
+    if(repoKnowledge?.learningPlan)spec.learningPlan=repoKnowledge.learningPlan(source+'\n'+extra);
     const result=graphicsDesign?.compile(spec,source,extra,options);
     if(!result)return;
     spec.implementation.applied.push(...result.applied);
@@ -342,6 +344,7 @@
       'AÇÕES AINDA NÃO EXECUTÁVEIS: '+actionPending+'\\n'+
       'PROIBIÇÕES E RESTRIÇÕES DO USUÁRIO (nunca ignorar): '+negatives+'\\n'+
 
+      'FONTES E TÉCNICAS SELECIONADAS (não significam código importado): '+(spec.learningPlan?.references||[]).slice(0,3).map(r=>r.repository+' / '+r.path+' — '+r.lesson+'; evidência '+r.evidence+'; licença: '+r.license).join(' | ')+'\\n'+
       'Limites/alertas: '+(plan.warnings||[]).slice(0,6).join('; ')+'\\n\\n';
     const value=context+String(instruction);
     if(value.length>10000)throw Error('Configuração e instrução de IA ultrapassam 10.000 caracteres. Reduza a instrução adicional.');

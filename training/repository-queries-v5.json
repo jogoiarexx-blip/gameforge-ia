@@ -1,0 +1,142 @@
+{
+  "version": 5,
+  "purpose": "34 consultas de recuperação de técnicas; não são 34 novas mecânicas implementadas",
+  "cases": [
+    {
+      "instruction": "Quero ganhar XP e gastar pontos em força e agilidade no RPG Nexo Ascensão",
+      "expectedReference": "luis-progression-study"
+    },
+    {
+      "instruction": "Melhorar equipamento com ouro e essência sem deixar gastar além do saldo",
+      "expectedReference": "luis-progression-study"
+    },
+    {
+      "instruction": "Missões do Nexo Ascensão por contador com recompensa uma vez só",
+      "expectedReference": "luis-quests-study"
+    },
+    {
+      "instruction": "Quero tarefa de derrotar cinco inimigos e receber prêmio sem duplicar",
+      "expectedReference": "luis-quests-study"
+    },
+    {
+      "instruction": "Validar inventário do save do Nexo antes de continuar",
+      "expectedReference": "luis-save-study"
+    },
+    {
+      "instruction": "Não restaurar equipamento que não existe quando carregar meu salvamento",
+      "expectedReference": "luis-save-study"
+    },
+    {
+      "instruction": "Chão de metal enferrujado com textura procedural tipo Sucata Zero",
+      "expectedReference": "luis-textures-study"
+    },
+    {
+      "instruction": "Quero pisos com ruído por semente e materiais de ferrugem",
+      "expectedReference": "luis-textures-study"
+    },
+    {
+      "instruction": "Sucata Zero carregar GLB com fallback quando falta modelo",
+      "expectedReference": "luis-assets-study"
+    },
+    {
+      "instruction": "Mostrar quando o carregamento de um modelo animado falhou",
+      "expectedReference": "luis-assets-study"
+    },
+    {
+      "instruction": "Oficina do Sucata Zero para equipar peças sem desmontar as essenciais",
+      "expectedReference": "luis-inventory-study"
+    },
+    {
+      "instruction": "Fabricar peça só se tiver receita e materiais suficientes no inventário",
+      "expectedReference": "luis-inventory-study"
+    },
+    {
+      "instruction": "Asas do Eclipse pool de projéteis com limite de balas",
+      "expectedReference": "luis-pool-study"
+    },
+    {
+      "instruction": "Reutilizar os tiros em vez de criar objetos novos toda hora",
+      "expectedReference": "luis-pool-study"
+    },
+    {
+      "instruction": "Terreno do Asas do Eclipse em blocos e lotes instanciados",
+      "expectedReference": "luis-terrain-study"
+    },
+    {
+      "instruction": "Cenário 3D que repete trechos de rio e floresta sem emenda visível",
+      "expectedReference": "luis-terrain-study"
+    },
+    {
+      "instruction": "Brasa de Aço rasterizar frames por pose em cache",
+      "expectedReference": "luis-sprite-cache-study"
+    },
+    {
+      "instruction": "Guardar os quadros do boneco correndo para reaproveitar os desenhos",
+      "expectedReference": "luis-sprite-cache-study"
+    },
+    {
+      "instruction": "Brasa de Aço recuperar backup de save corrompido",
+      "expectedReference": "luis-recovery-study"
+    },
+    {
+      "instruction": "Meu save quebrou, preservar o inválido e restaurar uma cópia anterior",
+      "expectedReference": "luis-recovery-study"
+    },
+    {
+      "instruction": "Madrugacraft visibilidade por distância com histerese",
+      "expectedReference": "luis-visibility-study"
+    },
+    {
+      "instruction": "Esconder árvores distantes sem apagar as colisões do cenário",
+      "expectedReference": "luis-visibility-study"
+    },
+    {
+      "instruction": "Abyss Garden comida separada para cada aquário",
+      "expectedReference": "abyss-care-study"
+    },
+    {
+      "instruction": "Dois peixinhos querem a mesma ração, só um pode comer cada comida",
+      "expectedReference": "abyss-care-study"
+    },
+    {
+      "instruction": "Abyss Garden crescimento depende da água e da fome",
+      "expectedReference": "abyss-growth-study"
+    },
+    {
+      "instruction": "Meu peixe está com fome e não cresce, mostrar quanto tempo falta",
+      "expectedReference": "abyss-growth-study"
+    },
+    {
+      "instruction": "Abyss Garden peixe vale mais quando chega em outro estágio",
+      "expectedReference": "abyss-value-study"
+    },
+    {
+      "instruction": "Vender peixe com preço por tamanho e raridade sem pagar duas vezes",
+      "expectedReference": "abyss-value-study"
+    },
+    {
+      "instruction": "Mecânica do Zé reparo visual por etapas",
+      "expectedReference": "repair-feedback-study"
+    },
+    {
+      "instruction": "O carro desmonta, instala a peça e faz o ajuste final conforme o progresso",
+      "expectedReference": "repair-feedback-study"
+    },
+    {
+      "instruction": "Nídara dieta abre evolução e muda o poder do tubarão",
+      "expectedReference": "nidara-design-study"
+    },
+    {
+      "instruction": "Tubarão escolhe mutação do corpo pelo que come e ganha habilidade",
+      "expectedReference": "nidara-design-study"
+    },
+    {
+      "instruction": "ARKHOS tabuleiro tático por turnos com criaturas",
+      "expectedReference": "arkhos-design-study"
+    },
+    {
+      "instruction": "Quero estratégia com ordens, alcance e passagem de turno no tabuleiro",
+      "expectedReference": "arkhos-design-study"
+    }
+  ]
+}

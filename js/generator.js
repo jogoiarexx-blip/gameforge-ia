@@ -99,7 +99,9 @@
 
     const gfxFactory=root.gameForgeGraphicsFactory||(typeof require==='function'?require('./graphics-runtime'):null);
     if(typeof gfxFactory!=='function')throw Error('Camada gráfica offline ausente. Atualize o Studio.');
-    const graphicsModule='const GameForgeGraphics = ('+gfxFactory.toString()+')(GAME_SPEC);\n';
+    const cacheFactory=root.gameForgeRenderCacheFactory||(typeof require==='function'?require('./render-cache'):null);
+    const cacheModule=!three?'const gameForgeRenderCacheFactory = '+cacheFactory.toString()+';\n':'';
+    const graphicsModule=cacheModule+'const GameForgeGraphics = ('+gfxFactory.toString()+')(GAME_SPEC);\n';
     const graphicsTelemetry='\nif(typeof window.__gameforgeTelemetry==="function"){const rawTelemetry=window.__gameforgeTelemetry;window.__gameforgeTelemetry=()=>({...rawTelemetry(),graphics:GameForgeGraphics.snapshot()});}\n';
     const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+graphicsModule+(simulation?'const GameForgeSimulationRules = ('+simulationRules.toString()+')();\n':'')+rules+combatModule+branchModule+'('+runtime.toString()+')();\n'+graphicsTelemetry;
     const css=BASE_CSS;
@@ -132,6 +134,8 @@
       ...(spec.actionModel?{'MODELO_ACOES.json':JSON.stringify(spec.actionModel,null,2),
         'PLANO_ACOES.md':(root.GameForgeMissionSemantics||(typeof require==='function'?require('./mission-semantics'):null))?.report(spec.actionModel)||''}:{}),
       'RELATORIO_GERACAO.md':generationReport(spec),
+      ...(spec.learningPlan?{'PLANO_APRENDIZADO.json':JSON.stringify(spec.learningPlan,null,2),
+        'FONTES_ESTUDADAS.md':(root.GameForgeRepoKnowledge||(typeof require==='function'?require('./repository-knowledge'):null)).learningReport(spec.learningPlan)}:{}),
       'PERFIL_VISUAL.json':JSON.stringify(spec.renderProfile||{version:1,style:'illustrated',quality:'auto'},null,2),
       'GUIA_VISUAL.md':'# Perfil gráfico executável\n\nO perfil está em PERFIL_VISUAL.json e no GAME_SPEC. Renderização procedural offline com paletas, detalhes 2D e iluminação/materiais 3D. Fotorrealismo, texturas de alta resolução e modelos artísticos próprios exigem conteúdo adicional. Qualidade automática usa orçamento reduzido em telas estreitas.\n',
       ...(Array.isArray(spec.stageSpecs)?{

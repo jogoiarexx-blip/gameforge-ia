@@ -78,6 +78,11 @@ def run():
                     graphics = active.get('graphics') or {}
                     assert graphics.get('style') == 'illustrated', (label, graphics)
                     assert graphics.get('finishes', 0) > 0 if item['dimension'] == '2d' else graphics.get('scenes', 0) > 0, (label, graphics)
+                    if label in ('2d-arena', '2d-platform', '2d-simulation'):
+                        cache = graphics.get('cache') or {}
+                        assert cache.get('entries', 0) > 0, (label, cache)
+                        assert cache.get('hits', 0) > 0, (label, cache)
+                        assert cache.get('bytes', 0) <= cache.get('maxBytes', 0), (label, cache)
                     assert active.get('state') in ('play', 'victory', 'intermission'), (label, active)
                     assert active.get('player') and isinstance(active['player'].get('x'), (float, int)), label
                     page.screenshot(path=str(screenshots / (label + '-gameplay.png')), full_page=True)

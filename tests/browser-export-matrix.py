@@ -411,8 +411,18 @@ def run():
                 paused_care = care_page.evaluate('window.__gameforgeTelemetry().simulation')
                 care_page.wait_for_timeout(350)
                 assert care_page.evaluate('window.__gameforgeTelemetry().simulation') == paused_care
-                care_page.locator('#pause').click()
-                care_page.get_by_role('button', name='Alimentar', exact=True).click()
+                care_page.locator('#simulation-save').click()
+                assert 'Salvo' in care_page.locator('#simulation-save-status').inner_text()
+                saved_care = care_page.evaluate('window.__gameforgeTelemetry().simulation')
+                care_page.reload(wait_until='load')
+                care_page.wait_for_timeout(400)
+                assert care_page.evaluate('window.__gameforgeTelemetry().state') == 'menu'
+                care_page.locator('#simulation-continue').click()
+                restored_care = care_page.evaluate('window.__gameforgeTelemetry().simulation')
+                assert restored_care['money'] == saved_care['money']
+                assert restored_care['sales'] == saved_care['sales']
+                assert restored_care['slots'] == saved_care['slots'], (restored_care, saved_care)
+                care_page.get_by_role('button', name='Alimentar' , exact=True).click()
                 care_page.get_by_role('button', name='Trocar água', exact=True).click()
                 care_page.wait_for_function('window.__gameforgeTelemetry().simulation.slots[0].age >= 6', timeout=6000)
                 active_care = care_page.evaluate('window.__gameforgeTelemetry()')
@@ -427,6 +437,15 @@ def run():
                 care_page.keyboard.press('3')
                 assert care_page.evaluate('window.__gameforgeTelemetry().simulation') == sold
                 assert sold['sales'] == 1 and sold['slots'][0] is None
+                care_page.reload(wait_until='load')
+                care_page.locator('#simulation-continue').click()
+                assert care_page.evaluate('window.__gameforgeTelemetry().state') == 'victory'
+                assert care_page.evaluate('window.__gameforgeTelemetry().simulation') == sold
+                care_page.locator('#restart').click()
+                assert care_page.evaluate('window.__gameforgeTelemetry().simulation.sales') == 0
+                care_page.reload(wait_until='load')
+                care_page.locator('#simulation-continue').click()
+                assert care_page.evaluate('window.__gameforgeTelemetry().simulation.sales') == 0
                 assert not care_errors, care_errors
                 results.append('aquarium-care-mobile')
             except Exception as exc:
@@ -434,9 +453,43 @@ def run():
             finally:
                 care_page.close()
 
+            for domain in ['farm', 'shop']:
+                page = browser.new_page(viewport={'width': 960, 'height': 720})
+                errors = []
+                page.on('pageerror', lambda error: errors.append(str(error)))
+                try:
+                    page.goto(origin + '/tests/_browser_output/save-' + domain + '/index.html', wait_until='load')
+                    page.locator('#start').click()
+                    page.keyboard.press('1')
+                    page.keyboard.press('2')
+                    page.wait_for_function('window.__gameforgeTelemetry().simulation.slots[0].age >= 2')
+                    page.keyboard.press('3')
+                    before = page.evaluate('window.__gameforgeTelemetry().simulation')
+                    page.reload(wait_until='load')
+                    page.locator('#simulation-continue').click()
+                    assert page.evaluate('window.__gameforgeTelemetry().simulation') == before
+                    if domain == 'farm':
+                        assert before['inventory'] == 1
+                        page.keyboard.press('4')
+                    else:
+                        assert before['complete']
+                    page.wait_for_function("window.__gameforgeTelemetry().state === 'victory'")
+                    won = page.evaluate('window.__gameforgeTelemetry().simulation')
+                    page.reload(wait_until='load')
+                    page.locator('#simulation-continue').click()
+                    page.keyboard.press('4')
+                    assert page.evaluate('window.__gameforgeTelemetry().simulation') == won
+                    page.screenshot(path=str(screenshots / ('save-' + domain + '.png')), full_page=True)
+                    assert not errors, errors
+                    results.append('save-' + domain)
+                except Exception as exc:
+                    failures.append(('save-' + domain, str(exc), errors, []))
+                finally:
+                    page.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 4 + len(graphics_matrix)
+            assert len(results) == len(matrix) + 6 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

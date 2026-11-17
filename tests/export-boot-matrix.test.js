@@ -18,7 +18,7 @@ const {validateFiles}=require('../tools/verify-exports.cjs');
 const glb=require('../js/glb-runtime.js');
 const assets=require('../js/asset-library.js');
 
-function environment(files,dimension){
+function environment(files,dimension,localStorage){
  const callbacks=[],handlers={},elements=new Map(),errors=[];
  let now=0,drawCount=0,lastScene=null;
  const gradient=()=>({addColorStop(){}});
@@ -57,7 +57,7 @@ function environment(files,dimension){
  };
  const env={
   console,AbortController,AbortSignal,Uint8Array,Uint8ClampedArray,TextDecoder,TextEncoder,
-  document:doc,performance:{now:()=>now},
+  localStorage,document:doc,performance:{now:()=>now},
   requestAnimationFrame:callback=>callbacks.push(callback),
   addEventListener(type,cb){(handlers[type]??=[]).push(cb);},
   setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},
@@ -327,4 +327,20 @@ test('GF-TRAIN-06: aquário exportado cresce, pausa, retoma cuidados e vende sem
  assert.ok(h.telemetry().simulation.slots[0].age>7);assert.equal(h.telemetry().simulation.slots[1].age,0);
  key('3');assert.equal(h.telemetry().state,'victory');assert.equal(h.telemetry().simulation.sales,1);
  const sold=h.telemetry().simulation;key('3');assert.deepEqual(h.telemetry().simulation,sold);
+});
+
+test('GF-TRAIN-07: arquivo exportado salva, continua, reinicia e funciona com storage bloqueado',()=>{
+ const spec=parser.parseGdd('','Quero cuidar de aquário com água suja em 20 segundos.'),files=generator.generate(spec,'');
+ const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
+ const a=environment(files,'2d',storage);a.element('start').click();a.input('keydown','1');a.input('keydown','2');a.tick(65);a.element('pause').click();
+ const state=a.telemetry().simulation;
+ a.element('body').children.find(x=>x.id==='simulation-save').click();assert.match(a.telemetry().persistence.status,/Salvo/);
+ const b=environment(files,'2d',storage);assert.equal(b.telemetry().state,'menu');
+ b.element('overlay').children.find(x=>x.id==='simulation-continue').click();
+ assert.equal(JSON.stringify(b.telemetry().simulation),JSON.stringify(state));b.tick();
+ assert.equal(JSON.stringify(b.telemetry().simulation),JSON.stringify(state),'primeiro frame não acumula tempo fechado');
+ b.element('restart').click();assert.equal(b.telemetry().simulation.slots.filter(Boolean).length,0);
+ const c=environment(files,'2d',{getItem(){throw Error('negado');},setItem(){throw Error('negado');}});
+ c.element('start').click();c.input('keydown','1');assert.equal(c.telemetry().simulation.slots.filter(Boolean).length,1);
+ assert.match(c.telemetry().persistence.status,/Não foi possível/);
 });

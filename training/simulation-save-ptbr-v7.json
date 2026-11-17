@@ -1,0 +1,208 @@
+{
+  "version": 7,
+  "purpose": "Regressão do interpretador e salvamento local; não ajusta pesos de modelos externos",
+  "cases": [
+    {
+      "instruction": "Quero cuidar de aquário e salvar meu progresso",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário para continuar amanhã",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário e guardar o progresso",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário com salvamento automático",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário com save",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário sem salvar",
+      "domain": "aquarium",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de aquário sem salvamento",
+      "domain": "aquarium",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de aquário não quero salvar",
+      "domain": "aquarium",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de aquário desativar save",
+      "domain": "aquarium",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de aquário sem salvar, mas agora salvar progresso",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário salvar progresso, mas agora sem salvar",
+      "domain": "aquarium",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de aquário guardar progresso, depois remover salvamento",
+      "domain": "aquarium",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de fazenda e salvar meu progresso",
+      "domain": "farm",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda para continuar amanhã",
+      "domain": "farm",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda e guardar o progresso",
+      "domain": "farm",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda com salvamento automático",
+      "domain": "farm",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda com save",
+      "domain": "farm",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda sem salvar",
+      "domain": "farm",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de fazenda sem salvamento",
+      "domain": "farm",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de fazenda não quero salvar",
+      "domain": "farm",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de fazenda desativar save",
+      "domain": "farm",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de fazenda sem salvar, mas agora salvar progresso",
+      "domain": "farm",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda salvar progresso, mas agora sem salvar",
+      "domain": "farm",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de fazenda guardar progresso, depois remover salvamento",
+      "domain": "farm",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero administrar uma loja e salvar meu progresso",
+      "domain": "shop",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero administrar uma loja para continuar amanhã",
+      "domain": "shop",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero administrar uma loja e guardar o progresso",
+      "domain": "shop",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero administrar uma loja com salvamento automático",
+      "domain": "shop",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero administrar uma loja com save",
+      "domain": "shop",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero administrar uma loja sem salvar",
+      "domain": "shop",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero administrar uma loja sem salvamento",
+      "domain": "shop",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero administrar uma loja não quero salvar",
+      "domain": "shop",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero administrar uma loja desativar save",
+      "domain": "shop",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero administrar uma loja sem salvar, mas agora salvar progresso",
+      "domain": "shop",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero administrar uma loja salvar progresso, mas agora sem salvar",
+      "domain": "shop",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero administrar uma loja guardar progresso, depois remover salvamento",
+      "domain": "shop",
+      "enabled": false
+    },
+    {
+      "instruction": "Agora salvar meu progresso.",
+      "gdd": "# Aquário\nCuidar de peixes. Sem salvar.",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Agora sem salvar.",
+      "gdd": "# Fazenda\nCuidar de fazenda e salvar progresso.",
+      "domain": "farm",
+      "enabled": false
+    },
+    {
+      "instruction": "qro cuidar de peixinhos no aquariu e salvar",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero administrar loja com 4 prateleiras e sem precisar salvar",
+      "domain": "shop",
+      "enabled": false
+    }
+  ]
+}

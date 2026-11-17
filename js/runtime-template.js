@@ -2,6 +2,7 @@
    Nao depende de bibliotecas ou de conexao de rede. */
 function gameForgeBoot() {
   'use strict';
+ const V=typeof GameForgeGraphics==='object'?GameForgeGraphics:null;
   const spec = GAME_SPEC;
   const tuning={difficulty:1,enemyMultiplier:1,bossMultiplier:1,playerSpeedMultiplier:1,fireRateMultiplier:1,particlesMultiplier:1,...(spec.tuning||{})};
   const canvas = document.getElementById('game');
@@ -355,7 +356,11 @@ function gameForgeBoot() {
       ctx.fillStyle=color.accent;ctx.fillRect(-13,-13,26,27);
       ctx.fillStyle='#f5c7a0';ctx.beginPath();ctx.arc(0,-17,12,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#172733';ctx.fillRect(4,-20,5,4);
+      V?.unitDetail(ctx,0,-1,17);
       ctx.fillStyle='#f5c7a0';ctx.fillRect(-18,-7,5,16-stride*3);ctx.fillRect(13,-7,5,16+stride*3);
+    }else if(V){
+      V.actor(ctx,0,0,20,color.accent,clock);
+      ctx.rotate(player.angle);ctx.fillStyle='#d7e7d9';ctx.fillRect(8,-4,20,6);
     }else{
       ctx.rotate(player.angle);
       ctx.shadowColor=color.accent;ctx.shadowBlur=14;
@@ -367,19 +372,21 @@ function gameForgeBoot() {
   }
   function render(){
     background();
+    if(V&&spec.genre==='arena')V.backdrop(ctx,W,H,clock);
     ctx.save();if(spec.genre==='platform')ctx.translate(-cameraX,0);
     if(spec.genre==='platform'){
-      for(const p of platforms){ctx.fillStyle=color.ground;ctx.fillRect(p.x,p.y,p.w,p.h);ctx.fillStyle=color.accent;ctx.fillRect(p.x,p.y,p.w,5);if(p.checkpoint){ctx.fillStyle=platformCheckpointIndex>=platforms.indexOf(p)?'#8cf0ad':'#f7d779';ctx.fillRect(p.x+p.w*.5-3,p.y-48,6,48);ctx.beginPath();ctx.moveTo(p.x+p.w*.5+3,p.y-48);ctx.lineTo(p.x+p.w*.5+30,p.y-38);ctx.lineTo(p.x+p.w*.5+3,p.y-28);ctx.fill();}}
+      for(const p of platforms){if(V)V.surface(ctx,p.x,p.y,p.w,p.h,'soil');else{ctx.fillStyle=color.ground;ctx.fillRect(p.x,p.y,p.w,p.h);}ctx.fillStyle=color.accent;ctx.fillRect(p.x,p.y,p.w,5);if(p.checkpoint){ctx.fillStyle=platformCheckpointIndex>=platforms.indexOf(p)?'#8cf0ad':'#f7d779';ctx.fillRect(p.x+p.w*.5-3,p.y-48,6,48);ctx.beginPath();ctx.moveTo(p.x+p.w*.5+3,p.y-48);ctx.lineTo(p.x+p.w*.5+30,p.y-38);ctx.lineTo(p.x+p.w*.5+3,p.y-28);ctx.fill();}}
     }
     if(spec.genre==='platform'){for(const t of platformTraps){ctx.fillStyle='#dc6670';for(let x=t.x;x<t.x+t.w;x+=11){ctx.beginPath();ctx.moveTo(x,t.y+t.h);ctx.lineTo(x+5.5,t.y);ctx.lineTo(x+11,t.y+t.h);ctx.fill();}}}
     if(spec.genre==='platform'){for(const fx of platformSparks){ctx.globalAlpha=Math.min(1,fx.life*2.5);ctx.fillStyle='#ffe3a1';ctx.fillRect(fx.x-3,fx.y-3,6,6);}ctx.globalAlpha=1;}
     for(const d of drops){ctx.fillStyle=d.kind==='heal'?'#ef6e93':d.kind==='ammo'?'#85caff':'#f9c762';ctx.beginPath();ctx.arc(d.x,d.y,d.r+Math.sin(clock*6)*2,0,Math.PI*2);ctx.fill();}
     for(const o of obstacles){if(spec.genre==='racing'){if(o.kind==='cone'){ctx.fillStyle='#f2aa4b';ctx.beginPath();ctx.moveTo(o.x,o.y-18);ctx.lineTo(o.x-14,o.y+18);ctx.lineTo(o.x+14,o.y+18);ctx.fill();ctx.fillStyle='#fff1c6';ctx.fillRect(o.x-8,o.y+4,16,5);}else{drawRacingCar(o.x,o.y,['#e97069','#6b9ce3','#f0c26d','#b18ce5'][o.paint||0]);}}else{ctx.fillStyle=o.kind==='cone'?'#f2aa4b':color.enemy;ctx.fillRect(o.x-20,o.y-32,40,64);ctx.fillStyle='#21293c';ctx.fillRect(o.x-14,o.y-15,28,20);}}
-    for(const e of enemies){if(spec.genre==='platform'){drawAnimatedActor(e.x,e.y,e.kind,e.phase,e.dir||1,e.hitFlash||0);}else{ctx.fillStyle=e.boss?'#ae6edb':color.enemy;ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#281625';ctx.fillRect(e.x-7,e.y-5,5,5);ctx.fillRect(e.x+4,e.y-5,5,5);}}
+    for(const e of enemies){if(spec.genre==='platform'){drawAnimatedActor(e.x,e.y,e.kind,e.phase,e.dir||1,e.hitFlash||0);}else if(V){V.actor(ctx,e.x,e.y,e.r,e.boss?'#ae6edb':color.enemy,clock+e.x,e.boss);}else{ctx.fillStyle=e.boss?'#ae6edb':color.enemy;ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#281625';ctx.fillRect(e.x-7,e.y-5,5,5);ctx.fillRect(e.x+4,e.y-5,5,5);}}
     if(spec.genre==='platform')for(const d of platformDefeated)drawAnimatedActor(d.x,d.y,d.kind,0,d.dir||1,0,d.ttl);
     for(const b of bullets){ctx.fillStyle='#f8d580';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();}
-    for(const p of particles){ctx.fillStyle=color.enemy;ctx.fillRect(p.x,p.y,4,4);}
+    if(!V||V.profile.particles)for(const p of particles){ctx.fillStyle=color.enemy;ctx.fillRect(p.x,p.y,4,4);}
     drawPlayer(player.x,player.y);ctx.restore();
+    V?.finish(ctx,W,H);
     if(spec.genre==='racing'){ctx.fillStyle='#07121bd9';ctx.fillRect(18,68,170,70);ctx.fillStyle='#f4f7fa';ctx.font='bold 22px sans-serif';ctx.fillText(Math.round(racingSpeed*.36)+' km/h',30,99);ctx.font='14px sans-serif';ctx.fillText('Percurso '+Math.floor(traveled/100)+' m',30,123);}
     if(state==='play'&&paused){ctx.fillStyle='#0b1024be';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 44px sans-serif';ctx.textAlign='center';ctx.fillText('PAUSADO',W/2,H/2);ctx.textAlign='left';}
   }

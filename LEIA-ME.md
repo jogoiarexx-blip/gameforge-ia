@@ -1,3 +1,9 @@
+# GameForge Studio v0.22 — perfis gráficos em todos os modelos
+
+A camada gráfica compartilhada atende os 16 modelos 2D/3D. Peça pixel art, cartoon, ilustrado, naturalista ou low poly; combine com qualidade alta/equilibrada/leve, pôr do sol e iluminação noturna. Os perfis continuam procedurais e não criam automaticamente assets fotorrealistas. O perfil é preservado no backup e acompanha o jogo exportado.
+
+Documentação: [Guia gráfico e treinamento](docs/TREINAMENTO_GRAFICOS_GF_GFX_01.md).
+
 # GameForge Studio v0.21 — FPS 3D com economia e loja gerada por GDD
 
 Esta etapa demonstra a passagem de um pedido em português para **um sistema de jogo com estado, controles e regras executáveis**. O novo módulo `js/combat-economy.js` implementa economia de combate para o motor FPS 3D. Não utiliza pagamentos reais nem serviço externo.

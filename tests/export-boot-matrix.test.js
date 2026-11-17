@@ -299,3 +299,17 @@ test('GF-TRAIN-03 exportação executa os três ciclos até vitória, pausa temp
   key('3');key('4');assert.equal(h.telemetry().simulation.sales,1);
  }
 });
+
+test('GF-GFX-01: todos os motores exportados executam perfis pixel e cartoon',()=>{
+ for(const {dimension,genre} of combinations)for(const style of ['pixel art','cartoon']){
+  const spec=parser.parseGdd('# Visual '+genre,'Visual '+style+', qualidade alta, pôr do sol.',{dimension,genre});
+  const files=generator.generate(spec,'');validateFiles(files,dimension,genre);
+  const h=environment(files,dimension);h.tick(2);h.element('start').click();h.tick(12);
+  const info=h.telemetry().graphics;
+  assert.ok(info,dimension+'/'+genre+' deve exportar perfil');
+  assert.equal(info.style,style==='pixel art'?'pixel':'cartoon');
+  assert.equal(info.effectiveQuality,'high');
+  if(dimension==='2d')assert.ok(info.finishes>0,genre+' desenha com pipeline gráfico');
+  else assert.ok(info.scenes>0,genre+' prepara cena 3D');
+ }
+});

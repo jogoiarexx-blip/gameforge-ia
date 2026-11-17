@@ -75,6 +75,9 @@ def run():
                     page.wait_for_timeout(180)
                     page.keyboard.up('ArrowRight')
                     active = page.evaluate("window.__gameforgeTelemetry()")
+                    graphics = active.get('graphics') or {}
+                    assert graphics.get('style') == 'illustrated', (label, graphics)
+                    assert graphics.get('finishes', 0) > 0 if item['dimension'] == '2d' else graphics.get('scenes', 0) > 0, (label, graphics)
                     assert active.get('state') in ('play', 'victory', 'intermission'), (label, active)
                     assert active.get('player') and isinstance(active['player'].get('x'), (float, int)), label
                     page.locator('#pause').click()
@@ -134,7 +137,7 @@ def run():
                     assert not remote_requests, (label, remote_requests)
                     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), (label, 'rolagem horizontal')
                     results.append(label)
-                    if label in ('2d-simulation', '2d-arena', '3d-fps', '3d-shooter', '3d-urban-action'):
+                    if True:  # Galeria completa de todos os modelos
                         page.screenshot(path=str(screenshots / (label + '.png')), full_page=True)
                 except Exception as exc:
                     page.screenshot(path=str(screenshots / (label + '-failure.png')), full_page=True)

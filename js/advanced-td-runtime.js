@@ -1,6 +1,7 @@
 /* GameForge v0.15 — standalone advanced TD Canvas2D runtime, offline by design. */
 function gameForgeAdvancedTDBoot(){
  'use strict';
+ const V=typeof GameForgeGraphics==='object'?GameForgeGraphics:null;
  const spec=GAME_SPEC,R=GameForgeTDRules,mode=spec.genre==='lane-defense'?'lane':'blocks';
  const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d',{alpha:false});
  const W=960,H=540,TAU=Math.PI*2;
@@ -130,6 +131,7 @@ function gameForgeAdvancedTDBoot(){
    if(t.type==='miner'){diamond(0,-33,17,'#b1e3ae');rect(-5,-21,10,8,'#759f89');}
    else {rect(-5,-31,10,25,shade);circle(0,-27,10,shade);if(t.type==='cannon')rect(2,-32,20,12,'#e29d76');}
   }
+  V?.unitDetail(ctx,0,-8,20);
   for(let i=0;i<t.level;i++)diamond(-11+i*11,27,4,'#f7e6a0');
   bar(-19,35,38,t.hp/t.maxHp,'#a4efc2');
   ctx.restore();
@@ -148,13 +150,14 @@ function gameForgeAdvancedTDBoot(){
    if(e.kind==='armored')rect(-16,-8,32,5,'#bfd0df');
   }
   circle(-6,-19,2,'#18383c');circle(6,-19,2,'#18383c');
+  V?.unitDetail(ctx,0,-6,20);
   bar(-21,-38,42,e.hp/e.maxHp,'#ffe09f');
   if(e.slow>0){ctx.strokeStyle='#b9effa';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-5,26,0,TAU);ctx.stroke();}
   ctx.restore();
  }
  function draw(){
   const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,mode==='lane'?'#2d5e66':'#18364c');sky.addColorStop(1,mode==='lane'?'#5c8265':'#396554');
-  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);V?.backdrop(ctx,W,H,time);
   // Simple parallax skyline and sky particles, independent of external images or textures.
   for(let i=0;i<20;i++){circle(20+i*57,34+(i*71)%36,3+(i%4),'#a3dec122');}
   rect(originX-11,originY-8,d.cols*cellX+20,d.rows*cellY+18,'#0a2630aa');
@@ -204,7 +207,7 @@ function gameForgeAdvancedTDBoot(){
    wave:d.wave,waves:d.waves,towers:d.towers.length,blocks:d.tiles.filter(x=>x>0).length,cardCooldowns:{...d.cardCooldowns},
    awaitingChoice:d.awaitingChoice,active:d.active,player:{...pos,screenX:pos.x,screenY:pos.y},
    objective:mode==='lane'?'five-lanes':'winding-path'};
-  window.__gameforgeTelemetry=()=>telemetry;Object.assign(window.__gameforgeTelemetry,telemetry);
+  window.__gameforgeTelemetry=()=>({...telemetry,...(V?{graphics:V.snapshot()}:{})});Object.assign(window.__gameforgeTelemetry,telemetry);
  }
  function frame(now){
   const dt=last?clamp((now-last)/1000,0,.05):1/60;last=now;frames++;
@@ -214,7 +217,7 @@ function gameForgeAdvancedTDBoot(){
   }
   if(noteTime>0){noteTime-=dt;if(noteTime<=0)$('message').style.opacity='0';}
   if(frames%15===0)renderControls();
-  draw();hud();publish();requestAnimationFrame(frame);
+  draw();V?.finish(ctx,W,H);hud();publish();requestAnimationFrame(frame);
  }
  $('start').addEventListener('click',()=>{
   if(state==='menu'||state==='victory')reset();

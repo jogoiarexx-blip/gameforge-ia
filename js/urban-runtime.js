@@ -5,6 +5,7 @@
 'use strict';
 function gameForgeUrban3DBoot(){
  'use strict';
+ const V=typeof GameForgeGraphics==='object'?GameForgeGraphics:null;
  const T=THREE,R=GameForgeUrbanRules,I=GameForgeUrbanInput,S=GameForgeUrbanSave,spec=GAME_SPEC;
  const $=id=>document.getElementById(id),canvas=$('game');
  const SIM_DT=1/60, MAX_STEPS=5,keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
@@ -22,7 +23,7 @@ function gameForgeUrban3DBoot(){
  const saveStore=S.create(()=>window.localStorage,saveKey,raw=>R.load(raw));
  let renderer=null,scene,camera,hero,guard,guardMesh,buildingDoor,beacon;
  try{
-  renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'default',alpha:false});
+  renderer=new T.WebGLRenderer({canvas,antialias:V?.quality!=='low'&&V?.profile.style!=='pixel',powerPreference:'default',alpha:false});
  }catch(e){
   if(typeof gameForgeSoftwareRenderer==='function'){
    try{renderer=gameForgeSoftwareRenderer(T,canvas);}catch(_){}
@@ -44,7 +45,7 @@ function gameForgeUrban3DBoot(){
  const sunlight=new T.DirectionalLight(0xffe2ba,2.0);
  sunlight.position.set(-8,17,6);scene.add(sunlight);
  const materials={};
- const material=(color)=>materials[color]||(materials[color]=new T.MeshLambertMaterial({color}));
+ const material=(color)=>materials[color]||(materials[color]=(V?new T.MeshStandardMaterial({color,roughness:.8,metalness:.04}):new T.MeshLambertMaterial({color})));
  function box(x,y,z,w,h,d,color,parent=scene){
   const mesh=new T.Mesh(new T.BoxGeometry(w,h,d),material(color));
   mesh.position.set(x,y,z);parent.add(mesh);return mesh;
@@ -105,6 +106,10 @@ function gameForgeUrban3DBoot(){
    const arm=box(x,1.31,-.05,.25,.9,.29,shirt,g);limbs.push(arm);
   }
   box(.55,1.02,-.41,.21,.14,.61,0x24292e,g);
+  if(V){
+   box(0,2.38,0,.43,.14,.43,pants,g);box(0,.94,0,.85,.12,.48,pants,g);
+   if(V.detail>1){for(const x of [-.25,.25]){box(x,.11,-.09,.3,.18,.48,pants,g);box(x,1.4,-.25,.19,.2,.08,0xa6ac9f,g);}box(0,1.37,.31,.5,.6,.18,pants,g);}
+  }
   g.userData.legs=limbs;return g;
  }
  hero=character(0x334a5e,0xd5b093,0x272e37);
@@ -159,7 +164,7 @@ function gameForgeUrban3DBoot(){
  function resize(){
   const width=Math.max(320,Math.min(1200,canvas.clientWidth||960));
   const height=Math.max(180,Math.round(width*9/16));
-  renderer.setPixelRatio?.(Math.min(window.devicePixelRatio||1,1.3));
+  renderer.setPixelRatio?.(V?V.pixelRatio(window.devicePixelRatio||1):Math.min(window.devicePixelRatio||1,1.3));
   renderer.setSize(width,height,false);
   camera.aspect=width/height;camera.updateProjectionMatrix();
  }
@@ -351,7 +356,7 @@ function gameForgeUrban3DBoot(){
   camera.position.set(safe.x,safe.y,safe.z);
   cameraOccluded=desired.occluded||safe.occluded;
   camera.lookAt(progress.x,1.25,progress.z-2.5);
-  renderer.render(scene,camera);
+  V?.scene(T,renderer,scene,!renderer.isWebGLRenderer);renderer.render(scene,camera);
  }
  let prevFrame=0,accumulator=0;
  function frame(now){

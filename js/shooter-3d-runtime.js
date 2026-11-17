@@ -1,6 +1,7 @@
 /* Motor independente de shoot'em up 3D: Three.js local, sem dependencias de CDN. */
 function gameForgeShooter3DBoot(){
  'use strict';
+ const V=typeof GameForgeGraphics==='object'?GameForgeGraphics:null;
  const T=THREE, R=gameForgeWorldRules(),spec=GAME_SPEC;
  const branchConfig=spec.stageBranches?.enabled===true?spec.stageBranches:null;
  const BR=branchConfig?GameForgeStageBranches:null;
@@ -54,7 +55,7 @@ function gameForgeShooter3DBoot(){
  const tuning={difficulty:1,enemyMultiplier:1,bossMultiplier:1,playerSpeedMultiplier:1,fireRateMultiplier:1,...spec.tuning};
  for(const k of Object.keys(tuning))tuning[k]=R.clamp(Number(tuning[k])||1,.25,4);
  let renderer,software=false;
- try{renderer=new T.WebGLRenderer({canvas,antialias:opts.quality!=='low',powerPreference:'high-performance',preserveDrawingBuffer:true});}
+ try{renderer=new T.WebGLRenderer({canvas,antialias:opts.quality!=='low'&&V?.quality!=='low'&&V?.profile.style!=='pixel',powerPreference:'high-performance',preserveDrawingBuffer:true});}
  catch(e){
   if(typeof gameForgeSoftwareRenderer==='function')try{renderer=gameForgeSoftwareRenderer(T,canvas);software=true;}catch{}
   if(!renderer){$('overlay-title').textContent='Renderização indisponível';$('overlay-sub').textContent='WebGL e modo compatível indisponíveis neste dispositivo.';$('start').disabled=true;return;}
@@ -94,6 +95,10 @@ function gameForgeShooter3DBoot(){
   for(const side of [-1,1]){
    makeMesh(geos.thruster,mats.engine,group,side*.4,.7,1.05);
    makeMesh(geos.pod,trim,group,side*1.24,.72,.33);
+  }
+  if(V&&V.detail>1){
+   for(const side of [-1,1]){const fin=makeMesh(geos.pod,body,group,side*.7,1.03,.7);fin.rotation.z=side*.65;fin.scale.set(.35,2,.7);}
+   const spine=makeMesh(geos.pod,trim,group,0,1.11,.6);spine.scale.set(.25,1.7,1.1);
   }
   group.scale.setScalar(boss?2.25:1);
   world.add(group);
@@ -396,7 +401,7 @@ function gameForgeShooter3DBoot(){
  }
  function resize(){
   const rect=canvas.getBoundingClientRect(),w=Math.max(320,Math.round(rect.width||960)),h=Math.round(w*9/16);
-  renderer.setPixelRatio(pixelRatio);renderer.setSize(w,h,false);
+  renderer.setPixelRatio(V?V.pixelRatio(pixelRatio):pixelRatio);renderer.setSize(w,h,false);
   if(camera){camera.aspect=w/h;camera.updateProjectionMatrix();}
  }
  function frame(now){
@@ -415,7 +420,7 @@ function gameForgeShooter3DBoot(){
    updateHud();
   }
   if(noticeTime>0){noticeTime-=dt;if(noticeTime<=0)$('message').style.opacity='0';}
-  if(scene&&(!software||now-lastDraw>=1000/30)){renderer.render(scene,camera);lastDraw=now;}
+  if(scene&&(!software||now-lastDraw>=1000/30)){V?.scene(T,renderer,scene,software);renderer.render(scene,camera);lastDraw=now;}
  }
  function start(){
   if(state==='route-choice')return;

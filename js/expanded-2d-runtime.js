@@ -1,6 +1,7 @@
 /* Canvas2D RPG + tower defense. Serialized together with strategy-rules.js. */
 function gameForgeExpanded2DBoot() {
   'use strict';
+ const V=typeof GameForgeGraphics==='object'?GameForgeGraphics:null;
   const spec=GAME_SPEC,R=GameForgeStrategyRules,td=spec.genre==='tower-defense';
   const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d',{alpha:false});
   const W=960,H=540,TAU=Math.PI*2,world={width:2400,height:1600};canvas.width=W;canvas.height=H;
@@ -126,8 +127,8 @@ function gameForgeExpanded2DBoot() {
     for(const h of [{x:90,y:565,w:145,h:110},{x:310,y:535,w:125,h:100},{x:100,y:960,w:155,h:110},{x:380,y:1010,w:130,h:95}])obstacles.push({...h,kind:'house'});
     for(const r of [{x:870,y:635,w:90,h:65},{x:1350,y:925,w:100,h:55},{x:1930,y:450,w:75,h:65},{x:1540,y:1160,w:90,h:80}])obstacles.push({...r,kind:'rock'});
     terrain=document.createElement('canvas');terrain.width=world.width;terrain.height=world.height;const c=terrain.getContext('2d');
-    c.fillStyle=['#20463c','#263f43','#333f44'][stage%3];c.fillRect(0,0,world.width,world.height);
-    for(let i=0;i<2600;i++){const x=random()*world.width,y=random()*world.height;c.fillStyle=['#31584a','#345743','#315a4c','#263e37'][i%4];c.fillRect(x,y,5+random()*35,2+random()*12);}
+    c.fillStyle=V?V.palette.ground:['#20463c','#263f43','#333f44'][stage%3];c.fillRect(0,0,world.width,world.height);
+    for(let i=0;i<(V?V.detail===1?900:V.detail===2?1800:2600:2600);i++){const x=random()*world.width,y=random()*world.height;c.fillStyle=V?(i%2?V.palette.light:V.palette.dark):['#31584a','#345743','#315a4c','#263e37'][i%4];c.fillRect(x,y,5+random()*35,2+random()*12);}
     // Broad paths have dark margins, dappled stones and ruts.
     c.lineCap='round';c.lineJoin='round';
     const roads=[[[60,800],[420,800],[950,790],[1530,810],[2240,800]],[[640,800],[640,500]],[[1150,800],[1150,1050]],[[1740,800],[1740,630]]];
@@ -234,7 +235,7 @@ function gameForgeExpanded2DBoot() {
   }
   function drawTree(t){
     ellipse(t.x+12,t.y+10,t.size*.9,t.size*.35,'#102a2380');rect(t.x-5,t.y-25,10,34,'#72583d');
-    circle(t.x,t.y-34,t.size,'#153c32');circle(t.x-12,t.y-42,t.size*.7,'#235943');circle(t.x+11,t.y-54,t.size*.63,'#31694a');circle(t.x-6,t.y-65,t.size*.43,'#46835b');
+    circle(t.x,t.y-34,t.size,V?.palette.dark||'#153c32');circle(t.x-12,t.y-42,t.size*.7,V?.palette.ground||'#235943');circle(t.x+11,t.y-54,t.size*.63,V?.palette.light||'#31694a');circle(t.x-6,t.y-65,t.size*.43,V?.palette.accent||'#46835b');
   }
   function drawActor(a,hero=false){
     const boss=a.kind==='boss',archer=a.kind==='archer',brute=a.kind==='brute',r=a.r;
@@ -259,6 +260,7 @@ function gameForgeExpanded2DBoot() {
       circle(a.x-5,a.y-r*.85,3,'#fbb77c');circle(a.x+5,a.y-r*.85,3,'#fbb77c');
       if(archer){ctx.strokeStyle='#ddb476';ctx.lineWidth=3;ctx.beginPath();ctx.arc(a.x+20,a.y-4,17,-1.3,1.3);ctx.stroke();}else rect(a.x+r*.8,a.y-r*.25,boss?10:7,r*1.1,'#b5b7a1');
     }
+    V?.unitDetail(ctx,a.x,a.y,r);
     if(!hero&&a.hp<a.maxHp)bar(a.x-r,a.y-r-17,r*2,a.hp/a.maxHp,boss?'#f2ba6b':'#f39b83');
   }
   function drawRPG(){
@@ -353,7 +355,7 @@ function gameForgeExpanded2DBoot() {
     telemetry={genre:spec.genre,runtime:'expanded-2d',state:paused&&state==='play'?'paused':state,paused,frames,stage:stage+1,stageCount:stages.length,time,stageTime,player:p,camera:{...camera},health:td?d?.base||0:player?.hp||0,enemies:td?d?.enemies.length||0:enemies.length,bullets:bullets.length,particles:particles.length,score:td?d?.kills||0:player?.coins||0,resources:td?d?.coins||0:player?.coins||0,towers:d?.towers.length||0,wave:d?.wave||0,collectibles:collected,bossDefeated:bossDead,puzzleKey:puzzle.key,puzzleLever:puzzle.lever,puzzleSolved:puzzle.solved,puzzleRewarded:puzzle.rewarded,chestsOpened:treasureChests.filter(c=>c.opened).length,chestsTotal:treasureChests.length,level:player?.level||1,objective:td?'protect-base':'relics-boss-portal'};
     Object.assign(window.__gameforgeTelemetry,telemetry);
   }
-  function frame(now){const dt=last?Math.min(.05,Math.max(0,(now-last)/1000)):1/60;last=now;frames++;update(dt);ctx.clearRect(0,0,W,H);if(td)drawDefense();else drawRPG();hud();publish();requestAnimationFrame(frame);}
+  function frame(now){const dt=last?Math.min(.05,Math.max(0,(now-last)/1000)):1/60;last=now;frames++;update(dt);ctx.clearRect(0,0,W,H);if(td)drawDefense();else drawRPG();V?.finish(ctx,W,H);hud();publish();requestAnimationFrame(frame);}
   $('start').addEventListener('click',()=>{
     if(state==='menu'||state==='victory')reset();else if(state==='defeat')startStage();else if(state==='intermission')continueStage();else if(state==='inventory'){state='play';paused=false;hide();}else if(paused)togglePause();
   });

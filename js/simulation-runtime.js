@@ -1,6 +1,7 @@
 (function(root){
 function gameForgeSimulationBoot(){
  'use strict';
+ const V=typeof GameForgeGraphics==='object'?GameForgeGraphics:null;
  const c=GAME_SPEC.simulation,R=GameForgeSimulationRules,el=id=>document.getElementById(id);
  const canvas=el('game'),ctx=canvas.getContext('2d');canvas.width=960;canvas.height=540;
  let s=R.create(c),state='menu',paused=false,selected=0,frames=0,last=0;
@@ -46,23 +47,24 @@ function gameForgeSimulationBoot(){
  rootTelemetry();
  function rootTelemetry(){window.__gameforgeTelemetry=()=>({state,paused,frames,player:{x:selected,y:0},simulation:JSON.parse(JSON.stringify(s)),domain:c.domain});}
  function draw(){
-  ctx.fillStyle=c.domain==='aquarium'?'#103d57':c.domain==='farm'?'#153d2a':'#243046';ctx.fillRect(0,0,960,540);
+  ctx.fillStyle=c.domain==='aquarium'?'#103d57':c.domain==='farm'?'#153d2a':'#243046';ctx.fillRect(0,0,960,540);V?.backdrop(ctx,960,540,frames/60);
   ctx.font='22px sans-serif';ctx.fillStyle='#fff';ctx.fillText(c.label+' · '+c.cost+' $ para iniciar · Venda '+c.price+' $',22,48);
   const w=960/c.slots;
   for(let i=0;i<c.slots;i++){
    const item=s.slots[i],x=i*w+8;
-   ctx.fillStyle=i===selected?'#367567':'#253b48';ctx.fillRect(x,110,w-16,340);
+   ctx.fillStyle=i===selected?'#367567':'#253b48';ctx.fillRect(x,110,w-16,340);V?.habitat(ctx,x,110,w-16,340,c.domain,frames/60);if(i===selected){ctx.strokeStyle='#f8d68d';ctx.lineWidth=3;ctx.strokeRect(x+2,112,w-20,336);}
    ctx.fillStyle='#fff';ctx.font='16px sans-serif';ctx.fillText('#'+(i+1),x+8,140);
    if(item){
     const progress=item.age/c.seconds;
     ctx.fillStyle=c.domain==='aquarium'?'#ffc568':c.domain==='farm'?'#8be26c':'#e2ad79';
-    if(c.domain==='aquarium'){ctx.beginPath();ctx.ellipse(x+w/2-8,250,15+progress*20,10+progress*10,0,0,Math.PI*2);ctx.fill();}
+    if(V)V.product(ctx,x+w/2-8,280,progress,c.domain,frames/60);
+    else if(c.domain==='aquarium'){ctx.beginPath();ctx.ellipse(x+w/2-8,250,15+progress*20,10+progress*10,0,0,Math.PI*2);ctx.fill();}
     else ctx.fillRect(x+w/2-22,300-progress*90,28,30+progress*90);
     ctx.fillStyle='#fff';ctx.fillText(!item.cared?c.care:progress>=1?'Pronto!':Math.ceil(c.seconds-item.age)+' s',x+8,390);
    }else ctx.fillText('Vazio',x+8,250);
   }
  }
- function frame(t){const dt=Math.min(.1,Math.max(0,(t-last)/1000));last=t;frames++;if(state==='play'&&!paused)R.tick(s,c,dt);update();draw();requestAnimationFrame(frame);}
+ function frame(t){const dt=Math.min(.1,Math.max(0,(t-last)/1000));last=t;frames++;if(state==='play'&&!paused)R.tick(s,c,dt);update();draw();V?.finish(ctx,960,540);requestAnimationFrame(frame);}
  requestAnimationFrame(frame);
 }
 root.gameForgeSimulationBoot=gameForgeSimulationBoot;

@@ -5,6 +5,7 @@
 'use strict';
 function gameForgeUrbanMissionBoot(){
  'use strict';
+ const V=typeof GameForgeGraphics==='object'?GameForgeGraphics:null;
  const spec=GAME_SPEC,plan=spec.urbanMissions,T=THREE,R=GameForgeUrbanRules,F=GameForgeUrbanMissionFlow,I=GameForgeUrbanInput,S=GameForgeUrbanSave;
  const $=id=>document.getElementById(id),canvas=$('game');
  const blockers=[
@@ -20,7 +21,7 @@ function gameForgeUrbanMissionBoot(){
   .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').slice(0,45);
  const saveStore=S.create(()=>window.localStorage,storageKey,raw=>F.restore(plan,raw));
  let renderer=null;
- try{renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'default'});}
+ try{renderer=new T.WebGLRenderer({canvas,antialias:V?.quality!=='low'&&V?.profile.style!=='pixel',alpha:false,powerPreference:'default'});}
  catch(_){if(typeof gameForgeSoftwareRenderer==='function')try{renderer=gameForgeSoftwareRenderer(T,canvas);}catch(_){}}
  if(!renderer){$('overlay-title').textContent='Gráficos 3D indisponíveis';$('start').disabled=true;return;}
  renderer.setClearColor(0x94b3c3);
@@ -29,7 +30,7 @@ function gameForgeUrbanMissionBoot(){
  scene.add(new T.HemisphereLight(0xe3f1ff,0x414448,2.2));
  const sun=new T.DirectionalLight(0xffe4c4,1.6);sun.position.set(-8,15,6);scene.add(sun);
  const mats={};
- function material(color){return mats[color]||(mats[color]=new T.MeshLambertMaterial({color}));}
+ function material(color){return mats[color]||(mats[color]=(V?new T.MeshStandardMaterial({color,roughness:.8,metalness:.04}):new T.MeshLambertMaterial({color})));}
  function box(x,y,z,w,h,d,c,parent=scene){
   const mesh=new T.Mesh(new T.BoxGeometry(w,h,d),material(c));mesh.position.set(x,y,z);parent.add(mesh);return mesh;
  }
@@ -60,6 +61,7 @@ function gameForgeUrbanMissionBoot(){
   box(0,1.37,0,.72,.94,.42,shirt,g);orb(0,2.09,0,.29,0xccac8f,g);
   for(const x of [-.23,.23])legs.push(box(x,.53,0,.25,.88,.29,0x333840,g));
   for(const x of [-.52,.52])legs.push(box(x,1.37,-.04,.23,.77,.29,shirt,g));
+  if(V){box(0,2.32,0,.48,.14,.43,0x333840,g);box(0,.98,0,.76,.12,.47,0x333840,g);if(V.detail>1){for(const x of [-.23,.23]){box(x,.1,-.08,.29,.18,.43,0x333840,g);box(x,1.4,-.25,.18,.2,.08,0xa6ac9f,g);}}}
   g.userData.legs=legs;scene.add(g);return g;
  }
  const actorAssets=typeof GF_SCENE_ASSETS!=='undefined'&&Array.isArray(GF_SCENE_ASSETS)?GF_SCENE_ASSETS:[];
@@ -202,7 +204,7 @@ function gameForgeUrbanMissionBoot(){
  }
  function resize(){
   const w=Math.max(320,Math.min(1200,canvas.clientWidth||960)),h=Math.max(180,Math.round(w*9/16));
-  renderer.setPixelRatio?.(Math.min(1.4,window.devicePixelRatio||1));
+  renderer.setPixelRatio?.(V?V.pixelRatio(window.devicePixelRatio||1):Math.min(1.4,window.devicePixelRatio||1));
   renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
  }
  resize();window.addEventListener('resize',resize);
@@ -367,7 +369,7 @@ function gameForgeUrbanMissionBoot(){
   camera.position.set(safe.x,safe.y,safe.z);
   cameraOccluded=desired.occluded||safe.occluded;
   camera.lookAt(sim.position.x,1.2,sim.position.z-2.5);
-  renderer.render(scene,camera);
+  V?.scene(T,renderer,scene,!renderer.isWebGLRenderer);renderer.render(scene,camera);
  }
  hero.position.set(sim.position.x,0,sim.position.z);syncObjects();hud();
  $('mission').textContent=statusText();notice('Missões compiladas do GDD. WASD, Espaço, E, R, P.');

@@ -291,12 +291,14 @@ test('GF-TRAIN-08: pousar numa ilha nova salva posição segura sem liberar port
  assert.ok(checkpoint.platformCheckpoint>=1,'mecânica real marcou pouso');
  assert.equal(checkpoint.campaignCheckpoint,0,'pouso salva ainda na fase 1');
  assert.equal(checkpoint.campaignProgress.platformCheckpoint,checkpoint.platformCheckpoint);
- assert.equal(checkpoint.score,0,'pouso não cria prêmio monetário');
+ assert.equal(checkpoint.score,checkpoint.collected*80,
+  'pouso e coleta simultâneos só pagam os cristais efetivamente alcançados');
  const revived=boot('platform',db);revived.start();revived.tick(2);
  const restored=revived.telemetry();
  assert.equal(restored.platformCheckpoint,checkpoint.platformCheckpoint);
  assert.equal(restored.stage,1);
- assert.equal(restored.score,0);
+ assert.equal(restored.score,checkpoint.score,'retomada do pouso não duplica cristais');
+ assert.equal(restored.collected,checkpoint.collected);
  assert.ok(restored.player.x>100,'retomada aparece na última plataforma segura');
  assert.equal(restored.campaignSaveStatus,'recovered');
  assert.ok(restored.collected<restored.required,'checkpoint intermediário não desbloqueia portal');

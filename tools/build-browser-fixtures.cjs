@@ -6,7 +6,7 @@ const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 for(const name of [
  'runtime-template','shooter-runtime','world-rules','software-renderer','three-runtime',
- 'shooter-3d-runtime','shooter-campaign-save','strategy-rules','expanded-2d-runtime','advanced-td-rules',
+ 'shooter-3d-runtime','shooter-campaign-save','adventure-campaign-save','strategy-rules','expanded-2d-runtime','advanced-td-rules',
  'advanced-td-runtime','combat-economy','urban-rules','urban-runtime','urban-mission-flow','urban-mission-runtime','mission-semantics'
 ])require(path.join(root,'js',name+'.js'));
 require(path.join(root,'vendor/three-source.js'));
@@ -77,6 +77,34 @@ for(const item of gameplayRequests){
  item.files=Object.keys(files);
 }
 fs.writeFileSync(path.join(output,'gameplay-training.json'),JSON.stringify(gameplayRequests,null,2));
+
+// GF-TRAIN-07: duas campanhas novas com salvamento entre fases.
+// Manifesto separado para manter o contrato de 3 cenários do GF-TRAIN-04.
+const adventureRequests=[
+ {slug:'training-3d-rpg-campaign',genre:'rpg',dimension:'3d',
+  command:'Crie RPG 3D com três fases, magia, experiência e poções.'},
+ {slug:'training-3d-platform-campaign',genre:'platform',dimension:'3d',
+  command:'Crie um jogo de plataforma 3D com três fases e cristais.'}
+];
+for(const entry of adventureRequests){
+ const spec=parser.parseGdd('',entry.command,{genre:entry.genre,dimension:entry.dimension});
+ if(spec.genre!==entry.genre||spec.dimension!==entry.dimension||spec.stages?.length!==3)
+  throw Error('GF-TRAIN-07: comando não criou 3 fases para '+entry.slug);
+ const files=generator.generate(spec,'');
+ validateFiles(files,entry.dimension,entry.genre);
+ const dest=path.join(output,entry.slug);
+ fs.mkdirSync(dest);
+ for(const [name,content] of Object.entries(files)){
+  if(name.includes('/')||name.includes('\\')||name.includes('..'))
+   throw Error('GF-TRAIN-07: nome de arquivo inseguro');
+  fs.writeFileSync(path.join(dest,name),content);
+ }
+ const zip=zipper.zipFiles(files);
+ fs.writeFileSync(path.join(output,entry.slug+'.zip'),new Uint8Array(await zip.arrayBuffer()));
+ entry.files=Object.keys(files);
+}
+fs.writeFileSync(path.join(output,'adventure-training.json'),JSON.stringify(adventureRequests,null,2));
+
 
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

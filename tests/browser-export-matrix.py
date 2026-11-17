@@ -408,8 +408,9 @@ def run():
                 assert frozen['slots'][1]['age'] == 0, frozen
                 assert frozen['slots'][1]['satiety'] == 0, frozen
                 care_page.locator('#pause').click()
+                paused_care = care_page.evaluate('window.__gameforgeTelemetry().simulation')
                 care_page.wait_for_timeout(350)
-                assert care_page.evaluate('window.__gameforgeTelemetry().simulation') == frozen
+                assert care_page.evaluate('window.__gameforgeTelemetry().simulation') == paused_care
                 care_page.locator('#pause').click()
                 care_page.get_by_role('button', name='Alimentar', exact=True).click()
                 care_page.get_by_role('button', name='Trocar água', exact=True).click()

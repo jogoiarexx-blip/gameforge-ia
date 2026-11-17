@@ -1,0 +1,656 @@
+{
+  "version": 3,
+  "kind": "Casos de regressão rotulados manualmente; não fine-tuning de modelo",
+  "cases": [
+    {
+      "instruction": "quero uma fazendinha pra plantar e colher",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "qro cuidar da fazenda e vender a colheita",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Faça uma horta, plantar e colher verduras",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Crie um simulador agrícola 2D",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Eu quero um jogo na fazenda para plantar",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Jogo de fazenda: regar, colher e vender",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Fazendinha onde eu cuido das plantas e vendo",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero administrar fazenda com canteiros",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Criar jogo de plantar e colher pra celular",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Faça farming simulator 2D sem tratores",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Simulação de fazenda em duas dimensões",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero fazenda para plantar sem tiros",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero cuidar da fazenda 2d sem 3d",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda com meta de 60 moedas",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Plantar e colher na minha horta, 3 canteiros",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero fazenda com plantar, regar e colher, 8 canteiros",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Cuidar de fazenda com funcionário",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Administrar uma fazenda com chuva e estações do ano",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero criar fazenda onde posso construir celeiros",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Jogo de plantar e colher sem combate para crianças",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "farm",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero aquário pra criar peixes e vender",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Crie um jogo de cuidar de peixes",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "qro cuidar de peixinhos no aquariu",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero comprar peixe no aquário, alimentar e vender",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Faça um aquário onde os peixes crescem",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero administrar aquário 2D",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "No meu aquário eu vou alimentar peixes",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Um aquário para celular, comprar e vender peixes",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Simulador de aquarismo em 2D",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Aquário com peixe que cresce em 5 segundos",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário com 6 tanques",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero aquário para alimentar peixes sem armas",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Criar peixes num aquário sem 3d",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Um jogo de aquário e vender os peixes crescidos",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero cuidar de peixes com reprodução",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Aquário para alimentar e vender com genética e reprodução",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Cuidar do aquário com personagem andando",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Gerenciar aquário com 12 tanques e meta de 500 moedas",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Faça aquário com peixinhos para cuidar sem multiplayer",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "quero aquário para cuidar e vender em cinco fases",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "aquarium",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Criar jogo de gerenciar um supermercado",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Simulador de mercado 2D com estoque",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Eu quero ter uma lojinha e atender clientes",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero abrir uma loja, repor estoque e vender",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Faça jogo de cuidar da loja",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Na minha loja quero vender produtos",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Simulação: administrar loja com quatro prateleiras",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero repor estoque e atender clientes",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Um simulador de loja sem tiros",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero gerenciar mercado para celular",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Crie um simulador de supermercado sem 3d",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Administrar uma loja com 8 prateleiras",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Administrar loja com estoque custa 10 e venda por 30",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero atender clientes, começar com 100 moedas",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero gerenciar uma loja e contratar funcionários",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero administrar loja, construir salas",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero repor estoque automático e atender clientes",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero gerenciar supermercado com meta de 200 moedas",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Criar simulador de loja com atendimento em 3 segundos",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "domain": "shop",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Simulador de hospital com pacientes e médicos",
+      "expected": {
+        "blocked": true
+      }
+    },
+    {
+      "instruction": "Quero simulador de cidade com moradores e impostos",
+      "expected": {
+        "blocked": true
+      }
+    },
+    {
+      "instruction": "Faça um simulador de vida com emprego e família",
+      "expected": {
+        "blocked": true
+      }
+    },
+    {
+      "instruction": "Simulador de restaurante com receitas e clientes",
+      "expected": {
+        "blocked": true
+      }
+    },
+    {
+      "instruction": "Simulador de ônibus com passageiros",
+      "expected": {
+        "blocked": true
+      }
+    },
+    {
+      "instruction": "Quero simulador de avião com pouso e decolagem",
+      "expected": {
+        "blocked": true
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário 3D e vender peixes",
+      "expected": {
+        "blocked": true
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja em primeira pessoa",
+      "expected": {
+        "blocked": true
+      }
+    },
+    {
+      "instruction": "Um jogo de fazenda 3D para plantar e colher",
+      "expected": {
+        "blocked": true
+      }
+    },
+    {
+      "instruction": "RPG 2d com uma fazenda no mapa",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "2d",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Jogo de corrida 3d com loja de carros",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Navinha 2d passando sobre uma fazenda",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "2d",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero jogo de plataforma 2d numa fazenda",
+      "expected": {
+        "genre": "platform",
+        "dimension": "2d",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "FPS 3D com loja para comprar munição",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Quero jogo tipo GTA 3D com lojas e carros",
+      "expected": {
+        "genre": "urban-action",
+        "dimension": "3d",
+        "blocked": false
+      }
+    },
+    {
+      "instruction": "Sem aquário, quero cuidar de fazenda",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "blocked": false
+      }
+    }
+  ]
+}

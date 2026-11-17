@@ -4,6 +4,7 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from functools import partial
 from threading import Thread
 import json
+import os
 import tempfile
 import zipfile
 import traceback
@@ -19,7 +20,7 @@ class QuietHandler(SimpleHTTPRequestHandler):
 def run():
     assert (OUTPUT / 'matrix.json').exists(), 'Execute node tools/build-browser-fixtures.cjs antes do navegador'
     matrix = json.loads((OUTPUT / 'matrix.json').read_text())
-    assert len(matrix) == 15, 'Matriz de gêneros alterada: atualizar cobertura'
+    assert len(matrix) == 16, 'Matriz de gêneros alterada: atualizar cobertura'
     screenshots = OUTPUT / 'screenshots'
     screenshots.mkdir(exist_ok=True)
     extracted = OUTPUT / '_reimported'
@@ -39,7 +40,7 @@ def run():
     failures = []
     with sync_playwright() as playwright, tempfile.TemporaryDirectory() as tmp:
         browser = playwright.chromium.launch(
-            headless=True, args=[
+            headless=True, executable_path=os.environ.get("GF_CHROMIUM_PATH"), args=[
                 '--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader',
                 '--enable-webgl', '--disable-dev-shm-usage'
             ]
@@ -80,6 +81,18 @@ def run():
                     page.wait_for_function(
                         "window.__gameforgeTelemetry().paused === true", timeout=5000
                     )
+                    if label == '2d-simulation':
+                        page.wait_for_timeout(250)
+                        assert page.evaluate('window.__gameforgeTelemetry().simulation.slots.every(x => x === null)')
+                        page.locator('#pause').click()
+                        page.get_by_role('button', name='Plantar', exact=True).click()
+                        page.get_by_role('button', name='Regar', exact=True).click()
+                        page.wait_for_function('window.__gameforgeTelemetry().simulation.slots.some(x => x && x.age >= 2)', timeout=6000)
+                        page.get_by_role('button', name='Colher', exact=True).click()
+                        assert page.evaluate('window.__gameforgeTelemetry().simulation.inventory') == 1
+                        page.get_by_role('button', name='Vender colheita', exact=True).click()
+                        assert page.evaluate('window.__gameforgeTelemetry().state') == 'victory'
+                        assert page.evaluate('window.__gameforgeTelemetry().simulation.sales') == 1
                     if label == '3d-urban-action':
                         assert isinstance(active.get('guardWaypoints'), int), 'Motor urbano deve expor a rota do guarda'
                         assert active['guardWaypoints'] >= 0

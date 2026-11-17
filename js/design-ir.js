@@ -16,7 +16,7 @@ const patterns=Object.freeze([
  {id:'quests',label:'Missões/quests roteirizadas',pattern:/\b(quests?|missoes? com escolhas|missoes? de historia|campanha roteirizada)\b/,engines:[]},
  {id:'skill-tree',label:'Árvore de habilidades',pattern:/\b(arvore de habilidades?|skill tree|habilidades? permanentes?|pontos? de habilidade|evolu(?:cao|ir|ir as)(?: de| das)? habilidades?|melhorar habilidades?)\b/,engines:[]},
  {id:'craft',label:'Fabricação de itens',pattern:/\b(crafting|fabricar itens?|fabricar armas?|sistema de fabricacao)\b/,engines:[]},
- {id:'farming',label:'Plantar, colher e gerir fazenda',pattern:/\b(fazenda|plantar|colheita|cultivar|agricultura)\b/,engines:[]},
+ {id:'farming',label:'Plantar, colher e gerir fazenda',pattern:/\b(fazenda|plantar|colheita|cultivar|agricultura)\b/,engines:['simulation-2d'],partial:['simulation-2d']},
  {id:'sailing',label:'Navegação de barcos',pattern:/\b(navegar barcos?|navegar no mar|dirigir barcos?|pilot(?:ar)? navios?|navios? dirigiveis|batalhas? navais?|barcos?|navios?|piratas?)\b/,engines:[]},
  {id:'inventory-3d',label:'Inventário de itens 3D',pattern:/\b(inventario|mochila|guardar itens?)\b/,engines:['rpg-2d'],partial:['rpg-2d']},
  {id:'animated-assets',label:'Personagens GLB animados',pattern:/\b(glb animad|personagem animad|animationmixer|esqueleto glb)\b/,engines:[]}
@@ -83,6 +83,16 @@ function inspect(spec,gdd='',command=''){
        origin:item.origin,reason};
      blocked.push(block);constraints.push(block);
    }
+ }
+ const simDesign=root.GameForgeSimulationDesign||(typeof require==='function'?require('./simulation-design'):null);
+ const sim=simDesign?.inspect(primary);
+ const unsupportedSimulation=/\b(?:simulador|simulacao)\s+(?:de|da|do)\s+(?:hospital|cidade|vida|restaurante|onibus|aviao|futebol)\b/.test(primary);
+ if((sim?.identified&&engine!=='simulation-2d')||unsupportedSimulation){
+  const reason='Este pedido exige um motor de simulação próprio; o protótipo atual oferece somente fazenda, aquário e loja em 2D.';
+  if(!blocked.some(x=>x.id==='missing-core-engine')){
+   const block={id:'missing-core-engine',label:'Simulação solicitada sem motor compatível',status:'incompativel',origin:rows[rows.length-1]?.origin||null,reason};
+   blocked.push(block);constraints.push(block);
+  }
  }
  const counts={suportado:0,parcial:0,pendente:0,incompativel:blocked.length};
  requirements.forEach(r=>counts[r.status]++);

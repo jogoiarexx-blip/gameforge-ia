@@ -1,3 +1,9 @@
+# GameForge Studio v0.23 — técnicas de projetos estudados
+
+Novo estudo seletivo de 22 arquivos em nove projetos públicos das contas jogoiarexx-blip e luispauloalves500: 17 técnicas com fontes e limites, recuperação por pedidos em português e plano técnico incluído em cada exportação. Cache de desenhos procedurais autoral, limitado por memória, aplicado aos atores/superfícies compartilhados 2D.
+
+Leia o [estudo e plano de aproveitamento](docs/ESTUDO_REPOSITORIOS_GF_STUDY_05.md). Referências não importam automaticamente as mecânicas nem assets dos jogos originais.
+
 # GameForge Studio v0.22 — perfis gráficos em todos os modelos
 
 A camada gráfica compartilhada atende os 16 modelos 2D/3D. Peça pixel art, cartoon, ilustrado, naturalista ou low poly; combine com qualidade alta/equilibrada/leve, pôr do sol e iluminação noturna. Os perfis continuam procedurais e não criam automaticamente assets fotorrealistas. O perfil é preservado no backup e acompanha o jogo exportado.

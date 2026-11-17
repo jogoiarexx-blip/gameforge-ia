@@ -20,6 +20,8 @@ function gameForgeGraphicsFactory(spec){
  if(profile.style==='natural'){for(const key of Object.keys(palette)){const n=parseInt(palette[key].slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255,gray=r*.3+g*.59+b*.11;palette[key]='#'+[r,g,b].map(c=>Math.round(c*.78+gray*.22).toString(16).padStart(2,'0')).join('');}}
  const stats={backgrounds:0,actors:0,finishes:0,scenes:0,materials:0};
  const scenes=new WeakSet();let scratch=null;
+ const cacheBudget=quality==='low'?1048576:quality==='high'?4194304:2097152;
+ const cache=typeof gameForgeRenderCacheFactory==='function'?gameForgeRenderCacheFactory({maxEntries:64,maxBytes:cacheBudget}):null;
  const dot=(c,x,y,r,color)=>{c.fillStyle=color;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();};
  function backdrop(c,w,h,time=0,kind='land'){
   stats.backgrounds++;c.save();
@@ -34,7 +36,7 @@ function gameForgeGraphicsFactory(spec){
   if(profile.particles){c.globalAlpha=.35;for(let i=0;i<detail*7;i++){const x=(i*149+Math.sin(i+time*.3)*12+w)%w,y=(i*71+time*(kind==='space'?8:2))%h;dot(c,x,y,i%3?1:2,palette.accent);}}
   c.restore();
  }
- function surface(c,x,y,w,h,kind='stone'){
+ function paintSurface(c,x,y,w,h,kind='stone'){
   c.save();const base=kind==='soil'?palette.ground:palette.dark;
   c.fillStyle=base;c.fillRect(x,y,w,h);
   c.fillStyle=palette.light;c.globalAlpha=.5;c.fillRect(x,y,w,Math.min(5,h/5));
@@ -43,8 +45,8 @@ function gameForgeGraphicsFactory(spec){
   if(profile.style==='cartoon'){c.globalAlpha=1;c.strokeStyle='#142431';c.lineWidth=2;c.strokeRect(x+1,y+1,w-2,h-2);}
   c.restore();
  }
- function actor(c,x,y,r=18,paint='#65c6b5',time=0,boss=false){
-  stats.actors++;c.save();c.translate(x,y);
+ function paintActor(c,x,y,r=18,paint='#65c6b5',time=0,boss=false){
+  c.save();c.translate(x,y);
   if(profile.shadows){c.fillStyle='#07121d55';c.beginPath();c.ellipse(3,r*.8,r,r*.32,0,0,Math.PI*2);c.fill();}
   const step=Math.sin(time*8)*r*.12;
   c.fillStyle='#24364d';c.fillRect(-r*.5,r*.15, r*.34,r*.7+step);c.fillRect(r*.16,r*.15,r*.34,r*.7-step);
@@ -60,6 +62,30 @@ function gameForgeGraphicsFactory(spec){
   c.fillStyle='#f1cca6';c.fillRect(-r*.88,-r*.45,r*.22,r*.7-step);c.fillRect(r*.66,-r*.45,r*.22,r*.7+step);
   if(boss){c.strokeStyle=palette.accent;c.lineWidth=3;c.beginPath();c.moveTo(-r*.7,-r);c.lineTo(-r*.9,-r*1.5);c.moveTo(r*.7,-r);c.lineTo(r*.9,-r*1.5);c.stroke();}
   c.restore();
+ }
+ function cached(c,key,w,h,x,y,painter){
+  if(!cache||typeof document==='undefined'||typeof c.canvas?.getContext!=='function'||w>2048||h>512||w*h*4>cacheBudget)return false;
+  let image=cache.get(key);
+  if(!image){
+   image=document.createElement('canvas');image.width=w;image.height=h;
+   const target=image.getContext('2d');if(!target)return false;
+   painter(target);
+   if(!cache.put(key,image,w*h*4,value=>{value.width=1;value.height=1;}))return false;
+  }
+  c.drawImage(image,x,y);return true;
+ }
+ function actor(c,x,y,r=18,paint='#65c6b5',time=0,boss=false){
+  stats.actors++;
+  const phase=Math.floor((((time*8)%(Math.PI*2))+Math.PI*2)%(Math.PI*2)/(Math.PI*2)*8);
+  const edge=Math.ceil(r*4+16),half=edge/2;
+  const key='actor:'+r+':'+paint+':'+Number(boss)+':'+phase;
+  if(cached(c,key,edge,edge,x-half,y-half,target=>paintActor(target,half,half,r,paint,phase*Math.PI/32,boss)))return;
+  paintActor(c,x,y,r,paint,time,boss);
+ }
+ function surface(c,x,y,w,h,kind='stone'){
+  const width=Math.ceil(w),height=Math.ceil(h);
+  if(cached(c,'surface:'+width+':'+height+':'+kind,width,height,x,y,target=>paintSurface(target,0,0,width,height,kind)))return;
+  paintSurface(c,x,y,w,h,kind);
  }
  function unitDetail(c,x,y,r=18){
   if(detail===1)return;c.save();c.strokeStyle=profile.style==='cartoon'?'#162a3e':'#fff4cf99';c.lineWidth=profile.style==='cartoon'?3:1.5;c.beginPath();c.arc(x-3,y-3,r*.68,Math.PI,Math.PI*1.7);c.stroke();
@@ -131,7 +157,7 @@ function gameForgeGraphicsFactory(spec){
   });
  }
  function pixelRatio(base){return Math.min(base,profile.style==='pixel'?.5:quality==='low'?1:quality==='high'?1.8:1.4);}
- function snapshot(){return {...profile,effectiveQuality:quality,detail,...stats};}
+ function snapshot(){return {...profile,effectiveQuality:quality,detail,...stats,cache:cache?.snapshot()||null};}
  return {profile,palette,quality,detail,backdrop,surface,actor,unitDetail,habitat,product,finish,scene,pixelRatio,snapshot};
 }
 root.gameForgeGraphicsFactory=gameForgeGraphicsFactory;

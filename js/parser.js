@@ -3,6 +3,7 @@
   'use strict';
   const intentCompiler=root.GameForgeIntent||(typeof require==='function'?require('./intent-compiler'):null);
   const normalize = s => intentCompiler?.normalize ? intentCompiler.normalize(s) : String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const graphicsDesign=root.GameForgeGraphicsDesign||(typeof require==='function'?require('./graphics-design'):null);
   const simulationDesign=root.GameForgeSimulationDesign||(typeof require==='function'?require('./simulation-design'):null);
   const sourceCorpus=root.GameForgeGameCorpus||(typeof require==='function'?require('./game-corpus'):null);
   const urbanDesign=root.GameForgeUrbanDesign||(typeof require==='function'?require('./urban-design'):null);
@@ -284,6 +285,7 @@
       compiled.limitations.unshift(compiled.engineAvailability.reason);
       compiled.detected.push('Câmera: terceira pessoa',
         urbanMissions.length?'Motor urbano 3D: '+urbanMissions.length+' missão(ões) por ações e dependências':'Motor urbano 3D: vertical slice URB-01 (1 bairro)');
+      applyGraphics(compiled,source,extra,options);
       return designIR?designIR.enrich(compiled,source,extra):compiled;
     }
     const interpreted=intentCompiler?intentCompiler.compile(compiled,source,extra,options):compiled;
@@ -302,7 +304,16 @@
       interpreted.limitations.unshift('Simulação 2D inicial com seleção de espaços e botões. Sem caminhada, salvamento, construção livre ou simulação 3D. Meta medida em receita de vendas.');
       interpreted.detected.push('Simulação: '+sim.config.label+' · '+sim.config.slots+' espaços · meta '+sim.config.target);
     }
+    applyGraphics(interpreted,source,extra,options);
     return designIR?designIR.enrich(interpreted,source,extra):interpreted;
+  }
+  function applyGraphics(spec,source,extra,options){
+    const result=graphicsDesign?.compile(spec,source,extra,options);
+    if(!result)return;
+    spec.implementation.applied.push(...result.applied);
+    spec.implementation.pending.push(...result.pending);
+    spec.implementation.warnings.push(...result.warnings);
+    spec.detected.push('Visual: '+result.profile.style+' · '+result.profile.atmosphere+' · '+result.profile.quality);
   }
   function creationInstruction(spec,instruction=''){
     const plan=spec.implementation||{applied:[],pending:[],warnings:[]};

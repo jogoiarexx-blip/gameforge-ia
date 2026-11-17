@@ -1,0 +1,806 @@
+{
+  "version": 4,
+  "purpose": "Matriz de regressão de cinco perfis nos 16 modelos; não avaliação independente nem fine-tuning",
+  "cases": [
+    {
+      "instruction": "Quero cuidar de aquário 2D. Visual pixel art, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário 2D. Visual cartoon, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário 2D. Visual ilustrado, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário 2D. Visual naturalista, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "style": "natural",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário 2D. Visual low poly, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "simulation",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Quero jogo de arena 2D. Visual pixel art, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Quero jogo de arena 2D. Visual cartoon, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Quero jogo de arena 2D. Visual ilustrado, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Quero jogo de arena 2D. Visual naturalista, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "2d",
+        "style": "natural",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Quero jogo de arena 2D. Visual low poly, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie um jogo de plataforma 2D. Visual pixel art, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie um jogo de plataforma 2D. Visual cartoon, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie um jogo de plataforma 2D. Visual ilustrado, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie um jogo de plataforma 2D. Visual naturalista, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "2d",
+        "style": "natural",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie um jogo de plataforma 2D. Visual low poly, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Quero jogo de corrida 2D. Visual pixel art, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Quero jogo de corrida 2D. Visual cartoon, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Quero jogo de corrida 2D. Visual ilustrado, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Quero jogo de corrida 2D. Visual naturalista, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "2d",
+        "style": "natural",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Quero jogo de corrida 2D. Visual low poly, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Quero RPG 2D. Visual pixel art, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Quero RPG 2D. Visual cartoon, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Quero RPG 2D. Visual ilustrado, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Quero RPG 2D. Visual naturalista, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "2d",
+        "style": "natural",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Quero RPG 2D. Visual low poly, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie navinha espacial 2D. Visual pixel art, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie navinha espacial 2D. Visual cartoon, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie navinha espacial 2D. Visual ilustrado, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie navinha espacial 2D. Visual naturalista, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "2d",
+        "style": "natural",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie navinha espacial 2D. Visual low poly, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie defesa de torres 2D. Visual pixel art, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "tower-defense",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie defesa de torres 2D. Visual cartoon, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "tower-defense",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie defesa de torres 2D. Visual ilustrado, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "tower-defense",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie defesa de torres 2D. Visual naturalista, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "tower-defense",
+        "dimension": "2d",
+        "style": "natural",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie defesa de torres 2D. Visual low poly, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "tower-defense",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie defesa por linhas 2D. Visual pixel art, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "lane-defense",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie defesa por linhas 2D. Visual cartoon, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "lane-defense",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie defesa por linhas 2D. Visual ilustrado, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "lane-defense",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie defesa por linhas 2D. Visual naturalista, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "lane-defense",
+        "dimension": "2d",
+        "style": "natural",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie defesa por linhas 2D. Visual low poly, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "lane-defense",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie defesa de blocos 2D. Visual pixel art, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "block-td",
+        "dimension": "2d",
+        "style": "pixel",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie defesa de blocos 2D. Visual cartoon, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "block-td",
+        "dimension": "2d",
+        "style": "cartoon",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie defesa de blocos 2D. Visual ilustrado, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "block-td",
+        "dimension": "2d",
+        "style": "illustrated",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie defesa de blocos 2D. Visual naturalista, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "block-td",
+        "dimension": "2d",
+        "style": "natural",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie defesa de blocos 2D. Visual low poly, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "block-td",
+        "dimension": "2d",
+        "style": "lowpoly",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D. Visual pixel art, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D. Visual cartoon, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D. Visual ilustrado, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D. Visual naturalista, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "style": "natural",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D. Visual low poly, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D. Visual pixel art, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D. Visual cartoon, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D. Visual ilustrado, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D. Visual naturalista, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "style": "natural",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie FPS 3D. Visual low poly, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D. Visual pixel art, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D. Visual cartoon, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D. Visual ilustrado, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D. Visual naturalista, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "style": "natural",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie RPG 3D. Visual low poly, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie jogo de corrida 3D. Visual pixel art, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie jogo de corrida 3D. Visual cartoon, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie jogo de corrida 3D. Visual ilustrado, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie jogo de corrida 3D. Visual naturalista, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "style": "natural",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie jogo de corrida 3D. Visual low poly, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie jogo de plataforma 3D. Visual pixel art, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie jogo de plataforma 3D. Visual cartoon, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie jogo de plataforma 3D. Visual ilustrado, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie jogo de plataforma 3D. Visual naturalista, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "3d",
+        "style": "natural",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie jogo de plataforma 3D. Visual low poly, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "platform",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie navinha espacial 3D. Visual pixel art, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie navinha espacial 3D. Visual cartoon, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie navinha espacial 3D. Visual ilustrado, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie navinha espacial 3D. Visual naturalista, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "style": "natural",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie navinha espacial 3D. Visual low poly, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie GTA 3D com carros, lojas e polícia. Visual pixel art, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "urban-action",
+        "dimension": "3d",
+        "style": "pixel",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie GTA 3D com carros, lojas e polícia. Visual cartoon, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "urban-action",
+        "dimension": "3d",
+        "style": "cartoon",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    },
+    {
+      "instruction": "Crie GTA 3D com carros, lojas e polícia. Visual ilustrado, qualidade leve, luz do dia.",
+      "expected": {
+        "genre": "urban-action",
+        "dimension": "3d",
+        "style": "illustrated",
+        "quality": "low",
+        "atmosphere": "day"
+      }
+    },
+    {
+      "instruction": "Crie GTA 3D com carros, lojas e polícia. Visual naturalista, qualidade alta, pôr do sol.",
+      "expected": {
+        "genre": "urban-action",
+        "dimension": "3d",
+        "style": "natural",
+        "quality": "high",
+        "atmosphere": "sunset"
+      }
+    },
+    {
+      "instruction": "Crie GTA 3D com carros, lojas e polícia. Visual low poly, qualidade equilibrada, cenário noturno.",
+      "expected": {
+        "genre": "urban-action",
+        "dimension": "3d",
+        "style": "lowpoly",
+        "quality": "medium",
+        "atmosphere": "night"
+      }
+    }
+  ]
+}

@@ -7,6 +7,7 @@
 const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const dims=(genre,dim)=>genre+'-'+dim;
 const support={
+ 'visual-profile':{all:true,contract:'GAME_SPEC.renderProfile + gameForgeGraphicsFactory',test:'tests/graphics.test.js',pattern:/pixel|cartoon|low.?poly|ilustrad|realista|qualidade|sombras|particulas|por do sol/},
  'simulation-cycle':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation + gameForgeSimulationRulesFactory',test:'tests/simulation.test.js',pattern:/aquario|fazenda|loja|plantar|vender|estoque/},
  'stage-count':{all:true,contract:'GAME_SPEC.stages',test:'tests/intent-compiler.test.js',pattern:/\b(fases|missoes|niveis|levels)\b/},
  'waves':{engines:['shooter-3d','tower-defense-2d','lane-defense-2d','block-td-2d'],contract:'GAME_SPEC.stageConfig[].waves',test:'tests/intent-compiler.test.js',pattern:/\b(onda|wave)/},

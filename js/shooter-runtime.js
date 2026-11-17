@@ -2,6 +2,7 @@
    Esta funcao e serializada para game.js pelo GameForge Generator. */
 function gameForgeShooterBoot() {
   'use strict';
+ const V=typeof GameForgeGraphics==='object'?GameForgeGraphics:null;
   const spec = GAME_SPEC;
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', {alpha:false});
@@ -28,7 +29,7 @@ function gameForgeShooterBoot() {
   let simulationAccumulator=0,simulationSteps=0;
   let waveSpawned=0,spawnClock=0,groupStep=0,boss=null,bossSeen=false,health=100,lives=3,weapon=1,shield=0,fireClock=0,invuln=0;
   let player={x:W/2,y:H-92,r:19,afterimages:[]},enemies=[],friendly=[],hostile=[],drops=[],particles=[];
-  let speedLevel=0,flash=0,shake=0,quality='high',qualitySamples=0,fpsEstimate=60;
+  let speedLevel=0,flash=0,shake=0,quality=V?V.quality:'high',qualitySamples=0,fpsEstimate=60;
   const keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
   let mouse={x:W/2,y:H/2,down:false},audio=null;
   const rand=(a,b)=>a+Math.random()*(b-a);
@@ -256,6 +257,7 @@ function gameForgeShooterBoot() {
       polygon([[-5,-5],[0,-18],[5,-5],[0,5]],'#d2faff');
       if(!enemy){ctx.fillStyle='#ffa465';ctx.fillRect(-13,18,7,8+Math.sin(time*23)*6);ctx.fillRect(6,18,7,8+Math.cos(time*21)*6);}
     }
+    V?.unitDetail(ctx,0,0,22);
     ctx.shadowBlur=0;ctx.restore();
   }
   function enemyDraw(e){
@@ -281,6 +283,7 @@ function gameForgeShooterBoot() {
   function render(){
     ctx.save();if(shake)ctx.translate(rand(-shake,shake),rand(-shake,shake));
     background();
+    V?.backdrop(ctx,W,H,time,'space');
     for(const a of player.afterimages){ctx.globalAlpha=a.life*.6;ship(a.x,a.y,.85);}
     ctx.globalAlpha=1;
     for(const d of drops){ctx.save();ctx.translate(d.x,d.y);ctx.rotate(time*2);ctx.shadowBlur=10;ctx.shadowColor=T.accent;
@@ -290,7 +293,7 @@ function gameForgeShooterBoot() {
     bossDraw();
     ctx.fillStyle='#fff8a1';for(const b of friendly){ctx.shadowColor=T.accent;ctx.shadowBlur=quality==='low'?0:10;ctx.fillRect(b.x-3,b.y-12,6,18);}ctx.shadowBlur=0;
     for(const b of hostile){ctx.fillStyle=b.kind==='boss'?'#ff74dc':'#ff9e70';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill();}
-    for(const p of particles){ctx.globalAlpha=p.life/p.max;ctx.fillStyle=p.color;ctx.fillRect(p.x-p.r/2,p.y-p.r/2,p.r,p.r);}
+    if(!V||V.profile.particles)for(const p of particles){ctx.globalAlpha=p.life/p.max;ctx.fillStyle=p.color;ctx.fillRect(p.x-p.r/2,p.y-p.r/2,p.r,p.r);}
     ctx.globalAlpha=1;
     if(invuln<=0||Math.floor(time*12)%2===0)ship(player.x,player.y);
     if(shield>0){ctx.strokeStyle=T.accent;ctx.lineWidth=2;ctx.beginPath();ctx.arc(player.x,player.y,30+Math.sin(time*4)*2,0,TAU);ctx.stroke();}
@@ -304,7 +307,7 @@ function gameForgeShooterBoot() {
   window.__gameforgeTelemetry=()=>({state,paused,frames,clock:time,stage:stageIndex,genre:'shooter',player:{x:player.x,y:player.y,radius:player.r,screenX:player.x,screenY:player.y},enemies:enemies.length,enemyBullets:hostile.length,playerBullets:friendly.length,bossHp:boss?.hp??null,spawned:waveSpawned,weapon,lives,credits,speedLevel,quality,simulationHz:60,simulationSteps});
   function loop(ms){
     const rawDt=Math.max(0,(ms-last)/1000);last=ms;
-    if(rawDt>0&&rawDt<.25){fpsEstimate=fpsEstimate*.96+(.04/rawDt);qualitySamples+=rawDt;if(qualitySamples>3){qualitySamples=0;quality=fpsEstimate<38?'low':'high';}}
+    if((!V||V.profile.quality==='auto')&&rawDt>0&&rawDt<.25){fpsEstimate=fpsEstimate*.96+(.04/rawDt);qualitySamples+=rawDt;if(qualitySamples>3){qualitySamples=0;quality=fpsEstimate<38?'low':'high';}}
     if(state==='play'&&!paused){
       simulationAccumulator+=Math.min(rawDt,.25);
       let steps=0;
@@ -314,7 +317,7 @@ function gameForgeShooterBoot() {
       }
       if(steps===MAX_SIM_STEPS&&simulationAccumulator>=SIM_DT)simulationAccumulator=0;
     }else simulationAccumulator=0;
-    render();frames++;requestAnimationFrame(loop);
+    render();V?.finish(ctx,W,H);frames++;requestAnimationFrame(loop);
   }
   $('start').addEventListener('click',()=>{if(state==='intermission')initStage();else newGame();});
   $('pause').addEventListener('click',()=>{if(state==='play'){paused=!paused;simulationAccumulator=0;}});

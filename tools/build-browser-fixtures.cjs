@@ -37,6 +37,19 @@ for(const [dimension,genres] of Object.entries(parser.styles)){
   matrix.push({dimension,genre,slug,files:Object.keys(files)});
  }
 }
+const graphicsMatrix=[];
+for(const entry of [
+ {slug:'graphics-pixel-2d',dimension:'2d',genre:'shooter',style:'pixel',instruction:'Visual pixel art, qualidade alta.'},
+ {slug:'graphics-natural-3d',dimension:'3d',genre:'rpg',style:'natural',instruction:'Visual naturalista, qualidade alta, pôr do sol.'}
+]){
+ const source='# Perfil gráfico '+entry.slug;
+ const spec=parser.parseGdd(source,entry.instruction,{genre:entry.genre,dimension:entry.dimension});
+ const files=generator.generate(spec,source);validateFiles(files,entry.dimension,entry.genre);
+ const directory=path.join(output,entry.slug);fs.mkdirSync(directory);
+ for(const [filename,contents] of Object.entries(files))fs.writeFileSync(path.join(directory,filename),contents);
+ graphicsMatrix.push(entry);
+}
+fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');
 }

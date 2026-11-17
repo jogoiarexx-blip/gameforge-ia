@@ -59,6 +59,8 @@ jobs:
         run: python tests/browser-gameplay-lifecycle-v5.py
       - name: GF-TRAIN-06 — Validar checkpoint de campanha exportada no Chromium
         run: python tests/browser-shooter-checkpoint-v6.py
+      - name: GF-TRAIN-07 — Verificar checkpoints RPG e plataforma 3D nos ZIPs
+        run: python tests/browser-adventure-checkpoints-v7.py
       - name: GF-005 — Continuar projeto, restaurar GLB e validar perda de armazenamento
         run: python tests/browser-project-continuity-gf005.py
       - name: Salvar capturas do navegador para auditoria

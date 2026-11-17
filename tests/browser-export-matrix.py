@@ -48,7 +48,7 @@ def run():
         try:
             for item in matrix:
                 label = item['slug']
-                viewport = {'width': 390, 'height': 844} if label in ('2d-arena', '3d-fps', '3d-urban-action') else {'width': 960, 'height': 720}
+                viewport = {'width': 390, 'height': 844} if label in ('2d-simulation', '2d-arena', '3d-fps', '3d-urban-action') else {'width': 960, 'height': 720}
                 page = browser.new_page(viewport=viewport)
                 page_errors = []
                 remote_requests = []
@@ -134,7 +134,7 @@ def run():
                     assert not remote_requests, (label, remote_requests)
                     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), (label, 'rolagem horizontal')
                     results.append(label)
-                    if label in ('2d-arena', '3d-fps', '3d-shooter', '3d-urban-action'):
+                    if label in ('2d-simulation', '2d-arena', '3d-fps', '3d-shooter', '3d-urban-action'):
                         page.screenshot(path=str(screenshots / (label + '.png')), full_page=True)
                 except Exception as exc:
                     page.screenshot(path=str(screenshots / (label + '-failure.png')), full_page=True)
@@ -360,7 +360,7 @@ def run():
 
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == 18
+            assert len(results) == len(matrix) + 3
         finally:
             browser.close()
             server.shutdown()

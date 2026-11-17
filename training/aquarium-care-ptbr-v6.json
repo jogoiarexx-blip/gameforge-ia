@@ -1,0 +1,249 @@
+{
+  "version": 6,
+  "purpose": "40 pedidos de cuidado, valorização e restrições; regressão do compilador, não fine-tuning externo",
+  "cases": [
+    {
+      "instruction": "Quero cuidar de aquário com peixes crescendo e vender",
+      "expected": {}
+    },
+    {
+      "instruction": "qro cuidar de peixinhos no aquariu",
+      "expected": {}
+    },
+    {
+      "instruction": "Quero joguinho de peixinho pra dar comida",
+      "expected": {}
+    },
+    {
+      "instruction": "Quero criar peixes e dar ração no celular",
+      "expected": {}
+    },
+    {
+      "instruction": "Quero aquário para alimentar e vender a 60 FPS no celular",
+      "expected": {}
+    },
+    {
+      "instruction": "Quero cuidar de aquário com fome em 10 segundos",
+      "expected": {
+        "hungerSeconds": 10
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário com saciedade dura 20 segundos",
+      "expected": {
+        "hungerSeconds": 20
+      }
+    },
+    {
+      "instruction": "Cuidar de peixes, alimentar a cada 12 segundos",
+      "expected": {
+        "hungerSeconds": 12
+      }
+    },
+    {
+      "instruction": "Quero aquário com peixes para comer de 15 em 15 segundos",
+      "expected": {
+        "hungerSeconds": 15
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário e dar comida cada 9 segundos",
+      "expected": {
+        "hungerSeconds": 9
+      }
+    },
+    {
+      "instruction": "Aquário para cuidar, sem fome",
+      "expected": {
+        "hungerEnabled": false
+      }
+    },
+    {
+      "instruction": "Quero aquário para cuidar, não quero fome",
+      "expected": {
+        "hungerEnabled": false
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário sem precisar alimentar",
+      "expected": {
+        "hungerEnabled": false,
+        "feedingRequired": false
+      }
+    },
+    {
+      "instruction": "Quero aquário onde o peixe cresce sem alimentação",
+      "expected": {
+        "hungerEnabled": false,
+        "feedingRequired": false
+      }
+    },
+    {
+      "instruction": "Quero criar peixes, não quero peixe com fome",
+      "expected": {
+        "hungerEnabled": false
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário, sem fome, depois com fome em 14 segundos",
+      "expected": {
+        "hungerEnabled": true,
+        "hungerSeconds": 14
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário com água suja em 8 segundos",
+      "expected": {
+        "waterEnabled": true,
+        "waterSeconds": 8
+      }
+    },
+    {
+      "instruction": "Quero cuidar de peixes e trocar água a cada 25 segundos",
+      "expected": {
+        "waterEnabled": true,
+        "waterSeconds": 25
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário com água limpa",
+      "expected": {
+        "waterEnabled": true
+      }
+    },
+    {
+      "instruction": "Aquário para cuidar sem água suja",
+      "expected": {
+        "waterEnabled": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário sem fome e com água suja em 16 segundos",
+      "expected": {
+        "hungerEnabled": false,
+        "waterEnabled": true,
+        "waterSeconds": 16
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário sem precisar limpar a água",
+      "expected": {
+        "waterEnabled": false
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário com fome e sem tiros",
+      "expected": {
+        "hungerEnabled": true
+      }
+    },
+    {
+      "instruction": "Quero criar peixes sem tiros com fome em 11 segundos",
+      "expected": {
+        "hungerEnabled": true,
+        "hungerSeconds": 11
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário e vender filhotes",
+      "expected": {
+        "sellYoung": true
+      }
+    },
+    {
+      "instruction": "Quero aquário para vender peixe ainda filhote",
+      "expected": {
+        "sellYoung": true
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário, vender os peixes pequenos",
+      "expected": {
+        "sellYoung": true
+      }
+    },
+    {
+      "instruction": "Quero cuidar de peixes e vender em qualquer idade",
+      "expected": {
+        "sellYoung": true
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário com venda antecipada",
+      "expected": {
+        "sellYoung": true
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário sem vender filhotes",
+      "expected": {
+        "sellYoung": false
+      }
+    },
+    {
+      "instruction": "Aquário para cuidar, vender filhotes, depois vender somente adultos",
+      "expected": {
+        "sellYoung": false
+      }
+    },
+    {
+      "instruction": "Quero aquário para cuidar, só vender quando crescer",
+      "expected": {
+        "sellYoung": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário, filhote vale 4, jovem vale 14, adulto vale 30",
+      "expected": {
+        "juvenilePrice": 4,
+        "youngPrice": 14,
+        "price": 30
+      }
+    },
+    {
+      "instruction": "Quero cuidar de peixes, adulto vale 40 moedas",
+      "expected": {
+        "price": 40
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário com 2 tanques",
+      "expected": {
+        "slots": 2
+      }
+    },
+    {
+      "instruction": "Quero cuidar de peixes em 6 aquários",
+      "expected": {
+        "slots": 6
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário, crescer em 30 segundos, fome em 6 segundos",
+      "expected": {
+        "seconds": 30,
+        "hungerSeconds": 6
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário sem cuidados",
+      "expected": {
+        "hungerEnabled": false,
+        "waterEnabled": false,
+        "feedingRequired": false
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário com reprodução e genética",
+      "expected": {
+        "pending": "simulation-breeding"
+      }
+    },
+    {
+      "instruction": "Quero cuidar de peixes e comprar ração",
+      "expected": {
+        "pending": "simulation-paid-food"
+      }
+    }
+  ]
+}

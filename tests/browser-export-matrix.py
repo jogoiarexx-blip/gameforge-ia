@@ -390,9 +390,53 @@ def run():
                 finally:
                     page.close()
 
+            # Cuidado real por tanque, interrupção/retomada e venda com valor por idade.
+            care_page = browser.new_page(viewport={'width': 390, 'height': 844})
+            care_errors = []
+            care_page.on('pageerror', lambda error: care_errors.append(str(error)))
+            try:
+                care_page.goto(origin + '/tests/_browser_output/aquarium-care/index.html', wait_until='load')
+                care_page.locator('#start').click()
+                care_page.get_by_role('button', name='Comprar peixe', exact=True).click()
+                care_page.get_by_role('button', name='Alimentar', exact=True).click()
+                care_page.locator('[data-control="right"]').click()
+                care_page.get_by_role('button', name='Comprar peixe', exact=True).click()
+                care_page.locator('[data-control="left"]').click()
+                care_page.wait_for_function('window.__gameforgeTelemetry().simulation.tanks[0].water === 0', timeout=12000)
+                frozen = care_page.evaluate('window.__gameforgeTelemetry().simulation')
+                assert abs(frozen['slots'][0]['age'] - 5) < 1e-6, frozen
+                assert frozen['slots'][1]['age'] == 0, frozen
+                assert frozen['slots'][1]['satiety'] == 0, frozen
+                care_page.locator('#pause').click()
+                paused_care = care_page.evaluate('window.__gameforgeTelemetry().simulation')
+                care_page.wait_for_timeout(350)
+                assert care_page.evaluate('window.__gameforgeTelemetry().simulation') == paused_care
+                care_page.locator('#pause').click()
+                care_page.get_by_role('button', name='Alimentar', exact=True).click()
+                care_page.get_by_role('button', name='Trocar água', exact=True).click()
+                care_page.wait_for_function('window.__gameforgeTelemetry().simulation.slots[0].age >= 6', timeout=6000)
+                active_care = care_page.evaluate('window.__gameforgeTelemetry()')
+                assert active_care['selected']['value'] >= 12, active_care
+                assert active_care['simulation']['slots'][1]['age'] == 0
+                assert 'Saciedade' in care_page.locator('#mission').inner_text()
+                assert care_page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+                care_page.screenshot(path=str(screenshots / 'aquarium-care-mobile.png'), full_page=True)
+                care_page.get_by_role('button', name='Vender peixe', exact=True).click()
+                care_page.wait_for_function("window.__gameforgeTelemetry().state === 'victory'")
+                sold = care_page.evaluate('window.__gameforgeTelemetry().simulation')
+                care_page.keyboard.press('3')
+                assert care_page.evaluate('window.__gameforgeTelemetry().simulation') == sold
+                assert sold['sales'] == 1 and sold['slots'][0] is None
+                assert not care_errors, care_errors
+                results.append('aquarium-care-mobile')
+            except Exception as exc:
+                failures.append(('aquarium-care-mobile', str(exc), care_errors, []))
+            finally:
+                care_page.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 3 + len(graphics_matrix)
+            assert len(results) == len(matrix) + 4 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

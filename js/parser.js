@@ -299,6 +299,9 @@
       interpreted.campaign={maxStages:1,detectedStages:allLevels.length,omittedStages:Math.max(0,allLevels.length-1),prototype:true};
       interpreted.implementation.applied=interpreted.implementation.applied.filter(x=>!['stage-count','difficulty'].includes(x.id));
       interpreted.implementation.applied.push({id:'simulation-cycle',description:sim.config.label+': '+sim.config.start+', '+sim.config.care+', '+sim.config.finish+(sim.config.domain==='farm'?' e vender colheita':''),where:'Ciclo econômico 2D'});
+      if(sim.config.aquariumCare?.enabled)interpreted.implementation.applied.push({id:'aquarium-care',
+       description:'Aquário: valor por crescimento; '+(sim.config.aquariumCare.hungerEnabled?'saciedade por tanque':'fome desativada')+
+        (sim.config.aquariumCare.waterEnabled?'; qualidade e troca de água':'')+(sim.config.aquariumCare.sellYoung?'; venda de filhotes permitida':'; venda ao atingir idade adulta'),where:'Aquário 2D'});
       interpreted.implementation.pending.push(...sim.pending);
       interpreted.implementation.warnings.push(...sim.warnings);
       if(allLevels.length>1||/\b(?:[2-9]|[1-9][0-9]|duas|dois|tres|quatro|cinco)\s+fases\b/.test(norm))interpreted.implementation.pending.push({id:'simulation-campaign',description:'Campanha de simulação: somente um ciclo econômico está implementado',where:'Jogo inteiro'});
@@ -315,6 +318,7 @@
     spec.implementation.applied.push(...result.applied);
     spec.implementation.pending.push(...result.pending);
     spec.implementation.warnings.push(...result.warnings);
+    spec.implementation.requirements=[...spec.implementation.applied,...spec.implementation.pending].slice(0,120);
     spec.detected.push('Visual: '+result.profile.style+' · '+result.profile.atmosphere+' · '+result.profile.quality);
   }
   function creationInstruction(spec,instruction=''){

@@ -1,3 +1,9 @@
+# GameForge Studio v0.24 — aquário com cuidado e valorização
+
+O motor de aquário 2D agora executa saciedade por tanque, pausa de crescimento por falta de alimento, qualidade/troca de água quando pedida e cotação por idade. O comando pode permitir venda de filhotes ou exigir idade adulta. Alimentação e limpeza são gratuitas; comércio de ração, reprodução, doenças e salvamento do progresso continuam pendentes. Projetos v1 preservam seu ciclo original.
+
+Leia o [treinamento de cuidados do aquário](docs/TREINAMENTO_AQUARIO_GF_TRAIN_06.md).
+
 # GameForge Studio v0.23 — técnicas de projetos estudados
 
 Novo estudo seletivo de 22 arquivos em nove projetos públicos das contas jogoiarexx-blip e luispauloalves500: 17 técnicas com fontes e limites, recuperação por pedidos em português e plano técnico incluído em cada exportação. Cache de desenhos procedurais autoral, limitado por memória, aplicado aos atores/superfícies compartilhados 2D.

@@ -1,0 +1,3347 @@
+{
+  "version": 3,
+  "name": "GF-TRAIN-03: comandos compostos PT-BR com escopo por fase",
+  "notes": "120 exemplos sintéticos rotulados, não fine tuning nem treinamento de pesos de modelo",
+  "cases": [
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 4 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 4
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 4 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 4
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 4 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 4
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 7 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 7 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 7 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 11 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 11 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 11 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 17 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 17
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 17 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 17
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de arena de combate 3D com 4 fases. Na fase 2, coloque 17 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 17
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 4 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 4
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 4 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 4
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 4 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 4
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 7 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 7 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 7 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 11 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 11 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 11 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 17 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 17
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 17 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 17
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de FPS de combate 3D com 4 fases. Na fase 2, coloque 17 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 17
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 4 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 4
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 4 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 4
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 4 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 4
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 7 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 7 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 7 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 11 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 11 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 11 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 17 inimigos e na fase 3, sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 17
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 17 inimigos e na fase 3, sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 17
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de RPG de aventura 3D com 4 fases. Na fase 2, coloque 17 inimigos e na fase 3, sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 17
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 2 ondas por fase; na fase 2 cenário neon; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 2,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "neon"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 2 ondas por fase; na fase 2 cenário deserto; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 2,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "desert"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 2 ondas por fase; na fase 2 cenário floresta; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 2,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "forest"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 2 ondas por fase; na fase 2 cenário ruínas; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 2,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 3 ondas por fase; na fase 2 cenário neon; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 3,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "neon"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 3 ondas por fase; na fase 2 cenário deserto; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 3,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "desert"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 3 ondas por fase; na fase 2 cenário floresta; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 3,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "forest"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 3 ondas por fase; na fase 2 cenário ruínas; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 3,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 4 ondas por fase; na fase 2 cenário neon; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 4,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "neon"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 4 ondas por fase; na fase 2 cenário deserto; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 4,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "desert"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 4 ondas por fase; na fase 2 cenário floresta; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 4,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "forest"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 4 ondas por fase; na fase 2 cenário ruínas; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 4,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 5 ondas por fase; na fase 2 cenário neon; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 5,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "neon"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 5 ondas por fase; na fase 2 cenário deserto; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 5,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "desert"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 5 ondas por fase; na fase 2 cenário floresta; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 5,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "forest"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 5 ondas por fase; na fase 2 cenário ruínas; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 5,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 6 ondas por fase; na fase 2 cenário neon; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 6,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "neon"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 6 ondas por fase; na fase 2 cenário deserto; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 6,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "desert"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 6 ondas por fase; na fase 2 cenário floresta; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 6,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "forest"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de navinha 3D com 4 fases, 6 ondas por fase; na fase 2 cenário ruínas; chefe somente na última.",
+      "expected": {
+        "genre": "shooter",
+        "dimension": "3d",
+        "stages": 4,
+        "waves": 6,
+        "boss": [
+          "no",
+          "no",
+          "no",
+          "yes"
+        ],
+        "stageConfigs": {
+          "1": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ],
+          "2": [
+            "theme"
+          ],
+          "3": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 1 voltas por fase; na fase 2 cenário neon e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 1,
+        "stageConfigs": {
+          "1": {
+            "theme": "neon"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 1 voltas por fase; na fase 2 cenário deserto e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 1,
+        "stageConfigs": {
+          "1": {
+            "theme": "desert"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 1 voltas por fase; na fase 2 cenário floresta e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 1,
+        "stageConfigs": {
+          "1": {
+            "theme": "forest"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 2 voltas por fase; na fase 2 cenário neon e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 2,
+        "stageConfigs": {
+          "1": {
+            "theme": "neon"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 2 voltas por fase; na fase 2 cenário deserto e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 2,
+        "stageConfigs": {
+          "1": {
+            "theme": "desert"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 2 voltas por fase; na fase 2 cenário floresta e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 2,
+        "stageConfigs": {
+          "1": {
+            "theme": "forest"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 3 voltas por fase; na fase 2 cenário neon e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 3,
+        "stageConfigs": {
+          "1": {
+            "theme": "neon"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 3 voltas por fase; na fase 2 cenário deserto e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 3,
+        "stageConfigs": {
+          "1": {
+            "theme": "desert"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 3 voltas por fase; na fase 2 cenário floresta e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 3,
+        "stageConfigs": {
+          "1": {
+            "theme": "forest"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 4 voltas por fase; na fase 2 cenário neon e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 4,
+        "stageConfigs": {
+          "1": {
+            "theme": "neon"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 4 voltas por fase; na fase 2 cenário deserto e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 4,
+        "stageConfigs": {
+          "1": {
+            "theme": "desert"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 4 voltas por fase; na fase 2 cenário floresta e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 4,
+        "stageConfigs": {
+          "1": {
+            "theme": "forest"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 5 voltas por fase; na fase 2 cenário neon e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 5,
+        "stageConfigs": {
+          "1": {
+            "theme": "neon"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 5 voltas por fase; na fase 2 cenário deserto e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 5,
+        "stageConfigs": {
+          "1": {
+            "theme": "desert"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um jogo de corrida 3D com 3 fases e 5 voltas por fase; na fase 2 cenário floresta e na fase 3 cenário ruínas.",
+      "expected": {
+        "genre": "racing",
+        "dimension": "3d",
+        "stages": 3,
+        "laps": 5,
+        "stageConfigs": {
+          "1": {
+            "theme": "forest"
+          },
+          "2": {
+            "theme": "ruins"
+          }
+        },
+        "absence": {
+          "0": [
+            "theme"
+          ]
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 3 inimigos; na fase 3 coloque 4 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 3
+          },
+          "2": {
+            "enemies": 4
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 3 inimigos; na fase 3 coloque 8 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 3
+          },
+          "2": {
+            "enemies": 8
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 3 inimigos; na fase 3 coloque 12 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 3
+          },
+          "2": {
+            "enemies": 12
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 5 inimigos; na fase 3 coloque 4 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 5
+          },
+          "2": {
+            "enemies": 4
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 5 inimigos; na fase 3 coloque 8 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 5
+          },
+          "2": {
+            "enemies": 8
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 5 inimigos; na fase 3 coloque 12 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 5
+          },
+          "2": {
+            "enemies": 12
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 7 inimigos; na fase 3 coloque 4 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "enemies": 4
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 7 inimigos; na fase 3 coloque 8 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "enemies": 8
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 7 inimigos; na fase 3 coloque 12 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "enemies": 12
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 9 inimigos; na fase 3 coloque 4 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 9
+          },
+          "2": {
+            "enemies": 4
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 9 inimigos; na fase 3 coloque 8 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 9
+          },
+          "2": {
+            "enemies": 8
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 9 inimigos; na fase 3 coloque 12 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 9
+          },
+          "2": {
+            "enemies": 12
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 11 inimigos; na fase 3 coloque 4 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "enemies": 4
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 11 inimigos; na fase 3 coloque 8 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "enemies": 8
+          }
+        }
+      }
+    },
+    {
+      "gdd": "# Aventura de Arena 3D\n## Fase 1 — Começo\n2 inimigos\n## Fase 2 — Meio\n2 inimigos\n## Fase 3 — Final\n2 inimigos",
+      "instruction": "Na fase 2 coloque 11 inimigos; na fase 3 coloque 12 inimigos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "0": {
+            "enemies": 2
+          },
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "enemies": 12
+          }
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e crafting, árvore de habilidades e multiplayer. Na fase 2 sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e multiplayer, crafting e árvore de habilidades. Na fase 2 sobreviver por 30 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 30
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e crafting, árvore de habilidades e multiplayer. Na fase 2 sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e multiplayer, crafting e árvore de habilidades. Na fase 2 sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e crafting, árvore de habilidades e multiplayer. Na fase 2 sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e multiplayer, crafting e árvore de habilidades. Na fase 2 sobreviver por 60 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 60
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e crafting, árvore de habilidades e multiplayer. Na fase 2 sobreviver por 75 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 75
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e multiplayer, crafting e árvore de habilidades. Na fase 2 sobreviver por 75 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 75
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e crafting, árvore de habilidades e multiplayer. Na fase 2 sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e multiplayer, crafting e árvore de habilidades. Na fase 2 sobreviver por 90 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 90
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e crafting, árvore de habilidades e multiplayer. Na fase 2 sobreviver por 120 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 120
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e multiplayer, crafting e árvore de habilidades. Na fase 2 sobreviver por 120 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 120
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e crafting, árvore de habilidades e multiplayer. Na fase 2 sobreviver por 150 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 150
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie um RPG 3D com 3 fases e multiplayer, crafting e árvore de habilidades. Na fase 2 sobreviver por 150 segundos.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 3,
+        "stageConfigs": {
+          "1": {
+            "mission": "survive",
+            "seconds": 150
+          }
+        },
+        "pending": [
+          "craft",
+          "skill-tree",
+          "network"
+        ],
+        "absence": {
+          "0": [
+            "mission"
+          ],
+          "2": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 4 fases. Na fase dois coloque 4 inimigos, e na fase três sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 4
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 4 fases. Na fase dois coloque 5 inimigos, e na fase três sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 5
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 4 fases. Na fase dois coloque 6 inimigos, e na fase três sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 6
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 4 fases. Na fase dois coloque 7 inimigos, e na fase três sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 7
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 4 fases. Na fase dois coloque 8 inimigos, e na fase três sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 8
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 4 fases. Na fase dois coloque 9 inimigos, e na fase três sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 9
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 4 fases. Na fase dois coloque 10 inimigos, e na fase três sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 10
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 4 fases. Na fase dois coloque 11 inimigos, e na fase três sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 11
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 4 fases. Na fase dois coloque 12 inimigos, e na fase três sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 12
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Jogo de arena 3D com 4 fases. Na fase dois coloque 13 inimigos, e na fase três sobreviver por 45 segundos.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "enemies": 13
+          },
+          "2": {
+            "mission": "survive",
+            "seconds": 45
+          }
+        },
+        "absence": {
+          "0": [
+            "enemies",
+            "mission"
+          ],
+          "1": [
+            "mission"
+          ],
+          "2": [
+            "enemies"
+          ],
+          "3": [
+            "mission"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com 4 fases. Na fase 1 sem chefe, e na fase 3 coloque chefe.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "0": {
+            "boss": "no"
+          },
+          "2": {
+            "boss": "yes"
+          }
+        },
+        "absence": {
+          "1": [
+            "boss"
+          ],
+          "3": [
+            "boss"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com 4 fases. Na fase 1 sem chefe, e na fase 4 coloque chefe.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "0": {
+            "boss": "no"
+          },
+          "3": {
+            "boss": "yes"
+          }
+        },
+        "absence": {
+          "1": [
+            "boss"
+          ],
+          "2": [
+            "boss"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com 4 fases. Na fase 2 sem chefe, e na fase 3 coloque chefe.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "boss": "no"
+          },
+          "2": {
+            "boss": "yes"
+          }
+        },
+        "absence": {
+          "0": [
+            "boss"
+          ],
+          "3": [
+            "boss"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie jogo de arena 3D com 4 fases. Na fase 2 sem chefe, e na fase 4 coloque chefe.",
+      "expected": {
+        "genre": "arena",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "boss": "no"
+          },
+          "3": {
+            "boss": "yes"
+          }
+        },
+        "absence": {
+          "0": [
+            "boss"
+          ],
+          "2": [
+            "boss"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie jogo de fps 3D com 4 fases. Na fase 1 sem chefe, e na fase 3 coloque chefe.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "0": {
+            "boss": "no"
+          },
+          "2": {
+            "boss": "yes"
+          }
+        },
+        "absence": {
+          "1": [
+            "boss"
+          ],
+          "3": [
+            "boss"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie jogo de fps 3D com 4 fases. Na fase 1 sem chefe, e na fase 4 coloque chefe.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "0": {
+            "boss": "no"
+          },
+          "3": {
+            "boss": "yes"
+          }
+        },
+        "absence": {
+          "1": [
+            "boss"
+          ],
+          "2": [
+            "boss"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie jogo de fps 3D com 4 fases. Na fase 2 sem chefe, e na fase 3 coloque chefe.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "boss": "no"
+          },
+          "2": {
+            "boss": "yes"
+          }
+        },
+        "absence": {
+          "0": [
+            "boss"
+          ],
+          "3": [
+            "boss"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie jogo de fps 3D com 4 fases. Na fase 2 sem chefe, e na fase 4 coloque chefe.",
+      "expected": {
+        "genre": "fps",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "1": {
+            "boss": "no"
+          },
+          "3": {
+            "boss": "yes"
+          }
+        },
+        "absence": {
+          "0": [
+            "boss"
+          ],
+          "2": [
+            "boss"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie jogo de rpg 3D com 4 fases. Na fase 1 sem chefe, e na fase 3 coloque chefe.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "0": {
+            "boss": "no"
+          },
+          "2": {
+            "boss": "yes"
+          }
+        },
+        "absence": {
+          "1": [
+            "boss"
+          ],
+          "3": [
+            "boss"
+          ]
+        }
+      }
+    },
+    {
+      "instruction": "Crie jogo de rpg 3D com 4 fases. Na fase 1 sem chefe, e na fase 4 coloque chefe.",
+      "expected": {
+        "genre": "rpg",
+        "dimension": "3d",
+        "stages": 4,
+        "stageConfigs": {
+          "0": {
+            "boss": "no"
+          },
+          "3": {
+            "boss": "yes"
+          }
+        },
+        "absence": {
+          "1": [
+            "boss"
+          ],
+          "2": [
+            "boss"
+          ]
+        }
+      }
+    }
+  ]
+}

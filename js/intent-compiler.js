@@ -52,22 +52,42 @@ function stageIndex(text){
  return m?number(m[1])-1:null;
 }
 function requirements(text,origin){
- // Dividir por linhas preserva escopo de titulos: informacoes de fase nao vazam para outras fases.
- const lines=String(text||'').split(/\r?\n/),result=[],global=[];
+ // Quebrar comandos com mais de uma fase sem misturar requisitos: "fase 2 6
+ // inimigos; na fase 3 sobreviver 60 s". Cabeçalhos Markdown continuam
+ // definindo o escopo de suas linhas, e o texto original não é reescrito.
+ const lines=String(text||'').split(/\r?\n/),result=[];
  let current=null,scope=null;
+ const phaseRef='(?:fase|miss[aã]o|level|stage|etapa)\\s*(?:\\d{1,2}|um|uma|dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez)\\b';
+ // Segmenta somente delimitadores claros. Uma vírgula antes de "sem chefe"
+ // não muda o escopo; vírgulas que introduzem uma fase diferente, sim.
+ const stageStart=new RegExp('^(?:(?:na|no|para|da|do)\\s+)?'+phaseRef,'i');
+ const stageBoundary=new RegExp(',\\s*(?=(?:(?:na|no|para|da|do)\\s+)?'+phaseRef+')','gi');
+ const conjunctionBoundary=new RegExp('\\s+e\\s+(?=(?:(?:na|no|para|da|do)\\s+)?'+phaseRef+')','gi');
  for(let i=0;i<lines.length;i++){
-  const raw=lines[i].trim();if(!raw)continue;
-  const line=normalize(raw);
+  const raw=lines[i].trim();
+  if(!raw)continue;
   const heading=/^#{1,6}\s+/.test(raw);
-  const inline=stageIndex(line);
+  // Não fragmentar títulos de seção: eles gerenciam o escopo do GDD.
   if(heading){
-   current=inline;scope=inline!==null?'stage':'section';
-  } else if(inline!==null&&(/^[-*+]\s*/.test(raw)||/^(?:fase|missao|level|stage|etapa)\b/.test(line))){
-   current=inline;scope='stage';
+   const stage=stageIndex(raw);
+   current=stage;
+   scope=stage!==null?'stage':'section';
   }
   if(raw.length>2200)continue;
-  const record={text:raw,normal:line,origin,line:i+1,stage:inline!==null?inline:(scope==='stage'?current:null)};
-  result.push(record);
+  const pieces=heading?[raw]:raw
+    .replace(stageBoundary,';')
+    .replace(conjunctionBoundary,'; ')
+    .split(/;|[!?]+|\.(?=\s)/).map(x=>x.trim()).filter(Boolean);
+  for(const piece of pieces){
+   const line=normalize(piece);
+   const inline=stageIndex(line);
+   // "5 fases" é campanha, não escopo. Marcadores de fase no meio de
+   // uma frase definem o record específico, mas não contaminam a seção.
+   const explicit=inline!==null&&stageStart.test(line.replace(/^[-*+]\s*/,''));
+   if(!heading&&explicit&&origin==='GDD'){current=inline;scope='stage';}
+   const stage=inline!==null?inline:scope==='stage'?current:null;
+   result.push({text:piece,normal:line,origin,line:i+1,stage});
+  }
  }
  return result;
 }

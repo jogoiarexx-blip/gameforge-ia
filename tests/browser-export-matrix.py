@@ -491,9 +491,47 @@ def run():
                 finally:
                     page.close()
 
+            for domain in ['aquarium', 'farm', 'shop']:
+                page = browser.new_page(viewport={'width': 390, 'height': 844})
+                errors = []
+                page.on('pageerror', lambda error: errors.append(str(error)))
+                try:
+                    page.goto(origin + '/tests/_browser_output/automation-' + domain + '/index.html', wait_until='load')
+                    page.locator('#start').click()
+                    page.wait_for_function('window.__gameforgeTelemetry().simulation.automation.actions > 0')
+                    page.locator('#pause').click()
+                    frozen = page.evaluate('window.__gameforgeTelemetry().simulation')
+                    page.wait_for_timeout(250)
+                    assert page.evaluate('window.__gameforgeTelemetry().simulation') == frozen
+                    page.locator('#simulation-automation').click()
+                    assert page.evaluate('window.__gameforgeTelemetry().simulation.automation.paused')
+                    page.reload(wait_until='load')
+                    page.locator('#simulation-continue').click()
+                    assert page.evaluate('window.__gameforgeTelemetry().simulation.automation.paused')
+                    actions = page.evaluate('window.__gameforgeTelemetry().simulation.automation.actions')
+                    page.wait_for_timeout(300)
+                    assert page.evaluate('window.__gameforgeTelemetry().simulation.automation.actions') == actions
+                    page.locator('#simulation-automation').click()
+                    assert not page.evaluate('window.__gameforgeTelemetry().simulation.automation.paused')
+                    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+                    page.screenshot(path=str(screenshots / ('automation-' + domain + '.png')), full_page=True)
+                    page.wait_for_function("window.__gameforgeTelemetry().state === 'victory'", timeout=8000)
+                    won = page.evaluate('window.__gameforgeTelemetry().simulation')
+                    assert won['sales'] == 1 and won['money'] >= 0
+                    page.reload(wait_until='load')
+                    page.locator('#simulation-continue').click()
+                    assert page.evaluate('window.__gameforgeTelemetry().state') == 'victory'
+                    assert page.evaluate('window.__gameforgeTelemetry().simulation') == won
+                    assert not errors, errors
+                    results.append('automation-' + domain)
+                except Exception as exc:
+                    failures.append(('automation-' + domain, str(exc), errors, []))
+                finally:
+                    page.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 6 + len(graphics_matrix)
+            assert len(results) == len(matrix) + 9 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

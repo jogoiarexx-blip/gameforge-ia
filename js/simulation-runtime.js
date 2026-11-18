@@ -34,6 +34,10 @@ function gameForgeSimulationBoot(){
  const panel=document.createElement('div');panel.className='buttons';panel.style.padding='10px';
  (canvas.parentElement||document.body).appendChild(panel);
  const buttons=[];
+ if(c.automation?.enabled){
+  const toggle=document.createElement('button');toggle.id='simulation-automation';toggle.type='button';panel.appendChild(toggle);
+  toggle.addEventListener('click',()=>{if(state==='play'){s.automation.paused=!s.automation.paused;persist();update();}});
+ }
  const say=t=>{el('message').textContent=t;el('message').style.opacity='1';noticeUntil=frames+150;};
  function action(kind){
   if(state!=='play'||paused)return;
@@ -49,6 +53,7 @@ function gameForgeSimulationBoot(){
  el('pause').addEventListener('click',()=>{if(state==='play'){paused=!paused;persist();update();}});
  el('control-help').textContent=aquarium?'← → selecionar tanque · 1 comprar · 2 alimentar · 3 vender'+(c.aquariumCare.waterEnabled?' · 4 trocar água':''):'← → selecionar · 1 produzir · 2 cuidar · 3 colher/vender · 4 vender colheita';
  el('overlay-sub').textContent=c.label+': '+c.start+' → '+c.care+' → '+c.finish+(c.domain==='farm'?' → Vender':'')+(aquarium?'. O peixe cresce enquanto está alimentado'+(c.aquariumCare.waterEnabled?' e com água limpa':'')+'. O valor aumenta com a idade. Alimentar e trocar água são gratuitos.':'')+(save.enabled?'. Progresso salvo neste navegador. Fechado ou pausado, o tempo não avança. Novo jogo substitui o progresso anterior.':'. Salvamento desativado.');
+ if(c.automation?.enabled)el('overlay-sub').textContent=c.label+'. Ciclo automático a cada '+c.automation.intervalSeconds+' s, com custos normais. Você pode desligar a automação e jogar manualmente. Pausar congela o jogo. '+(save.enabled?'Progresso salvo neste navegador. Novo jogo substitui o anterior.':'Salvamento desativado.');
  function input(key){
   if(state!=='play'||paused)return;
   if(key==='ArrowRight')selected=(selected+1)%c.slots;
@@ -66,6 +71,7 @@ function gameForgeSimulationBoot(){
   else button.disabled=true;
  }
  function update(){
+  if(c.automation?.enabled){const toggle=el('simulation-automation');toggle.textContent=s.automation.paused?'Ligar automação':'Desligar automação';toggle.disabled=state!=='play';}
   saveButton.disabled=state==='menu';saveLabel.textContent=saveStatus;
   el('health').textContent=s.money+' $';el('score').textContent=s.earned+'/'+c.target;el('ammo').textContent=aquarium?s.slots.filter(Boolean).length+' peixes':s.inventory;el('level').textContent=c.label;
   el('mission').textContent=(paused?'Pausado · ':'')+'Vendas: '+s.sales+' · Espaço '+(selected+1);
@@ -77,6 +83,7 @@ function gameForgeSimulationBoot(){
      (c.aquariumCare.waterEnabled?' · Água '+Math.ceil(q.water)+'%':'')+
      (q.blocked.length?' · Precisa: '+q.blocked.join(', '):q.stage==='adult'?' · Pronto para vender':' · Crescendo'):'');
   }
+  if(c.automation?.enabled)el('mission').textContent+=' · Automação '+(s.automation.paused?'desligada':'ligada');
   for(const [b,k] of buttons){
    const item=s.slots[selected];
    b.disabled=state!=='play'||paused||(k==='start'?!!item||s.money<c.cost:k==='care'?!R.canCare(s,c,selected):k==='clean'?!R.canClean(s,c,selected):k==='sell'?!s.inventory:!R.canFinish(s,c,selected));
@@ -110,7 +117,7 @@ function gameForgeSimulationBoot(){
    }else ctx.fillText('Vazio',x+8,250);
   }
  }
- function frame(t){if(frames>noticeUntil)el('message').style.opacity='0';const dt=last?Math.min(.1,Math.max(0,(t-last)/1000)):0;last=t;frames++;if(state==='play'&&!paused){R.tick(s,c,dt);saveElapsed+=dt;if(saveElapsed>=5)persist();}update();draw();V?.finish(ctx,960,540);requestAnimationFrame(frame);}
+ function frame(t){if(frames>noticeUntil)el('message').style.opacity='0';const dt=last?Math.min(.1,Math.max(0,(t-last)/1000)):0;last=t;frames++;if(state==='play'&&!paused){R.tick(s,c,dt);if(s.complete){victory();persist();}saveElapsed+=dt;if(saveElapsed>=5)persist();}update();draw();V?.finish(ctx,960,540);requestAnimationFrame(frame);}
  update();requestAnimationFrame(frame);
 }
 root.gameForgeSimulationBoot=gameForgeSimulationBoot;

@@ -20,16 +20,16 @@ function negativeAt(text,index){
 }
 function matches(pattern,text){return text.matchAll(new RegExp(pattern.source.replaceAll('(\\d+)','('+numeric+')'),'g'));}
 const domains={
- aquarium:{label:'Aquário',pattern:/\b(aquario|aquarismo|criar peixes|cuidar (?:de|dos) peixes|(?:jogo|joguinho|game) (?:de|dos) peixes)\b/,item:'Peixe',start:'Comprar peixe',care:'Alimentar',finish:'Vender peixe',cost:8,price:22,seconds:18},
+ aquarium:{label:'Aquário',pattern:/\b(aquario|aquarismo|criar peixes|cuidar (?:de|dos) peixes|(?:jogo|joguinho|game) (?:idle )?(?:de|dos) peixes)\b/,item:'Peixe',start:'Comprar peixe',care:'Alimentar',finish:'Vender peixe',cost:8,price:22,seconds:18},
  farm:{label:'Fazenda',pattern:/\b(fazenda|farming simulator|simulador agricola|plantar e colher|horta)\b/,item:'Plantação',start:'Plantar',care:'Regar',finish:'Colher',cost:5,price:16,seconds:14},
- shop:{label:'Loja',pattern:/\b(simulador de (?:loja|mercado|supermercado)|(?:administrar|gerenciar|cuidar d[ae]|ter|abrir|minha) (?:uma |um |o |a )?(?:lojinha|loja|mercado|supermercado)|repor estoque|atender clientes)\b/,item:'Mercadoria',start:'Repor estoque',care:'Atender cliente',finish:'Vender produto',cost:9,price:24,seconds:10}
+ shop:{label:'Loja',pattern:/\b((?:simulador|jogo|game) (?:idle )?de (?:loja|mercado|supermercado)|(?:administrar|gerenciar|cuidar d[ae]|ter|abrir|minha) (?:uma |um |o |a )?(?:lojinha|loja|mercado|supermercado)|repor estoque|atender clientes)\b/,item:'Mercadoria',start:'Repor estoque',care:'Atender cliente',finish:'Vender produto',cost:9,price:24,seconds:10}
 };
 function inspect(text){
  const t=norm(text).replace(/\b(?:sem|nao quero|nao usar) 3\s*d\b/g,''),positive=t.split(/[.!?;,\n]|\bmas\b/).filter(c=>!/^\s*(?:sem|nao quero|nao usar)\b/.test(c)).join(' ');
  const matches=Object.entries(domains).filter(([,d])=>d.pattern.test(positive));
  // Um RPG numa fazenda continua RPG. Simulação explícita ou ciclo econômico
  // deve dominar a ambientação isolada.
- const named=/\b(simulacao|simulador|farming simulator|gerenciar|administrar|cuidar|cuido|plantar|colher|alimentar|vender|comprar|estoque|cresce|crescer|crescem|comer|dar comida|dar racao|ganhar tamanho|construir|criar peixes|atender|ter)\b/.test(positive);
+ const named=/\b(simulacao|simulador|automacao|automatizar|automatic[oa]|idle|farming simulator|gerenciar|administrar|cuidar|cuido|plantar|colher|alimentar|vender|comprar|estoque|cresce|crescer|crescem|comer|dar comida|dar racao|ganhar tamanho|construir|criar peixes|atender|ter)\b/.test(positive);
  const competing=/\b(rpg|plataforma|navinha|corrida|gta|mafia|tower defense|fps)\b/.test(positive.replace(/\b\d+\s*fps\b/g,''));
  return {identified:matches.length>0&&named&&!competing,domain:matches[0]?.[0]||'farm',
    matches:matches.map(([id])=>id),unsupported3d:/\b3\s*d\b|primeira pessoa|terceira pessoa/.test(positive)};
@@ -71,7 +71,7 @@ function compile(text,command=''){
    }
    if(/\b(?:com alimentacao|precisa alimentar|ativar alimentacao)\b/.test(record)&&!negativeAt(record,record.search(/alimentacao|alimentar/))){cfg.hungerEnabled=true;cfg.feedingRequired=true;}
    if(/\b(?:sem cuidados?|nao quero necessidades|sem necessidades)\b/.test(record)){cfg.hungerEnabled=false;cfg.waterEnabled=false;cfg.feedingRequired=false;}
-   if(/\b(?:agua suja|agua limpa|limpar (?:o aquario|o tanque|a agua)|trocar (?:a )?agua|limpeza da agua|qualidade da agua)\b/.test(record))cfg.waterEnabled=!negativeAt(record,record.search(/agua|limpar|trocar/));
+   if(/\b(?:agua suja|agua limpa|limpar (?:o aquario|o tanque|a agua)|trocar (?:a )?agua|limpeza da agua|qualidade da agua|limpeza automatica|troca (?:de )?agua automatica)\b/.test(record))cfg.waterEnabled=!negativeAt(record,record.search(/agua|limpar|trocar|limpeza/));
    const saleRules=[
     [/\b(?:vender (?:o |os |meu |meus )?(?:peixes? )?(?:ainda )?(?:filhotes?|jovens?|pequen[oa]s?)|vender (?:em |a )?qualquer (?:idade|tamanho)|venda antecipada)\b/,true],
     [/\b(?:vender (?:so|somente|apenas) (?:quando )?(?:adultos?|crescid[oa]s?)|so vender adulto|somente adultos|(?:so|somente|apenas) vender (?:quando )?crescer|vender (?:so|somente|apenas) quando crescer)\b/,false]
@@ -103,6 +103,32 @@ function compile(text,command=''){
  // Cada menção é interpretada na ordem; a última instrução prevalece.
  const savePattern=/\b(?:salvar|salvamento|save|guardar(?: o)? progresso|continuar amanha|continuar de onde parei)\b/g;
  for(const match of t.matchAll(savePattern))config.persistence.enabled=!negativeAt(t,match.index);
+ const auto={version:1,enabled:true,intervalSeconds:1,start:false,care:false,finish:false,sell:false,clean:false},autoEvents=[],autoSpans=[];
+ const relevant=['start','care','finish',...(config.domain==='farm'?['sell']:[]),...(config.domain==='aquarium'?['clean']:[])];
+ const collectAuto=(re,fields,manual=false)=>{
+  for(const m of t.matchAll(new RegExp(re.source,'g'))){
+   autoSpans.push([m.index,m.index+m[0].length]);
+   autoEvents.push({index:m.index,fields,enabled:manual?false:!negativeAt(t,m.index)});
+  }
+ };
+ collectAuto(/\b(?:automacao|(?:producao|ciclo|simulacao) automatic[oa]|automatizar (?:tudo|a producao|o ciclo)|idle)\b/,relevant);
+ collectAuto(/\bmodo manual\b/,relevant,true);
+ const startPattern={farm:/\b(?:plantar automaticamente|replantar automaticamente|plantio automatico|replantio automatico)\b/,aquarium:/\b(?:comprar (?:peixes?|filhotes?) automaticamente|compra automatica)\b/,shop:/\b(?:repor (?:o )?estoque automaticamente|reposicao automatica)\b/}[config.domain];
+ const carePattern={farm:/\b(?:regar automaticamente|irrigacao automatica)\b/,aquarium:/\b(?:alimentar(?: os peixes)? automaticamente|alimentacao automatica)\b/,shop:/\b(?:atender(?: clientes)? automaticamente|atendimento automatico)\b/}[config.domain];
+ collectAuto(startPattern,['start']);collectAuto(carePattern,['care']);
+ if(config.domain==='farm')collectAuto(/\b(?:colher automaticamente|colheita automatica)\b/,['finish']);
+ collectAuto(/\b(?:vender(?: (?:a )?colheita| (?:os )?peixes| (?:os )?produtos)? automaticamente|venda automatica)\b/,[config.domain==='farm'?'sell':'finish']);
+ if(config.domain==='aquarium')collectAuto(/\b(?:trocar (?:a )?agua automaticamente|limpeza automatica|troca (?:de )?agua automatica)\b/,['clean']);
+ for(const [re,field] of [
+  [/\b(?:plantio|replantio|compra|reposicao) manual\b/,'start'],[/\b(?:alimentacao|irrigacao|atendimento) manual\b/,'care'],
+  [/\bcolheita manual\b/,'finish'],[/\bvenda manual\b/,config.domain==='farm'?'sell':'finish'],[/\b(?:limpeza|troca de agua) manual\b/,'clean']
+ ])collectAuto(re,[field],true);
+ for(const event of autoEvents.sort((a,b)=>a.index-b.index))for(const field of event.fields)auto[field]=event.enabled;
+ for(const m of matches(/\b(?:automacao|ciclo automatico)\s*(?:a cada|cada|em)\s*(\d+)\s*segundos?/,t))if(!negativeAt(t,m.index)){
+  auto.intervalSeconds=Math.max(1,Math.min(60,number(m[1])));if(auto.intervalSeconds!==number(m[1]))warnings.push('Intervalo de automação limitado a '+auto.intervalSeconds+' segundos.');
+ }
+ if(config.domain==='aquarium'&&!config.aquariumCare?.waterEnabled)auto.clean=false;
+ auto.enabled=relevant.some(field=>auto[field]);if(auto.enabled)config.automation=auto;
  const pending=[];
  const unsupported=[['paid-food',/comprar racao|racao (?:custa|paga)|comida (?:custa|paga)/,'Loja e cobrança de alimentação'],
  ['health',/doencas?|peixes? (?:morrem?|morrendo)|morte dos peixes|saude dos peixes/,'Saúde, doenças e morte de peixes'],
@@ -112,12 +138,13 @@ function compile(text,command=''){
  ['vehicles',/tratores?|dirigir|veiculos?/,'Veículos dirigíveis'],
  ['recipes',/receitas?|cozinhar|restaurante/,'Receitas e preparo de alimentos'],
  ['weather',/clima|estacoes do ano|chuva/,'Clima e estações'],
- ['automation',/automatic[oa]|automatizar/,'Automação de produção'],
+ ['automation',/automatic(?:[oa]|amente)|automatizar|automacao|\bidle\b/,'Automação de produção'],
  ['walk',/andar|caminhar|personagem andando/,'Personagem caminhando pelo cenário']];
  for(const [id,re,label] of unsupported){
-  const scoped=id==='automation'?t.replace(/\b(?:salvamento|save|salvar|guardar (?:o )?progresso)\s+automatic(?:o|amente)\b/g,'salvar'):t;
+  const scoped=id==='automation'?t.replace(/\b(?:salvamento|save|salvar|guardar (?:o )?progresso)\s+automatic(?:o|amente)\b/g,match=>' '.repeat(match.length)):t;
   const requests=new Map();
   for(const m of scoped.matchAll(new RegExp(re.source,'g'))){
+   if(id==='automation'&&autoSpans.some(([start,end])=>m.index>=start&&m.index<end))continue;
    const part=id==='health'?(/doenca/.test(m[0])?'disease':/morr|morte/.test(m[0])?'death':'health'):id;
    requests.set(part,!negativeAt(scoped,m.index));
   }

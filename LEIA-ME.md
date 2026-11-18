@@ -1,3 +1,9 @@
+# GameForge Studio v0.28 — ciclos automáticos de simulação
+
+Aquário, fazenda e loja podem automatizar produção, cuidados e venda. Pedidos parciais, como “alimentação automática e venda manual”, configuram etapas separadas. Custos, maturidade, pausa e salvamento continuam sendo respeitados. A automação funciona durante a sessão ativa e pode ser desligada pelo jogador.
+
+Leia o [treinamento de automação](docs/TREINAMENTO_AUTOMACAO_GF_TRAIN_10.md).
+
 # GameForge Studio v0.27 — revisões de simulações em linguagem simples
 
 Aquário, fazenda e loja entendem quantidades por extenso, minutos e alterações posteriores com negação local. O pedido “dois tanques, não quero dez tanques” mantém dois; retirar uma necessidade não desativa outra pedida explicitamente. Pendências retiradas pelo usuário também são atualizadas.

@@ -344,3 +344,18 @@ test('GF-TRAIN-07: arquivo exportado salva, continua, reinicia e funciona com st
  c.element('start').click();c.input('keydown','1');assert.equal(c.telemetry().simulation.slots.filter(Boolean).length,1);
  assert.match(c.telemetry().persistence.status,/Não foi possível/);
 });
+
+test('GF-TRAIN-10: exportação executa ciclo automático, pausa global e recupera vitória',()=>{
+ for(const domain of ['farm','aquarium','shop']){
+  const intro={farm:'Cuidar de fazenda',aquarium:'Cuidar de aquário',shop:'Administrar loja'}[domain];
+  const spec=parser.parseGdd('# Automação '+domain,intro+'. Produção automática, dois espaços, crescer em dois segundos, atendimento em dois segundos, meta de dez moedas.');
+  const files=generator.generate(spec,''),data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)},a=environment(files,'2d',storage);
+  a.element('start').click();a.tick(70);assert.ok(a.telemetry().simulation.automation.actions>0,domain);
+  a.element('pause').click();const frozen=JSON.stringify(a.telemetry().simulation);a.tick(80);
+  assert.equal(JSON.stringify(a.telemetry().simulation),frozen,domain+' pausa');
+  a.element('pause').click();a.tick(160);assert.equal(a.telemetry().state,'victory',domain);
+  const won=JSON.stringify(a.telemetry().simulation);a.tick(60);assert.equal(JSON.stringify(a.telemetry().simulation),won);
+  const b=environment(files,'2d',storage);b.element('overlay').children.find(x=>x.id==='simulation-continue').click();
+  assert.equal(b.telemetry().state,'victory');assert.equal(JSON.stringify(b.telemetry().simulation),won);
+ }
+});

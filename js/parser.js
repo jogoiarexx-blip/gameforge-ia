@@ -303,6 +303,7 @@
        description:'Aquário: valor por crescimento; '+(sim.config.aquariumCare.hungerEnabled?'saciedade por tanque':'fome desativada')+
         (sim.config.aquariumCare.waterEnabled?'; qualidade e troca de água':'')+(sim.config.aquariumCare.sellYoung?'; venda de filhotes permitida':'; venda ao atingir idade adulta'),where:'Aquário 2D'});
       interpreted.implementation.applied.push({id:'simulation-save',description:sim.config.persistence.enabled?'Salvamento local automático, manual e continuação; tempo fechado não avança':'Salvamento local desativado pelo pedido',where:'Simulação 2D'});
+      if(sim.config.automation?.enabled)interpreted.implementation.applied.push({id:'simulation-automation',description:'Automação local a cada '+sim.config.automation.intervalSeconds+' s: '+['start','care','finish','sell','clean'].filter(k=>sim.config.automation[k]).map(k=>({start:sim.config.start,care:sim.config.care,finish:sim.config.finish,sell:'Vender colheita',clean:'Trocar água'})[k]).join(', '),where:'Simulação 2D'});
       interpreted.implementation.pending.push(...sim.pending);
       interpreted.implementation.warnings.push(...sim.warnings);
       if(allLevels.length>1||/\b(?:[2-9]|[1-9][0-9]|duas|dois|tres|quatro|cinco)\s+fases\b/.test(norm))interpreted.implementation.pending.push({id:'simulation-campaign',description:'Campanha de simulação: somente um ciclo econômico está implementado',where:'Jogo inteiro'});

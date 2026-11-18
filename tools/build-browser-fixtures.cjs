@@ -59,6 +59,12 @@ for(const [domain,instruction] of [['farm','Quero cuidar de fazenda com dois can
  const directory=path.join(output,'save-'+domain);fs.mkdirSync(directory);
  for(const [filename,contents] of Object.entries(files))fs.writeFileSync(path.join(directory,filename),contents);
 }
+for(const [domain,intro] of [['farm','Cuidar de fazenda'],['aquarium','Cuidar de aquário'],['shop','Administrar loja']]){
+ const spec=parser.parseGdd('# Automação '+domain,intro+'. Produção automática. Dois espaços, crescer em dois segundos, atendimento em dois segundos e meta de dez moedas.'),files=generator.generate(spec,'');
+ validateFiles(files,'2d','simulation');
+ const directory=path.join(output,'automation-'+domain);fs.mkdirSync(directory);
+ for(const [filename,contents] of Object.entries(files))fs.writeFileSync(path.join(directory,filename),contents);
+}
 fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

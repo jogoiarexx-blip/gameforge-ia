@@ -6,6 +6,7 @@ function gameForgeSimulationRulesFactory(){
  const care=c=>c.domain==='aquarium'&&c.aquariumCare?.enabled?c.aquariumCare:null;
  function create(c){
   const s={money:c.startingMoney,earned:0,inventory:0,sales:0,slots:Array.from({length:c.slots},()=>null),complete:false};
+  if(c.automation?.enabled)s.automation={elapsed:0,paused:false,actions:0};
   if(care(c))s.tanks=Array.from({length:c.slots},()=>({water:100}));
   return s;
  }
@@ -37,9 +38,8 @@ function gameForgeSimulationRulesFactory(){
    satiety:item.satiety??null,water:s.tanks?.[index]?.water??100,blocked,
    remainingSeconds:Math.max(0,c.seconds-item.age)};
  }
- function tick(s,c,dt){
-  if(!Number.isFinite(dt)||dt<=0||s.complete)return;
-  const duration=Math.min(dt,1),cfg=care(c);
+ function grow(s,c,duration){
+  const cfg=care(c);
   for(let index=0;index<s.slots.length;index++){
    const item=s.slots[index];if(!item)continue;
    let growth=item.cared?duration:0;
@@ -57,6 +57,29 @@ function gameForgeSimulationRulesFactory(){
    }
    item.age=Math.min(c.seconds,item.age+growth);
    if(c.seconds-item.age<1e-8)item.age=c.seconds;
+  }
+ }
+ function automate(s,c){
+  const a=c.automation;if(!a?.enabled||s.automation?.paused||s.complete)return;
+  const perform=(index,action)=>{if(act(s,c,index,action))s.automation.actions++;};
+  // Colheita/venda só de adultos/prontos, mesmo se venda antecipada for permitida.
+  if(a.finish)for(let i=0;i<c.slots&&!s.complete;i++)if(s.slots[i]?.age+1e-8>=c.seconds)perform(i,'finish');
+  if(a.sell&&c.domain==='farm')for(let n=0;n<c.slots&&s.inventory>0&&!s.complete;n++)perform(0,'sell');
+  if(a.start)for(let i=0;i<c.slots&&!s.complete;i++)if(!s.slots[i])perform(i,'start');
+  for(let i=0;i<c.slots&&!s.complete;i++){
+   if(a.care&&canCare(s,c,i))perform(i,'care');
+   if(a.clean&&canClean(s,c,i))perform(i,'clean');
+  }
+ }
+ function tick(s,c,dt){
+  if(!Number.isFinite(dt)||dt<=0||s.complete)return;
+  let remaining=Math.min(dt,1);
+  if(!c.automation?.enabled||s.automation.paused){grow(s,c,remaining);return;}
+  const period=c.automation.intervalSeconds;
+  while(remaining>1e-10&&!s.complete){
+   const step=Math.min(remaining,Math.max(0,period-s.automation.elapsed));
+   grow(s,c,step);s.automation.elapsed+=step;remaining-=step;
+   if(s.automation.elapsed+1e-9>=period){s.automation.elapsed=0;automate(s,c);}
   }
  }
  function act(s,c,index,action){
@@ -117,6 +140,10 @@ function gameForgeSimulationRulesFactory(){
     if(cfg){
      if(!Array.isArray(v.tanks)||v.tanks.length!==c.slots)return null;
      for(let i=0;i<c.slots;i++){if(!number(v.tanks[i]?.water,0,100))return null;result.tanks[i].water=v.tanks[i].water;}
+    }
+    if(c.automation?.enabled){
+     const a=v.automation;if(!a||!number(a.elapsed,0,c.automation.intervalSeconds)||typeof a.paused!=='boolean'||!number(a.actions,0,1e9,true))return null;
+     result.automation={elapsed:a.elapsed,paused:a.paused,actions:a.actions};
     }
     for(const k of ['money','earned','inventory','sales'])result[k]=v[k];
     result.complete=result.earned>=c.target;

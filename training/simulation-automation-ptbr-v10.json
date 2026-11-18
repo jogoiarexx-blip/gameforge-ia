@@ -1,0 +1,469 @@
+{
+  "version": 10,
+  "purpose": "48 cenários de automação de ciclos locais; sem treinamento de pesos externos",
+  "cases": [
+    {
+      "instruction": "Quero cuidar de fazenda. Produção automática.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": true,
+        "finish": true,
+        "intervalSeconds": 1
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Quero automação a cada dois segundos.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "intervalSeconds": 2
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Modo idle.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. plantar automaticamente.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": false,
+        "finish": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. regar automaticamente.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "start": false,
+        "care": true,
+        "finish": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Vender automaticamente.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "sell": true,
+        "finish": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Sem automação.",
+      "domain": "farm",
+      "expected": {
+        "enabled": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Produção automática, mas modo manual.",
+      "domain": "farm",
+      "expected": {
+        "enabled": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Modo manual, depois produção automática.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Produção automática. Venda manual.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "sell": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Produção automática. Automação a cada cem segundos.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "intervalSeconds": 60
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Salvamento automático e produção automática.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "finish": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Produção automática.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": true,
+        "finish": true,
+        "intervalSeconds": 1
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Quero automação a cada dois segundos.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "intervalSeconds": 2
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Modo idle.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. comprar peixes automaticamente.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": false,
+        "finish": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. alimentar automaticamente.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "start": false,
+        "care": true,
+        "finish": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Vender automaticamente.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "finish": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Sem automação.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Produção automática, mas modo manual.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Modo manual, depois produção automática.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Produção automática. Venda manual.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "finish": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Produção automática. Automação a cada cem segundos.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "intervalSeconds": 60
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Salvamento automático e produção automática.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "finish": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Produção automática.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": true,
+        "finish": true,
+        "intervalSeconds": 1
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Quero automação a cada dois segundos.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "intervalSeconds": 2
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Modo idle.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. repor estoque automaticamente.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": false,
+        "finish": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. atender clientes automaticamente.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "start": false,
+        "care": true,
+        "finish": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Vender automaticamente.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "finish": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Sem automação.",
+      "domain": "shop",
+      "expected": {
+        "enabled": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Produção automática, mas modo manual.",
+      "domain": "shop",
+      "expected": {
+        "enabled": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Modo manual, depois produção automática.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "care": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Produção automática. Venda manual.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "finish": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Produção automática. Automação a cada cem segundos.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "intervalSeconds": 60
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Salvamento automático e produção automática.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "finish": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero jogo idle de peixes.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "start": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero jogo idle de loja.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "start": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero fazenda idle com produção automática.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "start": true
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Colheita automática.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "finish": true,
+        "start": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Limpeza automática.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "clean": true,
+        "start": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Produção automática, mas alimentação manual.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true,
+        "care": false,
+        "clean": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Plantio automático e venda manual.",
+      "domain": "farm",
+      "expected": {
+        "enabled": true,
+        "start": true,
+        "sell": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero administrar loja. Atendimento automático.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true,
+        "care": true,
+        "start": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Produção automática com reprodução.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": true
+      },
+      "noPending": true,
+      "pending": "simulation-breeding"
+    },
+    {
+      "instruction": "Quero administrar loja. Produção automática e funcionários.",
+      "domain": "shop",
+      "expected": {
+        "enabled": true
+      },
+      "noPending": true,
+      "pending": "simulation-employees"
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Sem alimentação automática.",
+      "domain": "aquarium",
+      "expected": {
+        "enabled": false
+      },
+      "noPending": true
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Produção automática, depois não quero mais automação.",
+      "domain": "farm",
+      "expected": {
+        "enabled": false
+      },
+      "noPending": true
+    }
+  ]
+}

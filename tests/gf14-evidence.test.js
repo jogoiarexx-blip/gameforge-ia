@@ -89,3 +89,22 @@ test('GF14: interface e script mantêm ordem e controles reais',()=>{
  assert.match(source,/refreshEvidence\(report\)/);
  assert.match(source,/refreshEvidence\(\)/);
 });
+
+test('GF14: manifesto de agentes não executa código nem concede escrita direta',()=>{
+ const H=require('../js/agent-handoff');
+ const pkg=H.create({instruction:'Melhorar os gráficos sem modificar style.css',
+  files:{...files,'index.html':'<script src="./game.js"></script>'},
+  spec:{genre:'arena',dimension:'2d'}});
+ assert.equal(pkg.policy,'NO_EXECUTION');
+ assert.ok(pkg.protectedFiles.includes('style.css'));
+ assert.ok(pkg.tasks.every(x=>x.executable===false&&x.reviewRequired===true));
+ assert.ok(pkg.tasks.every(x=>x.permissions.every(p=>['READ_MANIFEST','PROPOSE_PATCH'].includes(p))));
+ assert.ok(pkg.tasks.every(x=>x.files.every(f=>f.path!=='style.css')));
+});
+test('GF14: manifesto e relatórios são preservados no backup',()=>{
+ const H=require('../js/agent-handoff'),backup=require('../js/project-backup');
+ const manifest=JSON.stringify(H.create({instruction:'Melhorar controles',files}),null,2);
+ const snap={name:'Manifesto',gdd:'# Teste',files:{...files,'MANIFESTO_AGENTES_GF14.json':manifest}};
+ const copy=backup.decode(backup.encode(snap));
+ assert.equal(copy.files['MANIFESTO_AGENTES_GF14.json'],manifest);
+});

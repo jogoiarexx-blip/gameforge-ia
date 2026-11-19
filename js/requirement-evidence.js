@@ -35,7 +35,14 @@ function extract(input={}){
   const clean=String(text||'').replace(/^\s*[-*]\s*(?:\[[x ]\]\s*)?/,'').trim().slice(0,280);
   if(!clean||clean.length<5)return;
   const key=normalize(clean).replace(/\s+/g,' ').trim();
-  if(seen.has(key)||rows.length>=max)return;
+  if(seen.has(key)){
+   if(state==='UNSUPPORTED'){
+    const earlier=rows.find(row=>normalize(row.description).replace(/\s+/g,' ').trim()===key);
+    if(earlier){earlier.status='UNSUPPORTED';earlier.source='ENGINE_PENDING';earlier.note='Declarado pendente pelo contrato do motor, mesmo se também aparece no pedido.';}
+   }
+   return;
+  }
+  if(rows.length>=max)return;
   seen.add(key);
   const id='REQ-'+checksum(source+'|'+key).split(':')[0];
   rows.push({id,source,description:clean,category:category(clean),status:state,

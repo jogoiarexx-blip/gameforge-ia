@@ -95,7 +95,8 @@
    if(done)return !s.started&&s.progress.length===0&&s.elapsed===0&&s.talks>=i;
    const m=c.missions[i];
    if(s.progress.length!==m.objectives.length)return false;
-   if(s.progress.some((n,k)=>!finite(n,0,m.objectives[k].count-1)))return false;
+   if(s.progress.some((n,k)=>!finite(n,0,m.objectives[k].count))||
+    s.progress.every((n,k)=>n===m.objectives[k].count))return false;
    if(i===0&&s.talks===0&&!s.started)return s.progress.every(n=>n===0)&&s.elapsed===0;
    if(s.talks<i)return false;
    if(!s.started)return s.progress.every(n=>n===0)&&s.elapsed===0&&s.talks>=i;

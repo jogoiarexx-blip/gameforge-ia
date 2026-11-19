@@ -306,7 +306,7 @@
         "domain": "aquarium",
         "enabled": true,
         "event": "finish",
-        "count": 1,
+        "count": 5,
         "reward": 5
       }
     },

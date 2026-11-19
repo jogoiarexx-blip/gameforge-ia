@@ -135,6 +135,12 @@ function decide(id,observations){
    {bossVisible:rows.some(x=>x.bossAlive===true),bossHpReadings:hp.length});
  }
 }
+function protectFocus(html){
+ // Intercepta APENAS pedidos de foco do CLONE; não toca no editor nem no jogo ativo.
+ // O bridge injeta teclas na janela do clone, portanto foco do canvas não é necessário.
+ const guard='<script>HTMLElement.prototype.focus=function(){};window.focus=function(){};</script>';
+ return String(html).replace(/<head>/i,'<head>'+guard);
+}
 function createFrame(doc,host){
  if(!doc||!host||typeof doc.createElement!=='function'||typeof host.appendChild!=='function')
   throw Error('Área de teste descartável indisponível.');
@@ -167,7 +173,7 @@ async function run(input={}){
  const send=(action,args={})=>channel.send(action,args);
  try{
   if(!frame)throw Error('Não foi possível abrir o iframe descartável.');
-  frame.srcdoc=input.html;
+  frame.srcdoc=protectFocus(input.html);
   channel=createTransport(frame);
   let connected=false,lastErr;
   for(let i=0;i<12;i++){
@@ -270,6 +276,6 @@ function report(suite){
   '- A instrumentação de inimigos mede deslocamento, não inteligência, decisões ou dificuldade.','');
  return lines.join('\n');
 }
-root.GameForgeAdvancedScenarioQA={revision,requestRevision,plan,metric,decide,createFrame,run,valid,attach,report};
+root.GameForgeAdvancedScenarioQA={revision,requestRevision,plan,metric,decide,protectFocus,createFrame,run,valid,attach,report};
 if(typeof module!=='undefined')module.exports=root.GameForgeAdvancedScenarioQA;
 })(typeof globalThis!=='undefined'?globalThis:this);

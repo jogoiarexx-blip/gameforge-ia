@@ -692,14 +692,15 @@ def run():
                 moving = patrol_page.evaluate("window.__gameforgeTelemetry().exploration.guide")
                 assert 810 <= moving['x'] <= 885
                 patrol_page.locator('#pause').click()
+                frozen = patrol_page.evaluate("window.__gameforgeTelemetry().exploration.guide")
                 patrol_page.wait_for_timeout(350)
-                assert patrol_page.evaluate("window.__gameforgeTelemetry().exploration.guide") == moving
+                assert patrol_page.evaluate("window.__gameforgeTelemetry().exploration.guide") == frozen, 'NPC deve congelar após a pausa'
                 patrol_page.locator('#simulation-save').click()
                 patrol_page.reload(wait_until='load')
                 patrol_page.locator('#simulation-continue').click()
                 restored = patrol_page.evaluate("window.__gameforgeTelemetry().exploration.guide")
-                assert restored == moving
-                patrol_page.wait_for_function("(x) => Math.abs(window.__gameforgeTelemetry().exploration.guide.x - x) > 3", arg=moving['x'], timeout=4000)
+                assert restored == frozen, 'save deve recuperar posição e direção do NPC'
+                patrol_page.wait_for_function("(x) => Math.abs(window.__gameforgeTelemetry().exploration.guide.x - x) > 3", arg=frozen['x'], timeout=4000)
                 assert not patrol_errors, patrol_errors
                 patrol_page.screenshot(path=str(screenshots / 'patrol-aquarium-mobile.png'), full_page=True)
                 results.append('patrol-aquarium-mobile')

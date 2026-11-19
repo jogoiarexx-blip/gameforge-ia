@@ -13,6 +13,19 @@ const defs={
 };
 const normalize=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 function request(input){return {instruction:input?.instruction||'',gdd:input?.gdd||'',spec:input?.spec||null};}
+
+function revision(files={}){
+ const include=['game.js','style.css','engine-3d.js','ASSET_LIBRARY.json','ASSET_CENARIO.json','ASSET_CENARIO.b64'];
+ return Evidence.checksum(include.map(name=>name+'\0'+String(files[name]||'')).join('\0'));
+}
+function requestRevision(src={}){
+ const spec=src.spec||{};
+ const mechanics={genre:spec.genre||'',dimension:spec.dimension||'',stages:spec.stages||[],
+  bosses:spec.features?.bosses??null,persistence:spec.simulation?.persistence||null,
+  missions:spec.urbanMissions||null};
+ return Evidence.checksum(Evidence.requestFingerprint(src)+'\0'+JSON.stringify(mechanics));
+}
+
 function plan(input={}){
  const src=request(input),matrix=Evidence.extract({...src,files:input.files||{}});
  const genre=String(src.spec?.genre||''),featureBoss=src.spec?.features?.bosses===true;
@@ -29,8 +42,8 @@ function plan(input={}){
    (id==='boss'&&featureBoss);
   return {id,title:cfg.label,scope:cfg.scope,selected,requirementIds:matches};
  });
- return {version:16,kind:'DISPOSABLE_PREVIEW_QA_PLAN',codeFingerprint:Evidence.fingerprint(input.files||{}),
-  requestFingerprint:Evidence.requestFingerprint(src),scenarios:options,notes:[
+ return {version:16,kind:'DISPOSABLE_PREVIEW_QA_PLAN',codeFingerprint:revision(input.files||{}),
+  requestFingerprint:requestRevision(src),scenarios:options,notes:[
    'A prévia descartável usa iframe com sandbox allow-scripts, sem allow-same-origin.',
    'Mesmo resultado PASS representa somente observação parcial.',
    'Sem origem persistente, salvamento e retomada reais não são comprovados.'
@@ -139,8 +152,8 @@ async function run(input={}){
  const src=request(input),p=input.plan||plan(input);
  if(p.version!==16||p.kind!=='DISPOSABLE_PREVIEW_QA_PLAN'||!Array.isArray(p.scenarios)||
     p.scenarios.some(x=>!Object.hasOwn(defs,x.id)))throw Error('Plano GF16 inválido.');
- if(p.codeFingerprint!==Evidence.fingerprint(input.files||{})||
-    p.requestFingerprint!==Evidence.requestFingerprint(src))
+ if(p.codeFingerprint!==revision(input.files||{})||
+    p.requestFingerprint!==requestRevision(src))
   throw Error('Código/GDD mudaram antes do teste descartável; refaça o plano.');
  if(typeof input.html!=='string'||!input.html.includes('gameforge-qa')&&
     !input.html.includes('GameForge'))throw Error('HTML instrumentado ausente.');
@@ -211,8 +224,8 @@ async function run(input={}){
 }
 function valid(result,source,files){
  return result?.version===16&&result.kind==='ISOLATED_ADVANCED_QA_RESULT'&&result.isolated===true&&
-  result.codeFingerprint===Evidence.fingerprint(files||{})&&
-  result.requestFingerprint===Evidence.requestFingerprint(source||{})&&Array.isArray(result.results);
+  result.codeFingerprint===revision(files||{})&&
+  result.requestFingerprint===requestRevision(source||{})&&Array.isArray(result.results);
 }
 function attach(matrix,result,source,files){
  if(!valid(result,source,files))return matrix;
@@ -257,6 +270,6 @@ function report(suite){
   '- A instrumentação de inimigos mede deslocamento, não inteligência, decisões ou dificuldade.','');
  return lines.join('\n');
 }
-root.GameForgeAdvancedScenarioQA={plan,metric,decide,createFrame,run,valid,attach,report};
+root.GameForgeAdvancedScenarioQA={revision,requestRevision,plan,metric,decide,createFrame,run,valid,attach,report};
 if(typeof module!=='undefined')module.exports=root.GameForgeAdvancedScenarioQA;
 })(typeof globalThis!=='undefined'?globalThis:this);

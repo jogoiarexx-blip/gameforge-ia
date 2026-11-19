@@ -124,7 +124,8 @@ function gameForgeSimulationRulesFactory(){
   function restore(raw){
    try{
     if(typeof raw!=='string'||raw.length>30000)return null;
-    const data=JSON.parse(raw),v=data.state,cfg=care(c);
+    const data=JSON.parse(raw),v=data.state,cfg=care(c),free=c.exploration?.mode==='free';
+    if(free&&(!data.position||!number(data.position.x,0,960)||!number(data.position.y,0,540)))return null;
     if(data.version!==1||data.signature!==signature||!v||!number(data.selected,0,c.slots-1,true))return null;
     for(const k of ['money','earned','inventory','sales'])if(!number(v[k],0,1e9,true))return null;
     if(v.money>c.startingMoney+v.earned||v.earned>v.sales*c.price||v.sales>1e6||v.inventory>1e6)return null;
@@ -147,15 +148,17 @@ function gameForgeSimulationRulesFactory(){
     }
     for(const k of ['money','earned','inventory','sales'])result[k]=v[k];
     result.complete=result.earned>=c.target;
-    return {state:result,selected:data.selected};
+    return free?{state:result,selected:data.selected,position:{x:data.position.x,y:data.position.y}}:{state:result,selected:data.selected};
    }catch(_){return null;}
   }
   const target=()=>typeof accessStorage==='function'?accessStorage():accessStorage;
   function read(){if(!enabled)return null;try{return restore(target()?.getItem(key));}catch(_){return null;}}
-  function write(state,selected){
+  function write(state,selected,position){
    if(!enabled)return false;
    try{
-    const raw=JSON.stringify({version:1,signature,state,selected});if(!restore(raw))return false;
+    const data={version:1,signature,state,selected};
+    if(c.exploration?.mode==='free')data.position=position;
+    const raw=JSON.stringify(data);if(!restore(raw))return false;
     const storage=target();storage.setItem(key,raw);return storage.getItem(key)===raw;
    }catch(_){return false;}
   }

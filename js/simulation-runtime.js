@@ -7,9 +7,15 @@ function gameForgeSimulationBoot(){
  let s=R.create(c),state='menu',paused=false,selected=0,frames=0,last=0,noticeUntil=0;
  const aquarium=!!c.aquariumCare?.enabled;
  const exploring=c.exploration?.enabled===true;
+ const free=exploring&&c.exploration?.mode==='free';
+ const F=free?GameForgeExploration2D:null;
+ const room=free?F.layout(c.slots,c.domain,c.exploration.guide):null;
  const center=index=>960*(index+.5)/c.slots;
  let playerX=center(0),targetX=playerX,actionsOpen=false;
- const near=()=>Math.abs(playerX-center(selected))<=(c.exploration?.reach||44);
+ let avatar=free?F.spawn(room):null,walkTo=null,npcTalks=0;
+ const held=new Set();
+ const near=()=>free?F.inRange(avatar,room.stations[selected],c.exploration.reach):Math.abs(playerX-center(selected))<=(c.exploration?.reach||44);
+ const guideText=()=>c.domain==='aquarium'?'Cuide da fome e da água: peixes adultos valem mais.':c.domain==='farm'?'Regue a plantação, colha quando crescer e venda o estoque.':'Reponha os produtos, atenda clientes e acompanhe o saldo.';
  function moveTarget(index){selected=Math.max(0,Math.min(c.slots-1,index));targetX=center(selected);actionsOpen=false;}
  const save=R.persistence(c,GAME_SPEC.title,()=>window.localStorage);
  if(save.enabled){el('start').textContent='Novo jogo';el('restart').textContent='Novo jogo';}
@@ -23,21 +29,24 @@ function gameForgeSimulationBoot(){
  (el('restart').parentElement||document.body).appendChild(saveLabel);
  function persist(manual=false){
   if(!save.enabled||state==='menu')return;
-  const ok=save.write(s,selected);saveStatus=ok?'Salvo neste navegador':'Não foi possível salvar neste navegador';
+  const ok=save.write(s,selected,free?avatar:undefined);saveStatus=ok?'Salvo neste navegador':'Não foi possível salvar neste navegador';
   if(ok){saved=save.read();continueButton.disabled=!saved;}
   saveElapsed=0;if(manual)say(saveStatus);saveLabel.textContent=saveStatus;
  }
  function victory(){state='victory';el('message').style.opacity='0';el('overlay-title').textContent='Meta alcançada!';el('overlay-sub').textContent=s.sales+' vendas realizadas';el('overlay').classList.remove('hidden');}
  continueButton.addEventListener('click',()=>{
   const data=save.read();if(!data){continueButton.disabled=true;say('Progresso indisponível. Comece um novo jogo.');return;}
-  s=data.state;selected=data.selected;playerX=center(selected);targetX=playerX;actionsOpen=false;state='play';paused=false;last=0;el('overlay').classList.add('hidden');
+  s=data.state;selected=data.selected;playerX=center(selected);targetX=playerX;actionsOpen=false;
+  held.clear();walkTo=null;if(free)avatar=data.position&&F.walkable(room,data.position.x,data.position.y)?{...data.position}:F.spawn(room);
+  state='play';paused=false;last=0;el('overlay').classList.add('hidden');
   if(s.complete)victory();else say('Progresso recuperado. O tempo fechado não alterou o jogo.');update();
  });
  saveButton.addEventListener('click',()=>persist(true));
  window.addEventListener('pagehide',()=>persist());
  document.addEventListener('visibilitychange',()=>{if(document.hidden){persist();if(state==='play')paused=true;update();}});
  const panel=document.createElement('div');panel.className='buttons';panel.style.padding='10px';
- (canvas.parentElement||document.body).appendChild(panel);
+ // O painel contextual deve ficar fora da área recortada do canvas, inclusive em celulares.
+ (canvas.parentElement?.parentElement||document.body).appendChild(panel);
  const buttons=[];
  if(c.automation?.enabled){
   const toggle=document.createElement('button');toggle.id='simulation-automation';toggle.type='button';panel.appendChild(toggle);
@@ -54,14 +63,28 @@ function gameForgeSimulationBoot(){
  for(const [kind,label] of [['start',c.start],['care',c.care],['finish',c.finish],...(c.domain==='farm'?[['sell','Vender colheita']]:[]),...(c.aquariumCare?.waterEnabled?[['clean','Trocar água']]:[])]){
   const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>action(kind));panel.appendChild(b);buttons.push([b,kind]);
  }
- function begin(){s=R.create(c);selected=0;playerX=center(0);targetX=playerX;actionsOpen=false;state='play';paused=false;last=0;persist();el('overlay').classList.add('hidden');say('Comece em um espaço vazio. Meta: vender '+c.target+' moedas.');update();}
+ function begin(){s=R.create(c);selected=0;playerX=center(0);targetX=playerX;actionsOpen=false;held.clear();walkTo=null;npcTalks=0;if(free)avatar=F.spawn(room);state='play';paused=false;last=0;persist();el('overlay').classList.add('hidden');say('Comece em um espaço vazio. Meta: vender '+c.target+' moedas.');update();}
  el('start').addEventListener('click',begin);el('restart').addEventListener('click',begin);
  el('pause').addEventListener('click',()=>{if(state==='play'){paused=!paused;persist();update();}});
- el('control-help').textContent=exploring?'← → caminhar entre estações · E interagir · 1 iniciar · 2 cuidar · 3 vender/colher · 4 limpar/vender · toque para aproximar':aquarium?'← → selecionar tanque · 1 comprar · 2 alimentar · 3 vender'+(c.aquariumCare.waterEnabled?' · 4 trocar água':''):'← → selecionar · 1 produzir · 2 cuidar · 3 colher/vender · 4 vender colheita';
+ el('control-help').textContent=free?'WASD/setas mover · E falar/interagir · 1–4 agir perto de uma estação · toque para caminhar':exploring?'← → caminhar entre estações · E interagir · 1 iniciar · 2 cuidar · 3 vender/colher · 4 limpar/vender · toque para aproximar':aquarium?'← → selecionar tanque · 1 comprar · 2 alimentar · 3 vender'+(c.aquariumCare.waterEnabled?' · 4 trocar água':''):'← → selecionar · 1 produzir · 2 cuidar · 3 colher/vender · 4 vender colheita';
  el('overlay-sub').textContent=c.label+': '+c.start+' → '+c.care+' → '+c.finish+(c.domain==='farm'?' → Vender':'')+(aquarium?'. O peixe cresce enquanto está alimentado'+(c.aquariumCare.waterEnabled?' e com água limpa':'')+'. O valor aumenta com a idade. Alimentar e trocar água são gratuitos.':'')+(save.enabled?'. Progresso salvo neste navegador. Fechado ou pausado, o tempo não avança. Novo jogo substitui o progresso anterior.':'. Salvamento desativado.');
  if(c.automation?.enabled)el('overlay-sub').textContent=c.label+'. Ciclo automático a cada '+c.automation.intervalSeconds+' s, com custos normais. Você pode desligar a automação e jogar manualmente. Pausar congela o jogo. '+(save.enabled?'Progresso salvo neste navegador. Novo jogo substitui o anterior.':'Salvamento desativado.');
+ function activate(target){
+  if(!target){actionsOpen=false;say('Chegue perto de um aquário, canteiro, prateleira ou NPC.');update();return;}
+  if(target.type==='npc'){actionsOpen=false;npcTalks++;say(target.label+': '+guideText());update();return;}
+  const same=selected===target.index&&actionsOpen;
+  selected=target.index;actionsOpen=!same;
+  say(actionsOpen?'Estação '+(selected+1)+': escolha uma ação.':'Interação fechada.');
+  update();
+ }
  function input(key){
   if(state!=='play'||paused)return;
+  if(free){
+   if(key==='e'||key==='E'||key===' '){activate(F.nearest(avatar,room,c.exploration.reach));return;}
+   const actKey={'1':'start','2':'care','3':'finish','4':aquarium?'clean':'sell'}[key];
+   if(actKey)action(actKey);
+   return;
+  }
   if(exploring){
    if(key==='ArrowRight'||key==='d'||key==='D'){moveTarget(selected+1);update();return;}
    if(key==='ArrowLeft'||key==='a'||key==='A'){moveTarget(selected-1);update();return;}
@@ -76,12 +99,27 @@ function gameForgeSimulationBoot(){
   }
   const k={'1':'start','2':'care','3':'finish','4':aquarium?'clean':'sell'}[key];if(k)action(k);
  }
+ const directions=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D'];
  document.addEventListener('keydown',e=>{
+  if(free&&directions.includes(e.key)){
+   e.preventDefault();if(state==='play'&&!paused){held.add(e.key);walkTo=null;}return;
+  }
   const keys=exploring?['ArrowRight','ArrowLeft','a','A','d','D','e','E',' ','1','2','3','4']:['ArrowRight','ArrowLeft','1','2','3','4'];
   if(keys.includes(e.key)){e.preventDefault();if(!e.repeat)input(e.key);}
  });
+ document.addEventListener('keyup',e=>{if(free)held.delete(e.key);});
+ window.addEventListener('blur',()=>held.clear());
  canvas.addEventListener('pointerdown',e=>{
   const rect=canvas.getBoundingClientRect(),x=(e.clientX-rect.left)*960/rect.width,y=(e.clientY-rect.top)*540/rect.height;
+  if(free){
+   if(state!=='play'||paused)return;
+   const target=F.hitAt(room,x,y);
+   if(target&&F.inRange(avatar,target,c.exploration.reach)){activate(target);return;}
+   const destination=target?F.approachPoint(target):{x,y};
+   if(F.walkable(room,destination.x,destination.y)){walkTo=destination;actionsOpen=false;update();}
+   else say('Esse local está ocupado. Caminhe ao redor do obstáculo.');
+   return;
+  }
   if(y>=110&&y<450){
    const chosen=Math.max(0,Math.min(c.slots-1,Math.floor(x/(960/c.slots))));
    if(exploring){
@@ -93,6 +131,11 @@ function gameForgeSimulationBoot(){
  });
  for(const button of document.querySelectorAll('[data-control]')){
   if(button.dataset.control==='fire'){button.textContent=exploring?'INTERAGIR':aquarium?'COMPRAR':'PRODUZIR';button.addEventListener('pointerdown',e=>{e.preventDefault();if(exploring)input('e');else action('start');});}
+  else if(free&&['up','down','left','right'].includes(button.dataset.control)){
+   const key={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'}[button.dataset.control];
+   button.addEventListener('pointerdown',e=>{e.preventDefault();held.add(key);walkTo=null;});
+   for(const event of ['pointerup','pointercancel','pointerleave'])button.addEventListener(event,()=>held.delete(key));
+  }
   else if(['left','right'].includes(button.dataset.control))button.addEventListener('pointerdown',e=>{e.preventDefault();input(button.dataset.control==='left'?'ArrowLeft':'ArrowRight');});
   else button.disabled=true;
  }
@@ -110,7 +153,7 @@ function gameForgeSimulationBoot(){
      (c.aquariumCare.waterEnabled?' · Água '+Math.ceil(q.water)+'%':'')+
      (q.blocked.length?' · Precisa: '+q.blocked.join(', '):q.stage==='adult'?' · Pronto para vender':' · Crescendo'):'');
   }
-  if(exploring)el('mission').textContent+=' · '+(near()?(actionsOpen?'Interação aberta':'Aperte E para interagir'):'Caminhando...');
+  if(exploring)el('mission').textContent+=' · '+(free?(actionsOpen?'Interação aberta':F.nearest(avatar,room,c.exploration.reach)?.type==='npc'?'E para falar com o guia':'Explore com WASD; E interage perto de objetos'):(near()?(actionsOpen?'Interação aberta':'Aperte E para interagir'):'Caminhando...'));
   if(c.automation?.enabled)el('mission').textContent+=' · Automação '+(s.automation.paused?'desligada':'ligada');
   for(const [b,k] of buttons){
    const item=s.slots[selected];
@@ -118,8 +161,60 @@ function gameForgeSimulationBoot(){
   }
  }
  rootTelemetry();
- function rootTelemetry(){window.__gameforgeTelemetry=()=>({state,paused,frames,player:{x:exploring?playerX:selected,y:exploring?480:0},exploration:{enabled:exploring,x:playerX,target:targetX,near:exploring?near():false,actionsOpen},simulation:JSON.parse(JSON.stringify(s)),domain:c.domain,persistence:{enabled:save.enabled,key:save.key,status:saveStatus,available:!!saved},selected:aquarium?R.status(s,c,selected):null});}
+ function rootTelemetry(){window.__gameforgeTelemetry=()=>({state,paused,frames,player:{x:free?avatar.x:exploring?playerX:selected,y:free?avatar.y:exploring?480:0},exploration:{enabled:exploring,mode:free?'free':exploring?'stations':'classic',x:free?avatar.x:playerX,y:free?avatar.y:480,target:free?walkTo:targetX,near:exploring?near():false,actionsOpen,npcTalks,nearby:free?F.nearest(avatar,room,c.exploration.reach)?.id||null:null},simulation:JSON.parse(JSON.stringify(s)),domain:c.domain,persistence:{enabled:save.enabled,key:save.key,status:saveStatus,available:!!saved},selected:aquarium?R.status(s,c,selected):null});}
+ function drawRoom(){
+  ctx.fillStyle=c.domain==='aquarium'?'#173c49':c.domain==='farm'?'#2b4935':'#293b50';
+  ctx.fillRect(0,0,960,540);
+  ctx.fillStyle='#112431';ctx.fillRect(0,0,960,85);
+  ctx.fillStyle='#68818a';ctx.fillRect(17,78,926,9);ctx.fillRect(17,78,9,445);ctx.fillRect(934,78,9,445);
+  ctx.fillStyle='#ffffff09';for(let y=102;y<520;y+=43)for(let x=35;x<931;x+=43)ctx.fillRect(x,y,39,1);
+  ctx.fillStyle='#e8f6fa';ctx.font='bold 19px sans-serif';ctx.fillText(c.label+' · sala explorável',28,33);
+  ctx.font='13px sans-serif';ctx.fillText('Moedas: '+s.money+' · Vendas: '+s.sales+' · WASD / setas / E',28,60);
+  for(const obstacle of room.furniture){
+   ctx.fillStyle='#132b31';ctx.fillRect(obstacle.x+5,obstacle.y+5,obstacle.w,obstacle.h);
+   ctx.fillStyle='#987757';ctx.fillRect(obstacle.x,obstacle.y,obstacle.w,obstacle.h);
+  }
+  for(const station of room.stations){
+   const item=s.slots[station.index],progress=item?Math.max(0,Math.min(1,item.age/c.seconds)):0;
+   ctx.fillStyle='#0d2630';ctx.fillRect(station.x+4,station.y+4,station.w,station.h);
+   ctx.fillStyle=aquarium?'#286c88':c.domain==='farm'?'#6c6438':'#846949';
+   ctx.fillRect(station.x,station.y,station.w,station.h);
+   if(aquarium){
+    ctx.fillStyle='#419cba';ctx.fillRect(station.x+8,station.y+7,station.w-16,station.h-15);
+   }else if(c.domain==='farm'){
+    ctx.fillStyle='#6b4833';ctx.fillRect(station.x+8,station.y+7,station.w-16,station.h-15);
+   }else{
+    ctx.fillStyle='#dbb57b';for(let n=0;n<3;n++)ctx.fillRect(station.x+8,station.y+10+n*14,station.w-16,5);
+   }
+   if(item){
+    ctx.fillStyle=aquarium?'#ffcf75':c.domain==='farm'?'#95d96d':'#f7e1a5';
+    ctx.beginPath();ctx.arc(station.x+station.w/2,station.y+31,7+progress*10,0,Math.PI*2);ctx.fill();
+   }
+   ctx.strokeStyle=actionsOpen&&selected===station.index?'#ffe196':'#a0b5b6';
+   ctx.lineWidth=actionsOpen&&selected===station.index?4:1;
+   ctx.strokeRect(station.x,station.y,station.w,station.h);
+   ctx.fillStyle='#fff';ctx.font='bold 12px sans-serif';
+   ctx.fillText((aquarium?'Tanque ':c.domain==='farm'?'Canteiro ':'Prateleira ')+(station.index+1),station.x+3,station.y-7);
+   ctx.fillText(item?(aquarium?R.status(s,c,station.index).label:'Em produção'):'Vazio',station.x+3,station.y+station.h+14);
+  }
+  if(room.guide){
+   const guide=room.guide;
+   ctx.fillStyle='#1a3544';ctx.beginPath();ctx.arc(guide.x,guide.y+5,18,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#e8bd8d';ctx.beginPath();ctx.arc(guide.x,guide.y-8,11,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#f5eac4';ctx.font='bold 12px sans-serif';ctx.fillText(guide.label,guide.x-31,guide.y-27);
+  }
+  ctx.fillStyle='#102d39';ctx.beginPath();ctx.ellipse(avatar.x,avatar.y+12,14,5,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#f6cb9b';ctx.beginPath();ctx.arc(avatar.x,avatar.y-5,11,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#45a2ad';ctx.fillRect(avatar.x-11,avatar.y+5,22,21);
+  ctx.fillStyle='#254050';ctx.fillRect(avatar.x-10,avatar.y+23,8,7);ctx.fillRect(avatar.x+2,avatar.y+23,8,7);
+  const obj=F.nearest(avatar,room,c.exploration.reach);
+  if(obj){
+   ctx.fillStyle='#ffdea6';ctx.font='bold 14px sans-serif';
+   ctx.fillText(obj.type==='npc'?'E: falar com '+obj.label:'E: abrir ações da estação '+(obj.index+1),30,511);
+  }
+ }
  function draw(){
+  if(free){drawRoom();return;}
   ctx.fillStyle=c.domain==='aquarium'?'#103d57':c.domain==='farm'?'#153d2a':'#243046';ctx.fillRect(0,0,960,540);V?.backdrop(ctx,960,540,frames/60);
   ctx.font='22px sans-serif';ctx.fillStyle='#fff';ctx.fillText(c.label+' · '+c.cost+' $ para iniciar · '+(aquarium?'Adulto até ':'Venda ')+c.price+' $',22,48);
   const w=960/c.slots;
@@ -155,7 +250,32 @@ function gameForgeSimulationBoot(){
    ctx.fillStyle='#f0dfa0';ctx.font='14px sans-serif';ctx.fillText(near()?'E ou INTERAGIR para abrir ações':'Caminhando...',12,525);
   }
  }
- function frame(t){if(frames>noticeUntil)el('message').style.opacity='0';const dt=last?Math.min(.1,Math.max(0,(t-last)/1000)):0;last=t;frames++;if(state==='play'&&!paused){if(exploring){const distance=targetX-playerX;const step=c.exploration.speed*dt;playerX+=Math.sign(distance)*Math.min(Math.abs(distance),step);if(!near())actionsOpen=false;}R.tick(s,c,dt);if(s.complete){victory();persist();}saveElapsed+=dt;if(saveElapsed>=5)persist();}update();draw();V?.finish(ctx,960,540);requestAnimationFrame(frame);}
+ function frame(t){
+  if(frames>noticeUntil)el('message').style.opacity='0';
+  const dt=last?Math.min(.1,Math.max(0,(t-last)/1000)):0;
+  last=t;frames++;
+  if(state==='play'&&!paused){
+   if(free){
+    let dx=Number(held.has('ArrowRight')||held.has('d')||held.has('D'))-Number(held.has('ArrowLeft')||held.has('a')||held.has('A'));
+    let dy=Number(held.has('ArrowDown')||held.has('s')||held.has('S'))-Number(held.has('ArrowUp')||held.has('w')||held.has('W'));
+    if(dx||dy)walkTo=null;
+    else if(walkTo){
+     const vx=walkTo.x-avatar.x,vy=walkTo.y-avatar.y;
+     if(Math.hypot(vx,vy)<=8)walkTo=null;else{dx=vx;dy=vy;}
+    }
+    if(dx||dy)avatar=F.move(avatar,dx,dy,dt,room,c.exploration.speed);
+    if(actionsOpen&&!near())actionsOpen=false;
+   }else if(exploring){
+    const distance=targetX-playerX,step=c.exploration.speed*dt;
+    playerX+=Math.sign(distance)*Math.min(Math.abs(distance),step);
+    if(!near())actionsOpen=false;
+   }
+   R.tick(s,c,dt);
+   if(s.complete){victory();persist();}
+   saveElapsed+=dt;if(saveElapsed>=5)persist();
+  }
+  update();draw();V?.finish(ctx,960,540);requestAnimationFrame(frame);
+ }
  update();requestAnimationFrame(frame);
 }
 root.gameForgeSimulationBoot=gameForgeSimulationBoot;

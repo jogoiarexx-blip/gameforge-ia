@@ -529,9 +529,53 @@ def run():
                 finally:
                     page.close()
 
+            # GF-TRAIN-12: navegação real 2D no Chromium móvel, compra, cuidado, save e vitória.
+            free_page = browser.new_page(viewport={'width': 390, 'height': 844})
+            free_errors = []
+            free_page.on('pageerror', lambda error: free_errors.append(str(error)))
+            try:
+                free_page.goto(origin + '/tests/_browser_output/free-aquarium/index.html', wait_until='load')
+                free_page.locator('#start').click()
+                assert free_page.evaluate("window.__gameforgeTelemetry().exploration.mode") == 'free'
+                free_page.keyboard.press('1')
+                assert free_page.evaluate("window.__gameforgeTelemetry().simulation.slots[0]") is None
+                free_page.keyboard.down('ArrowRight')
+                free_page.wait_for_timeout(1250)
+                free_page.keyboard.up('ArrowRight')
+                free_page.keyboard.down('ArrowUp')
+                free_page.wait_for_timeout(1750)
+                free_page.keyboard.up('ArrowUp')
+                free_page.wait_for_function("window.__gameforgeTelemetry().exploration.near", timeout=3000)
+                free_page.keyboard.press('e')
+                assert free_page.evaluate("window.__gameforgeTelemetry().exploration.actionsOpen")
+                free_page.get_by_role('button', name='Comprar peixe', exact=True).click()
+                free_page.get_by_role('button', name='Alimentar', exact=True).click()
+                assert free_page.evaluate("window.__gameforgeTelemetry().simulation.slots[0].cared")
+                free_page.locator('#simulation-save').click()
+                saved_position = free_page.evaluate('window.__gameforgeTelemetry().player')
+                free_page.reload(wait_until='load')
+                free_page.locator('#simulation-continue').click()
+                restored_position = free_page.evaluate('window.__gameforgeTelemetry().player')
+                assert abs(restored_position['x'] - saved_position['x']) < 0.01
+                assert abs(restored_position['y'] - saved_position['y']) < 0.01
+                assert not free_page.evaluate("window.__gameforgeTelemetry().exploration.actionsOpen")
+                free_page.keyboard.press('e')
+                free_page.wait_for_function('window.__gameforgeTelemetry().simulation.slots[0].age >= 2', timeout=7000)
+                free_page.get_by_role('button', name='Vender peixe', exact=True).click()
+                free_page.wait_for_function("window.__gameforgeTelemetry().state === 'victory'")
+                assert free_page.evaluate('window.__gameforgeTelemetry().simulation.sales') == 1
+                assert free_page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+                free_page.screenshot(path=str(screenshots / 'free-aquarium-mobile.png'), full_page=True)
+                assert not free_errors, free_errors
+                results.append('free-aquarium-mobile')
+            except Exception as exc:
+                failures.append(('free-aquarium-mobile', str(exc), free_errors, []))
+            finally:
+                free_page.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 9 + len(graphics_matrix)
+            assert len(results) == len(matrix) + 10 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

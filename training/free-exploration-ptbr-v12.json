@@ -1,0 +1,175 @@
+{
+  "version": 12,
+  "name": "GF-TRAIN-12: movimentação livre com colisões e NPC guia",
+  "scope": "Casos rotulados para regressão de regras PT-BR; não é fine-tuning de IA",
+  "cases": [
+    {
+      "instruction": "Quero cuidar de aquário. Personagem andando livremente.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Movimentação livre.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Exploração livre.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Quero caminhar livremente.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Andar com WASD.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Andar livremente pelo cenário.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Quero andar livremente.",
+      "domain": "farm",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Quero movimentar pelo cenário.",
+      "domain": "farm",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Mapa explorável.",
+      "domain": "shop",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Caminhar pela sala.",
+      "domain": "farm",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Personagem andando pela loja.",
+      "domain": "shop",
+      "mode": "stations",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Caminhar entre tanques.",
+      "domain": "aquarium",
+      "mode": "stations",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Sem explorar livremente.",
+      "domain": "aquarium",
+      "mode": null,
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Não quero andar livremente.",
+      "domain": "aquarium",
+      "mode": null,
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Quero andar livremente, mas sem exploração livre.",
+      "domain": "aquarium",
+      "mode": null,
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Sem exploração livre, agora caminhar livremente.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Andar livremente. Agora personagem andando pela loja.",
+      "domain": "aquarium",
+      "mode": "stations",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Personagem andando entre tanques.",
+      "domain": "aquarium",
+      "mode": "stations",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Quero jogar no modo automático.",
+      "domain": "aquarium",
+      "mode": null,
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Quero falar com NPC e andar livremente.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Quero andar livremente, sem npc.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": false
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Sem npc, quero andar livremente com npc.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Não quero personagem andando, quero andar com WASD.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Sem andar livremente. Personagem caminhando pela loja.",
+      "domain": "aquarium",
+      "mode": "stations",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Caminhar livremente e plantar.",
+      "domain": "farm",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Quero andar livremente.",
+      "domain": "shop",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Personagem andando pela loja, depois movimentação livre.",
+      "domain": "aquarium",
+      "mode": "free",
+      "guide": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Andar livremente. Agora não quero andar livremente.",
+      "domain": "aquarium",
+      "mode": null,
+      "guide": true
+    }
+  ]
+}

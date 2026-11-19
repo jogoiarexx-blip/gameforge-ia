@@ -132,7 +132,7 @@ function compile(text,command=''){
  // GF-TRAIN-11: caminhada somente quando o jogador realmente pede exploração.
  // Última ordem explícita prevalece; a exploração não substitui o ciclo econômico.
  const walkRequests=[];
- const walkPattern=/\b(?:personagem|boneco|jogador)\s+(?:andando|caminhando|anda|caminha)\b|\b(?:andar|caminhar|andando|caminhando|aproximar|chegar|ir)\s+(?:ate|para|pelo|pela|entre|no|na|perto)\s+(?:o |a |os |as )?(?:aquario|tanque|loja|fazenda|prateleiras?|canteiros?|espacos?)\b|\b(?:interagir|interacao)\s+(?:com|ao|no|na)\s+(?:o |a )?(?:aquario|tanque|prateleira|canteiro)\b/g;
+ const walkPattern=/\b(?:personagem|boneco|jogador)\s+(?:andando|caminhando|anda|caminha)\b|\b(?:andar|caminhar|andando|caminhando|aproximar|chegar|ir)\s+(?:ate|para|pelo|pela|entre|no|na|perto)\s+(?:o |a |os |as )?(?:aquarios?|tanques?|loja|fazenda|prateleiras?|canteiros?|espacos?)\b|\b(?:interagir|interacao)\s+(?:com|ao|no|na)\s+(?:o |a )?(?:aquario|tanque|prateleira|canteiro)\b/g;
  for(const m of t.matchAll(walkPattern))walkRequests.push({index:m.index,enabled:!negativeAt(t,m.index)});
  if(walkRequests.length&&walkRequests[walkRequests.length-1].enabled)
   config.exploration={version:1,enabled:true,speed:240,reach:44};

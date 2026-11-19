@@ -25,7 +25,7 @@ function mock(conditions={}){
   return {send:async(action,params={})=>{
    if(action==='ping')return {ready:true};
    if(action==='inspect'){
-    if(current===1)return snapshot(clicks.includes('simulation-action-start')?changed:before);
+    if(current===1)return snapshot(clicks.includes('simulation-action-start')&&!conditions.noMutation?changed:before);
     return snapshot(conditions.mismatch?before:changed,{persistence:{available:true,enabled:true}});
    }
    if(action==='start')return {};

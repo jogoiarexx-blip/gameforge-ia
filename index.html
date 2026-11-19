@@ -139,14 +139,17 @@ Derrote o chefe.
         <details class="visual-composer" id="quest-editor">
           <summary>📋 Editor visual de missões (aquário, fazenda ou loja 2D)</summary>
           <div class="visual-composer-body">
-            <p class="hint">Monte três ou quatro missões com dois objetivos por missão. É possível exigir que o objetivo 1 termine antes do 2 e premiar com kits de suprimentos utilizáveis no jogo. Dois NPCs se alternam. Não apaga o GDD.</p>
+            <p class="hint">Monte três ou quatro missões com dois objetivos por missão. Configure dependências entre missões, kits gratuitos e aceleradores de crescimento. Os dois NPCs podem abrir linhas paralelas da campanha. Não apaga o GDD.</p>
             <div class="visual-composer-grid">
               <div><label for="qe-domain">Tipo de jogo</label><select id="qe-domain"><option value="aquarium">Aquário</option><option value="farm">Fazenda</option><option value="shop">Loja</option></select></div>
               <div><label for="qe-total">Quantidade de missões</label><select id="qe-total"><option value="3">3 missões</option><option value="4">4 missões</option></select></div>
             </div>
+            <label class="repo-source-opt"><input type="checkbox" id="qe-graph"> Missões paralelas com pré-requisitos (modo avançado v6)</label>
+            <p class="hint">Missões dependem apenas de etapas anteriores (sem ciclos). Kits substituem custo de compra; aceleradores são consumidos quando você cuida da produção e adiantam metade do crescimento. Máximo de três itens de um tipo por missão.</p>
             <div id="qe-rows" aria-label="Objetivos e condições das missões"></div>
             <div class="visual-composer-actions"><button type="button" class="small outline" id="qe-preview">Conferir objetivos</button><button type="button" class="small primary" id="qe-apply">Adicionar ao meu pedido</button></div>
-            <p class="hint">Para alterar missões de um jogo já criado, gere antes um jogo de simulação com três ou quatro missões (v4 ou v5). Jogos v4 só aceitam edição de objetivos sem kits nem dependências. Ao mudar as missões, o progresso salvo anterior não é compatível; baixe um backup do projeto antes de salvar.</p>
+            <p class="hint">Para alterar missões de um jogo já criado (v4, v5 ou v6), carregue as missões e edite apenas recursos já existentes no motor exportado. Você pode solicitar migração **somente** para alterações em missões ainda não iniciadas; não migra mudanças nas missões já jogadas, não cruza aparelhos e não altera os saves antigos.</p>
+            <label class="repo-source-opt"><input type="checkbox" id="qe-migrate"> Tentar migrar save compatível do mesmo navegador e endereço (preservar registro antigo)</label>
             <div class="visual-composer-actions"><button type="button" class="small outline" id="qe-load">Carregar missões do jogo criado</button><button type="button" class="small primary" id="qe-save">Salvar no game.js existente</button></div>
             <label for="qe-command">Pedido que será adicionado</label><textarea id="qe-command" readonly rows="5" aria-label="Prévia do pedido montado"></textarea>
             <div class="visual-composer-result" id="qe-result" role="status" aria-live="polite">Configure as missões e confira antes de aplicar.</div>

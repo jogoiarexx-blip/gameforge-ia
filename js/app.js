@@ -1339,6 +1339,17 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('gdd').addEventListener('change',saveState);$('instruction').addEventListener('change',saveState);$('project-name').addEventListener('change',saveState);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!qaState.candidate)saveState();});
   renderStyles();
+  if(globalThis.GameForgeQuestEditor){
+    globalThis.GameForgeQuestEditor.mount({
+      document,root:$('quest-editor'),instruction:$('instruction'),
+      onApply:()=>{
+        restoreCreationOptions({dimension:'2d',genre:'simulation'});
+        const parsed=analyze();
+        if(parsed)feedback('Missões configuradas. Agora clique em Criar jogo para gerar a campanha 2D.');
+        saveState();
+      }
+    });
+  }
   stageEditorRender();
   restoreState();
   renderReferences();analyze();

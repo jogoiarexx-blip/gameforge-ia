@@ -372,6 +372,49 @@ test('GF-TRAIN-11: aquário exportado exige proximidade, caminha, abre interaç�
  assert.equal(b.telemetry().simulation.sales,1);
 });
 
+test('GF-TRAIN-12: jogo livre exportado usa WASD, bloqueia ações distantes, salva posição e vence',()=>{
+ const spec=parser.parseGdd('','Quero cuidar de aquário. Andar livremente com WASD. Dois tanques. Crescer em dois segundos, meta de dez moedas.');
+ assert.equal(spec.simulation.exploration?.mode,'free');
+ const files=generator.generate(spec,'');validateFiles(files,'2d','simulation');
+ const mem=new Map(),storage={getItem:key=>mem.get(key)??null,setItem:(key,value)=>mem.set(key,value)};
+ const a=environment(files,'2d',storage),key=k=>{a.input('keydown',k);a.input('keyup',k);};
+ a.element('start').click();
+ key('1');assert.equal(a.telemetry().simulation.slots[0],null,'ação distante bloqueada');
+ const begin=a.telemetry().player;
+ a.input('keydown','ArrowRight');a.tick(74);a.input('keyup','ArrowRight');
+ assert.ok(a.telemetry().player.x>begin.x+200,'movimentação contínua');
+ a.input('keydown','ArrowUp');a.tick(120);a.input('keyup','ArrowUp');
+ const atTank=a.telemetry().player;
+ assert.ok(atTank.y>185,'personagem não atravessa tanque sólido');
+ assert.equal(a.telemetry().exploration.near,true);
+ key('e');assert.equal(a.telemetry().exploration.actionsOpen,true);
+ key('1');key('2');assert.ok(a.telemetry().simulation.slots[0],'comprou e alimentou ao interagir');
+ a.element('pause').click();const paused=JSON.stringify(a.telemetry().player),age=a.telemetry().simulation.slots[0].age;
+ a.tick(70);assert.equal(JSON.stringify(a.telemetry().player),paused);assert.equal(a.telemetry().simulation.slots[0].age,age);
+ a.element('pause').click();
+ a.element('body').children.find(x=>x.id==='simulation-save').click();
+ const b=environment(files,'2d',storage);
+ b.element('overlay').children.find(x=>x.id==='simulation-continue').click();
+ assert.deepEqual(b.telemetry().player,a.telemetry().player,'posição restaurada');
+ assert.equal(b.telemetry().exploration.actionsOpen,false);
+ b.input('keydown','e');b.tick(140);b.input('keydown','3');
+ assert.equal(b.telemetry().state,'victory');
+ assert.equal(b.telemetry().simulation.sales,1);
+});
+test('GF-TRAIN-12: NPC guia é uma interação sem duplicar moedas nem vendas',()=>{
+ const spec=parser.parseGdd('','Quero administrar uma loja. Quero andar livremente. Meta de 999 moedas.');
+ const files=generator.generate(spec,'');const h=environment(files,'2d');
+ h.element('start').click();
+ h.input('keydown','ArrowRight');h.tick(280);h.input('keyup','ArrowRight');
+ assert.equal(h.telemetry().exploration.nearby,'guide');
+ const money=h.telemetry().simulation.money;
+ h.input('keydown','e');h.input('keyup','e');
+ assert.equal(h.telemetry().exploration.npcTalks,1);
+ assert.equal(h.telemetry().exploration.actionsOpen,false);
+ assert.equal(h.telemetry().simulation.money,money);
+ assert.equal(h.telemetry().simulation.sales,0);
+});
+
 test('GF-TRAIN-10: exportação executa ciclo automático, pausa global e recupera vitória',()=>{
  for(const domain of ['farm','aquarium','shop']){
   const intro={farm:'Cuidar de fazenda',aquarium:'Cuidar de aquário',shop:'Administrar loja'}[domain];

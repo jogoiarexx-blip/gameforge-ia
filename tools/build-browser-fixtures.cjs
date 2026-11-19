@@ -75,6 +75,16 @@ const storySpec=parser.parseGdd('','Cuidar de aquário. Missão: vender um peixe
 const storyFiles=generator.generate(storySpec,'');validateFiles(storyFiles,'2d','simulation');
 const storyDirectory=path.join(output,'story-aquarium');fs.mkdirSync(storyDirectory);
 for(const [filename,contents] of Object.entries(storyFiles))fs.writeFileSync(path.join(storyDirectory,filename),contents);
+// GF-TRAIN-14: dois cenários físicos com escolhas e patrulha.
+for(const [slug,instruction] of [
+ ['branch-aquarium','Cuidar de aquário. Missão: escolher entre alimentar ou vender. Dois tanques, crescer em dois segundos e meta de dez moedas.'],
+ ['patrol-aquarium','Cuidar de aquário. NPC patrulhando. Dois tanques, crescer em dois segundos e meta de 999 moedas.']
+]){
+ const spec=parser.parseGdd('',instruction),files=generator.generate(spec,'');
+ validateFiles(files,'2d','simulation');
+ const directory=path.join(output,slug);fs.mkdirSync(directory);
+ for(const [filename,contents] of Object.entries(files))fs.writeFileSync(path.join(directory,filename),contents);
+}
 fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

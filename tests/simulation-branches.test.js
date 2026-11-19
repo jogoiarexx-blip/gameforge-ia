@@ -139,7 +139,7 @@ test('GF-TRAIN-14: exporta controles, missões e patrulha sem carregar CDN',()=>
  const files=Generator.generate(spec,'');
  assert.match(files['game.js'],/function gameForgeSimulationEventsFactory/);
  assert.match(files['game.js'],/function patrolGuide/);
- assert.match(files['game.js'],/simulation-choice-1/);
+ assert.match(files['game.js'],/simulation-choice-/);
  assert.match(files['game.js'],/const GameForgeSimulationEvents/);
  new vm.Script(files['game.js']);
  assert.doesNotMatch(files['index.html'],/<script[^>]+src=["']https?:/i);

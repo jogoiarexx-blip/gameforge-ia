@@ -244,7 +244,8 @@ function compile(text,command=''){
     const caption={start:config.start,care:config.care,finish:config.finish,sell:'Vender colheita',clean:'Trocar água'};
     const wantsConcurrent=/\b(?:objetivos simultaneos|tarefas simultaneas|objetivos paralelos|duas acoes por missao|dois objetivos por missao|objetivos ao mesmo tempo)\b/.test(t);
     const wantsDependency=/\b(?:dependencia entre objetivos|objetivos dependentes|objetivo 2 depois do objetivo 1|segundo objetivo depende do primeiro)\b/.test(t);
-    const wantsItemReward=/\b(?:recompensas? em itens|kits? de recompensa|recompensa(?:s)? (?:de )?\d+ kits?|ganhar \d+ kits?)\b/.test(t);
+    const globalItemRewards=/\b(?:recompensas? em itens|kits? de recompensa)\b/.test(t);
+    const wantsItemReward=globalItemRewards||/\b(?:recompensa(?:s)? (?:de )?\d+ kits?|ganhar \d+ kits?)\b/.test(t);
     const otherName={aquarium:'Pesquisador',farm:'Feirante',shop:'Gerente'}[config.domain];
     const missions=Array.from({length:countM},(_,i)=>{
      const brief=slots[i]||'';
@@ -278,7 +279,7 @@ function compile(text,command=''){
      }
      const dependency=/\b(?:objetivo 2 depois do objetivo 1|objetivo 2 apos (?:o )?objetivo 1|segundo objetivo (?:so )?depois do primeiro|segundo objetivo depende do primeiro)\b/.test(brief);
      const rewardMatch=brief.match(/\b(?:recompensa(?:s)?\s*(?:de|:)?|ganhar)\s*(\d+|um|uma|dois|duas|tres|quatro)\s*kits?\b/);
-     const requestedItems=rewardMatch?number(rewardMatch[1]):/\brecompensas? em itens\b/.test(brief)?1:0;
+     const requestedItems=rewardMatch?number(rewardMatch[1]):/\brecompensas? em itens\b/.test(brief)||globalItemRewards?1:0;
      const itemReward=Math.max(0,Math.min(3,requestedItems));
      if(itemReward!==requestedItems)warnings.push('Recompensa da missão limitada a três kits de suprimentos.');
      return {id:'m'+(i+1),label:'Missão '+(i+1)+' · '+actions.map(a=>caption[a.event]||a.event).join(' + '),

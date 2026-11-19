@@ -52,7 +52,7 @@ test('GF-ARCH-12: sem aprovação falsa de QA',()=>{
 });
 test('GF-ARCH-12: plugins só aceitam capacidades previstas e ids exclusivos',()=>{
  const h=Studio.createHarness();
- h.register({id:'meu-plugin',capabilities:['read-files'],run:c=>({brief:{name:Object.keys(c.files).length}})});
+ h.register({id:'meu-plugin',capabilities:['read-files','write-plan'],run:c=>({brief:{name:Object.keys(c.files).length}})});
  assert.throws(()=>h.register({id:'meu-plugin',run:()=>({})}),/já registrado/);
  assert.throws(()=>h.register({id:'plugin-perigoso',capabilities:['execute-shell'],run:()=>({})}),/Permissão/);
  assert.throws(()=>h.register({id:'__proto__',run:()=>({})}),/Plugin inválido/);
@@ -60,7 +60,7 @@ test('GF-ARCH-12: plugins só aceitam capacidades previstas e ids exclusivos',()
 });
 test('GF-ARCH-12: entrada é protegida de mutação na execução de plugin',()=>{
  const h=Studio.createHarness();
- h.register({id:'seguro',capabilities:['read-spec'],run:c=>{
+ h.register({id:'seguro',capabilities:['read-spec','write-plan'],run:c=>{
    assert.ok(Object.isFrozen(c));assert.ok(Object.isFrozen(c.spec));assert.ok(Object.isFrozen(c.files));
    assert.throws(()=>{c.spec.genre='wrong'},TypeError);
    return {gate:{status:'pending'}};
@@ -71,8 +71,8 @@ test('GF-ARCH-12: entrada é protegida de mutação na execução de plugin',()=
 });
 test('GF-ARCH-12: plugin não pode sobrescrever resultado anterior',()=>{
  const h=Studio.createHarness();
- h.register({id:'primeiro',run:()=>({brief:{name:'um'}})});
- h.register({id:'segundo',run:()=>({brief:{name:'dois'}})});
+ h.register({id:'primeiro',capabilities:['write-plan'],run:()=>({brief:{name:'um'}})});
+ h.register({id:'segundo',capabilities:['write-plan'],run:()=>({brief:{name:'dois'}})});
  assert.throws(()=>h.execute({}),/Campo duplicado/);
 });
 test('GF-ARCH-12: relatório audita dependências e preserva status',()=>{
@@ -84,4 +84,35 @@ test('GF-ARCH-12: relatório audita dependências e preserva status',()=>{
  assert.match(text,/Grafo de dependências/);
  assert.match(text,/sem apagar o save/);
  assert.match(text,/needs-validation/);
+});
+
+test('GF-ARCH-12: capacidades controlam efetivamente acesso e saída',()=>{
+ const h=Studio.createHarness();
+ h.register({id:'sem-leitura',capabilities:['write-plan'],run:c=>{
+  assert.deepEqual(c.files,{});assert.deepEqual(c.spec,{});
+  return {brief:{name:'limitado'}};
+ }});
+ assert.equal(h.execute({files:sample,spec:{genre:'fps'}}).brief.name,'limitado');
+ const b=Studio.createHarness();
+ b.register({id:'leitura-pura',capabilities:['read-files'],run:()=>({brief:{name:'falha'}})});
+ assert.throws(()=>b.execute({files:sample}),/sem permissão de escrita/);
+});
+test('GF-ARCH-12: grafo do motor separa ligações inferidas e explícitas',()=>{
+ const g=Studio.engineGraph({
+  'js/alpha.js':'root.GameForgeAlpha={get:()=>1};',
+  'js/beta.js':'const x=root.GameForgeAlpha.get(); root.GameForgeBeta={run:()=>x};',
+  'index.html':'<script src="./js/alpha.js"></script><script src="./js/beta.js"></script>'
+ });
+ assert.ok(g.edges.some(e=>e.from==='js/beta.js'&&e.to==='js/alpha.js'&&e.evidence==='INFERRED'));
+ assert.ok(g.edges.some(e=>e.from==='index.html'&&e.to==='js/alpha.js'&&e.evidence==='EXTRACTED'));
+ assert.ok(g.symbols.includes('GameForgeAlpha'));
+});
+test('GF-ARCH-12: CLI lê o motor real sem acesso externo',()=>{
+ const {analyze}=require('../tools/map-gameforge.cjs');
+ const out=analyze('js/development-engine.js');
+ assert.ok(out.graph.nodes.length>40);
+ assert.ok(out.graph.nodes.includes('js/development-engine.js'));
+ assert.ok(out.graph.nodes.includes('index.html'));
+ assert.ok(out.impact.includes('js/development-engine.js'));
+ assert.ok(out.impact.includes('index.html'));
 });

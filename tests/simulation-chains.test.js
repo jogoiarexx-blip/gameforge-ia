@@ -35,7 +35,7 @@ test('GF-TRAIN-15: segundo NPC é físico e distinto, legado sem segundo NPC',()
   assert.equal(scene.guide.id,'guide');assert.equal(scene.guide2.id,'guide-2');
   assert.equal(F.walkable(scene,scene.guide2.x,scene.guide2.y),false);
   assert.equal(F.hitAt(scene,scene.guide2.x,scene.guide2.y)?.id,'guide-2');
-  assert.equal(F.nearest({x:scene.guide2.x-38,y:scene.guide2.y},scene,55)?.id,'guide-2');
+  assert.equal(F.nearest({x:scene.guide2.x,y:scene.guide2.y+40},scene,55)?.id,'guide-2');
   assert.ok(F.walkable(scene,F.spawn(scene).x,F.spawn(scene).y));
  }
  assert.equal(F.layout(4,'aquarium',true,false).guide2,null);

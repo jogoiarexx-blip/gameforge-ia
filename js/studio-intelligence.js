@@ -52,6 +52,33 @@ function dependencyGraph(files){
   }
   return {version:1,method:'Referências textuais explícitas; não AST nem análise de chamadas',nodes,edges,unresolved:missing};
 }
+/* Grafo do próprio motor: referências globais são indícios (INFERRED),
+ * não ligações AST comprovadas. O grafo de arquivos mantém EXTRACTED. */
+function engineGraph(files){
+  const base=dependencyGraph(files),definitions=new Map(),all=Object.entries(files||{});
+  for(const [file,code] of all){
+    if(typeof code!=='string'||!/\.js$/i.test(file))continue;
+    const re=/\b(?:root|window|globalThis)\.(GameForge[A-Za-z0-9_]+)\s*=/g;
+    let m;
+    while((m=re.exec(code))){
+      if(!definitions.has(m[1]))definitions.set(m[1],normalizedPath(file));
+    }
+  }
+  const dedupe=new Set(base.edges.map(e=>e.from+'|'+e.to));
+  for(const [file,code] of all){
+    if(typeof code!=='string'||!/\.js$/i.test(file))continue;
+    const from=normalizedPath(file);
+    const matches=code.match(/\bGameForge[A-Za-z0-9_]+\b/g)||[];
+    for(const symbol of new Set(matches)){
+      const to=definitions.get(symbol),key=from+'|'+to;
+      if(!to||from===to||dedupe.has(key))continue;
+      dedupe.add(key);base.edges.push({from,to,relation:'references-global',symbol,evidence:'INFERRED'});
+    }
+  }
+  base.method+='; nomes globais por heurística (INFERRED)';
+  base.symbols=[...definitions.keys()].sort();
+  return base;
+}
 function affectedFiles(graph,changed=['game.js']){
   const affected=new Set((changed||[]).map(normalizedPath).filter(Boolean));
   const queue=[...affected];
@@ -161,6 +188,6 @@ function report(result){
     '\n- '+(q.checkpoint||'')+
     '\n\n**Limite:** grafo textual não verifica chamadas dinâmicas, runtime, desempenho ou mecânicas. Nenhum teste é marcado como aprovado sem execução.\n';
 }
-root.GameForgeStudioIntelligence={createHarness,createDefaultHarness,dependencyGraph,affectedFiles,brief,gate,review,report};
+root.GameForgeStudioIntelligence={createHarness,createDefaultHarness,dependencyGraph,engineGraph,affectedFiles,brief,gate,review,report};
 if(typeof module!=='undefined')module.exports=root.GameForgeStudioIntelligence;
 })(typeof globalThis!=='undefined'?globalThis:this);

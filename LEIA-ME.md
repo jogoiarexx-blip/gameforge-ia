@@ -1,3 +1,9 @@
+# GameForge Studio GF-TRAIN-12 — exploração livre 2D (nova opção)
+
+Aquário, fazenda e loja 2D agora também reconhecem pedidos como **“quero andar livremente com WASD”** ou **“movimentação livre”**. O jogo gerado cria uma sala 2D com obstáculos, estações e um NPC guia opcional: use WASD/setas ou toque para caminhar e E/INTERAGIR para agir perto dos objetos. O save recupera a posição. Modo clássico e caminhada por estações seguem disponíveis. Não há pathfinding automático, IA de NPC ou múltiplas salas.
+
+Leia o [GF-TRAIN-12](docs/TREINAMENTO_EXPLORACAO_GF_TRAIN_12.md).
+
 # GameForge Studio GF-TRAIN-11 — exploração opcional nos simuladores
 
 Aquário, fazenda e loja 2D podem criar um personagem que caminha entre estações quando o pedido inclui “personagem andando”, “caminhar entre tanques” ou “interagir com o aquário”. As ações manuais exigem proximidade: **setas ou A/D** para caminhar, **E** ou **INTERAGIR** para abrir opções e **1–4** para realizar ações. Jogos anteriores permanecem no modo clássico. A estação atual é restaurada pelo salvamento local. Não há mundo aberto nem navegação livre nesta etapa.

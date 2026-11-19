@@ -95,6 +95,11 @@ const parallelSpec=parser.parseGdd('','Cuidar de aquário. Três missões encade
 const parallelFiles=generator.generate(parallelSpec,'');validateFiles(parallelFiles,'2d','simulation');
 const parallelDir=path.join(output,'parallel-aquarium');fs.mkdirSync(parallelDir);
 for(const [filename,contents] of Object.entries(parallelFiles))fs.writeFileSync(path.join(parallelDir,filename),contents);
+// GF-TRAIN-17: dependência v5 e recompensa em kits reais para Chromium.
+const rewardSpec=parser.parseGdd('','Quero cuidar de aquário. Três missões encadeadas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Objetivo 2 depois do objetivo 1. Recompensa de 2 kits. Missão 2: comprar 1 e alimentar 1. Missão 3: comprar 1 e alimentar 1. Dois tanques, crescer em dois segundos, meta de novecentas moedas.');
+const rewardFiles=generator.generate(rewardSpec,'');validateFiles(rewardFiles,'2d','simulation');
+const rewardDir=path.join(output,'reward-aquarium');fs.mkdirSync(rewardDir);
+for(const [filename,contents] of Object.entries(rewardFiles))fs.writeFileSync(path.join(rewardDir,filename),contents);
 fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

@@ -10,7 +10,8 @@ function gameForgeSimulationRulesFactory(events){
   if(c.automation?.enabled)s.automation={elapsed:0,paused:false,actions:0};
   if(care(c))s.tanks=Array.from({length:c.slots},()=>({water:100}));
   if(c.story?.enabled){if(!E)throw Error('Motor de eventos não disponível.');s.story=E.create(c.story);
-   if(c.story.version===5){s.kits=0;s.kitsUsed=0;}}
+   if(c.story.version===5){s.kits=0;s.kitsUsed=0;}
+   if(c.story.version===6){s.items={kit:0,boost:0};s.itemsUsed={kit:0,boost:0};}}
   return s;
  }
  function quote(item,c){
@@ -92,6 +93,7 @@ function gameForgeSimulationRulesFactory(events){
   const outcome=E.record(s.story,c.story,kind,context);
   if(outcome.bonus)s.money+=outcome.bonus;
   if(c.story.version===5&&outcome.items)s.kits+=outcome.items;
+  if(c.story.version===6&&outcome.itemRewards?.count)s.items[outcome.itemRewards.kind]+=outcome.itemRewards.count;
  }
  function talk(s,c,npc=0){
   if(s.complete||!E||!c.story?.enabled||!s.story)return null;
@@ -118,8 +120,10 @@ function gameForgeSimulationRulesFactory(events){
    if(!valid)return false;
    const item=s.slots[index],cfg=care(c);
    if(action==='start'){
-    if(item||(s.money<c.cost&&!(c.story?.version===5&&s.kits>0)))return false;
+    const freeKit=c.story?.version===5?s.kits>0:c.story?.version===6?s.items.kit>0:false;
+    if(item||(s.money<c.cost&&!freeKit))return false;
     if(c.story?.version===5&&s.kits>0){s.kits--;s.kitsUsed++;}
+    else if(c.story?.version===6&&s.items.kit>0){s.items.kit--;s.itemsUsed.kit++;}
     else s.money-=c.cost;
     s.slots[index]={age:0,cared:cfg?.feedingRequired===false};
     if(cfg)s.slots[index].satiety=cfg.feedingRequired===false?100:0;
@@ -128,6 +132,10 @@ function gameForgeSimulationRulesFactory(events){
    if(action==='care'){
     if(!canCare(s,c,index))return false;
     item.cared=true;if(cfg)item.satiety=100;
+    if(c.story?.version===6&&s.items.boost>0){
+     s.items.boost--;s.itemsUsed.boost++;
+     item.age=Math.min(c.seconds,item.age+c.seconds*.5);
+    }
     storyEvent(s,c,'care',context);s.complete=win(s,c);return true;
    }
    if(action==='clean'){
@@ -163,6 +171,9 @@ function gameForgeSimulationRulesFactory(events){
     for(const k of ['money','earned','inventory','sales'])if(!number(v[k],0,1e9,true))return null;
     if(c.story?.enabled&&(!E||!E.validate(v.story,c.story)))return null;
     if(c.story?.version===5&&(!number(v.kits,0,12,true)||!number(v.kitsUsed,0,12,true)||v.kits+v.kitsUsed!==v.story.itemsEarned))return null;
+    if(c.story?.version===6&&(!v.items||!v.itemsUsed||
+      !['kit','boost'].every(k=>number(v.items[k],0,12,true)&&number(v.itemsUsed[k],0,12,true)&&
+       v.items[k]+v.itemsUsed[k]===v.story.itemsEarned[k])))return null;
     if(v.money>c.startingMoney+v.earned+(c.story?.enabled?v.story.rewards:0)||v.earned>v.sales*c.price||v.sales>1e6||v.inventory>1e6)return null;
     if(c.domain!=='aquarium'&&v.earned!==v.sales*c.price||c.domain!=='farm'&&v.inventory!==0)return null;
     if(!Array.isArray(v.slots)||v.slots.length!==c.slots)return null;
@@ -183,12 +194,18 @@ function gameForgeSimulationRulesFactory(events){
     }
     for(const k of ['money','earned','inventory','sales'])result[k]=v[k];
     if(c.story?.version===5){result.kits=v.kits;result.kitsUsed=v.kitsUsed;}
+    if(c.story?.version===6){result.items={kit:v.items.kit,boost:v.items.boost};result.itemsUsed={kit:v.itemsUsed.kit,boost:v.itemsUsed.boost};}
     if(c.story?.enabled){
      result.story={step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks};
      if(c.story.version===2)result.story.choice=v.story.choice;
      if(c.story.version===3)result.story={missionIndex:v.story.missionIndex,step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks,npcTalks:[...v.story.npcTalks],elapsed:v.story.elapsed};
      if(c.story.version===4)result.story={missionIndex:v.story.missionIndex,started:v.story.started,progress:[...v.story.progress],completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks,npcTalks:[...v.story.npcTalks],elapsed:v.story.elapsed};
      if(c.story.version===5)result.story={missionIndex:v.story.missionIndex,started:v.story.started,progress:[...v.story.progress],completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks,npcTalks:[...v.story.npcTalks],elapsed:v.story.elapsed,itemsEarned:v.story.itemsEarned};
+     if(c.story.version===6)result.story={missionProgress:v.story.missionProgress.map(p=>[...p]),
+      missionStarted:[...v.story.missionStarted],missionDone:[...v.story.missionDone],
+      elapsedByMission:[...v.story.elapsedByMission],activeMission:v.story.activeMission,
+      completed:v.story.completed,rewards:v.story.rewards,itemsEarned:{kit:v.story.itemsEarned.kit,boost:v.story.itemsEarned.boost},
+      talks:v.story.talks,npcTalks:[...v.story.npcTalks]};
     }
     result.complete=win(result,c);
     return free?{state:result,selected:data.selected,position:{

@@ -70,6 +70,11 @@ const freeSpec=parser.parseGdd('','Quero cuidar de aquário. Quero andar livreme
 const freeFiles=generator.generate(freeSpec,'');validateFiles(freeFiles,'2d','simulation');
 const freeDirectory=path.join(output,'free-aquarium');fs.mkdirSync(freeDirectory);
 for(const [filename,contents] of Object.entries(freeFiles))fs.writeFileSync(path.join(freeDirectory,filename),contents);
+// GF-TRAIN-13: gerar missão real com NPC, diálogo e venda para QA do navegador.
+const storySpec=parser.parseGdd('','Cuidar de aquário. Missão: vender um peixe. Andar livremente com WASD. Dois tanques, crescer em dois segundos e meta de dez moedas.');
+const storyFiles=generator.generate(storySpec,'');validateFiles(storyFiles,'2d','simulation');
+const storyDirectory=path.join(output,'story-aquarium');fs.mkdirSync(storyDirectory);
+for(const [filename,contents] of Object.entries(storyFiles))fs.writeFileSync(path.join(storyDirectory,filename),contents);
 fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

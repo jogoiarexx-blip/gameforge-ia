@@ -304,10 +304,11 @@
         (sim.config.aquariumCare.waterEnabled?'; qualidade e troca de água':'')+(sim.config.aquariumCare.sellYoung?'; venda de filhotes permitida':'; venda ao atingir idade adulta'),where:'Aquário 2D'});
       interpreted.implementation.applied.push({id:'simulation-save',description:sim.config.persistence.enabled?'Salvamento local automático, manual e continuação; tempo fechado não avança':'Salvamento local desativado pelo pedido',where:'Simulação 2D'});
       if(sim.config.automation?.enabled)interpreted.implementation.applied.push({id:'simulation-automation',description:'Automação local a cada '+sim.config.automation.intervalSeconds+' s: '+['start','care','finish','sell','clean'].filter(k=>sim.config.automation[k]).map(k=>({start:sim.config.start,care:sim.config.care,finish:sim.config.finish,sell:'Vender colheita',clean:'Trocar água'})[k]).join(', '),where:'Simulação 2D'});
+      if(sim.config.exploration?.enabled)interpreted.implementation.applied.push({id:'simulation-walk',description:'Personagem caminha entre estacoes; acoes exigem proximidade e interacao por E/toque',where:'Simulação 2D'});
       interpreted.implementation.pending.push(...sim.pending);
       interpreted.implementation.warnings.push(...sim.warnings);
       if(allLevels.length>1||/\b(?:[2-9]|[1-9][0-9]|duas|dois|tres|quatro|cinco)\s+fases\b/.test(norm))interpreted.implementation.pending.push({id:'simulation-campaign',description:'Campanha de simulação: somente um ciclo econômico está implementado',where:'Jogo inteiro'});
-      interpreted.limitations.unshift('Simulação 2D inicial com seleção de espaços e botões. Sem caminhada, construção livre ou simulação 3D. Salvamento local no mesmo navegador; sem sincronização entre aparelhos. Meta medida em receita de vendas.');
+      interpreted.limitations.unshift(sim.config.exploration?.enabled?'Simulação 2D explorável por estações com caminhada horizontal e interação; sem cenário livre, interiores, obstáculos físicos ou simulação 3D. Salvamento local no mesmo navegador, sem sincronização entre aparelhos.':'Simulação 2D inicial com seleção de espaços e botões. Sem caminhada, construção livre ou simulação 3D. Salvamento local no mesmo navegador; sem sincronização entre aparelhos. Meta medida em receita de vendas.');
       interpreted.detected.push('Simulação: '+sim.config.label+' · '+sim.config.slots+' espaços · meta '+sim.config.target);
     }
     applyGraphics(interpreted,source,extra,options);

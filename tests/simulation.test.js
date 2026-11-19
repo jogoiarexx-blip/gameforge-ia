@@ -47,7 +47,8 @@ test('simulação: dinheiro insuficiente, tempo inválido e venda sem estoque pr
 test('simulação: exporta regras offline, registra recursos não prontos e não inventa campanha',()=>{
  const s=Parser.parseGdd('','Quero cuidar de aquário com reprodução e personagem andando, 5 fases.');
  assert.equal(s.stages.length,1);
- for(const id of ['simulation-breeding','simulation-walk','simulation-campaign'])assert.ok(s.implementation.pending.some(x=>x.id===id),id);
+ for(const id of ['simulation-breeding','simulation-campaign'])assert.ok(s.implementation.pending.some(x=>x.id===id),id);
+ assert.ok(s.implementation.audit.items.some(x=>x.id==='simulation-walk'&&x.status==='implementada'));
  const files=Generator.generate(s,'');
  assert.match(files['game.js'],/GameForgeSimulationRules/);
  assert.match(files['RELATORIO_GERACAO.md'],/Ciclo econômico/);

@@ -6,6 +6,11 @@ function gameForgeSimulationBoot(){
  const canvas=el('game'),ctx=canvas.getContext('2d');canvas.width=960;canvas.height=540;
  let s=R.create(c),state='menu',paused=false,selected=0,frames=0,last=0,noticeUntil=0;
  const aquarium=!!c.aquariumCare?.enabled;
+ const exploring=c.exploration?.enabled===true;
+ const center=index=>960*(index+.5)/c.slots;
+ let playerX=center(0),targetX=playerX,actionsOpen=false;
+ const near=()=>Math.abs(playerX-center(selected))<=(c.exploration?.reach||44);
+ function moveTarget(index){selected=Math.max(0,Math.min(c.slots-1,index));targetX=center(selected);actionsOpen=false;}
  const save=R.persistence(c,GAME_SPEC.title,()=>window.localStorage);
  if(save.enabled){el('start').textContent='Novo jogo';el('restart').textContent='Novo jogo';}
  let saved=save.read(),saveStatus=save.enabled?(saved?'Progresso disponível neste navegador':'Ainda não salvo'):'Desativado',saveElapsed=0;
@@ -25,7 +30,7 @@ function gameForgeSimulationBoot(){
  function victory(){state='victory';el('message').style.opacity='0';el('overlay-title').textContent='Meta alcançada!';el('overlay-sub').textContent=s.sales+' vendas realizadas';el('overlay').classList.remove('hidden');}
  continueButton.addEventListener('click',()=>{
   const data=save.read();if(!data){continueButton.disabled=true;say('Progresso indisponível. Comece um novo jogo.');return;}
-  s=data.state;selected=data.selected;state='play';paused=false;last=0;el('overlay').classList.add('hidden');
+  s=data.state;selected=data.selected;playerX=center(selected);targetX=playerX;actionsOpen=false;state='play';paused=false;last=0;el('overlay').classList.add('hidden');
   if(s.complete)victory();else say('Progresso recuperado. O tempo fechado não alterou o jogo.');update();
  });
  saveButton.addEventListener('click',()=>persist(true));
@@ -41,6 +46,7 @@ function gameForgeSimulationBoot(){
  const say=t=>{el('message').textContent=t;el('message').style.opacity='1';noticeUntil=frames+150;};
  function action(kind){
   if(state!=='play'||paused)return;
+  if(exploring&&(!near()||!actionsOpen)){say('Aproxime-se da estação e pressione E para interagir.');return;}
   if(!R.act(s,c,selected,kind)){say('Selecione um espaço. Produza, cuide e aguarde ficar pronto.');return;}
   if(s.complete)victory();
   persist();update();
@@ -48,33 +54,54 @@ function gameForgeSimulationBoot(){
  for(const [kind,label] of [['start',c.start],['care',c.care],['finish',c.finish],...(c.domain==='farm'?[['sell','Vender colheita']]:[]),...(c.aquariumCare?.waterEnabled?[['clean','Trocar água']]:[])]){
   const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>action(kind));panel.appendChild(b);buttons.push([b,kind]);
  }
- function begin(){s=R.create(c);selected=0;state='play';paused=false;last=0;persist();el('overlay').classList.add('hidden');say('Comece em um espaço vazio. Meta: vender '+c.target+' moedas.');update();}
+ function begin(){s=R.create(c);selected=0;playerX=center(0);targetX=playerX;actionsOpen=false;state='play';paused=false;last=0;persist();el('overlay').classList.add('hidden');say('Comece em um espaço vazio. Meta: vender '+c.target+' moedas.');update();}
  el('start').addEventListener('click',begin);el('restart').addEventListener('click',begin);
  el('pause').addEventListener('click',()=>{if(state==='play'){paused=!paused;persist();update();}});
- el('control-help').textContent=aquarium?'← → selecionar tanque · 1 comprar · 2 alimentar · 3 vender'+(c.aquariumCare.waterEnabled?' · 4 trocar água':''):'← → selecionar · 1 produzir · 2 cuidar · 3 colher/vender · 4 vender colheita';
+ el('control-help').textContent=exploring?'← → caminhar entre estações · E interagir · 1 iniciar · 2 cuidar · 3 vender/colher · 4 limpar/vender · toque para aproximar':aquarium?'← → selecionar tanque · 1 comprar · 2 alimentar · 3 vender'+(c.aquariumCare.waterEnabled?' · 4 trocar água':''):'← → selecionar · 1 produzir · 2 cuidar · 3 colher/vender · 4 vender colheita';
  el('overlay-sub').textContent=c.label+': '+c.start+' → '+c.care+' → '+c.finish+(c.domain==='farm'?' → Vender':'')+(aquarium?'. O peixe cresce enquanto está alimentado'+(c.aquariumCare.waterEnabled?' e com água limpa':'')+'. O valor aumenta com a idade. Alimentar e trocar água são gratuitos.':'')+(save.enabled?'. Progresso salvo neste navegador. Fechado ou pausado, o tempo não avança. Novo jogo substitui o progresso anterior.':'. Salvamento desativado.');
  if(c.automation?.enabled)el('overlay-sub').textContent=c.label+'. Ciclo automático a cada '+c.automation.intervalSeconds+' s, com custos normais. Você pode desligar a automação e jogar manualmente. Pausar congela o jogo. '+(save.enabled?'Progresso salvo neste navegador. Novo jogo substitui o anterior.':'Salvamento desativado.');
  function input(key){
   if(state!=='play'||paused)return;
-  if(key==='ArrowRight')selected=(selected+1)%c.slots;
-  if(key==='ArrowLeft')selected=(selected+c.slots-1)%c.slots;
+  if(exploring){
+   if(key==='ArrowRight'||key==='d'||key==='D'){moveTarget(selected+1);update();return;}
+   if(key==='ArrowLeft'||key==='a'||key==='A'){moveTarget(selected-1);update();return;}
+   if(key==='e'||key==='E'||key===' '){
+    if(near()){actionsOpen=!actionsOpen;say(actionsOpen?'Escolha uma ação nesta estação.':'Interação fechada.');}
+    else say('Aguarde o personagem chegar à estação.');
+    update();return;
+   }
+  }else{
+   if(key==='ArrowRight')selected=(selected+1)%c.slots;
+   if(key==='ArrowLeft')selected=(selected+c.slots-1)%c.slots;
+  }
   const k={'1':'start','2':'care','3':'finish','4':aquarium?'clean':'sell'}[key];if(k)action(k);
  }
- document.addEventListener('keydown',e=>{if(['ArrowRight','ArrowLeft','1','2','3','4'].includes(e.key)){e.preventDefault();input(e.key);}});
+ document.addEventListener('keydown',e=>{
+  const keys=exploring?['ArrowRight','ArrowLeft','a','A','d','D','e','E',' ','1','2','3','4']:['ArrowRight','ArrowLeft','1','2','3','4'];
+  if(keys.includes(e.key)){e.preventDefault();if(!e.repeat)input(e.key);}
+ });
  canvas.addEventListener('pointerdown',e=>{
   const rect=canvas.getBoundingClientRect(),x=(e.clientX-rect.left)*960/rect.width,y=(e.clientY-rect.top)*540/rect.height;
-  if(y>=110&&y<450)selected=Math.max(0,Math.min(c.slots-1,Math.floor(x/(960/c.slots))));
+  if(y>=110&&y<450){
+   const chosen=Math.max(0,Math.min(c.slots-1,Math.floor(x/(960/c.slots))));
+   if(exploring){
+    if(chosen===selected&&near())actionsOpen=!actionsOpen;
+    else moveTarget(chosen);
+   }else selected=chosen;
+   update();
+  }
  });
  for(const button of document.querySelectorAll('[data-control]')){
-  if(button.dataset.control==='fire'){button.textContent=aquarium?'COMPRAR':'PRODUZIR';button.addEventListener('pointerdown',e=>{e.preventDefault();action('start');});}
+  if(button.dataset.control==='fire'){button.textContent=exploring?'INTERAGIR':aquarium?'COMPRAR':'PRODUZIR';button.addEventListener('pointerdown',e=>{e.preventDefault();if(exploring)input('e');else action('start');});}
   else if(['left','right'].includes(button.dataset.control))button.addEventListener('pointerdown',e=>{e.preventDefault();input(button.dataset.control==='left'?'ArrowLeft':'ArrowRight');});
   else button.disabled=true;
  }
  function update(){
+  if(exploring)panel.style.display=actionsOpen&&near()?'flex':'none';
   if(c.automation?.enabled){const toggle=el('simulation-automation');toggle.textContent=s.automation.paused?'Ligar automação':'Desligar automação';toggle.disabled=state!=='play';}
   saveButton.disabled=state==='menu';saveLabel.textContent=saveStatus;
   el('health').textContent=s.money+' $';el('score').textContent=s.earned+'/'+c.target;el('ammo').textContent=aquarium?s.slots.filter(Boolean).length+' peixes':s.inventory;el('level').textContent=c.label;
-  el('mission').textContent=(paused?'Pausado · ':'')+'Vendas: '+s.sales+' · Espaço '+(selected+1);
+  el('mission').textContent=(paused?'Pausado · ':'')+'Vendas: '+s.sales+' · Espaço '+(selected+1)+(exploring?' · '+(near()?(actionsOpen?'Interagindo':'E para interagir'):'Caminhando até estação'):'');
   if(aquarium){
    const q=R.status(s,c,selected),item=s.slots[selected];
    el('mission').textContent=(paused?'Pausado · ':'')+'Tanque '+(selected+1)+' · '+q.label+
@@ -83,14 +110,15 @@ function gameForgeSimulationBoot(){
      (c.aquariumCare.waterEnabled?' · Água '+Math.ceil(q.water)+'%':'')+
      (q.blocked.length?' · Precisa: '+q.blocked.join(', '):q.stage==='adult'?' · Pronto para vender':' · Crescendo'):'');
   }
+  if(exploring)el('mission').textContent+=' · '+(near()?(actionsOpen?'Interação aberta':'Aperte E para interagir'):'Caminhando...');
   if(c.automation?.enabled)el('mission').textContent+=' · Automação '+(s.automation.paused?'desligada':'ligada');
   for(const [b,k] of buttons){
    const item=s.slots[selected];
-   b.disabled=state!=='play'||paused||(k==='start'?!!item||s.money<c.cost:k==='care'?!R.canCare(s,c,selected):k==='clean'?!R.canClean(s,c,selected):k==='sell'?!s.inventory:!R.canFinish(s,c,selected));
+   b.disabled=state!=='play'||paused||(exploring&&(!near()||!actionsOpen))||(k==='start'?!!item||s.money<c.cost:k==='care'?!R.canCare(s,c,selected):k==='clean'?!R.canClean(s,c,selected):k==='sell'?!s.inventory:!R.canFinish(s,c,selected));
   }
  }
  rootTelemetry();
- function rootTelemetry(){window.__gameforgeTelemetry=()=>({state,paused,frames,player:{x:selected,y:0},simulation:JSON.parse(JSON.stringify(s)),domain:c.domain,persistence:{enabled:save.enabled,key:save.key,status:saveStatus,available:!!saved},selected:aquarium?R.status(s,c,selected):null});}
+ function rootTelemetry(){window.__gameforgeTelemetry=()=>({state,paused,frames,player:{x:exploring?playerX:selected,y:exploring?480:0},exploration:{enabled:exploring,x:playerX,target:targetX,near:exploring?near():false,actionsOpen},simulation:JSON.parse(JSON.stringify(s)),domain:c.domain,persistence:{enabled:save.enabled,key:save.key,status:saveStatus,available:!!saved},selected:aquarium?R.status(s,c,selected):null});}
  function draw(){
   ctx.fillStyle=c.domain==='aquarium'?'#103d57':c.domain==='farm'?'#153d2a':'#243046';ctx.fillRect(0,0,960,540);V?.backdrop(ctx,960,540,frames/60);
   ctx.font='22px sans-serif';ctx.fillStyle='#fff';ctx.fillText(c.label+' · '+c.cost+' $ para iniciar · '+(aquarium?'Adulto até ':'Venda ')+c.price+' $',22,48);
@@ -116,8 +144,18 @@ function gameForgeSimulationBoot(){
     }else ctx.fillText(!item.cared?c.care:progress>=1?'Pronto!':Math.ceil(c.seconds-item.age)+' s',x+8,390);
    }else ctx.fillText('Vazio',x+8,250);
   }
+  if(exploring){
+   ctx.fillStyle='#17343f';ctx.fillRect(0,454,960,86);
+   ctx.fillStyle='#315a60';for(let i=0;i<960;i+=80)ctx.fillRect(i+3,533,72,3);
+   ctx.fillStyle='#061922';ctx.beginPath();ctx.ellipse(playerX,514,19,5,0,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#4c95b8';ctx.fillRect(playerX-11,470,22,33);
+   ctx.fillStyle='#efc99c';ctx.beginPath();ctx.arc(playerX,460,12,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#2e2630';ctx.fillRect(playerX-10,448,20,6);
+   ctx.fillStyle='#233448';ctx.fillRect(playerX-10,501,8,12);ctx.fillRect(playerX+2,501,8,12);
+   ctx.fillStyle='#f0dfa0';ctx.font='14px sans-serif';ctx.fillText(near()?'E ou INTERAGIR para abrir ações':'Caminhando...',12,525);
+  }
  }
- function frame(t){if(frames>noticeUntil)el('message').style.opacity='0';const dt=last?Math.min(.1,Math.max(0,(t-last)/1000)):0;last=t;frames++;if(state==='play'&&!paused){R.tick(s,c,dt);if(s.complete){victory();persist();}saveElapsed+=dt;if(saveElapsed>=5)persist();}update();draw();V?.finish(ctx,960,540);requestAnimationFrame(frame);}
+ function frame(t){if(frames>noticeUntil)el('message').style.opacity='0';const dt=last?Math.min(.1,Math.max(0,(t-last)/1000)):0;last=t;frames++;if(state==='play'&&!paused){if(exploring){const distance=targetX-playerX;const step=c.exploration.speed*dt;playerX+=Math.sign(distance)*Math.min(Math.abs(distance),step);if(!near())actionsOpen=false;}R.tick(s,c,dt);if(s.complete){victory();persist();}saveElapsed+=dt;if(saveElapsed>=5)persist();}update();draw();V?.finish(ctx,960,540);requestAnimationFrame(frame);}
  update();requestAnimationFrame(frame);
 }
 root.gameForgeSimulationBoot=gameForgeSimulationBoot;

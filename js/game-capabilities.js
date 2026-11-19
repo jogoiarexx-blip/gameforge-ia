@@ -8,6 +8,7 @@ const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLo
 const dims=(genre,dim)=>genre+'-'+dim;
 const support={
  'simulation-automation':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.automation + GameForgeSimulationRules.tick',test:'tests/simulation-automation.test.js',pattern:/automacao|automatic|automatizar|idle/},
+ 'simulation-walk':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.exploration + gameForgeSimulationBoot',test:'tests/simulation-exploration.test.js',pattern:/personagem andando|caminhar|andar|interagir|aproximar/},
  'simulation-save':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.persistence + GameForgeSimulationRules.persistence',test:'tests/simulation-save.test.js',pattern:/salvar|salvamento|save|continuar|guardar progresso/},
  'aquarium-care':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.aquariumCare + GameForgeSimulationRules',test:'tests/aquarium-care.test.js',pattern:/aquario|peixe|fome|alimentar|crescer|agua/},
  'visual-profile':{all:true,contract:'GAME_SPEC.renderProfile + gameForgeGraphicsFactory',test:'tests/graphics.test.js',pattern:/pixel|cartoon|low.?poly|ilustrad|realista|qualidade|sombras|particulas|por do sol/},
@@ -53,7 +54,7 @@ function capability(id,spec){
  const key=normalizeId(id),definition=support[key];
  if(!definition)return {id:key,allowed:false,implemented:false,reason:'Sem contrato executável catalogado para este requisito.'};
  const allowed=!!(definition.all||definition.engines.includes(physicalEngine(spec)));
- return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation'].includes(key),contract:definition.contract,test:definition.test,
+ return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk'].includes(key),contract:definition.contract,test:definition.test,
    reason:allowed?'Mecânica do motor identificada; verificar GAME_SPEC e testes.':'O motor '+physicalEngine(spec)+' não implementa este parâmetro.'};
 }
 function provenance(item,source,command){
@@ -89,7 +90,7 @@ function audit(spec,gdd='',instruction=''){
   const cap=capability(entry.id,spec);
   // "Pendente" não é promovido só porque há uma capacidade com nome semelhante.
   const status=kind==='pending'?(cap.contract&&!cap.allowed?'incompativel':'pendente'):
-    !cap.allowed?'incompativel':cap.implemented&&['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation'].includes(entry.id)?'implementada':'configurada';
+    !cap.allowed?'incompativel':cap.implemented&&['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk'].includes(entry.id)?'implementada':'configurada';
   const where=String(entry.where||'Jogo inteiro');
   const origin=provenance(entry,gdd,instruction);
   const reason=status==='implementada'?'Módulo funcional existente no runtime com teste automatizado.':

@@ -129,6 +129,13 @@ function compile(text,command=''){
  }
  if(config.domain==='aquarium'&&!config.aquariumCare?.waterEnabled)auto.clean=false;
  auto.enabled=relevant.some(field=>auto[field]);if(auto.enabled)config.automation=auto;
+ // GF-TRAIN-11: caminhada somente quando o jogador realmente pede exploração.
+ // Última ordem explícita prevalece; a exploração não substitui o ciclo econômico.
+ const walkRequests=[];
+ const walkPattern=/\b(?:personagem|boneco|jogador)\s+(?:andando|caminhando|anda|caminha)\b|\b(?:andar|caminhar|andando|caminhando|aproximar|chegar|ir)\s+(?:ate|para|pelo|pela|entre|no|na|perto)\s+(?:o |a |os |as )?(?:aquarios?|tanques?|loja|fazenda|prateleiras?|canteiros?|espacos?)\b|\b(?:interagir|interacao)\s+(?:com|ao|no|na)\s+(?:o |a )?(?:aquario|tanque|prateleira|canteiro)\b/g;
+ for(const m of t.matchAll(walkPattern))walkRequests.push({index:m.index,enabled:!negativeAt(t,m.index)});
+ if(walkRequests.length&&walkRequests[walkRequests.length-1].enabled)
+  config.exploration={version:1,enabled:true,speed:240,reach:44};
  const pending=[];
  const unsupported=[['paid-food',/comprar racao|racao (?:custa|paga)|comida (?:custa|paga)/,'Loja e cobrança de alimentação'],
  ['health',/doencas?|peixes? (?:morrem?|morrendo)|morte dos peixes|saude dos peixes/,'Saúde, doenças e morte de peixes'],
@@ -141,6 +148,7 @@ function compile(text,command=''){
  ['automation',/automatic(?:[oa]|amente)|automatizar|automacao|\bidle\b/,'Automação de produção'],
  ['walk',/andar|caminhar|personagem andando/,'Personagem caminhando pelo cenário']];
  for(const [id,re,label] of unsupported){
+  if(id==='walk'&&config.exploration?.enabled)continue;
   const scoped=id==='automation'?t.replace(/\b(?:salvamento|save|salvar|guardar (?:o )?progresso)\s+automatic(?:o|amente)\b/g,match=>' '.repeat(match.length)):t;
   const requests=new Map();
   for(const m of scoped.matchAll(new RegExp(re.source,'g'))){

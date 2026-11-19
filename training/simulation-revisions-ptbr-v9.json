@@ -540,8 +540,8 @@
       "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nSem personagem andando.",
       "instruction": "Agora quero personagem andando.",
       "domain": "aquarium",
-      "expected": {},
-      "pending": "simulation-walk"
+      "expected": {"exploration.enabled": true},
+      "absentPending": "simulation-walk"
     },
     {
       "gdd": "# Aquário\nQuero cuidar de aquário com 4 tanques, fome em 10 segundos, água suja em 30 segundos, crescer em 18 segundos.\nCom funcionários.",

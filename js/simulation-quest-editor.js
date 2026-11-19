@@ -70,31 +70,43 @@
    prerequisites:[...(m.requiresMissions||[])],afterFirst:!!m.objectives[1]?.requiresFirst
   })),graph:story.version===6};
  }
- function editGenerated(files,proposed){
+ function editGenerated(files,proposed,options={}){
   const {spec,match,game}=extractGenerated(files),data=normalize(proposed),c=spec.simulation;
   if(data.domain!==c.domain)throw Error('Não é possível trocar o tipo de jogo já criado pelo editor de missões.');
   if(data.missions.some(m=>m.stock>c.slots))throw Error('Estoque exigido maior que a quantidade de espaços do jogo ('+c.slots+').');
   const advanced=data.missions.some(m=>m.afterFirst||m.kits>0);
-  if(c.story.version===4&&advanced)
-   throw Error('Para acrescentar dependências ou kits, crie primeiro um jogo com esse recurso. O motor já exportado v4 não contém a lógica v5.');
+  if(c.story.version===4&&(advanced||data.graph))
+   throw Error('Motor v4 exportado não contém dependências, kits ou recompensas avançadas.');
+  if(c.story.version===5&&data.graph)
+   throw Error('Motor v5 exportado não contém missões paralelas ou aceleradores. Crie um jogo novo v6.');
+  const oldConfig=JSON.parse(JSON.stringify(c));
+  if(options.migrateSave===true){
+   if(oldConfig.saveMigration!==undefined)
+    throw Error('Migração exige uma edição por vez: este projeto já contém migração. Abra o jogo e converta o save antes de editar novamente.');
+   if(c.persistence?.enabled!==true)throw Error('Este jogo não possui salvamento para migrar.');
+  }
   const previous=c.story.missions;
   c.story.missions=data.missions.map((m,i)=>({
    id:'m'+(i+1),
    label:'Missão '+(i+1)+' · '+m.objectives.map(o=>domains[data.domain].actions[o.event]).join(' + '),
    objectives:m.objectives.map((o,k)=>({
-    event:o.event,count:o.count,...(c.story.version===5?{requiresFirst:k===1&&m.afterFirst}:{})
+    event:o.event,count:o.count,...(c.story.version>=5?{requiresFirst:k===1&&m.afterFirst}:{})
    })),
    reward:previous[i]?.reward??(3+2*i),
    requires:[...(m.stock?[{kind:'stock',min:m.stock}]:[]),...(m.seconds?[{kind:'time',seconds:m.seconds}]:[])],
-   ...(c.story.version===5?{itemReward:m.kits}:{})
+   ...(c.story.version===5?{itemReward:m.kits}:c.story.version===6?{
+    itemReward:{kind:m.boosts>0?'boost':'kit',count:m.boosts||m.kits},
+    requiresMissions:[...m.prerequisites]}:{})
   }));
   const factory=root.gameForgeSimulationEventsFactory||(typeof require==='function'?require('./simulation-events'):null);
   if(typeof factory!=='function'||!factory().validConfig(c.story))
    throw Error('A configuração não passou na validação do motor de missões.');
+  delete c.saveMigration;
+  if(options.migrateSave===true)c.saveMigration={version:1,previous:oldConfig};
   const code=game.replace(match[0],'const GAME_SPEC = '+JSON.stringify(spec)+';\n');
   if(code===game)throw Error('Nenhuma alteração identificada.');
   return {files:{...files,'game.js':code},spec,oldStoryVersion:c.story.version,
-   notice:'O jogo exportado foi alterado sem regenerar scripts. O save antigo usa outra assinatura e não pode continuar após a mudança.'};
+   notice:options.migrateSave===true?'Migração autorizada: apenas saves válidos de missões ainda não iniciadas, na mesma origem, serão importados.':'O jogo exportado mudou sem regenerar scripts. O save antigo não pode continuar após a mudança.'};
  }
  function mount({document:doc,root:host,instruction,onApply,getGenerated,onEdit}){
   if(!host||!doc||!instruction)return false;

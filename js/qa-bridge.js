@@ -58,8 +58,10 @@
          case 'inspect':result=inspect();break;
          case 'qa-click':{
            // Permitido apenas para três controles conhecidos no jogo clonado.
-           if(!['simulation-save','simulation-continue','simulation-action-start'].includes(q.target))
+           if(!['simulation-save','simulation-continue','simulation-action-start','pause'].includes(q.target))
              throw Error('Ação QA não permitida');
+           if(q.target==='pause'&&window.__gameforgeQA18Storage?.kind!=='GF18_VIRTUAL_STORE')
+             throw Error('Pausa de QA permitida apenas no clone 3D virtual GF18');
            const button=document.getElementById(q.target);
            result={clicked:!!(button&&!button.disabled&&button.tagName==='BUTTON')};
            if(result.clicked)button.click();
@@ -67,10 +69,11 @@
          }
          case 'qa-storage':{
            // Acesso EXCLUSIVO ao armazenamento virtual injetado no clone GF17.
-           const virtual=window.__gameforgeQA17Storage;
-           if(!virtual||virtual.kind!=='GF17_VIRTUAL_STORE'||typeof virtual.dump!=='function')
+           const virtual=window.__gameforgeQA18Storage||window.__gameforgeQA17Storage;
+           if(!virtual||!['GF17_VIRTUAL_STORE','GF18_VIRTUAL_STORE'].includes(virtual.kind)||
+              typeof virtual.dump!=='function')
              throw Error('Armazenamento virtual indisponível');
-           result={virtual:true,entries:virtual.dump()};
+           result={virtual:true,entries:virtual.dump(),stats:typeof virtual.stats==='function'?virtual.stats():[]};
            break;
          }
          default:throw Error('Ação não permitida');

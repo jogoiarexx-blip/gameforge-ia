@@ -316,8 +316,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const advanced=advancedSuiteForCurrent();
     const hadRestore=!!state.files['RESULTADOS_RESTAURACAO_GF17.json'];
     const restored=saveResumeSuiteForCurrent();
+    const had3D=!!state.files['RESULTADOS_3D_GF18.json'];
+    const suite3d=suite3DForCurrent();
     if(!current||current.projectFingerprint!==revision||current.requestFingerprint!==requestRev||
-       (hadAdvanced&&!advanced)||(hadRestore&&!restored))refreshEvidence();
+       (hadAdvanced&&!advanced)||(hadRestore&&!restored)||(had3D&&!suite3d))refreshEvidence();
   }
   function projectSnapshot(){
     ensureEvidenceFresh();
@@ -847,6 +849,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('gf15-run').addEventListener('click',()=>projectOperation(runTypedQa));
   $('gf16-run').addEventListener('click',()=>projectOperation(runAdvancedQa));
   $('gf17-run').addEventListener('click',()=>projectOperation(runSaveResumeQa));
+  $('gf18-run').addEventListener('click',()=>projectOperation(run3DPersistenceQa));
   $('plan-improvement').addEventListener('click',planImprovement);
   $('improve').addEventListener('click',()=>projectOperation(improveGame));
   $('undo-improvement').addEventListener('click',undoImprovement);
@@ -855,7 +858,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
 
   /* Laboratório de QA visual v0.4: executa jogo no iframe e testa regressões. */
   const qaState={last:null,baseline:null,vision:null,candidate:null,baseCode:null};
-  let gf15Running=false, gf16Running=false, gf17Running=false;
+  let gf15Running=false, gf16Running=false, gf17Running=false, gf18Running=false;
   const qaStatus=message=>{$('qa-status').textContent=message;};
 
   function currentRequirementSource(){
@@ -1000,6 +1003,52 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       feedback('GF17: '+String(err?.message||err),true);
     }finally{gf17Running=false;qaButtons();}
   }
+
+  function suite3DForCurrent(){
+    let suite=null;
+    try{suite=JSON.parse(state.files['RESULTADOS_3D_GF18.json']||'null');}catch{}
+    if(!suite)return null;
+    if(!GameForge3DPersistenceQA.valid(suite,currentRequirementSource(),state.files)){
+      delete state.files['RESULTADOS_3D_GF18.json'];
+      delete state.files['RELATORIO_3D_GF18.md'];
+      $('gf18-summary').textContent='Versão de código, assets ou GDD mudou. Teste 3D anterior invalidado.';
+      return null;
+    }
+    return suite;
+  }
+  async function run3DPersistenceQa(){
+    if(!state.files['game.js']||gf15Running||gf16Running||gf17Running||gf18Running)return;
+    if(stagedImprovement||qaState.candidate){
+      feedback('Revise ou descarte a alteração pendente antes do QA 3D.',true);return;
+    }
+    gf18Running=true;qaButtons();
+    try{
+      const src=currentRequirementSource(),files={...state.files};
+      const p=GameForge3DPersistenceQA.plan({...src,files});
+      if(!p.applicable){
+        $('gf18-summary').textContent='Este jogo não oferece contrato de salvamento 3D reconhecido. Não será simulado.';
+        return;
+      }
+      const assets={...files,...await assetBinaryFiles()};
+      const spec=state.spec||GameForgeParser.parseGdd($('gdd').value);
+      const html=GameForgeGenerator.shell(spec.title,assets['style.css'],assets['game.js'],true,assets);
+      const result=await GameForge3DPersistenceQA.run({...src,files,plan:p,html,
+        onUpdate:msg=>{$('gf18-summary').textContent=msg;}});
+      if(!GameForge3DPersistenceQA.valid(result,currentRequirementSource(),state.files)){
+        $('gf18-summary').textContent='Projeto alterado durante o teste. Resultado descartado.';return;
+      }
+      state.files['RESULTADOS_3D_GF18.json']=JSON.stringify(result,null,2);
+      state.files['RELATORIO_3D_GF18.md']=GameForge3DPersistenceQA.report(result);
+      refreshEvidence();
+      $('gf18-summary').textContent='GF-ARCH-18 — '+result.status+': '+result.reason+
+        '\nO teste foi isolado em dois clones; PASS significa recuperação virtual, não durabilidade do dispositivo.';
+      listFiles();saveState();
+      feedback('GF18: '+result.status+'. Relatório 3D incluído no projeto.');
+    }catch(err){
+      $('gf18-summary').textContent='GF18 não concluído: '+String(err?.message||err);
+      feedback('Falha no teste 3D: '+String(err?.message||err),true);
+    }finally{gf18Running=false;qaButtons();}
+  }
   function refreshEvidence(qaReport=null){
     if(!state.files['game.js']){
       $('gf14-summary').textContent='Nenhum jogo foi gerado para análise.';
@@ -1012,7 +1061,8 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const general=GameForgeRequirementEvidence.evaluate(matrix,{files:state.files,qa:qaReport});
     const tested=GameForgeScenarioQA.attach(general,typedSuiteForCurrent(),currentRequirementSource(),state.files);
     const advanced=GameForgeAdvancedScenarioQA.attach(tested,advancedSuiteForCurrent(),currentRequirementSource(),state.files);
-    const examined=GameForgeSaveResumeQA.attach(advanced,saveResumeSuiteForCurrent(),currentRequirementSource(),state.files);
+    const restored=GameForgeSaveResumeQA.attach(advanced,saveResumeSuiteForCurrent(),currentRequirementSource(),state.files);
+    const examined=GameForge3DPersistenceQA.attach(restored,suite3DForCurrent(),currentRequirementSource(),state.files);
     state.files['MAPA_CODIGO_GF14.json']=JSON.stringify(codeMap,null,2);
     state.files['MATRIZ_REQUISITOS_GF14.json']=JSON.stringify(examined,null,2);
     state.files['MANIFESTO_AGENTES_GF14.json']=JSON.stringify(GameForgeAgentHandoff.create({instruction:$('instruction').value,spec:state.spec,files:state.files}),null,2);
@@ -1031,10 +1081,11 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
 
   function qaButtons(){
     const ready=!!state.files['game.js'],has=!!qaState.last,ref=!!qaState.baseline,ai=state.mode==='ai';
-    $('qa-run').disabled=!ready||gf15Running||gf16Running||gf17Running;
-    $('gf15-run').disabled=!ready||gf15Running||gf16Running||gf17Running;
-    $('gf16-run').disabled=!ready||gf15Running||gf16Running||gf17Running;
-    $('gf17-run').disabled=!ready||gf15Running||gf16Running||gf17Running;
+    $('qa-run').disabled=!ready||gf15Running||gf16Running||gf17Running||gf18Running;
+    $('gf15-run').disabled=!ready||gf15Running||gf16Running||gf17Running||gf18Running;
+    $('gf16-run').disabled=!ready||gf15Running||gf16Running||gf17Running||gf18Running;
+    $('gf17-run').disabled=!ready||gf15Running||gf16Running||gf17Running||gf18Running;
+    $('gf18-run').disabled=!ready||gf15Running||gf16Running||gf17Running||gf18Running;
     $('qa-baseline').disabled=!has;
     $('qa-compare').disabled=!(has&&ref);
     $('qa-vision').disabled=!(has&&ai);
@@ -1060,7 +1111,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     }finally{t.close();}
   }
   async function qaRun(){
-    if(!state.files['game.js']||gf15Running||gf16Running||gf17Running)return;
+    if(!state.files['game.js']||gf15Running||gf16Running||gf17Running||gf18Running)return;
     $('qa-run').disabled=true;qaStatus('Executando roteiro de testes...');
     try{
       $('preview-box').scrollIntoView({block:'center',inline:'nearest'});

@@ -488,7 +488,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     try{return await action();}finally{projectOperations--;}
   }
   function projectAvailable(){
-    if(projectOperations||qaState.candidate){feedback('Conclua o teste ou a alteração em andamento antes de abrir ou baixar um backup.',true);return false;}
+    if(projectOperations||qaState.candidate||stagedImprovement){feedback('Conclua o teste ou descarte a proposta pendente antes de abrir ou baixar um backup.',true);return false;}
     return true;
   }
   async function downloadProject(){
@@ -570,6 +570,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     }finally{projectOperations--;}
   });
   async function generate(){
+    if(stagedImprovement){feedback('Descarte a proposta pendente antes de gerar outro jogo.',true);return;}
     if(qaState.candidate){feedback('Aceite ou descarte a correção candidata antes de gerar outro jogo.',true);return;}
     const spec=analyze();if(!spec)return;
     if(spec.designIR?.blocked?.length){

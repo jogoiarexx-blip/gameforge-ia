@@ -13,7 +13,7 @@ function gameForgeExploration2DFactory(){
   const furniture=count<=4?[{id:'counter',type:'obstacle',x:425,y:309,w:110,h:36}]:[];
   const guide=withGuide?{id:'guide',type:'npc',x:860,y:485,r:14,
    label:domain==='aquarium'?'Cuidador':domain==='farm'?'Agricultor':'Atendente'}:null;
-  const guide2=withGuide&&withSecondNpc?{id:'guide-2',type:'npc',x:700,y:485,r:14,
+  const guide2=withGuide&&withSecondNpc?{id:'guide-2',type:'npc',x:700,y:450,r:14,
    label:domain==='aquarium'?'Pesquisador':domain==='farm'?'Feirante':'Gerente'}:null;
   return {width:WIDTH,height:HEIGHT,bounds:{left:25,top:90,right:935,bottom:520},radius:RADIUS,
    stations,furniture,guide,guide2};

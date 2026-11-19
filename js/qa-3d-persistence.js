@@ -174,7 +174,10 @@ async function run(input={}){
   }
   if(!key)return decision(p,'INCONCLUSIVE',
    p.contract==='URBAN_AUTOSAVE_V1'?'Nenhum salvamento urbano confiável encontrado.':
-   'O RPG/arena/FPS ainda não concluiu uma fase para gerar checkpoint; não foi simulado.');
+   'O RPG/arena/FPS ainda não concluiu uma fase para gerar checkpoint; não foi simulado.',
+   {virtualKeyTypes:Object.keys(records).map(k=>k.startsWith('gameforge-urban-')?'urban':k.startsWith('gameforge-campaign-')?'campaign':'other'),
+    telemetryGenre:after?.genre,telemetryState:after?.state,saveStatus:after?.saveStatus,
+    saveEnabled:after?.saveEnabled,inspectedErrors:(await send('inspect'))?.errors?.slice(0,3)||[]});
   try{record=JSON.parse(records[key]);}catch{
    return decision(p,'FAIL','Registro de salvamento produzido pelo jogo não é JSON válido.');
   }

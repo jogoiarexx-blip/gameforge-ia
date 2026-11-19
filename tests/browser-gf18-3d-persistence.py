@@ -58,7 +58,7 @@ def run():
                 page.locator('#file-list').get_by_text('RESULTADOS_3D_GF18.json',exact=True).click()
                 result=json.loads(page.locator('#file-editor').input_value())
                 assert result['version']==18
-                assert result['contract']=='URBAN_AUTOSAVE_V1'
+                assert result['contract']=='URBAN_MISSIONS_V2'
                 assert result['status']=='PASS'
                 assert result['scenario']['observed']['restoredInNewClone'] is True
                 page.locator('#file-list').get_by_text('MATRIZ_REQUISITOS_GF14.json',exact=True).click()

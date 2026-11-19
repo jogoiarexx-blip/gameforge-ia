@@ -28,6 +28,7 @@ function category(text){
 function clauses(text){
  return String(text||'').split(/\n|;|[.!?](?=\s|$)/).map(x=>x.trim()).filter(Boolean);
 }
+function requestFingerprint(input){return checksum(String(input?.instruction||'')+'\0'+String(input?.gdd||'')+'\0'+JSON.stringify(input?.spec?.implementation?.pending||[]));}
 function extract(input={}){
  const rows=[],seen=new Set(),max=40;
  function push(text,source,state='UNVERIFIED'){
@@ -48,7 +49,7 @@ function extract(input={}){
   push(typeof pending==='string'?pending:pending?.description,'ENGINE_PENDING','UNSUPPORTED');
  }
  return {version:14,method:'Segmentação textual e pendências declaradas; sem teste automático implícito',
-  projectFingerprint:fingerprint(input.files||{}),requirements:rows,
+  projectFingerprint:fingerprint(input.files||{}),requestFingerprint:requestFingerprint(input),requirements:rows,
   summary:{total:rows.length,unverified:rows.filter(r=>r.status==='UNVERIFIED').length,unsupported:rows.filter(r=>r.status==='UNSUPPORTED').length,observedPartial:0,issues:0},
   note:'Declaração, configuração e heurística não comprovam implementação. QA genérico só oferece evidência parcial.'};
 }
@@ -108,7 +109,7 @@ function report(matrix){
  result.push('**Limite:** o teste QA embutido verifica um pequeno cenário; não é uma bateria completa dos requisitos declarados. Qualquer alteração de código invalida evidências da versão anterior.','');
  return result.join('\n');
 }
-const api={extract,evaluate,report,fingerprint,checksum,category};
+const api={extract,evaluate,report,fingerprint,requestFingerprint,checksum,category};
 root.GameForgeRequirementEvidence=api;
 if(typeof module!=='undefined')module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

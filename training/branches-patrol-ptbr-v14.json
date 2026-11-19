@@ -1,0 +1,367 @@
+{
+  "version": 14,
+  "title": "Escolhas e patrulhas condicionais PT-BR",
+  "note": "30 casos de regressão rotulados; são testes de interpretação de comandos, não ajuste de pesos de IA",
+  "cases": [
+    {
+      "instruction": "Cuidar de aquário. Missão com escolhas de diálogo.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão com duas opções.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão ramificada.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missões ramificadas.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão com diálogo ramificado.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão: escolher entre alimentar ou vender.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão: escolher entre alimentar dois peixes ou vender tres peixes.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 2,
+        "countB": 3,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão: escolher entre alimentar seis peixes ou vender dez peixes.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 5,
+        "countB": 5,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar da fazenda. Missão: escolher entre plantar ou vender.",
+      "expected": {
+        "domain": "farm",
+        "branch": true,
+        "eventA": "start",
+        "eventB": "sell",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar da fazenda. Missão: escolher entre regar ou colher.",
+      "expected": {
+        "domain": "farm",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Administrar uma loja. Missão: escolher entre repor ou vender.",
+      "expected": {
+        "domain": "shop",
+        "branch": true,
+        "eventA": "start",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Administrar uma loja. Missão: escolher entre comprar ou vender.",
+      "expected": {
+        "domain": "shop",
+        "branch": true,
+        "eventA": "start",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão: dialogo com escolhas.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão: dois caminhos.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão: escolher entre alimentar e vender.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão: vender um peixe.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão: vender dois peixes.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão com escolhas de diálogo. Agora sem escolhas de diálogo.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Sem escolhas de diálogo. Agora missão com escolhas de diálogo.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão com múltiplos finais.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. NPC patrulhando.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": true
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. NPC com patrulha.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": true
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Guia patrulhando.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": true
+      }
+    },
+    {
+      "instruction": "Cuidar da fazenda. Agricultor patrulhando.",
+      "expected": {
+        "domain": "farm",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": true
+      }
+    },
+    {
+      "instruction": "Administrar uma loja. Atendente patrulhando.",
+      "expected": {
+        "domain": "shop",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": true
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Sem NPC patrulhando.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. NPC patrulhando. Agora sem NPC patrulhando.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": false
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Sem NPC patrulhando. Agora NPC patrulhando.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": false,
+        "eventA": null,
+        "eventB": null,
+        "countA": 0,
+        "countB": 0,
+        "patrol": true
+      }
+    },
+    {
+      "instruction": "Cuidar de aquário. Missão com escolhas de diálogo e NPC patrulhando.",
+      "expected": {
+        "domain": "aquarium",
+        "branch": true,
+        "eventA": "care",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": true
+      }
+    },
+    {
+      "instruction": "Administrar uma loja. Missão: escolher entre repor ou vender. NPC patrulhando.",
+      "expected": {
+        "domain": "shop",
+        "branch": true,
+        "eventA": "start",
+        "eventB": "finish",
+        "countA": 1,
+        "countB": 1,
+        "patrol": true
+      }
+    }
+  ]
+}

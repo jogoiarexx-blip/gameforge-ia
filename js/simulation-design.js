@@ -191,7 +191,7 @@ function compile(text,command=''){
    const branchRequests=[...t.matchAll(/\b(?:escolhas? de dialogo|dialogo com escolhas|(?:missao|missoes) ramificadas?|dialogo ramificado|escolher entre (?:as )?(?:duas )?(?:missoes|tarefas|opcoes)|duas opcoes|dois caminhos|escolher entre (?:alimentar|regar|plantar|comprar|repor|vender|colher)\b)\b/g)];
    const wantsBranch=branchRequests.length&& !negativeAt(t,branchRequests[branchRequests.length-1].index);
    if(wantsBranch&&storyState.mission){
-    const pair=t.match(/\b(?:escolher entre|entre|opcoes?\s*:|caminhos?\s*:?)\s*(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|\d+))?(?:\s+(?:peixes?|produtos?|colheitas?|itens?|vezes|canteiros?|tanques?))?\s+ou\s+(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|\d+))?\b/);
+    const pair=t.match(/\b(?:escolher entre|entre|opcoes?\s*:|caminhos?\s*:?)\s*(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+))?(?:\s+(?:peixes?|produtos?|colheitas?|itens?|vezes|canteiros?|tanques?))?\s+ou\s+(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+))?\b/);
     const convert=word=>({alimentar:'care',regar:'care',plantar:'start',comprar:'start',repor:'start',
       vender:config.domain==='farm'?'sell':'finish',colher:'finish'})[word];
     const first=pair?convert(pair[1]):'care',second=pair?convert(pair[3]):'finish';

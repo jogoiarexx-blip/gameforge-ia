@@ -90,6 +90,11 @@ const chainSpec=parser.parseGdd('','Cuidar de aquário. Duas missões encadeadas
 const chainFiles=generator.generate(chainSpec,'');validateFiles(chainFiles,'2d','simulation');
 const chainDir=path.join(output,'chain-aquarium');fs.mkdirSync(chainDir);
 for(const [filename,contents] of Object.entries(chainFiles))fs.writeFileSync(path.join(chainDir,filename),contents);
+// GF-TRAIN-16: 3 missões com duas tarefas reais por missão e NPCs alternados.
+const parallelSpec=parser.parseGdd('','Cuidar de aquário. Três missões encadeadas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Missão 2: comprar 1 e alimentar 1. Missão 3: comprar 1 e alimentar 1. Dois tanques, crescer em dois segundos, meta de dez moedas.');
+const parallelFiles=generator.generate(parallelSpec,'');validateFiles(parallelFiles,'2d','simulation');
+const parallelDir=path.join(output,'parallel-aquarium');fs.mkdirSync(parallelDir);
+for(const [filename,contents] of Object.entries(parallelFiles))fs.writeFileSync(path.join(parallelDir,filename),contents);
 fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

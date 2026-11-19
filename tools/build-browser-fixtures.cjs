@@ -85,6 +85,11 @@ for(const [slug,instruction] of [
  const directory=path.join(output,slug);fs.mkdirSync(directory);
  for(const [filename,contents] of Object.entries(files))fs.writeFileSync(path.join(directory,filename),contents);
 }
+// GF-TRAIN-15: fixture de integração de duas missões e dois NPCs no navegador real.
+const chainSpec=parser.parseGdd('','Cuidar de aquário. Duas missões encadeadas. Primeira missão: comprar um peixe. Segunda missão: vender um peixe, estoque de um peixe e esperar 3 segundos. Dois tanques, crescer em dois segundos, meta de dez moedas.');
+const chainFiles=generator.generate(chainSpec,'');validateFiles(chainFiles,'2d','simulation');
+const chainDir=path.join(output,'chain-aquarium');fs.mkdirSync(chainDir);
+for(const [filename,contents] of Object.entries(chainFiles))fs.writeFileSync(path.join(chainDir,filename),contents);
 fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

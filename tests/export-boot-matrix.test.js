@@ -395,7 +395,7 @@ test('GF-TRAIN-12: jogo livre exportado usa WASD, bloqueia ações distantes, sa
  a.element('body').children.find(x=>x.id==='simulation-save').click();
  const b=environment(files,'2d',storage);
  b.element('overlay').children.find(x=>x.id==='simulation-continue').click();
- assert.deepEqual(b.telemetry().player,a.telemetry().player,'posição restaurada');
+ assert.equal(JSON.stringify(b.telemetry().player),JSON.stringify(a.telemetry().player),'posição restaurada');
  assert.equal(b.telemetry().exploration.actionsOpen,false);
  b.input('keydown','e');b.tick(140);b.input('keydown','3');
  assert.equal(b.telemetry().state,'victory');

@@ -133,9 +133,21 @@ function compile(text,command=''){
  // Última ordem explícita prevalece; a exploração não substitui o ciclo econômico.
  const walkRequests=[];
  const walkPattern=/\b(?:personagem|boneco|jogador)\s+(?:andando|caminhando|anda|caminha)\b|\b(?:andar|caminhar|andando|caminhando|aproximar|chegar|ir)\s+(?:ate|para|pelo|pela|entre|no|na|perto)\s+(?:o |a |os |as )?(?:aquarios?|tanques?|loja|fazenda|prateleiras?|canteiros?|espacos?)\b|\b(?:interagir|interacao)\s+(?:com|ao|no|na)\s+(?:o |a )?(?:aquario|tanque|prateleira|canteiro)\b/g;
- for(const m of t.matchAll(walkPattern))walkRequests.push({index:m.index,enabled:!negativeAt(t,m.index)});
- if(walkRequests.length&&walkRequests[walkRequests.length-1].enabled)
-  config.exploration={version:1,enabled:true,speed:240,reach:44};
+ // GF-TRAIN-12: livre e por estações são modos diferentes, sem herdar sistemas fictícios.
+ const freePattern=/\b(?:andar|caminhar|explorar|movimentar(?:-se)?|se movimentar)\s+(?:livremente|pelo cenario|pela sala|por toda (?:a loja|a fazenda)|em todas as direcoes|com wasd)\b|\b(?:movimentacao|exploracao)\s+livre\b|\b(?:mapa|loja|fazenda|aquario)\s+exploravel\b|\b(?:andar|caminhar)\s+(?:com\s+)?wasd\b|\b(?:personagem|boneco|jogador)\s+(?:andando|caminhando)\s+livremente\b/g;
+ for(const m of t.matchAll(walkPattern))walkRequests.push({index:m.index,mode:'stations',enabled:!negativeAt(t,m.index)});
+ for(const m of t.matchAll(freePattern))walkRequests.push({index:m.index,mode:'free',enabled:!negativeAt(t,m.index)});
+ let movement=null;
+ for(const event of walkRequests.sort((a,b)=>a.index-b.index)){
+  if(event.enabled)movement=event.mode;
+  else if(movement===event.mode)movement=null;
+ }
+ if(movement==='stations')config.exploration={version:1,enabled:true,speed:240,reach:44};
+ if(movement==='free'){
+  let guide=true;
+  for(const m of t.matchAll(/\b(?:npc|guia do jogo|personagem secundario)\b/g))guide=!negativeAt(t,m.index);
+  config.exploration={version:2,mode:'free',enabled:true,speed:190,reach:55,guide};
+ }
  const pending=[];
  const unsupported=[['paid-food',/comprar racao|racao (?:custa|paga)|comida (?:custa|paga)/,'Loja e cobrança de alimentação'],
  ['health',/doencas?|peixes? (?:morrem?|morrendo)|morte dos peixes|saude dos peixes/,'Saúde, doenças e morte de peixes'],

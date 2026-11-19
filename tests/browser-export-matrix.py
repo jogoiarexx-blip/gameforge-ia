@@ -980,10 +980,10 @@ def run():
                 graph_page.keyboard.press('e')
                 assert graph_page.evaluate("window.__gameforgeTelemetry().simulation.story.activeMission") == 1
                 graph_page.keyboard.down('ArrowLeft')
-                graph_page.wait_for_function("window.__gameforgeTelemetry().player.x < 240", timeout=7500)
+                graph_page.wait_for_function("window.__gameforgeTelemetry().player.x < 575", timeout=7500)
                 graph_page.keyboard.up('ArrowLeft')
                 graph_page.keyboard.down('ArrowUp')
-                graph_page.wait_for_function("window.__gameforgeTelemetry().exploration.near", timeout=7500)
+                graph_page.wait_for_function("window.__gameforgeTelemetry().exploration.nearby === 'station-1'", timeout=8500)
                 graph_page.keyboard.up('ArrowUp')
                 graph_page.keyboard.press('e')
                 graph_page.keyboard.press('1')

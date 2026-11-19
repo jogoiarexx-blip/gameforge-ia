@@ -142,7 +142,7 @@ async function run(input={}){
   if(keys.length!==1)return result(p,'INCONCLUSIVE','O jogo não criou exatamente um registro válido de simulação.',{keys:keys.length});
   try{
    savedRecord=JSON.parse(virtualStore[keys[0]]);
-   savedState=stateView(savedRecord.state);
+   savedState=stateView({simulation:savedRecord.state});
   }catch{return result(p,'INCONCLUSIVE','Registro de salvamento ilegível no armazenamento virtual.');}
   if(!savedState)return result(p,'INCONCLUSIVE','Registro não contém estado de simulação verificável.');
   close(first);first=null;

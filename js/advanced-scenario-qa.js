@@ -139,7 +139,9 @@ function protectFocus(html){
  // Intercepta APENAS pedidos de foco do CLONE; não toca no editor nem no jogo ativo.
  // O bridge injeta teclas na janela do clone, portanto foco do canvas não é necessário.
  const guard='<script>HTMLElement.prototype.focus=function(){};window.focus=function(){};</script>';
- return String(html).replace(/<head>/i,'<head>'+guard);
+ const source=String(html);
+ const csp=source.match(/<meta http-equiv="Content-Security-Policy"[^>]*>/i);
+ return csp?source.replace(csp[0],csp[0]+guard):source.replace(/<head>/i,'<head>'+guard);
 }
 function createFrame(doc,host){
  if(!doc||!host||typeof doc.createElement!=='function'||typeof host.appendChild!=='function')

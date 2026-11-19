@@ -46,7 +46,7 @@ function plan(input={}){
     'Contrato de salvamento não disponível para este jogo'};
 }
 function boot(seed={}){
- const data=Object.create(null);
+ const data=Object.create(null),audit=[];
  const allowed=k=>/^gameforge-urban-v1-[a-z0-9-]{1,54}(?::(?:backup|pending))?$/.test(String(k))||
   /^gameforge-campaign-v1:(?:rpg|arena|fps):gf-[0-9a-f]{8}-[0-9a-f]{8}$/.test(String(k));
  for(const [k,v] of Object.entries(seed||{})){
@@ -55,8 +55,9 @@ function boot(seed={}){
  const store={
   getItem(k){return Object.hasOwn(data,String(k))?data[String(k)]:null;},
   setItem(k,value){
-   const key=String(k),v=String(value);
-   if(!allowed(key)||v.length>200000)throw Error('GF18: chave ou valor recusado');
+   const key=String(k),v=String(value),ok=allowed(key)&&v.length<=200000;
+   if(audit.length<24)audit.push({op:'set',key:key.slice(0,95),size:v.length,accepted:ok});
+   if(!ok)throw Error('GF18: chave ou valor recusado');
    data[key]=v;
   },
   removeItem(k){if(allowed(k))delete data[String(k)];},
@@ -66,7 +67,7 @@ function boot(seed={}){
  };
  Object.defineProperty(window,'localStorage',{configurable:true,value:store});
  Object.defineProperty(window,'__gameforgeQA18Storage',{configurable:false,value:Object.freeze({
-  kind:'GF18_VIRTUAL_STORE',dump:()=>({...data})})});
+  kind:'GF18_VIRTUAL_STORE',dump:()=>({...data}),stats:()=>audit.slice()})});
 }
 function inject(html,entries={}){
  const base=GF16.protectFocus(String(html||''));
@@ -176,6 +177,7 @@ async function run(input={}){
    p.contract==='URBAN_AUTOSAVE_V1'?'Nenhum salvamento urbano confiável encontrado.':
    'O RPG/arena/FPS ainda não concluiu uma fase para gerar checkpoint; não foi simulado.',
    {virtualKeyTypes:Object.keys(records).map(k=>k.startsWith('gameforge-urban-')?'urban':k.startsWith('gameforge-campaign-')?'campaign':'other'),
+    rawVirtualKeys:Object.keys(raw.entries||{}).slice(0,6),virtualActions:(raw.stats||[]).slice(0,12),
     telemetryGenre:after?.genre,telemetryState:after?.state,saveStatus:after?.saveStatus,
     saveEnabled:after?.saveEnabled,inspectedErrors:(await send('inspect'))?.errors?.slice(0,3)||[]});
   try{record=JSON.parse(records[key]);}catch{

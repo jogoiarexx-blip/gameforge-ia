@@ -201,6 +201,13 @@ Derrote o chefe.
           <button id="qa-repair" class="outline small" disabled>✦ Propor correção</button>
         </div>
         <div id="qa-status" class="hint" role="status">Execute o jogo e depois inicie a inspeção automática.</div>
+          <details class="studio-disclosure"><summary>Rastreabilidade do código e requisitos</summary>
+            <section aria-label="Evidências por requisito" class="qa-workbench">
+              <p class="hint">Separar o que foi solicitado, identificado no código e realmente observado nos testes.</p>
+              <button type="button" class="small outline" id="gf14-inspect">Atualizar análise e relatórios</button>
+              <pre class="dev-plan" id="gf14-summary">Gere um jogo e execute QA para reunir evidências.</pre>
+            </section>
+          </details>
         <div id="qa-report" class="qa-report muted">Nenhuma inspeção realizada.</div>
         <div class="qa-frames"><figure><img id="qa-before" alt="Cena inicial da inspeção"><figcaption>Antes · começo do teste</figcaption></figure><figure><img id="qa-after" alt="Cena após movimentação"><figcaption>Depois · após controle</figcaption></figure><figure><img id="qa-shot" alt="Cena durante os disparos da nave"><figcaption>Durante os disparos</figcaption></figure></div>
         <div id="qa-candidate" class="qa-candidate hidden"><strong>Correção candidata — ainda não salva</strong><p id="qa-candidate-message" class="hint">Teste a prévia antes de aceitar.</p><div class="qa-controls"><button id="qa-accept" class="primary small">Aceitar correção</button><button id="qa-reject" class="outline small">Descartar e restaurar</button></div></div>
@@ -291,6 +298,8 @@ Derrote o chefe.
   <script src="./js/generator.js"></script>
   <script src="./js/studio-intelligence.js"></script>
   <script src="./js/studio-orchestrator.js"></script>
+  <script src="./js/code-provenance.js"></script>
+  <script src="./js/requirement-evidence.js"></script>
   <script src="./js/development-engine.js"></script>
   <script src="./js/gdd-roadmap.js"></script>
   <script src="./js/zip.js"></script>

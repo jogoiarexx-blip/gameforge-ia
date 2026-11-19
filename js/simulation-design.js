@@ -187,10 +187,48 @@ function compile(text,command=''){
    const label=storyState.mission?'Missão do '+name:'Diálogo do '+name;
    config.story={version:1,enabled:true,requiredForVictory:storyState.mission,
     npc:{name,lines},mission:{id:'primeira-tarefa',label,steps:storyState.mission?[{event:'talk',count:1},{event:objective,count}]:[{event:'talk',count:1}],reward:storyState.mission?5:0}};
+   // GF-TRAIN-15: duas missões sequenciais, NPCs distintos e guardas tipadas.
+   const chainPattern=/\b(?:duas|dois|2)\s+(?:missoes|tarefas)\s*(?:encadeadas|em sequencia|seguidas|uma apos a outra)?\b|\b(?:missoes|tarefas)\s+(?:encadeadas|em sequencia|seguidas|consecutivas)\b|\bprimeira (?:missao|tarefa)\b[\s\S]*?\bsegunda (?:missao|tarefa)\b/g;
+   const chains=[...t.matchAll(chainPattern)],wantChain=chains.length>0&&!negativeAt(t,chains[chains.length-1].index);
+   if(wantChain&&storyState.mission){
+    const verbs='(?:comprar|alimentar|vender|venda|plantar|regar|colher|repor|trocar (?:a )?agua)';
+    const quantity='(?:\\d+|um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)';
+    const stage=phrase=>{
+     const re=new RegExp('\\b(?:'+phrase+')\\s*(?:de|:|-)??\\s*('+verbs+')(?:\\s+('+quantity+'))?\\b');
+     const m=re.exec(t);if(!m)return null;
+     const action=named[m[1]]||(config.domain==='farm'?'sell':'finish');
+     const value=m[2]?number(m[2]):1,clamped=Math.max(1,Math.min(5,value));
+     if(value!==clamped)warnings.push('Missão com no máximo cinco ações.');
+     return {event:action,count:clamped};
+    };
+    const first=stage('primeira (?:missao|tarefa)|missao 1|tarefa 1')||{event:'start',count:1};
+    const second=stage('segunda (?:missao|tarefa)|missao 2|tarefa 2')||{event:config.domain==='farm'?'sell':'finish',count:1};
+    const guards=[];
+    const stock=t.match(/\b(?:estoque|inventario)\s*(?:de|com|:|minimo de|pelo menos)?\s*(${numeric})\b|\b(?:ter|precisa(?:r)? de|com)\s+(?:pelo menos\s+)?(${numeric})\s+(?:itens?|peixes?|produtos?|colheitas?)\s+(?:no|em)\s+(?:estoque|inventario)\b/);
+    if(stock){
+     const requested=number(stock[1]||stock[2]),value=Math.max(1,Math.min(config.slots,requested));
+     if(requested!==value)warnings.push('Inventário da missão limitado aos espaços existentes.');
+     guards.push({kind:'stock',min:value});
+    }
+    const time=t.match(/\b(?:aguardar|esperar|apos|depois de|somente apos|so depois de)\s*(${numeric})\s*segundos?\b/);
+    if(time){
+     const requested=number(time[1]),value=Math.max(1,Math.min(60,requested));
+     if(requested!==value)warnings.push('Espera da missão limitada a 60 segundos jogados.');
+     guards.push({kind:'time',seconds:value});
+    }
+    const otherName={aquarium:'Pesquisador',farm:'Feirante',shop:'Gerente'}[config.domain];
+    const labels={start:config.start,care:config.care,finish:config.finish,sell:'Vender colheita',clean:'Trocar água'};
+    config.story={version:3,enabled:true,requiredForVictory:true,npc:{name,lines},npc2:{
+     name:otherName,lines:['Essa é a segunda missão. Complete os requisitos e depois faça a tarefa.','Confira o estoque e o tempo no painel da missão.','Muito bem, concluiu as duas missões!']},
+     missions:[
+      {id:'m1',label:'Primeira missão: '+(labels[first.event]||'Produzir'),event:first.event,count:first.count,reward:3,requires:[]},
+      {id:'m2',label:'Segunda missão: '+(labels[second.event]||'Vender'),event:second.event,count:second.count,reward:7,requires:guards}
+     ]};
+   }
    // GF-TRAIN-14: duas opções executáveis de tarefa, sem árvore arbitrária de roteiros.
    const branchRequests=[...t.matchAll(/\b(?:escolhas? de dialogo|dialogo com escolhas|(?:missao|missoes) ramificadas?|dialogo ramificado|escolher entre (?:as )?(?:duas )?(?:missoes|tarefas|opcoes)|duas opcoes|dois caminhos|escolher entre (?:alimentar|regar|plantar|comprar|repor|vender|colher)\b)\b/g)];
    const wantsBranch=branchRequests.length&& !negativeAt(t,branchRequests[branchRequests.length-1].index);
-   if(wantsBranch&&storyState.mission){
+   if(wantsBranch&&storyState.mission&&config.story.version!==3){
     const pair=t.match(/\b(?:escolher entre|entre|opcoes?\s*:|caminhos?\s*:?)\s*(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+))?(?:\s+(?:peixes?|produtos?|colheitas?|itens?|vezes|canteiros?|tanques?))?\s+ou\s+(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+))?\b/);
     const convert=word=>({alimentar:'care',regar:'care',plantar:'start',comprar:'start',repor:'start',
       vender:config.domain==='farm'?'sell':'finish',colher:'finish'})[word];

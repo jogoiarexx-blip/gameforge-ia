@@ -203,7 +203,7 @@ function compile(text,command=''){
     };
     const first=stage('primeira (?:missao|tarefa)|missao 1|tarefa 1')||{event:'start',count:1};
     const second=stage('segunda (?:missao|tarefa)|missao 2|tarefa 2')||{event:config.domain==='farm'?'sell':'finish',count:1};
-    if(/\b(?:tres|3|quatro|4|cinco|5)\s+missoes\b/.test(t))pending.push({id:'simulation-chain-limit',description:'Até duas missões encadeadas disponíveis nesta versão',where:'Simulação 2D'});
+    if(/\b(?:cinco|5|seis|6)\s+missoes\b/.test(t))pending.push({id:'simulation-chain-limit',description:'Até quatro missões encadeadas disponíveis nesta versão',where:'Simulação 2D'});
     const guards=[];
     const stock=t.match(new RegExp('\\b(?:estoque|inventario)\\s*(?:de|com|:|minimo de|pelo menos)?\\s*('+numeric+')\\b|\\b(?:ter|precisa(?:r)? de|com)\\s+(?:pelo menos\\s+)?('+numeric+')\\s+(?:itens?|item|peixes?|produtos?|colheitas?)\\s+(?:no|em)\\s+(?:estoque|inventario)\\b'));
     if(stock&&!negativeAt(t,stock.index)){
@@ -226,10 +226,65 @@ function compile(text,command=''){
       {id:'m2',label:'Segunda missão: '+(labels[second.event]||'Vender'),event:second.event,count:second.count,reward:7,requires:guards}
      ]};
    }
+   // GF-TRAIN-16: 3 ou 4 missões de simulação, até 2 objetivos independentes por etapa.
+   // O editor visual produz a mesma gramática PT-BR; não executamos código do usuário.
+   const multiReq=[...t.matchAll(/\b(?:tres|3|quatro|4)\s+(?:missoes|tarefas)\s*(?:encadeadas|em sequencia|seguidas|consecutivas)?\b/g)];
+   const multiText=multiReq.at(-1);
+   const wantMulti=!!(multiText&&!negativeAt(t,multiText.index));
+   if(wantMulti&&storyState.mission){
+    const countM=/^(?:quatro|4)\b/.test(multiText[0])?4:3;
+    const slots=[];
+    const headings=[...t.matchAll(/\b(?:missao|tarefa)\s*([1-4])\s*[:\-—]?\s*|\b(primeira|segunda|terceira|quarta)\s+(?:missao|tarefa)\s*[:\-—]?\s*/g)];
+    for(let i=0;i<headings.length;i++){
+     const m=headings[i],n=m[1]?Number(m[1]):({primeira:1,segunda:2,terceira:3,quarta:4}[m[2]]);
+     if(n>=1&&n<=countM&&!slots[n-1])slots[n-1]=t.slice(m.index+m[0].length,headings[i+1]?.index??t.length);
+    }
+    const verbs=/(comprar|alimentar|vender|venda|plantar|regar|colher|repor|atender|trocar (?:a )?agua)\b(?:\s+(\d+|um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez))?/g;
+    const defaults=[['start','care'],['finish','start'],['care','finish'],['start','finish']];
+    const caption={start:config.start,care:config.care,finish:config.finish,sell:'Vender colheita',clean:'Trocar água'};
+    const wantsConcurrent=/\b(?:objetivos simultaneos|tarefas simultaneas|objetivos paralelos|duas acoes por missao|dois objetivos por missao|objetivos ao mesmo tempo)\b/.test(t);
+    const otherName={aquarium:'Pesquisador',farm:'Feirante',shop:'Gerente'}[config.domain];
+    const missions=Array.from({length:countM},(_,i)=>{
+     const brief=slots[i]||'';
+     const actions=[];
+     for(const match of brief.matchAll(verbs)){
+      if(negativeAt(brief,match.index))continue;
+      const event=match[1]==='atender'?'care':named[match[1]];
+      if(!event||actions.some(a=>a.event===event))continue;
+      const requested=match[2]?number(match[2]):1,count=Math.max(1,Math.min(5,requested));
+      if(requested!==count)warnings.push('Objetivo da missão '+(i+1)+' limitado a cinco ações.');
+      actions.push({event,count});
+      if(actions.length===2)break;
+     }
+     if(!actions.length)actions.push({event:defaults[i][0],count:1});
+     if(actions.length===1&&wantsConcurrent){
+      const second=defaults[i].find(e=>e!==actions[0].event)||'care';
+      actions.push({event:second,count:1});
+     }
+     const requires=[];
+     const stock=brief.match(new RegExp('\\b(?:estoque|inventario)\\s*(?:de|com|:|minimo de|pelo menos)?\\s*('+numeric+')\\b|\\b(?:ter|precisa(?:r)? de|com)\\s+(?:pelo menos\\s+)?('+numeric+')\\s+(?:itens?|item|peixes?|produtos?|colheitas?)\\s+(?:no|em)\\s+(?:estoque|inventario)\\b'));
+     if(stock&&!negativeAt(brief,stock.index)){
+      const requested=number(stock[1]||stock[2]),min=Math.max(1,Math.min(config.slots,requested));
+      if(min!==requested)warnings.push('Estoque limitado aos espaços existentes.');
+      requires.push({kind:'stock',min});
+     }
+     const time=brief.match(new RegExp('\\b(?:aguardar|esperar|apos|depois de|somente apos|so depois de)\\s*('+numeric+')\\s*segundos?\\b'));
+     if(time&&!negativeAt(brief,time.index)){
+      const requested=number(time[1]),seconds=Math.max(1,Math.min(60,requested));
+      if(seconds!==requested)warnings.push('Espera de missão limitada a 60 segundos ativos.');
+      requires.push({kind:'time',seconds});
+     }
+     return {id:'m'+(i+1),label:'Missão '+(i+1)+' · '+actions.map(a=>caption[a.event]||a.event).join(' + '),
+      objectives:actions,reward:3+2*i,requires};
+    });
+    config.story={version:4,enabled:true,requiredForVictory:true,npc:{name,lines},npc2:{
+     name:otherName,lines:['Vamos cumprir a próxima missão.','Veja os objetivos no painel e cuide do estoque.','Parabéns, campanha concluída!']},
+     missions};
+   }
    // GF-TRAIN-14: duas opções executáveis de tarefa, sem árvore arbitrária de roteiros.
    const branchRequests=[...t.matchAll(/\b(?:escolhas? de dialogo|dialogo com escolhas|(?:missao|missoes) ramificadas?|dialogo ramificado|escolher entre (?:as )?(?:duas )?(?:missoes|tarefas|opcoes)|duas opcoes|dois caminhos|escolher entre (?:alimentar|regar|plantar|comprar|repor|vender|colher)\b)\b/g)];
    const wantsBranch=branchRequests.length&& !negativeAt(t,branchRequests[branchRequests.length-1].index);
-   if(wantsBranch&&storyState.mission&&config.story.version!==3){
+   if(wantsBranch&&storyState.mission&&!([3,4].includes(config.story.version))){
     const pair=t.match(/\b(?:escolher entre|entre|opcoes?\s*:|caminhos?\s*:?)\s*(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+))?(?:\s+(?:peixes?|produtos?|colheitas?|itens?|vezes|canteiros?|tanques?))?\s+ou\s+(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+))?\b/);
     const convert=word=>({alimentar:'care',regar:'care',plantar:'start',comprar:'start',repor:'start',
       vender:config.domain==='farm'?'sell':'finish',colher:'finish'})[word];

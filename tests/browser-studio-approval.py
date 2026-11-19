@@ -42,6 +42,7 @@ def main():
                 page.locator('#dev-candidate').wait_for(state='visible',timeout=20000)
                 assert page.locator('#file-editor').input_value() == before, 'Proposta gravou antes da aprovação'
                 assert 'game.js' in page.locator('#dev-candidate-summary').inner_text()
+                page.locator('#dev-candidate details > summary').click()
                 assert 'ARQUIVO: game.js' in page.locator('#dev-candidate-diff').inner_text()
                 page.locator('#dev-candidate-discard').click()
                 assert page.locator('#dev-candidate').is_hidden()

@@ -1,3 +1,9 @@
+# GameForge Studio GF-TRAIN-11 — exploração opcional nos simuladores
+
+Aquário, fazenda e loja 2D podem criar um personagem que caminha entre estações quando o pedido inclui “personagem andando”, “caminhar entre tanques” ou “interagir com o aquário”. As ações manuais exigem proximidade: **setas ou A/D** para caminhar, **E** ou **INTERAGIR** para abrir opções e **1–4** para realizar ações. Jogos anteriores permanecem no modo clássico. A estação atual é restaurada pelo salvamento local. Não há mundo aberto nem navegação livre nesta etapa.
+
+Leia o [treinamento GF-TRAIN-11](docs/TREINAMENTO_EXPLORACAO_GF_TRAIN_11.md).
+
 # GameForge Studio v0.28 — ciclos automáticos de simulação
 
 Aquário, fazenda e loja podem automatizar produção, cuidados e venda. Pedidos parciais, como “alimentação automática e venda manual”, configuram etapas separadas. Custos, maturidade, pausa e salvamento continuam sendo respeitados. A automação funciona durante a sessão ativa e pode ser desligada pelo jogador.

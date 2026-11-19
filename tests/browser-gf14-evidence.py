@@ -45,7 +45,7 @@ def main():
                 with page.expect_download(timeout=30000) as d:page.locator('#export').click()
                 out=Path(temp)/'gf14.zip';d.value.save_as(out)
                 with zipfile.ZipFile(out) as z:
-                    for name in ['MAPA_CODIGO_GF14.json','MATRIZ_REQUISITOS_GF14.json','RELATORIO_REQUISITOS_GF14.md']:
+                    for name in ['MAPA_CODIGO_GF14.json','MATRIZ_REQUISITOS_GF14.json','RELATORIO_REQUISITOS_GF14.md','MANIFESTO_AGENTES_GF14.json']:
                         assert name in z.namelist(), name
                     assert json.loads(z.read('MATRIZ_REQUISITOS_GF14.json'))['version']==14
                 assert not failures, failures

@@ -71,6 +71,10 @@
     const simulation=spec.genre==='simulation'&&!three;
     const simulationRules=root.gameForgeSimulationRulesFactory||(typeof require==='function'?require('./simulation-rules'):null);
     const simulationBoot=root.gameForgeSimulationBoot||(typeof require==='function'?require('./simulation-runtime'):null);
+    const freeMovement=simulation&&spec.simulation?.exploration?.mode==='free';
+    const explorationFactory=freeMovement?(root.gameForgeExploration2DFactory||(typeof require==='function'?require('./exploration-2d'):null)):null;
+    if(freeMovement&&typeof explorationFactory!=='function')throw Error('Motor de exploração livre ausente no Studio. Atualize a aplicação.');
+    const explorationModule=freeMovement?'const GameForgeExploration2D = ('+explorationFactory.toString()+')();\n':'';
     const runtime=simulation?simulationBoot:three?(spec.genre==='urban-action'?(spec.urbanMissions?.length?root.gameForgeUrbanMissionBoot:root.gameForgeUrban3DBoot):spec.genre==='shooter'?root.gameForgeShooter3DBoot:root.gameForgeThreeBoot):advanced?root.gameForgeAdvancedTDBoot:expanded?root.gameForgeExpanded2DBoot:spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
     if(typeof runtime!=='function')throw Error('Motor '+spec.genre+' '+(spec.dimension||'2d')+' não carregado. Atualize o Studio.');
     if(three&&!root.GameForgeThreeSource)throw Error('Biblioteca 3D local ausente. Atualize o Studio.');
@@ -103,7 +107,7 @@
     const cacheModule=!three?'const gameForgeRenderCacheFactory = '+cacheFactory.toString()+';\n':'';
     const graphicsModule=cacheModule+'const GameForgeGraphics = ('+gfxFactory.toString()+')(GAME_SPEC);\n';
     const graphicsTelemetry='\nif(typeof window.__gameforgeTelemetry==="function"){const rawTelemetry=window.__gameforgeTelemetry;window.__gameforgeTelemetry=()=>({...rawTelemetry(),graphics:GameForgeGraphics.snapshot()});}\n';
-    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+graphicsModule+(simulation?'const GameForgeSimulationRules = ('+simulationRules.toString()+')();\n':'')+rules+combatModule+branchModule+'('+runtime.toString()+')();\n'+graphicsTelemetry;
+    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+graphicsModule+(simulation?'const GameForgeSimulationRules = ('+simulationRules.toString()+')();\n':'')+explorationModule+rules+combatModule+branchModule+'('+runtime.toString()+')();\n'+graphicsTelemetry;
     const css=BASE_CSS;
     const dependencies=three?{'engine-3d.js':root.GameForgeThreeSource,'THREE-LICENSE.txt':root.GameForgeThreeLicense}:{};
     const shooterManifest=spec.genre==='shooter' ? {'MANIFESTO_SHMUP.md':

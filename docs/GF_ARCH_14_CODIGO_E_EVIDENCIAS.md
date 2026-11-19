@@ -32,3 +32,8 @@ O identificador de revisão é um checksum não criptográfico: serve para detec
 ## Próximo avanço sugerido
 
 GF-ARCH-15: runner de verificações tipadas por requisito, com ID do teste, cenário executado e resultado, além de um processo de agentes isolado do navegador, somente com leitura e propostas de arquivos previamente autorizados. Manter aprovação humana obrigatória antes de aplicar alterações.
+
+## Preparação segura para agentes futuros
+
+O módulo `js/agent-handoff.js` produz o arquivo `MANIFESTO_AGENTES_GF14.json`, com tarefas e categorias, arquivos sugeridos, símbolos pertinentes, requisitos, restrições expressas, revisões de arquivos e checklist de aceite. O manifesto **não contém o código-fonte**, não atribui acesso à rede, não inicia agentes, não concede alteração direta nem substitui a revisão antes de aplicar patches. Seu campo de permissão `PROPOSE_PATCH` significa apenas uma intenção registrada: nenhum agente foi instanciado. A integração real de ferramentas isoladas continua fora do escopo.
+

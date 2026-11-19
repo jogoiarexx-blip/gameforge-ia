@@ -110,6 +110,7 @@ function gameForgeSimulationBoot(){
      (c.aquariumCare.waterEnabled?' · Água '+Math.ceil(q.water)+'%':'')+
      (q.blocked.length?' · Precisa: '+q.blocked.join(', '):q.stage==='adult'?' · Pronto para vender':' · Crescendo'):'');
   }
+  if(exploring)el('mission').textContent+=' · '+(near()?(actionsOpen?'Interação aberta':'Aperte E para interagir'):'Caminhando...');
   if(c.automation?.enabled)el('mission').textContent+=' · Automação '+(s.automation.paused?'desligada':'ligada');
   for(const [b,k] of buttons){
    const item=s.slots[selected];

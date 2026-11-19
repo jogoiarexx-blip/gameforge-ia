@@ -143,8 +143,12 @@ function createHarness(){
       changedFiles:Object.freeze([...source.changedFiles])});
     const output={plugins:[],brief:null,graph:null,impact:[],gate:null};
     for(const plugin of plugins.values()){
-      const result=plugin.run(context);
+      const view=Object.freeze({...context,
+        spec:plugin.capabilities.includes('read-spec')?context.spec:Object.freeze({}),
+        files:plugin.capabilities.includes('read-files')?context.files:Object.freeze({})});
+      const result=plugin.run(view);
       if(!result||typeof result!=='object'||Array.isArray(result))throw Error('Resultado inválido do plugin '+plugin.id);
+      if(Object.keys(result).length&&!plugin.capabilities.includes('write-plan'))throw Error('Plugin sem permissão de escrita no plano: '+plugin.id);
       for(const field of ['brief','graph','impact','gate']){
         if(Object.prototype.hasOwnProperty.call(result,field)){
           if(output[field]!=null&&(field!=='impact'||output.impact.length))throw Error('Campo duplicado: '+field);

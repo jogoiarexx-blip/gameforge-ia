@@ -312,7 +312,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const requestRev=GameForgeRequirementEvidence.requestFingerprint({
       instruction:$('instruction').value,gdd:$('gdd').value,spec:state.spec
     });
-    if(!current||current.projectFingerprint!==revision||current.requestFingerprint!==requestRev)refreshEvidence();
+    const hadAdvanced=!!state.files['RESULTADOS_AVANCADOS_GF16.json'];
+    const advanced=advancedSuiteForCurrent();
+    if(!current||current.projectFingerprint!==revision||current.requestFingerprint!==requestRev||
+       (hadAdvanced&&!advanced))refreshEvidence();
   }
   function projectSnapshot(){
     ensureEvidenceFresh();

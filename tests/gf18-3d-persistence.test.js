@@ -28,6 +28,7 @@ function transportSimulator(options={}){
    if(a==='start'){started=true;return {};}
    if(a==='press'){moved=true;return {};}
    if(a==='release')return {};
+   if(a==='qa-click'&&params.target==='pause')return {clicked:true};
    if(a==='qa-storage'){
     return {virtual:true,entries:options.missingRecord?{}:
       options.campaign?{[campaignKey]:JSON.stringify(checkpoint)}:{[saveKey]:JSON.stringify(options.saved||progress)}};
@@ -189,6 +190,7 @@ test('GF18: fluxo de missões urbanas v2 usa chave própria e restaura objetivos
    if(action==='start'){playing=true;return {};}
    if(action==='press'){moved=true;return {};}
    if(action==='release')return {};
+   if(action==='qa-click'&&args.target==='pause')return {clicked:true};
    if(action==='qa-storage')return {virtual:true,entries:{[key]:JSON.stringify(record)}};
    if(action==='inspect'){
     const x=instance===2||moved?6:0;
@@ -220,4 +222,13 @@ test('GF18: salva e valida registro real produzido pelas regras urbanas v2',()=>
  assert.equal(restored.position.x,5);
  assert.deepEqual(restored.rewards,[]);
  assert.ok(Object.keys(fakeWindow.__gameforgeQA18Storage.dump()).includes(key));
+});
+
+test('GF18: a gravação urbana deve ocorrer pela pausa do jogo, não por injeção de estado',async()=>{
+ const fake=transportSimulator();
+ await GF18.run({...urban,html,frameFactory:fake.frameFactory,
+  transportFactory:fake.transportFactory,sleep:async()=>{}});
+ assert.ok(fake.events.some(e=>e.a==='qa-click'&&e.params.target==='pause'));
+ const bridge=fs.readFileSync(path.join(__dirname,'..','js/qa-bridge.js'),'utf8');
+ assert.match(bridge,/window\.__gameforgeQA18Storage\?\.kind/);
 });

@@ -191,17 +191,19 @@ function compile(text,command=''){
    const branchRequests=[...t.matchAll(/\b(?:escolhas? de dialogo|dialogo com escolhas|missoes? ramificadas?|escolher entre (?:as )?(?:duas )?(?:missoes|tarefas|opcoes)|duas opcoes|dois caminhos|escolher entre (?:alimentar|regar|plantar|comprar|repor|vender|colher)\b)\b/g)];
    const wantsBranch=branchRequests.length&& !negativeAt(t,branchRequests[branchRequests.length-1].index);
    if(wantsBranch&&storyState.mission){
-    const pair=t.match(/\b(?:escolher entre|entre|opcoes?\s*:|caminhos?\s*:?)\s*(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(?:peixes?|produtos?|colheitas?))?\s+ou\s+(alimentar|regar|plantar|comprar|repor|vender|colher)\b/);
+    const pair=t.match(/\b(?:escolher entre|entre|opcoes?\s*:|caminhos?\s*:?)\s*(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|\d+))?(?:\s+(?:peixes?|produtos?|colheitas?|itens?|vezes|canteiros?|tanques?))?\s+ou\s+(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|\d+))?\b/);
     const convert=word=>({alimentar:'care',regar:'care',plantar:'start',comprar:'start',repor:'start',
       vender:config.domain==='farm'?'sell':'finish',colher:'finish'})[word];
-    const first=pair?convert(pair[1]):'care',second=pair?convert(pair[2]):'finish';
+    const first=pair?convert(pair[1]):'care',second=pair?convert(pair[3]):'finish';
+    const clampCount=value=>Math.max(1,Math.min(5,Number.isFinite(number(value))?number(value):1));
+    if(pair&&[pair[2],pair[4]].some(v=>v&&number(v)>5))warnings.push('Contagem de opção de missão limitada a cinco ações.');
     const readable={start:config.start,care:config.care,finish:config.finish,sell:'Vender colheita',clean:'Trocar água'};
     config.story.version=2;
     config.story.mission.steps=[{event:'talk',count:1}];
     delete config.story.mission.reward;
     config.story.mission.branches=[
-     {id:'a',label:readable[first]||config.care,event:first,count:1,reward:5},
-     {id:'b',label:readable[second]||config.finish,event:second,count:1,reward:8}
+     {id:'a',label:readable[first]||config.care,event:first,count:clampCount(pair?.[2]||'1'),reward:5},
+     {id:'b',label:readable[second]||config.finish,event:second,count:clampCount(pair?.[4]||'1'),reward:8}
     ];
     config.story.npc.lines[0]='Escolha uma das duas tarefas no diálogo: tecla 5 ou 6.';
     config.story.npc.lines[1]='Escolha uma tarefa antes de executar o objetivo.';

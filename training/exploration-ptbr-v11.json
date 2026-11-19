@@ -1,0 +1,96 @@
+{
+  "version": 11,
+  "kind": "Comandos de exploração por proximidade; exemplos rotulados de regressão determinística, não fine-tuning de IA",
+  "cases": [
+    {
+      "instruction": "Quero cuidar de aquário. Personagem andando pela loja.",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. O boneco caminha até o tanque.",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Andar entre tanques para alimentar os peixes.",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Interagir com o aquário.",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Aproximar até o tanque.",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Caminhar entre canteiros.",
+      "domain": "farm",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Personagem andando pela fazenda.",
+      "domain": "farm",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Jogador caminha entre prateleiras.",
+      "domain": "shop",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero administrar uma loja. Interagir com a prateleira.",
+      "domain": "shop",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário com dois tanques. Sem personagem andando.",
+      "domain": "aquarium",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Não quero caminhar entre canteiros.",
+      "domain": "farm",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero administrar uma loja. Sem interagir com prateleira.",
+      "domain": "shop",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Personagem andando, depois sem personagem andando.",
+      "domain": "aquarium",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Sem personagem andando. Agora personagem andando.",
+      "domain": "aquarium",
+      "enabled": true
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Personagem andando. Agora não quero personagem andando.",
+      "domain": "aquarium",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Quero alimentar e vender meus peixes.",
+      "domain": "aquarium",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero administrar uma loja com reposição automática.",
+      "domain": "shop",
+      "enabled": false
+    },
+    {
+      "instruction": "Quero cuidar da fazenda, plantar e colher.",
+      "domain": "farm",
+      "enabled": false
+    }
+  ]
+}

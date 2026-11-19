@@ -1399,6 +1399,17 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   if(globalThis.GameForgeQuestEditor){
     globalThis.GameForgeQuestEditor.mount({
       document,root:$('quest-editor'),instruction:$('instruction'),
+      getGenerated:()=>state.files,
+      onEdit:result=>{
+        if(!window.confirm('Esta edição altera a missão no jogo já criado. O progresso salvo da versão anterior ficará incompatível. Você fez backup e deseja continuar?'))
+          throw Error('Edição cancelada. O jogo original está preservado.');
+        state.files=result.files;state.spec=result.spec;
+        qaState.last=null;qaState.baseline=null;
+        refreshEvidence();listFiles();
+        if(state.selected==='game.js')selectFile('game.js');
+        saveState();runPreview();
+        feedback('Missões atualizadas no game.js sem recriar o projeto. O save anterior não pode ser retomado.');
+      },
       onApply:()=>{
         restoreCreationOptions({dimension:'2d',genre:'simulation'});
         const parsed=analyze();

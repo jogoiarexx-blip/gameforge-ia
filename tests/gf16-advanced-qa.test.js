@@ -173,3 +173,12 @@ test('GF16: código real produz IDs e métricas limitadas sem alterar regras',()
  assert.match(app,/GameForgeAdvancedScenarioQA\.run/);
  assert.match(app,/GameForgeAdvancedScenarioQA\.attach/);
 });
+
+test('GF16: asset GLB, motor 3D ou missões alterados invalidam evidências',()=>{
+ const p=fullPlan(),result={version:16,kind:'ISOLATED_ADVANCED_QA_RESULT',isolated:true,
+   codeFingerprint:p.codeFingerprint,requestFingerprint:p.requestFingerprint,results:[]};
+ assert.equal(GF16.valid(result,source,files),true);
+ assert.equal(GF16.valid(result,source,{...files,'ASSET_LIBRARY.json':'{"assets":[]}'}),false);
+ assert.equal(GF16.valid(result,source,{...files,'engine-3d.js':'nova revisão'}),false);
+ assert.equal(GF16.valid(result,{...source,spec:{...source.spec,stages:['Nova fase']}},files),false);
+});

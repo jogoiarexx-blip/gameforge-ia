@@ -69,7 +69,7 @@ function brief(input){
   const spec=input.spec||{}, instruction=toText(input.instruction,4000).trim();
   const restrictions=[];
   for(const part of instruction.split(/[.!?\n;]/)){
-    if(/\b(?:n[aã]o|sem|evit[ae]|preserv[ae]|mantenh[ao]|nunca)\b/i.test(part.trim()))
+    if(/\b(?:n[aã]o|sem|evit[ae]|preserv[ae]|manter|mantenh[ao]|nunca)\b/i.test(part.trim()))
       restrictions.push(part.trim().slice(0,160));
   }
   const stages=Array.isArray(spec.stages)?spec.stages.length:null;

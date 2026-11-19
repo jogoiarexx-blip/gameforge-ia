@@ -18,9 +18,10 @@
     return {event:o.event,count:Number(o.count)};
    });
    if(objectives[0].event===objectives[1].event)throw Error('Escolha duas ações diferentes na missão '+(i+1)+'.');
-   const stock=safe(m.stock??0,0,12),seconds=safe(m.seconds??0,0,60);
-   if(stock===null||seconds===null)throw Error('Estoque ou espera fora do limite na missão '+(i+1)+'.');
-   return {objectives,stock,seconds};
+   const stock=safe(m.stock??0,0,12),seconds=safe(m.seconds??0,0,60),kits=safe(m.kits??0,0,3);
+   const afterFirst=m.afterFirst===true;
+   if(stock===null||seconds===null||kits===null)throw Error('Estoque, espera ou recompensa fora do limite na missão '+(i+1)+'.');
+   return {objectives,stock,seconds,kits,afterFirst};
   });
   return {domain:data.domain,missions};
  }
@@ -31,11 +32,61 @@
    let line='Missão '+(i+1)+': '+m.objectives.map(o=>domain.actions[o.event]+' '+o.count).join(' e ')+'.';
    if(m.stock>0)line+=' Estoque de '+m.stock+'.';
    if(m.seconds>0)line+=' Esperar '+m.seconds+' segundos.';
+   if(m.afterFirst)line+=' Objetivo 2 depois do objetivo 1.';
+   if(m.kits>0)line+=' Recompensa de '+m.kits+' kits.';
    lines.push(line);
   }
   return lines.join('\n');
  }
- function mount({document:doc,root:host,instruction,onApply}){
+ function extractGenerated(files){
+  const game=files?.['game.js'];
+  if(typeof game!=='string'||!game.startsWith('/* Jogo criado no modo sem IA. Código editável. */')||
+   game.length>2000000)throw Error('Abra um jogo de simulação criado pelo motor sem IA.');
+  const marker='const GAME_SPEC = ';
+  if(game.split(marker).length!==2)throw Error('GAME_SPEC alterado: para proteger seu código, edite manualmente ou recupere um backup.');
+  const match=game.match(/const GAME_SPEC = ([^\r\n]+);\r?\n/);
+  if(!match)throw Error('Não foi possível localizar a configuração original do jogo.');
+  let spec;try{spec=JSON.parse(match[1]);}catch{throw Error('GAME_SPEC não é JSON puro: não será alterado automaticamente.');}
+  if(spec?.genre!=='simulation'||!([4,5].includes(spec.simulation?.story?.version)))
+   throw Error('Editor de projeto pronto disponível somente para missões v4 ou v5 de simulação 2D.');
+  return {spec,match,game};
+ }
+ function fromSpec(files){
+  const {spec}=extractGenerated(files),story=spec.simulation.story;
+  return {domain:spec.simulation.domain,missions:story.missions.map(m=>({
+   objectives:m.objectives.map(o=>({event:o.event,count:o.count})),
+   stock:m.requires.find(r=>r.kind==='stock')?.min||0,
+   seconds:m.requires.find(r=>r.kind==='time')?.seconds||0,
+   kits:m.itemReward||0,afterFirst:!!m.objectives[1]?.requiresFirst
+  }))};
+ }
+ function editGenerated(files,proposed){
+  const {spec,match,game}=extractGenerated(files),data=normalize(proposed),c=spec.simulation;
+  if(data.domain!==c.domain)throw Error('Não é possível trocar o tipo de jogo já criado pelo editor de missões.');
+  if(data.missions.some(m=>m.stock>c.slots))throw Error('Estoque exigido maior que a quantidade de espaços do jogo ('+c.slots+').');
+  const advanced=data.missions.some(m=>m.afterFirst||m.kits>0);
+  if(c.story.version===4&&advanced)
+   throw Error('Para acrescentar dependências ou kits, crie primeiro um jogo com esse recurso. O motor já exportado v4 não contém a lógica v5.');
+  const previous=c.story.missions;
+  c.story.missions=data.missions.map((m,i)=>({
+   id:'m'+(i+1),
+   label:'Missão '+(i+1)+' · '+m.objectives.map(o=>domains[data.domain].actions[o.event]).join(' + '),
+   objectives:m.objectives.map((o,k)=>({
+    event:o.event,count:o.count,...(c.story.version===5?{requiresFirst:k===1&&m.afterFirst}:{})
+   })),
+   reward:previous[i]?.reward??(3+2*i),
+   requires:[...(m.stock?[{kind:'stock',min:m.stock}]:[]),...(m.seconds?[{kind:'time',seconds:m.seconds}]:[])],
+   ...(c.story.version===5?{itemReward:m.kits}:{})
+  }));
+  const factory=root.gameForgeSimulationEventsFactory||(typeof require==='function'?require('./simulation-events'):null);
+  if(typeof factory!=='function'||!factory().validConfig(c.story))
+   throw Error('A configuração não passou na validação do motor de missões.');
+  const code=game.replace(match[0],'const GAME_SPEC = '+JSON.stringify(spec)+';\n');
+  if(code===game)throw Error('Nenhuma alteração identificada.');
+  return {files:{...files,'game.js':code},spec,oldStoryVersion:c.story.version,
+   notice:'O jogo exportado foi alterado sem regenerar scripts. O save antigo usa outra assinatura e não pode continuar após a mudança.'};
+ }
+ function mount({document:doc,root:host,instruction,onApply,getGenerated,onEdit}){
   if(!host||!doc||!instruction)return false;
   const by=id=>doc.getElementById(id);
   const domainSelect=by('qe-domain'),totalSelect=by('qe-total'),rows=by('qe-rows'),preview=by('qe-command'),status=by('qe-result');
@@ -84,6 +135,12 @@
     const timeGroup=el('div'),timeId='qe-time-'+i;
     field(timeGroup,'Esperar segundos (0 = sem)',timeId,el('input',{id:timeId,type:'number',value:'0',min:'0',max:'60',step:'1'}));
     grid.append(stockGroup,timeGroup);
+    const afterGroup=el('div'),afterId='qe-after-'+i;
+    const after=el('input',{id:afterId,type:'checkbox'});
+    field(afterGroup,'Objetivo 2 só depois do objetivo 1',afterId,after);
+    const kitsGroup=el('div'),kitsId='qe-kits-'+i;
+    field(kitsGroup,'Recompensa em kits (0–3)',kitsId,el('input',{id:kitsId,type:'number',value:'0',min:'0',max:'3',step:'1'}));
+    grid.append(afterGroup,kitsGroup);
     fieldset.appendChild(grid);rows.appendChild(fieldset);
    }
    preview.value='';status.textContent='Configure os objetivos e confira o pedido antes de aplicar.';
@@ -92,7 +149,8 @@
    const total=Number(totalSelect.value);
    return {domain:domainSelect.value,missions:Array.from({length:total},(_,i)=>({
     objectives:[0,1].map(k=>({event:by('qe-action-'+i+'-'+k)?.value,count:by('qe-count-'+i+'-'+k)?.value})),
-    stock:by('qe-stock-'+i)?.value,seconds:by('qe-time-'+i)?.value
+    stock:by('qe-stock-'+i)?.value,seconds:by('qe-time-'+i)?.value,
+    kits:by('qe-kits-'+i)?.value,afterFirst:by('qe-after-'+i)?.checked===true
    }))};
   }
   function check(){
@@ -101,6 +159,21 @@
     status.textContent=totalSelect.value+' missões com objetivos e eventos verificáveis; confira o texto e clique em Adicionar ao pedido.';
     return value;
    }catch(e){status.textContent=e.message;preview.value='';return null;}
+  }
+  function populate(data){
+   const normalized=normalize(data);
+   domainSelect.value=normalized.domain;totalSelect.value=String(normalized.missions.length);render();
+   for(const [i,m] of normalized.missions.entries()){
+    for(const [k,o] of m.objectives.entries()){
+     by('qe-action-'+i+'-'+k).value=o.event;
+     by('qe-count-'+i+'-'+k).value=String(o.count);
+    }
+    by('qe-stock-'+i).value=String(m.stock);
+    by('qe-time-'+i).value=String(m.seconds);
+    by('qe-kits-'+i).value=String(m.kits);
+    by('qe-after-'+i).checked=m.afterFirst;
+   }
+   check();
   }
   domainSelect.addEventListener('change',render);totalSelect.addEventListener('change',render);
   by('qe-preview').addEventListener('click',check);
@@ -113,9 +186,24 @@
    status.textContent='Missões adicionadas ao pedido. Clique em Criar jogo para gerar e testar.';
    if(typeof onApply==='function')onApply(value);
   });
+  const load=by('qe-load'),save=by('qe-save');
+  if(load)load.addEventListener('click',()=>{
+   try{if(typeof getGenerated!=='function')throw Error('Projeto não disponível.');
+    populate(fromSpec(getGenerated()));
+    status.textContent='Missões carregadas do jogo criado. Confira e salve as alterações.';
+   }catch(e){status.textContent=e.message;}
+  });
+  if(save)save.addEventListener('click',()=>{
+   try{
+    if(typeof getGenerated!=='function'||typeof onEdit!=='function')throw Error('Edição indisponível neste projeto.');
+    const result=editGenerated(getGenerated(),read());
+    onEdit(result);
+    status.textContent='Missões aplicadas ao game.js. Teste a prévia; o save anterior fica incompatível.';
+   }catch(e){status.textContent=e.message;}
+  });
   render();
   return true;
  }
- root.GameForgeQuestEditor={domains,normalize,buildPrompt,mount};
+ root.GameForgeQuestEditor={domains,normalize,buildPrompt,extractGenerated,fromSpec,editGenerated,mount};
  if(typeof module!=='undefined')module.exports=root.GameForgeQuestEditor;
 })(typeof globalThis!=='undefined'?globalThis:this);

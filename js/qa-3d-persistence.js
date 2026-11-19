@@ -193,7 +193,13 @@ async function run(input={}){
   const start=initial.telemetry;
   held='ArrowRight';
   await send('press',{key:held});await wait(p.contract.startsWith('URBAN_')?2300:850);
-  await send('release',{key:held});held=null;await wait(260);
+  await send('release',{key:held});held=null;await wait(150);
+  // Nos dois motores urbanos, o botão de Pausa é uma ação real do
+  // jogador que chama save(). Não forçamos valores nem saltamos fases.
+  if(p.contract.startsWith('URBAN_')){
+   await send('qa-click',{target:'pause'});
+   await wait(140);
+  }
   const after=(await send('inspect')).telemetry;
   const raw=await send('qa-storage');
   if(!raw?.virtual)return decision(p,'INCONCLUSIVE','Canal de armazenamento virtual não confirmado.');

@@ -13,6 +13,8 @@ const support={
  'simulation-story':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story + GameForgeSimulationEvents + GameForgeSimulationRules',test:'tests/simulation-events.test.js',pattern:/missao|missoes|dialogo|tarefa|npc|conversar com|falar com/},
  'simulation-branches':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.version=2 + GameForgeSimulationEvents.choose',test:'tests/simulation-branches.test.js',pattern:/escolha de dialogo|escolhas de dialogo|duas opcoes|escolher entre|missoes ramificadas/},
  'simulation-patrol':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.exploration.patrol + GameForgeExploration2D.patrolGuide',test:'tests/simulation-branches.test.js',pattern:/patrulha|patrulhando|patrulhar|andando de um lado para outro/},
+ 'simulation-chain':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.version=3 + GameForgeSimulationEvents + segundo NPC',test:'tests/simulation-chains.test.js',pattern:/duas missoes|missoes encadeadas|missoes em sequencia|primeira missao|segunda missao/},
+ 'simulation-conditions':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.missions[].requires + GameForgeSimulationRules.tick/act',test:'tests/simulation-chains.test.js',pattern:/estoque minimo|inventario|aguardar|esperar|segundos/},
  'simulation-save':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.persistence + GameForgeSimulationRules.persistence',test:'tests/simulation-save.test.js',pattern:/salvar|salvamento|save|continuar|guardar progresso/},
  'aquarium-care':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.aquariumCare + GameForgeSimulationRules',test:'tests/aquarium-care.test.js',pattern:/aquario|peixe|fome|alimentar|crescer|agua/},
  'visual-profile':{all:true,contract:'GAME_SPEC.renderProfile + gameForgeGraphicsFactory',test:'tests/graphics.test.js',pattern:/pixel|cartoon|low.?poly|ilustrad|realista|qualidade|sombras|particulas|por do sol/},
@@ -58,7 +60,7 @@ function capability(id,spec){
  const key=normalizeId(id),definition=support[key];
  if(!definition)return {id:key,allowed:false,implemented:false,reason:'Sem contrato executável catalogado para este requisito.'};
  const allowed=!!(definition.all||definition.engines.includes(physicalEngine(spec)));
- return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk','simulation-free','simulation-story','simulation-branches','simulation-patrol'].includes(key),contract:definition.contract,test:definition.test,
+ return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk','simulation-free','simulation-story','simulation-branches','simulation-patrol','simulation-chain','simulation-conditions'].includes(key),contract:definition.contract,test:definition.test,
    reason:allowed?'Mecânica do motor identificada; verificar GAME_SPEC e testes.':'O motor '+physicalEngine(spec)+' não implementa este parâmetro.'};
 }
 function provenance(item,source,command){
@@ -94,7 +96,7 @@ function audit(spec,gdd='',instruction=''){
   const cap=capability(entry.id,spec);
   // "Pendente" não é promovido só porque há uma capacidade com nome semelhante.
   const status=kind==='pending'?(cap.contract&&!cap.allowed?'incompativel':'pendente'):
-    !cap.allowed?'incompativel':cap.implemented&&['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk','simulation-free','simulation-story','simulation-branches','simulation-patrol'].includes(entry.id)?'implementada':'configurada';
+    !cap.allowed?'incompativel':cap.implemented&&['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk','simulation-free','simulation-story','simulation-branches','simulation-patrol','simulation-chain','simulation-conditions'].includes(entry.id)?'implementada':'configurada';
   const where=String(entry.where||'Jogo inteiro');
   const origin=provenance(entry,gdd,instruction);
   const reason=status==='implementada'?'Módulo funcional existente no runtime com teste automatizado.':

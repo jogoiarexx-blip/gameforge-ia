@@ -1,0 +1,336 @@
+{
+  "version": 13,
+  "note": "30 casos de regressão rotulados por desenvolvedores, não fine-tuning neural nem avaliação cega",
+  "cases": [
+    {
+      "instruction": "Quero cuidar de aquário. Missão: vender dois peixes.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "finish",
+        "count": 2,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão: alimentar tres peixes.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "care",
+        "count": 3,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Tarefa: comprar 2 peixes.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "start",
+        "count": 2,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão: trocar a água.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "clean",
+        "count": 1,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão: vender um peixe.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "finish",
+        "count": 1,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão: venda 4 peixes.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "finish",
+        "count": 4,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Missão: plantar dois canteiros.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "farm",
+        "enabled": true,
+        "event": "start",
+        "count": 2,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Missão: regar tres canteiros.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "farm",
+        "enabled": true,
+        "event": "care",
+        "count": 3,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Missão: colher 2 vezes.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "farm",
+        "enabled": true,
+        "event": "finish",
+        "count": 2,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Missão: vender duas colheitas.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "farm",
+        "enabled": true,
+        "event": "sell",
+        "count": 2,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. Tarefa: vender dois produtos.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "shop",
+        "enabled": true,
+        "event": "finish",
+        "count": 2,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. Missão: repor 2 itens.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "shop",
+        "enabled": true,
+        "event": "start",
+        "count": 2,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. Missão: vender um produto.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "shop",
+        "enabled": true,
+        "event": "finish",
+        "count": 1,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão com NPC.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "finish",
+        "count": 1,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Diálogo com NPC.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "talk",
+        "count": 1,
+        "reward": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Falar com o cuidador.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "talk",
+        "count": 1,
+        "reward": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Conversar com guia.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "talk",
+        "count": 1,
+        "reward": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Sem missão.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": false,
+        "event": null,
+        "count": 0,
+        "reward": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Não quero missão.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": false,
+        "event": null,
+        "count": 0,
+        "reward": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Sem diálogo.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": false,
+        "event": null,
+        "count": 0,
+        "reward": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão, agora sem missão.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": false,
+        "event": null,
+        "count": 0,
+        "reward": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Sem missão. Agora quero missão.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "finish",
+        "count": 1,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Sem diálogo, agora diálogo.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "talk",
+        "count": 1,
+        "reward": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Andar livremente com WASD.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": false,
+        "event": null,
+        "count": 0,
+        "reward": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar da fazenda. Andar livremente com WASD, missão: colher 5 vezes.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "farm",
+        "enabled": true,
+        "event": "finish",
+        "count": 5,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. Movimentação livre, diálogos com npc.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "shop",
+        "enabled": true,
+        "event": "talk",
+        "count": 1,
+        "reward": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão com escolhas de diálogo.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "finish",
+        "count": 1,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão: vender seis peixes.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "finish",
+        "count": 1,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão: vender 6 peixes.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "finish",
+        "count": 5,
+        "reward": 5
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Quero uma tarefa e salvar o progresso.",
+      "expected": {
+        "genre": "simulation",
+        "domain": "aquarium",
+        "enabled": true,
+        "event": "finish",
+        "count": 1,
+        "reward": 5
+      }
+    }
+  ]
+}

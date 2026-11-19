@@ -92,7 +92,7 @@ test('GF-TRAIN-12: ZIP usa código local e jogo livre não depende de CDN',()=>{
  assert.match(files['game.js'],/drawRoom/);
  assert.match(files['game.js'],/held\.has/);
  new vm.Script(files['game.js']);
- assert.ok(!/https:\/\/.*\.js/.test(files['game.js']));
+ assert.doesNotMatch(files['index.html'],/<script[^>]+src=["']https?:/i,'sem scripts remotos no jogo exportado');
  const classic=Generator.generate(Parser.parseGdd('','Quero cuidar de aquário.'),'');
  assert.doesNotMatch(classic['game.js'],/const GameForgeExploration2D = /);
 });

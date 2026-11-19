@@ -152,7 +152,14 @@ async function run(input={}){
   throw Error('GF18: plano mudou ou é inválido.');
  if(!p.applicable)return decision(p,'UNSUPPORTED','O jogo não oferece contrato 3D de persistência conhecido.');
  const html=String(input.html||''),makeFrame=input.frameFactory||
-  (()=>GF16.createFrame(root.document,root.document.body));
+  (()=> {
+   const frame=GF16.createFrame(root.document,root.document.body);
+   // Chromium suspende requestAnimationFrame de iframes totalmente fora
+   // da janela. Mantê-lo no viewport, atrás do Studio e sem interação.
+   frame.style.cssText='position:fixed;left:0;top:0;width:960px;height:600px;'+
+    'opacity:0.01;pointer-events:none;z-index:-1;border:0;';
+   return frame;
+  });
  const makeTransport=input.transportFactory||((frame)=>root.GameForgeVisualQA.transport(frame));
  const wait=input.sleep||sleep,progress=input.onUpdate||(()=>{});
  let first=null,second=null,held=null;
@@ -213,7 +220,9 @@ async function run(input={}){
    const a=urbanState(start),b=urbanState(after);
    changed=!!a&&!!b&&a.x!==null&&b.x!==null&&
     Math.hypot(b.x-a.x,b.z-a.z)>0.2;
-   if(!changed)return decision(p,'INCONCLUSIVE','O personagem urbano não mudou de posição; não há progresso suficiente para comprovar save.');
+   if(!changed)return decision(p,'INCONCLUSIVE','O personagem urbano não mudou de posição; não há progresso suficiente para comprovar save.',
+     {startPlayer:start?.player,afterPlayer:after?.player,framesStart:start?.frames,framesAfter:after?.frames,
+      pausedStart:start?.paused,pausedAfter:after?.paused,saveStatus:after?.saveStatus});
    const savedPos=p.contract==='URBAN_MISSIONS_V2'?urbanMissionSavedState(record):urbanSavedState(record);
    const startPos=urbanState(start),endPos=urbanState(after);
    const persisted=!!savedPos&&savedPos.x!==null&&savedPos.z!==null&&

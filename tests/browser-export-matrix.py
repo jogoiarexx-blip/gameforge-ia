@@ -940,9 +940,111 @@ def run():
             finally:
                 edit_page.close()
 
+            # GF-TRAIN-18: missões em paralelo ficam bloqueadas até os pré-requisitos, boosts são reais.
+            graph_page = browser.new_page(viewport={'width': 390, 'height': 844})
+            graph_errors = []
+            graph_page.on('pageerror', lambda error: graph_errors.append(str(error)))
+            try:
+                graph_page.goto(origin + '/tests/_browser_output/graph-aquarium/index.html', wait_until='load')
+                graph_page.locator('#start').click()
+                assert graph_page.evaluate("window.__gameforgeTelemetry().simulation.story.activeMission") == -1
+                assert graph_page.evaluate("window.__gameforgeTelemetry().story.available") == [0]
+                graph_page.keyboard.down('ArrowRight')
+                graph_page.wait_for_function("window.__gameforgeTelemetry().exploration.nearby === 'guide'", timeout=9500)
+                graph_page.keyboard.up('ArrowRight')
+                graph_page.keyboard.press('e')
+                assert graph_page.evaluate("window.__gameforgeTelemetry().simulation.story.activeMission") == 0
+                graph_page.keyboard.down('ArrowLeft')
+                graph_page.wait_for_function("window.__gameforgeTelemetry().player.x < 240", timeout=8000)
+                graph_page.keyboard.up('ArrowLeft')
+                graph_page.keyboard.down('ArrowUp')
+                graph_page.wait_for_function("window.__gameforgeTelemetry().exploration.near", timeout=7000)
+                graph_page.keyboard.up('ArrowUp')
+                graph_page.keyboard.press('e')
+                graph_page.keyboard.press('1')
+                graph_page.keyboard.press('2')
+                assert graph_page.evaluate("window.__gameforgeTelemetry().simulation.story.missionDone") == [True, False, False, False]
+                assert graph_page.evaluate("window.__gameforgeTelemetry().simulation.items.boost") == 2
+                assert graph_page.evaluate("window.__gameforgeTelemetry().story.available.sort()") == [1, 2]
+                graph_page.locator('#simulation-save').click()
+                graph_page.reload(wait_until='load')
+                graph_page.locator('#simulation-continue').click()
+                assert graph_page.evaluate("window.__gameforgeTelemetry().simulation.items.boost") == 2
+                assert graph_page.evaluate("window.__gameforgeTelemetry().simulation.story.missionDone[0]")
+                graph_page.keyboard.down('ArrowDown')
+                graph_page.wait_for_function("window.__gameforgeTelemetry().player.y > 475", timeout=8000)
+                graph_page.keyboard.up('ArrowDown')
+                graph_page.keyboard.down('ArrowRight')
+                graph_page.wait_for_function("window.__gameforgeTelemetry().exploration.nearby === 'guide-2'", timeout=7500)
+                graph_page.keyboard.up('ArrowRight')
+                graph_page.keyboard.press('e')
+                assert graph_page.evaluate("window.__gameforgeTelemetry().simulation.story.activeMission") == 1
+                graph_page.keyboard.down('ArrowLeft')
+                graph_page.wait_for_function("window.__gameforgeTelemetry().player.x < 240", timeout=7500)
+                graph_page.keyboard.up('ArrowLeft')
+                graph_page.keyboard.down('ArrowUp')
+                graph_page.wait_for_function("window.__gameforgeTelemetry().exploration.near", timeout=7500)
+                graph_page.keyboard.up('ArrowUp')
+                graph_page.keyboard.press('e')
+                graph_page.keyboard.press('1')
+                graph_page.keyboard.press('2')
+                assert graph_page.evaluate("window.__gameforgeTelemetry().simulation.itemsUsed.boost") == 1
+                assert graph_page.evaluate("window.__gameforgeTelemetry().simulation.items.boost") == 1
+                assert graph_page.evaluate("window.__gameforgeTelemetry().simulation.story.missionDone") == [True, True, False, False]
+                assert graph_page.evaluate("window.__gameforgeTelemetry().story.available") == [2]
+                assert 'Aceleradores: 1' in graph_page.locator('#ammo').inner_text()
+                assert not graph_errors, graph_errors
+                graph_page.screenshot(path=str(screenshots / 'graph-aquarium-mobile.png'), full_page=True)
+                results.append('graph-aquarium-mobile')
+            except Exception:
+                failures.append(('graph-aquarium-mobile', traceback.format_exc(limit=5), graph_errors, []))
+            finally:
+                graph_page.close()
+
+            # GF-TRAIN-18: no Studio, configurar grafo e autorizar migração futura sem recriar código.
+            graph_editor = browser.new_page(viewport={'width': 390, 'height': 844})
+            editor18_errors = []
+            graph_editor.on('pageerror', lambda error: editor18_errors.append(str(error)))
+            graph_editor.on('dialog', lambda dialog: dialog.accept())
+            try:
+                graph_editor.goto(origin + '/index.html', wait_until='load')
+                graph_editor.locator('#gdd').fill('')
+                graph_editor.locator('#quest-editor > summary').click()
+                graph_editor.locator('#qe-graph').check()
+                graph_editor.locator('#qe-total').select_option('4')
+                graph_editor.locator('#qe-boost-0').fill('2')
+                graph_editor.locator('#qe-dep-3-1').check()
+                graph_editor.locator('#qe-dep-3-2').check()
+                graph_editor.locator('#qe-kits-1').fill('1')
+                graph_editor.locator('#qe-apply').click()
+                assert graph_editor.evaluate("GameForgeParser.parseGdd('',document.getElementById('instruction').value).simulation.story.version") == 6
+                graph_editor.locator('#generate').click()
+                graph_editor.wait_for_function("document.getElementById('rerun') && !document.getElementById('rerun').disabled", timeout=17000)
+                graph_editor.locator('#qe-load').click()
+                assert graph_editor.locator('#qe-graph').is_checked()
+                assert graph_editor.locator('#qe-boost-0').input_value() == '2'
+                assert graph_editor.locator('#qe-dep-3-2').is_checked()
+                graph_editor.locator('#qe-count-3-0').fill('2')
+                graph_editor.locator('#qe-migrate').check()
+                graph_editor.locator('#qe-save').click()
+                assert 'Migração autorizada' in graph_editor.locator('#qe-result').inner_text()
+                graph_editor.locator('#file-list .file-item').filter(has_text='game.js').first.click()
+                assert graph_editor.evaluate("""() => {
+                  const c=GameForgeQuestEditor.extractGenerated({'game.js':document.getElementById('file-editor').value}).spec.simulation;
+                  return c.story.version===6 && c.story.missions[3].objectives[0].count===2 &&
+                    c.saveMigration.version===1 && c.saveMigration.previous.story.missions[3].objectives[0].count===1;
+                }""")
+                assert not editor18_errors, editor18_errors
+                graph_editor.screenshot(path=str(screenshots / 'quest-graph-editor-mobile.png'), full_page=True)
+                results.append('quest-graph-editor-mobile')
+            except Exception:
+                failures.append(('quest-graph-editor-mobile', traceback.format_exc(limit=5), editor18_errors, []))
+            finally:
+                graph_editor.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 18 + len(graphics_matrix)
+            assert len(results) == len(matrix) + 20 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

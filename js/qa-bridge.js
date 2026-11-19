@@ -71,7 +71,7 @@
            if(!virtual||!['GF17_VIRTUAL_STORE','GF18_VIRTUAL_STORE'].includes(virtual.kind)||
               typeof virtual.dump!=='function')
              throw Error('Armazenamento virtual indisponível');
-           result={virtual:true,entries:virtual.dump()};
+           result={virtual:true,entries:virtual.dump(),stats:typeof virtual.stats==='function'?virtual.stats():[]};
            break;
          }
          default:throw Error('Ação não permitida');

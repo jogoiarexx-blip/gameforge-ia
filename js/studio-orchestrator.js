@@ -105,6 +105,24 @@ function stage(input={}){
   filesTouched:changes.map(c=>c.path),checklist:['Revisar arquivos alterados','Confirmar impacto da alteração','Aprovar explicitamente','Rodar QA depois de aplicar'],
   note:'Conteúdo não executado. Assinaturas são detectores de conflito, não segurança criptográfica.'};
 }
+/* Prévia limitada de alterações por faixa divergente. Não é diff linha a linha
+ * completo: evita despejar arquivos enormes antes de aprovar. */
+function preview(candidate,currentFiles,limit=1100){
+ if(!candidate||!Array.isArray(candidate.changes))throw Error('Proposta inválida.');
+ const budget=Math.max(120,Math.min(4000,Number(limit)||1100));
+ return candidate.changes.map(change=>{
+  const original=String((currentFiles||{})[change.path]||''),newer=change.next||'';
+  let start=0;
+  while(start<original.length&&start<newer.length&&original[start]===newer[start])start++;
+  let tail=0;
+  while(tail<original.length-start&&tail<newer.length-start&&original[original.length-1-tail]===newer[newer.length-1-tail])tail++;
+  const oldPart=original.slice(Math.max(0,start-80),original.length-tail);
+  const newPart=newer.slice(Math.max(0,start-80),newer.length-tail);
+  const excerpt=s=>s.length>budget?s.slice(0,budget)+'\n[…trecho abreviado…]':s;
+  return 'ARQUIVO: '+change.path+' ('+change.kind+')\nTrecho antigo:\n- '+excerpt(oldPart)+
+   '\nTrecho proposto:\n+ '+excerpt(newPart)+'\n';
+ }).join('\n');
+}
 function apply(currentFiles,candidate,option={}){
  if(option.approved!==true)throw Error('É necessária aprovação explícita para aplicar a proposta.');
  if(!candidate||candidate.version!==13||candidate.status!=='STAGED'||candidate.approval!=='REQUIRED')throw Error('Proposta inválida.');
@@ -131,7 +149,7 @@ function report(p){
   '\n\n## Alertas\n'+(p.warnings.map(x=>'- '+x).join('\n')||'- Nenhum')+
   '\n\nNenhuma alteração é aplicada sem proposta revisada e aprovação explícita. Gates só avançam quando o teste realmente acontece.\n';
 }
-const api={plan,stage,apply,report,checksum,protectedFiles};
+const api={plan,stage,apply,preview,report,checksum,protectedFiles};
 root.GameForgeStudioOrchestrator=api;
 if(typeof module!=='undefined')module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

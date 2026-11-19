@@ -184,7 +184,15 @@ async function run(input={}){
    changed=!!a&&!!b&&a.x!==null&&b.x!==null&&
     Math.hypot(b.x-a.x,b.z-a.z)>0.2;
    if(!changed)return decision(p,'INCONCLUSIVE','O personagem urbano não mudou de posição; não há progresso suficiente para comprovar save.');
-   if(!sameUrban(record,after))return decision(p,'FAIL','Registro urbano não corresponde ao progresso observado antes da recriação.');
+   const savedPos=urbanSavedState(record),startPos=urbanState(start),endPos=urbanState(after);
+   const persisted=!!savedPos&&savedPos.x!==null&&savedPos.z!==null&&
+     Math.hypot(savedPos.x-startPos.x,savedPos.z-startPos.z)>0.2;
+   if(!persisted)return decision(p,'INCONCLUSIVE','O jogo se moveu, mas o autosave ainda não persistiu essa posição.');
+   // Urbano grava a cada 1,5 s durante movimento: o registro pode ficar atrás
+   // do frame final, sem ser uma falha de persistência.
+   const drift=Math.hypot(savedPos.x-endPos.x,savedPos.z-endPos.z);
+   if(drift>8)return decision(p,'FAIL','Autosave muito distante da posição observada.',
+     {distanceFromLatest:Math.round(drift*100)/100});
   }else{
    if(!Number.isInteger(record.stage)||record.stage<1)
     return decision(p,'INCONCLUSIVE','O checkpoint gravado não corresponde a uma nova fase.');

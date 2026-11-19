@@ -682,6 +682,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     stagedImprovement=null;
     $('dev-candidate').hidden=true;
     $('dev-candidate-summary').textContent='';
+    $('dev-candidate-diff').textContent='';
     $('improve').disabled=!state.files['game.js'];
   }
   function rootGameForgeStudio(){return typeof GameForgeStudioIntelligence!=='undefined'&&!!GameForgeStudioIntelligence.review;}
@@ -744,6 +745,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       $('dev-candidate-summary').textContent='Arquivos alterados: '+candidate.filesTouched.join(', ')+
         '. Restrições preservadas no plano: '+(candidate.restricted.join('; ')||'nenhuma explícita')+
         '. Código ainda NÃO aplicado. Para rejeitar, escolha Descartar.';
+      $('dev-candidate-diff').textContent=GameForgeStudioOrchestrator.preview(candidate,state.files);
       $('dev-candidate').hidden=false;
       $('improve').disabled=true;
       feedback('Proposta preparada. Confira a lista de arquivos e clique em Aprovar e testar ou Descartar.');

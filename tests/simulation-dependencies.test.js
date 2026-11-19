@@ -54,7 +54,7 @@ test('GF-TRAIN-17: objetivo dependente bloqueado até primeiro terminar; recompe
  R.tick(s,c,1);R.tick(s,c,1);
  R.act(s,c,1,'finish');const prior=s.money;
  R.act(s,c,1,'start');
- assert.equal(s.money,prior);assert.equal(s.story.missionIndex,2);
+ assert.equal(s.money,prior+c.story.missions[1].reward,'compra usa kit; saldo sobe só pelo bônus da missão');assert.equal(s.story.missionIndex,2);
  assert.equal(s.kits,1,'recompensa da segunda missão devolve um kit');
  assert.equal(s.kitsUsed,2);assert.equal(s.story.itemsEarned,3);
  assert.equal(s.story.rewards,8);

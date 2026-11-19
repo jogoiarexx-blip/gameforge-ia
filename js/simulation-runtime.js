@@ -10,7 +10,7 @@ function gameForgeSimulationBoot(){
  const exploring=c.exploration?.enabled===true;
  const free=exploring&&c.exploration?.mode==='free';
  const F=free?GameForgeExploration2D:null;
- const room=free?F.layout(c.slots,c.domain,c.exploration.guide,c.story?.version===3):null;
+ const room=free?F.layout(c.slots,c.domain,c.exploration.guide,c.story?.version>=3):null;
  const center=index=>960*(index+.5)/c.slots;
  let playerX=center(0),targetX=playerX,actionsOpen=false;
  let avatar=free?F.spawn(room):null,walkTo=null,npcTalks=0;
@@ -80,7 +80,7 @@ function gameForgeSimulationBoot(){
  el('pause').addEventListener('click',()=>{if(state==='play'){paused=!paused;persist();update();}});
  el('control-help').textContent=free?'WASD/setas mover · E falar/interagir · 1–4 agir perto de uma estação · toque para caminhar':exploring?'← → caminhar entre estações · E interagir · 1 iniciar · 2 cuidar · 3 vender/colher · 4 limpar/vender · toque para aproximar':aquarium?'← → selecionar tanque · 1 comprar · 2 alimentar · 3 vender'+(c.aquariumCare.waterEnabled?' · 4 trocar água':''):'← → selecionar · 1 produzir · 2 cuidar · 3 colher/vender · 4 vender colheita';
  el('overlay-sub').textContent=c.label+': '+c.start+' → '+c.care+' → '+c.finish+(c.domain==='farm'?' → Vender':'')+(aquarium?'. O peixe cresce enquanto está alimentado'+(c.aquariumCare.waterEnabled?' e com água limpa':'')+'. O valor aumenta com a idade. Alimentar e trocar água são gratuitos.':'')+(save.enabled?'. Progresso salvo neste navegador. Fechado ou pausado, o tempo não avança. Novo jogo substitui o progresso anterior.':'. Salvamento desativado.');
- if(E)el('overlay-sub').textContent+=' '+(c.story.version===3?
+ if(E)el('overlay-sub').textContent+=' '+(c.story.version===4?'Campanha com '+c.story.missions.length+' missões. Converse com os dois NPCs alternadamente. Cada missão possui até dois objetivos que podem avançar ao mesmo tempo.':c.story.version===3?
    'Duas missões em sequência: fale com '+c.story.npc.name+', conclua a primeira, depois procure '+c.story.npc2.name+'. Recompensas de 3 e 7 moedas.':
    'Missão: fale com o '+c.story.npc.name+' e conclua as ações. '+(c.story.version===2?'Escolha entre duas tarefas com 5 ou 6. Recompensas: 5 ou 8 moedas.':'Recompensa única de '+c.story.mission.reward+' moedas.'));
  if(c.automation?.enabled)el('overlay-sub').textContent=c.label+'. Ciclo automático a cada '+c.automation.intervalSeconds+' s, com custos normais. Você pode desligar a automação e jogar manualmente. Pausar congela o jogo. '+(save.enabled?'Progresso salvo neste navegador. Novo jogo substitui o anterior.':'Salvamento desativado.');

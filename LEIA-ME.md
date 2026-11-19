@@ -1,3 +1,11 @@
+# GameForge Studio GF-TRAIN-16 — quatro missões e editor visual para leigos
+
+Agora o GameForge pode gerar **três ou quatro missões sequenciais de simulação 2D**, com **até dois objetivos simultâneos em cada uma**. O jogador conversa com dois NPCs alternados, cumpre os objetivos em qualquer ordem, ganha uma recompensa única por missão e recupera tudo pelo salvamento local.
+
+No Studio, no passo **Criar**, use **“Editor visual de missões”**: escolha aquário/fazenda/loja, número de missões, ações, quantidades, estoque e tempo. Clique em **Conferir objetivos → Adicionar ao meu pedido → Criar jogo**. O GDD original não é apagado.
+
+Documentação e limites: [GF-TRAIN-16](docs/TREINAMENTO_GF_TRAIN_16_EDITOR_MISSOES.md). Não inclui árvore narrativa livre, vários locais ou mais de dois NPCs físicos.
+
 # GameForge Studio GF-TRAIN-15 — duas missões encadeadas e dois NPCs
 
 Já é possível pedir **duas missões em sequência** num simulador de aquário, fazenda ou loja 2D, com um NPC para começar cada missão. A segunda pode exigir **estoque mínimo**, **espera de segundos de jogo ativo**, ou ambos, antes de contabilizar a tarefa real. Os avanços e recompensas (3 e 7 moedas) são salvos e restaurados.

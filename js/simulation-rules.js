@@ -76,7 +76,7 @@ function gameForgeSimulationRulesFactory(events){
  function tick(s,c,dt){
   if(!Number.isFinite(dt)||dt<=0||s.complete)return;
   let remaining=Math.min(dt,1);
-  if(c.story?.version===3&&E)E.advance(s.story,c.story,remaining);
+  if(c.story?.version>=3&&E)E.advance(s.story,c.story,remaining);
   if(!c.automation?.enabled||s.automation.paused){grow(s,c,remaining);return;}
   const period=c.automation.intervalSeconds;
   while(remaining>1e-10&&!s.complete){
@@ -107,7 +107,7 @@ function gameForgeSimulationRulesFactory(events){
  }
  function act(s,c,index,action){
   if(s.complete)return false;
-  const context=c.story?.version===3?{stock:c.domain==='farm'?s.inventory:s.slots.filter(Boolean).length}:undefined;
+  const context=c.story?.version>=3?{stock:c.domain==='farm'?s.inventory:s.slots.filter(Boolean).length}:undefined;
   const valid=Number.isInteger(index)&&index>=0&&index<s.slots.length;
   if(action==='sell'&&c.domain==='farm'){
    if(s.inventory<=0)return false;
@@ -181,6 +181,7 @@ function gameForgeSimulationRulesFactory(events){
      result.story={step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks};
      if(c.story.version===2)result.story.choice=v.story.choice;
      if(c.story.version===3)result.story={missionIndex:v.story.missionIndex,step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks,npcTalks:[...v.story.npcTalks],elapsed:v.story.elapsed};
+     if(c.story.version===4)result.story={missionIndex:v.story.missionIndex,started:v.story.started,progress:[...v.story.progress],completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks,npcTalks:[...v.story.npcTalks],elapsed:v.story.elapsed};
     }
     result.complete=win(result,c);
     return free?{state:result,selected:data.selected,position:{

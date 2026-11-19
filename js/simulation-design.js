@@ -282,13 +282,27 @@ function compile(text,command=''){
      const requestedItems=rewardMatch?number(rewardMatch[1]):/\brecompensas? em itens\b/.test(brief)||globalItemRewards?1:0;
      const itemReward=Math.max(0,Math.min(3,requestedItems));
      if(itemReward!==requestedItems)warnings.push('Recompensa da missão limitada a três kits de suprimentos.');
+     const boostMatch=brief.match(/\b(?:recompensa(?:s)?\s*(?:de|:)?|ganhar)\s*(\d+|um|uma|dois|duas|tres|quatro)\s*(?:aceleradores?|boosters?)\b/);
+     const boostCount=boostMatch?Math.max(0,Math.min(3,number(boostMatch[1]))):0;
+     if(boostMatch&&number(boostMatch[1])!==boostCount)warnings.push('Recompensa aceleradora limitada a três itens.');
+     const graphPhrase=/\b(?:missoes? paralelas|missoes? em paralelo|dependencias? entre missoes|desbloquear apos etapas?)\b/.test(t);
+     const explicitDeps=brief.match(/\bdesbloquear apos etapas?\s+([1-4](?:\s*(?:,|e)\s*[1-4])*)/);
+     const baseline=i===0?[]:graphPhrase?(i===1||i===2?[0]:[1,2]):[i-1];
+     let requiresMissions=explicitDeps?[...new Set((explicitDeps[1].match(/[1-4]/g)||[]).map(x=>Number(x)-1))]:baseline;
+     if(requiresMissions.some(j=>j>=i||j<0)){warnings.push('Missão '+(i+1)+': dependências precisam apontar para missões anteriores.');requiresMissions=baseline;}
+     const typedReward={kind:boostCount>0?'boost':'kit',count:boostCount||itemReward};
      return {id:'m'+(i+1),label:'Missão '+(i+1)+' · '+actions.map(a=>caption[a.event]||a.event).join(' + '),
-      objectives:actions.map((o,k)=>({...o,requiresFirst:k===1&&(dependency||wantsDependency&&!slots[i])})),reward:3+2*i,requires,itemReward};
+      objectives:actions.map((o,k)=>({...o,requiresFirst:k===1&&(dependency||wantsDependency&&!slots[i])})),reward:3+2*i,requires,itemReward,typedReward,requiresMissions};
     });
+    const graphRequested=/\b(?:missoes? paralelas|missoes? em paralelo|dependencias? entre missoes|desbloquear apos etapas?|aceleradores? de crescimento)\b/.test(t)||
+     missions.some(m=>m.typedReward.kind==='boost');
     const advanced=wantsDependency||wantsItemReward||missions.some(m=>m.itemReward>0||m.objectives.some(o=>o.requiresFirst));
-    config.story={version:advanced?5:4,enabled:true,requiredForVictory:true,npc:{name,lines},npc2:{
+    config.story={version:graphRequested?6:advanced?5:4,enabled:true,requiredForVictory:true,npc:{name,lines},npc2:{
      name:otherName,lines:['Vamos cumprir a próxima missão.','Veja os objetivos no painel e cuide do estoque.','Parabéns, campanha concluída!']},
-     missions:advanced?missions:missions.map(m=>({id:m.id,label:m.label,objectives:m.objectives.map(o=>({event:o.event,count:o.count})),reward:m.reward,requires:m.requires}))};
+     missions:graphRequested?missions.map(m=>({id:m.id,label:m.label,objectives:m.objectives,
+      reward:m.reward,requires:m.requires,requiresMissions:m.requiresMissions,itemReward:m.typedReward})):
+      advanced?missions.map(m=>({id:m.id,label:m.label,objectives:m.objectives,reward:m.reward,requires:m.requires,itemReward:m.itemReward})):
+      missions.map(m=>({id:m.id,label:m.label,objectives:m.objectives.map(o=>({event:o.event,count:o.count})),reward:m.reward,requires:m.requires}))};
    }
    // GF-TRAIN-14: duas opções executáveis de tarefa, sem árvore arbitrária de roteiros.
    const branchRequests=[...t.matchAll(/\b(?:escolhas? de dialogo|dialogo com escolhas|(?:missao|missoes) ramificadas?|dialogo ramificado|escolher entre (?:as )?(?:duas )?(?:missoes|tarefas|opcoes)|duas opcoes|dois caminhos|escolher entre (?:alimentar|regar|plantar|comprar|repor|vender|colher)\b)\b/g)];

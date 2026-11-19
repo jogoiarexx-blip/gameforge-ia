@@ -100,6 +100,11 @@ const rewardSpec=parser.parseGdd('','Quero cuidar de aquário. Três missões en
 const rewardFiles=generator.generate(rewardSpec,'');validateFiles(rewardFiles,'2d','simulation');
 const rewardDir=path.join(output,'reward-aquarium');fs.mkdirSync(rewardDir);
 for(const [filename,contents] of Object.entries(rewardFiles))fs.writeFileSync(path.join(rewardDir,filename),contents);
+// GF-TRAIN-18: grafo com bifurcação real e aceleradores consumíveis.
+const graphSpec=parser.parseGdd('','Cuidar de aquário. Quatro missões paralelas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Recompensa de 2 aceleradores. Missão 2: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 3: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 4: comprar 1 e alimentar 1. Desbloquear após etapas 2 e 3. Dois tanques, crescer em dois segundos, meta de novecentas moedas.');
+const graphFiles=generator.generate(graphSpec,'');validateFiles(graphFiles,'2d','simulation');
+const graphDir=path.join(output,'graph-aquarium');fs.mkdirSync(graphDir);
+for(const [filename,contents] of Object.entries(graphFiles))fs.writeFileSync(path.join(graphDir,filename),contents);
 fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

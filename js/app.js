@@ -395,7 +395,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const src=$('file-editor').value;
     if(src.length>2000000){feedback('Arquivo muito grande para edição no navegador.',true);return;}
     state.files[state.selected]=src;
-    if(['game.js','style.css','index.html'].includes(state.selected)){qaState.last=null;qaState.baseline=null;}
+    if(['game.js','style.css','index.html'].includes(state.selected)){
+      qaState.last=null;qaState.baseline=null;
+      refreshEvidence();
+    }
     listFiles();selectFile(state.selected);if(!qaState.candidate)saveState();
     if(['game.js','style.css','index.html'].includes(state.selected))runPreview();
     feedback('Alteração aplicada ao arquivo '+state.selected+'.');
@@ -447,6 +450,11 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     return GameForgeAssetLibrary.materialize(assetProjectId,currentAssetManifest());
   }
   async function getExportFiles(){
+    const stored=state.files['MATRIZ_REQUISITOS_GF14.json'];
+    let matrix=null;try{matrix=JSON.parse(stored||'null');}catch{}
+    const revision=GameForgeRequirementEvidence.fingerprint(state.files);
+    const requestRev=GameForgeRequirementEvidence.requestFingerprint({instruction:$('instruction').value,gdd:$('gdd').value,spec:state.spec});
+    if(!matrix||matrix.projectFingerprint!==revision||matrix.requestFingerprint!==requestRev)refreshEvidence();
     roadmapSaveFiles();
     const files={...state.files,...await assetBinaryFiles()};
     files['PROJETO.gameforge.json']=GameForgeProject.encode(projectSnapshot());
@@ -768,6 +776,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       pushHistory(pending.instruction);
       state.files=files;
       if(pending.output.spec)state.spec=pending.output.spec;
+      refreshEvidence();
       const task=pending.activeTaskId&&preparedTaskId===pending.activeTaskId?selectedRoadmap():null;
       if(task&&task.id===pending.activeTaskId){
         roadmapTasks=GameForgeRoadmap.changeStatus(roadmapTasks,task.id,'em andamento','Código aprovado; aguardando QA e revisão manual.');

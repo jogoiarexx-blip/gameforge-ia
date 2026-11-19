@@ -9,8 +9,9 @@ const GF16=root.GameForgeAdvancedScenarioQA||(typeof require==='function'?requir
 const Evidence=root.GameForgeRequirementEvidence||(typeof require==='function'?require('./requirement-evidence'):null);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const URBAN=/^gameforge-urban-v1-[a-z0-9-]{1,54}(?::(?:backup|pending))?$/;
+const MISSION=/^gameforge-urban-missions-v2-[a-z0-9-]{1,45}(?::(?:backup|pending))?$/;
 const CAMPAIGN=/^gameforge-campaign-v1:(?:rpg|arena|fps):gf-[0-9a-f]{8}-[0-9a-f]{8}$/;
-function permittedKey(key){return URBAN.test(String(key))||CAMPAIGN.test(String(key));}
+function permittedKey(key){return URBAN.test(String(key))||MISSION.test(String(key))||CAMPAIGN.test(String(key));}
 function clean(entries={}){
  const out=Object.create(null);let size=0;
  if(!entries||typeof entries!=='object'||Array.isArray(entries))return {};
@@ -28,7 +29,8 @@ function source(input={}){
 function plan(input={}){
  const s=source(input),spec=s.spec||{},genre=spec.genre,dimension=spec.dimension;
  let contract='UNSUPPORTED';
- if(dimension==='3d'&&genre==='urban-action')contract='URBAN_AUTOSAVE_V1';
+ if(dimension==='3d'&&genre==='urban-action')
+  contract=Array.isArray(spec.urbanMissions)&&spec.urbanMissions.length?'URBAN_MISSIONS_V2':'URBAN_AUTOSAVE_V1';
  else if(dimension==='3d'&&['rpg','arena','fps'].includes(genre)&&
   /^gf-[0-9a-f]{8}-[0-9a-f]{8}$/.test(String(spec.projectId||''))&&
   !spec.combatEconomy?.enabled)contract='CAMPAIGN_CHECKPOINT_V1';
@@ -39,7 +41,7 @@ function plan(input={}){
  return {version:18,kind:'3D_CONTRACT_QA_PLAN',contract,applicable:contract!=='UNSUPPORTED',
   codeFingerprint:GF16.revision(input.files||{}),
   requestFingerprint:GF16.requestRevision(s),requirementIds:matched,
-  scope:contract==='URBAN_AUTOSAVE_V1'?
+  scope:contract==='URBAN_AUTOSAVE_V1'||contract==='URBAN_MISSIONS_V2'?
    'Mover jogador, confirmar registro salvo, destruir clone, restaurar em outro':
    contract==='CAMPAIGN_CHECKPOINT_V1'?
     'Somente checkpoint que tenha sido realmente produzido durante a prévia; sem transição de fase o resultado é INCONCLUSIVE':
@@ -48,6 +50,7 @@ function plan(input={}){
 function boot(seed={}){
  const data=Object.create(null),audit=[];
  const allowed=k=>/^gameforge-urban-v1-[a-z0-9-]{1,54}(?::(?:backup|pending))?$/.test(String(k))||
+  /^gameforge-urban-missions-v2-[a-z0-9-]{1,45}(?::(?:backup|pending))?$/.test(String(k))||
   /^gameforge-campaign-v1:(?:rpg|arena|fps):gf-[0-9a-f]{8}-[0-9a-f]{8}$/.test(String(k));
  for(const [k,v] of Object.entries(seed||{})){
   if(allowed(k)&&typeof v==='string'&&v.length<=200000)data[k]=v;
@@ -93,6 +96,27 @@ function urbanSavedState(record){
   captured:record.captured===true,missionComplete:record.missionComplete===true,
   rewardGranted:record.rewardGranted===true};
 }
+function urbanMissionSavedState(record){
+ if(!record||record.version!==2||!record.position)return null;
+ return {x:numeric(record.position.x),z:numeric(record.position.z),
+  health:numeric(record.health),cash:numeric(record.cash),ammo:numeric(record.ammo),
+  reserve:numeric(record.reserve),stage:Number.isInteger(record.stage)?record.stage+1:null,
+  completed:Array.isArray(record.completed)?record.completed.slice():null,
+  rewards:Array.isArray(record.rewards)?record.rewards.slice():null,
+  counts:record.counts||null,status:record.status||null};
+}
+function sameUrbanMission(record,telemetry){
+ const a=urbanMissionSavedState(record),b=urbanState(telemetry);
+ if(!a||!b||!telemetry?.mission)return false;
+ for(const k of ['x','z','health','cash','ammo','reserve']){
+  if(a[k]===null||b[k]===null||Math.abs(a[k]-b[k])>0.5)return false;
+ }
+ if(a.stage!==telemetry.stage||
+    JSON.stringify(a.rewards)!==JSON.stringify(telemetry.mission.rewards))return false;
+ const progress=telemetry.mission.progress;
+ if(!Array.isArray(progress)||!a.counts)return false;
+ return progress.every(s=>Number(s.done)===Number(a.counts[s.id]||0));
+}
 function sameUrban(record,telemetry){
  const a=urbanSavedState(record),b=urbanState(telemetry);
  return !!a&&!!b&&Object.keys(a).every(k=>
@@ -117,7 +141,7 @@ function decision(p,status,reason,observed={}){
   codeFingerprint:p.codeFingerprint,requestFingerprint:p.requestFingerprint,
   requirementIds:p.requirementIds||[],isolated:true,
   at:new Date().toISOString(),
-  scenario:{id:p.contract==='URBAN_AUTOSAVE_V1'?'urban-autosave-restart':'campaign-checkpoint-restart',
+  scenario:{id:p.contract.startsWith('URBAN_')?'urban-autosave-restart':'campaign-checkpoint-restart',
    status,scope:p.scope,observed},
   limitation:'PASS valida restauração em storage virtual de iframe descartável, não durabilidade em disco nem missão/chefe completo.'};
 }
@@ -161,20 +185,21 @@ async function run(input={}){
    return decision(p,'INCONCLUSIVE','O jogo 3D não iniciou em estado jogável.');
   const start=initial.telemetry;
   held='ArrowRight';
-  await send('press',{key:held});await wait(p.contract==='URBAN_AUTOSAVE_V1'?1750:850);
+  await send('press',{key:held});await wait(p.contract.startsWith('URBAN_')?2300:850);
   await send('release',{key:held});held=null;await wait(260);
   const after=(await send('inspect')).telemetry;
   const raw=await send('qa-storage');
   if(!raw?.virtual)return decision(p,'INCONCLUSIVE','Canal de armazenamento virtual não confirmado.');
   const records=clean(raw.entries);
   let key,record;
-  if(p.contract==='URBAN_AUTOSAVE_V1'){
-   key=Object.keys(records).find(k=>URBAN.test(k)&&!k.includes(':backup')&&!k.includes(':pending'));
+  if(p.contract.startsWith('URBAN_')){
+   const filter=p.contract==='URBAN_MISSIONS_V2'?MISSION:URBAN;
+   key=Object.keys(records).find(k=>filter.test(k)&&!k.includes(':backup')&&!k.includes(':pending'));
   }else{
    key=Object.keys(records).find(k=>CAMPAIGN.test(k));
   }
   if(!key)return decision(p,'INCONCLUSIVE',
-   p.contract==='URBAN_AUTOSAVE_V1'?'Nenhum salvamento urbano confiável encontrado.':
+   p.contract.startsWith('URBAN_')?'Nenhum salvamento urbano confiável encontrado.':
    'O RPG/arena/FPS ainda não concluiu uma fase para gerar checkpoint; não foi simulado.',
    {virtualKeyTypes:Object.keys(records).map(k=>k.startsWith('gameforge-urban-')?'urban':k.startsWith('gameforge-campaign-')?'campaign':'other'),
     rawVirtualKeys:Object.keys(raw.entries||{}).slice(0,6),virtualActions:(raw.stats||[]).slice(0,12),
@@ -184,12 +209,13 @@ async function run(input={}){
    return decision(p,'FAIL','Registro de salvamento produzido pelo jogo não é JSON válido.');
   }
   let changed=false;
-  if(p.contract==='URBAN_AUTOSAVE_V1'){
+  if(p.contract.startsWith('URBAN_')){
    const a=urbanState(start),b=urbanState(after);
    changed=!!a&&!!b&&a.x!==null&&b.x!==null&&
     Math.hypot(b.x-a.x,b.z-a.z)>0.2;
    if(!changed)return decision(p,'INCONCLUSIVE','O personagem urbano não mudou de posição; não há progresso suficiente para comprovar save.');
-   const savedPos=urbanSavedState(record),startPos=urbanState(start),endPos=urbanState(after);
+   const savedPos=p.contract==='URBAN_MISSIONS_V2'?urbanMissionSavedState(record):urbanSavedState(record);
+   const startPos=urbanState(start),endPos=urbanState(after);
    const persisted=!!savedPos&&savedPos.x!==null&&savedPos.z!==null&&
      Math.hypot(savedPos.x-startPos.x,savedPos.z-startPos.z)>0.2;
    if(!persisted)return decision(p,'INCONCLUSIVE','O jogo se moveu, mas o autosave ainda não persistiu essa posição.');
@@ -209,15 +235,16 @@ async function run(input={}){
   if(loaded?.telemetry?.state==='menu'){
    await second.transport.send('start');await wait(250);loaded=await second.transport.send('inspect');
   }
-  const t=loaded?.telemetry,matching=p.contract==='URBAN_AUTOSAVE_V1'?
+  const t=loaded?.telemetry,matching=p.contract==='URBAN_MISSIONS_V2'?
+   sameUrbanMission(record,t):p.contract==='URBAN_AUTOSAVE_V1'?
    sameUrban(record,t):campaignMatches(record,t);
   const observations={destroyedClone:true,storageVirtual:true,recordKeyType:p.contract,
    changedBeforeSave:changed||record.stage>=1,
    restoredInNewClone:matching,stageAfterRestart:numeric(t?.stage)};
   if(!matching)return decision(p,'FAIL','A nova instância não recuperou os campos estáveis do registro salvo.',observations);
   return decision(p,'PASS',
-   p.contract==='URBAN_AUTOSAVE_V1'?
-    'Movimento urbano foi salvo e restaurado em um novo iframe 3D.':
+   p.contract.startsWith('URBAN_')?
+    'Movimento urbano e campos de missão foram salvos e restaurados em um novo iframe 3D.':
     'Checkpoint gerado por transição de fase foi recuperado em um novo iframe 3D.',observations);
  }finally{
   if(held&&first){try{await first.transport.send('release',{key:held});}catch{}}
@@ -253,7 +280,7 @@ function report(suite){
   '\n\n**Limitação:** '+suite.limitation+
   '\n\nNão atesta que missões ou chefes foram concluídos, nem prova armazenamento persistente fora da sessão QA.\n';
 }
-root.GameForge3DPersistenceQA={plan,clean,permittedKey,boot,inject,urbanState,urbanSavedState,sameUrban,
+root.GameForge3DPersistenceQA={plan,clean,permittedKey,boot,inject,urbanState,urbanSavedState,sameUrban,urbanMissionSavedState,sameUrbanMission,
  viewCampaign,campaignMatches,decision,run,valid,attach,report};
 if(typeof module!=='undefined')module.exports=root.GameForge3DPersistenceQA;
 })(typeof globalThis!=='undefined'?globalThis:this);

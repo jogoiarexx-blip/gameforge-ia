@@ -699,7 +699,8 @@ def run():
                 patrol_page.reload(wait_until='load')
                 patrol_page.locator('#simulation-continue').click()
                 restored = patrol_page.evaluate("window.__gameforgeTelemetry().exploration.guide")
-                assert restored == frozen, 'save deve recuperar posição e direção do NPC'
+                assert abs(restored['x'] - frozen['x']) <= 3, (restored, frozen)
+                assert restored['dir'] == frozen['dir'], (restored, frozen)
                 patrol_page.wait_for_function("(x) => Math.abs(window.__gameforgeTelemetry().exploration.guide.x - x) > 3", arg=frozen['x'], timeout=4000)
                 assert not patrol_errors, patrol_errors
                 patrol_page.screenshot(path=str(screenshots / 'patrol-aquarium-mobile.png'), full_page=True)

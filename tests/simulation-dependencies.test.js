@@ -52,8 +52,8 @@ test('GF-TRAIN-17: objetivo dependente bloqueado até primeiro terminar; recompe
  assert.deepEqual(s.story.progress,[0,1]);
  // Objetivo start requer slot vazio e consegue utilizar kit.
  R.tick(s,c,1);R.tick(s,c,1);
- R.act(s,c,0,'finish');const prior=s.money;
- R.act(s,c,0,'start');
+ R.act(s,c,1,'finish');const prior=s.money;
+ R.act(s,c,1,'start');
  assert.equal(s.money,prior);assert.equal(s.story.missionIndex,2);
  assert.equal(s.kits,1,'recompensa da segunda missão devolve um kit');
  assert.equal(s.kitsUsed,2);assert.equal(s.story.itemsEarned,3);

@@ -89,3 +89,19 @@ test('GF-ARCH-13: HTML carrega o módulo antes de desenvolvimento e só então a
   assert.match(html,new RegExp('id="'+id+'"'));
  }
 });
+
+test('GF-ARCH-13: não confunde ponto em arquivo com fim de frase',()=>{
+ const p=Flow.plan({instruction:'Aumenta a vida dos inimigos sem mexer no style.css',files});
+ assert.ok(p.protectedFiles.includes('style.css'));
+ assert.ok(!p.targets.includes('style.css'));
+ assert.ok(p.targets.includes('game.js'));
+ assert.equal(p.agents.find(a=>a.id==='graphics').status,'NOT_NEEDED');
+});
+test('GF-ARCH-13: prévia explica a mudança e não altera o projeto',()=>{
+ const c=Flow.stage({currentFiles:files,proposedFiles:{...files,'game.js':'const newGame = true;'}});
+ const text=Flow.preview(c,files);
+ assert.match(text,/ARQUIVO: game\.js/);
+ assert.match(text,/Trecho antigo/);
+ assert.match(text,/Trecho proposto/);
+ assert.equal(files['game.js'],'const GAME_SPEC = {"genre":"arena"}; /* baseline */');
+});

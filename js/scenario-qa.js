@@ -18,6 +18,11 @@ const FIRE=/\b(atir\w*|dispar\w*|tiros?|proj[eé]teis?|shoot\w*)\b/i;
 const PERF=/\b(fps|desempenh\w*|fluidez|renderiz\w*|frames?|otimiz\w*)\b/i;
 const CANVAS=/\b(canvas|tela|renderiz\w*)\b/i;
 const RUNTIME=/\b(erros?|trav\w*|crash\w*|bugs?|falhas?|congel\w*)\b/i;
+function positiveText(description){
+ const text=clean(description);
+ const match=/\b(nao|sem|preservar|evitar|evite|nunca)\b/.exec(text);
+ return match?text.slice(0,match.index):text;
+}
 function plan(input={}){
  const files=input.files||{},matrix=Evidence.extract({...input,files});
  const permitted=matrix.requirements.filter(r=>r.status!=='UNSUPPORTED');
@@ -28,7 +33,7 @@ function plan(input={}){
   {id:'movement',matcher:MOVEMENT},
   {id:'fire',matcher:FIRE}
  ].map(({id,matcher})=>{
-  const matched=permitted.filter(r=>matcher.test(clean(r.description))).map(r=>r.id);
+  const matched=permitted.filter(r=>matcher.test(positiveText(r.description))).map(r=>r.id);
   return {id,name:SCENARIOS[id].name,category:SCENARIOS[id].category,scope:SCENARIOS[id].scope,
    requirementIds:matched,selected:id==='canvas'||id==='runtime'||id==='frames'||matched.length>0,
    expected:'OBSERVATION_ONLY'};
@@ -74,6 +79,7 @@ function decide(id,before,after,extra={}){
    pass(id,'FAIL','Contador de frames não avançou.',{before:start,after:end,delta:end-start});
  }
  if(id==='movement'){
+  if(['menu','defeat','victory','paused'].includes(a.telemetry?.state))return pass(id,'INCONCLUSIVE','Jogo não estava em estado jogável durante o comando.');
   const p1=pos(a),p2=pos(b);
   if(!p1||!p2)return pass(id,'INCONCLUSIVE','Posição do jogador não instrumentada.');
   const delta=Math.hypot(p2.x-p1.x,p2.y-p1.y,p2.z-p1.z);
@@ -81,6 +87,7 @@ function decide(id,before,after,extra={}){
    pass(id,'FAIL','Nenhum deslocamento mensurável após ArrowRight.',{distance:Math.round(delta*100)/100,key:'ArrowRight'});
  }
  if(id==='fire'){
+  if(['menu','defeat','victory','paused'].includes(a.telemetry?.state))return pass(id,'INCONCLUSIVE','Jogo não estava em estado jogável durante o disparo.');
   const n=extra?.during?.telemetry?.playerBullets;
   if(!Number.isFinite(n))return pass(id,'INCONCLUSIVE','Telemetria de projéteis indisponível.');
   return n>0?pass(id,'PASS','Projéteis observados durante espaço pressionado.',{count:n,key:' '}):

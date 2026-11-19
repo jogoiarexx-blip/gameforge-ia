@@ -191,3 +191,11 @@ test('GF16: clone bloqueia focus(), sem alterar HTML do jogo original',()=>{
  assert.ok(clone.includes('<title>Teste</title>'));
  assert.equal(original.includes('HTMLElement.prototype.focus'),false);
 });
+
+test('GF16: autosave e ZIP verificam expiração avançada mesmo sem mudar game.js',()=>{
+ const app=fs.readFileSync(path.join(__dirname,'..','js/app.js'),'utf8');
+ const block=app.slice(app.indexOf('function ensureEvidenceFresh()'),app.indexOf('function projectSnapshot()'));
+ assert.match(block,/hadAdvanced/);
+ assert.match(block,/advancedSuiteForCurrent\(\)/);
+ assert.match(block,/hadAdvanced&&!advanced/);
+});

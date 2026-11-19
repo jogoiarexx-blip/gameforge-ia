@@ -573,9 +573,65 @@ def run():
             finally:
                 free_page.close()
 
+            # GF-TRAIN-13: conversa real com NPC, missão, recompensa única e save no Chromium móvel.
+            story_page = browser.new_page(viewport={'width': 390, 'height': 844})
+            story_errors = []
+            story_page.on('pageerror', lambda error: story_errors.append(str(error)))
+            try:
+                story_page.goto(origin + '/tests/_browser_output/story-aquarium/index.html', wait_until='load')
+                story_page.locator('#start').click()
+                assert story_page.evaluate("window.__gameforgeTelemetry().story.event") == 'talk'
+                story_page.keyboard.press('1')
+                assert story_page.evaluate("window.__gameforgeTelemetry().simulation.slots[0]") is None
+                story_page.keyboard.down('ArrowRight')
+                story_page.wait_for_function("window.__gameforgeTelemetry().exploration.nearby === 'guide'", timeout=8000)
+                story_page.keyboard.up('ArrowRight')
+                balance = story_page.evaluate("window.__gameforgeTelemetry().simulation.money")
+                story_page.keyboard.press('e')
+                assert story_page.evaluate("window.__gameforgeTelemetry().story.event") == 'finish'
+                assert story_page.evaluate("window.__gameforgeTelemetry().simulation.money") == balance
+                story_page.locator('#simulation-save').click()
+                prior = story_page.evaluate("window.__gameforgeTelemetry().simulation.story")
+                position = story_page.evaluate("window.__gameforgeTelemetry().player")
+                story_page.reload(wait_until='load')
+                story_page.locator('#simulation-continue').click()
+                assert story_page.evaluate("window.__gameforgeTelemetry().simulation.story") == prior
+                restored = story_page.evaluate("window.__gameforgeTelemetry().player")
+                assert abs(position['x'] - restored['x']) < 0.01
+                assert abs(position['y'] - restored['y']) < 0.01
+                story_page.keyboard.down('ArrowLeft')
+                story_page.wait_for_function("window.__gameforgeTelemetry().player.x < 320", timeout=7000)
+                story_page.keyboard.up('ArrowLeft')
+                story_page.keyboard.down('ArrowUp')
+                story_page.wait_for_function("window.__gameforgeTelemetry().exploration.near", timeout=6000)
+                story_page.keyboard.up('ArrowUp')
+                story_page.keyboard.press('e')
+                assert story_page.evaluate("window.__gameforgeTelemetry().exploration.actionsOpen")
+                story_page.keyboard.press('1')
+                story_page.keyboard.press('2')
+                story_page.wait_for_function("window.__gameforgeTelemetry().simulation.slots[0].age >= 2", timeout=6500)
+                story_page.keyboard.press('3')
+                story_page.wait_for_function("window.__gameforgeTelemetry().state === 'victory'", timeout=3000)
+                won = story_page.evaluate("window.__gameforgeTelemetry().simulation")
+                assert won['story']['rewards'] == 5 and won['story']['completed']
+                assert won['sales'] == 1
+                story_page.keyboard.press('3')
+                assert story_page.evaluate("window.__gameforgeTelemetry().simulation") == won
+                story_page.reload(wait_until='load')
+                story_page.locator('#simulation-continue').click()
+                assert story_page.evaluate("window.__gameforgeTelemetry().simulation") == won
+                assert story_page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+                story_page.screenshot(path=str(screenshots / 'story-aquarium-mobile.png'), full_page=True)
+                assert not story_errors, story_errors
+                results.append('story-aquarium-mobile')
+            except Exception as exc:
+                failures.append(('story-aquarium-mobile', str(exc), story_errors, []))
+            finally:
+                story_page.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 10 + len(graphics_matrix)
+            assert len(results) == len(matrix) + 11 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

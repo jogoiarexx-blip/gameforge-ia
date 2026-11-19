@@ -44,7 +44,11 @@ def run():
                     return x.includes('GF-ARCH-18 —')||x.includes('GF18 não concluído');
                 }""",timeout=85000)
                 summary=page.locator('#gf18-summary').inner_text()
-                assert 'GF-ARCH-18 — PASS' in summary,summary
+                if 'GF-ARCH-18 — PASS' not in summary:
+                    page.locator('#file-list').get_by_text('RESULTADOS_3D_GF18.json',exact=True).click()
+                    details=json.loads(page.locator('#file-editor').input_value())
+                    print('GF18 diagnostic:',json.dumps(details,ensure_ascii=False))
+                    raise AssertionError(summary)
                 after=page.evaluate("""()=>({
                     html:document.querySelector('#preview').srcdoc,
                     keys:Object.keys(localStorage).filter(x=>x.startsWith('gameforge-urban-v1-'))

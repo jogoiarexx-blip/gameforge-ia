@@ -152,6 +152,14 @@
      const count=el('input',{id:countId,type:'number',value:'1',min:'1',max:'5',step:'1'});
      field(group,'Quantas vezes?',countId,count);grid.appendChild(group);
     }
+    const prereqBox=el('div',{class:'quest-dependencies'});
+    prereqBox.appendChild(el('strong',{text:'Pré-requisitos de desbloqueio'}));
+    for(let j=0;j<i;j++){
+     const id='qe-dep-'+i+'-'+j,check=el('input',{id,type:'checkbox'});
+     check.checked=i===1||i===2?j===0:i===3&&(j===1||j===2);
+     field(prereqBox,'Concluir missão '+(j+1),id,check);
+    }
+    grid.appendChild(prereqBox);
     const stockGroup=el('div'),stockId='qe-stock-'+i;
     field(stockGroup,'Estoque mínimo (0 = sem)',stockId,el('input',{id:stockId,type:'number',value:'0',min:'0',max:'12',step:'1'}));
     const timeGroup=el('div'),timeId='qe-time-'+i;
@@ -162,7 +170,9 @@
     field(afterGroup,'Objetivo 2 só depois do objetivo 1',afterId,after);
     const kitsGroup=el('div'),kitsId='qe-kits-'+i;
     field(kitsGroup,'Recompensa em kits (0–3)',kitsId,el('input',{id:kitsId,type:'number',value:'0',min:'0',max:'3',step:'1'}));
-    grid.append(afterGroup,kitsGroup);
+    const boostGroup=el('div'),boostId='qe-boost-'+i;
+    field(boostGroup,'Recompensa: aceleradores (0–3)',boostId,el('input',{id:boostId,type:'number',value:'0',min:'0',max:'3',step:'1'}));
+    grid.append(afterGroup,kitsGroup,boostGroup);
     fieldset.appendChild(grid);rows.appendChild(fieldset);
    }
    preview.value='';status.textContent='Configure os objetivos e confira o pedido antes de aplicar.';
@@ -172,8 +182,10 @@
    return {domain:domainSelect.value,missions:Array.from({length:total},(_,i)=>({
     objectives:[0,1].map(k=>({event:by('qe-action-'+i+'-'+k)?.value,count:by('qe-count-'+i+'-'+k)?.value})),
     stock:by('qe-stock-'+i)?.value,seconds:by('qe-time-'+i)?.value,
-    kits:by('qe-kits-'+i)?.value,afterFirst:by('qe-after-'+i)?.checked===true
-   }))};
+    kits:by('qe-kits-'+i)?.value,boosts:by('qe-boost-'+i)?.value,
+    afterFirst:by('qe-after-'+i)?.checked===true,
+    prerequisites:Array.from({length:i},(_,j)=>j).filter(j=>by('qe-dep-'+i+'-'+j)?.checked===true)
+   })),graph:by('qe-graph')?.checked===true};
   }
   function check(){
    try{
@@ -184,7 +196,9 @@
   }
   function populate(data){
    const normalized=normalize(data);
-   domainSelect.value=normalized.domain;totalSelect.value=String(normalized.missions.length);render();
+   domainSelect.value=normalized.domain;totalSelect.value=String(normalized.missions.length);
+   if(by('qe-graph'))by('qe-graph').checked=normalized.graph;
+   render();
    for(const [i,m] of normalized.missions.entries()){
     for(const [k,o] of m.objectives.entries()){
      by('qe-action-'+i+'-'+k).value=o.event;
@@ -193,7 +207,9 @@
     by('qe-stock-'+i).value=String(m.stock);
     by('qe-time-'+i).value=String(m.seconds);
     by('qe-kits-'+i).value=String(m.kits);
+    by('qe-boost-'+i).value=String(m.boosts);
     by('qe-after-'+i).checked=m.afterFirst;
+    for(let j=0;j<i;j++)by('qe-dep-'+i+'-'+j).checked=m.prerequisites.includes(j);
    }
    check();
   }
@@ -218,9 +234,9 @@
   if(save)save.addEventListener('click',()=>{
    try{
     if(typeof getGenerated!=='function'||typeof onEdit!=='function')throw Error('Edição indisponível neste projeto.');
-    const result=editGenerated(getGenerated(),read());
+    const result=editGenerated(getGenerated(),read(),{migrateSave:by('qe-migrate')?.checked===true});
     onEdit(result);
-    status.textContent='Missões aplicadas ao game.js. Teste a prévia; o save anterior fica incompatível.';
+    status.textContent='Missões aplicadas ao game.js. '+result.notice;
    }catch(e){status.textContent=e.message;}
   });
   render();

@@ -108,3 +108,16 @@ test('GF14: manifesto e relatórios são preservados no backup',()=>{
  const copy=backup.decode(backup.encode(snap));
  assert.equal(copy.files['MANIFESTO_AGENTES_GF14.json'],manifest);
 });
+
+test('GF14: alteração de instrução ou GDD invalida revisão dos requisitos',()=>{
+ const old={instruction:'Melhore controles',gdd:'# Arena',files};
+ const matrix=R.extract(old);
+ assert.notEqual(matrix.requestFingerprint,R.requestFingerprint({...old,instruction:'Melhore o mapa'}));
+ assert.notEqual(matrix.requestFingerprint,R.requestFingerprint({...old,gdd:'# FPS'}));
+});
+test('GF14: exportação verifica revisão antes de emitir arquivos',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'..','js/app.js'),'utf8');
+ assert.match(source,/matrix\.requestFingerprint!==requestRev/);
+ assert.match(source,/matrix\.projectFingerprint!==revision/);
+ assert.match(source,/refreshEvidence\(\)/);
+});

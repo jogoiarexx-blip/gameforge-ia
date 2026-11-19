@@ -71,3 +71,12 @@ test('backup e restauração local preservam qualidade 2D e estilo visual',()=>{
  assert.equal(backup.save({setItem(_key,value){stored=value;}},'project',snap).ok,true);
  assert.deepEqual(backup.restoreStored(stored).creationOptions,portable.creationOptions);
 });
+
+test('backup portável permite os novos relatórios do Studio sem bloquear exportação',()=>{
+ const snap=original();
+ snap.files['BRIEF_E_CHECKLIST_STUDIO.md']='# relatório de teste';
+ snap.files['MAPA_DEPENDENCIAS.json']='{}';
+ const restored=backup.decode(backup.encode(snap));
+ assert.equal(restored.files['BRIEF_E_CHECKLIST_STUDIO.md'],snap.files['BRIEF_E_CHECKLIST_STUDIO.md']);
+ assert.equal(restored.files['MAPA_DEPENDENCIAS.json'],snap.files['MAPA_DEPENDENCIAS.json']);
+});

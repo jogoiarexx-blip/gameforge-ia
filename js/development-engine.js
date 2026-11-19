@@ -102,10 +102,11 @@ function plan(instruction,spec,files){
 
   const unknown=text.length>0&&changes.length===0&&direct.tasks.length===0&&direct.pending.length===0;
   const unsupported=tasks.filter(t=>!t.possible).map(t=>t.title+(t.title==='Programar objetivo da fase'?' — informe "fase N" de um jogo ação/FPS 3D gerado no motor v0.14':' — regra não implementada neste motor'));
+  const studio=root.GameForgeStudioIntelligence?root.GameForgeStudioIntelligence.review({instruction:text,spec,files,changedFiles:['game.js']}):null;
   return {title:'Plano incremental de desenvolvimento',instruction:text,reason:'Preservar arquivos atuais e editar apenas as configurações controladas do motor',
     tasks, pending:[...(unknown?['Pedido livre não coberto por regras: exige IA ou programação manual']:[]),...unsupported,...direct.pending],
     tests:['Verificar sintaxe JS','Iniciar prévia','Executar QA de movimentação e controles','Comparar com versão anterior'],
-    supported:supported&&tasks.some(t=>t.possible)};
+    supported:supported&&tasks.some(t=>t.possible),studio};
 }
 function modify(files,spec,planResult){
   if(!files?.['game.js'])throw Error('Gere um jogo antes de pedir melhorias.');
@@ -174,6 +175,7 @@ function modify(files,spec,planResult){
   return {changed:true,files:out,applied,pending,spec:next};
 }
 function report(p,applied=[]){return '# Plano e evolução do jogo\n\n## Pedido\n'+p.instruction+'\n\n## Ações\n'+(p.tasks.map(t=>`- ${t.possible?'[x]':'[ ]'} ${t.title}: ${t.rationale}`).join('\n')||'- Nenhuma ação do motor local identificada')+'\n\n## Verificações recomendadas\n'+p.tests.map(x=>'- [ ] '+x).join('\n')+'\n\n## Alterações realizadas\n'+(applied.map(x=>'- '+x).join('\n')||'- Nenhuma')+'\n\n## Pendências\n'+(p.pending.map(x=>'- '+x).join('\n')||'- Nenhuma conhecida')+'\n\n**Nota:** plano não substitui execução e QA real.\n';}
-root.GameForgeDevelopment={analyze,plan,modify,report};
+function reportWithStudio(p,applied=[]){return report(p,applied)+(p?.studio&&root.GameForgeStudioIntelligence?'\n'+root.GameForgeStudioIntelligence.report(p.studio):'');}
+root.GameForgeDevelopment={analyze,plan,modify,report:reportWithStudio};
 if(typeof module!=='undefined')module.exports=root.GameForgeDevelopment;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -588,6 +588,11 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       if(mode==='offline'){
         lastPlan=GameForgeDevelopment.plan($('instruction').value,spec,{});
         state.files=GameForgeGenerator.generate(spec,$('gdd').value);
+        if(rootGameForgeStudio()){
+          const studio=GameForgeStudioIntelligence.review({instruction:$('instruction').value,spec,files:state.files,changedFiles:['game.js']});
+          state.files['BRIEF_E_CHECKLIST_STUDIO.md']=GameForgeStudioIntelligence.report(studio);
+          state.files['MAPA_DEPENDENCIAS.json']=JSON.stringify(studio.graph,null,2);
+        }
         state.files['RELATORIO_LEITURA_GDD.md']=$('gdd').value.trim()?readingReport($('gdd').value,spec):'# Criação por comando direto\\n\\nNenhum GDD foi fornecido. O código foi gerado a partir da instrução em COMANDO_ORIGINAL.md.\\n';
         state.files['PLANO_INTERPRETACAO.md']=GameForgeIntent.report(spec);
         if($('instruction').value.trim())state.files['COMANDO_ORIGINAL.md']='# Comando original\\n\\n'+$('instruction').value;
@@ -667,9 +672,17 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     listFiles();selectFile('game.js');runPreview();renderHistory();saveState();qaButtons();
     feedback('Melhoria desfeita. Arquivos anteriores restaurados.');
   }
+  function rootGameForgeStudio(){return typeof GameForgeStudioIntelligence!=='undefined'&&!!GameForgeStudioIntelligence.review;}
   function displayPlan(p){
-    $('development-plan').textContent=p.tasks?.length ? p.tasks.map((t,i)=>`${i+1}. ${t.title} — ${t.rationale||t.why}${t.possible===false?' (exige IA)':''}\n   Testes: ${(t.checks||[]).join('; ')}`).join('\n') +
+    const main=p.tasks?.length ? p.tasks.map((t,i)=>`${i+1}. ${t.title} — ${t.rationale||t.why}${t.possible===false?' (exige IA)':''}\n   Testes: ${(t.checks||[]).join('; ')}`).join('\n') +
       '\n\nPendências: '+(p.pending||[]).join('; ') : (p.pending||[]).join('\n')||'Nenhuma mudança reconhecida. Descreva o que deve mudar.';
+    const studio=p.studio;
+    const assessment=studio?'\n\n[Studio Intelligence] Dependências explícitas: '+studio.graph.edges.length+
+      '; arquivos potencialmente impactados: '+(studio.impact.join(', ')||'não identificados')+
+      '\nGate de qualidade: '+studio.gate.status+' — '+studio.gate.reason+
+      '\nRestrições preservadas: '+(studio.brief.restrictions.join('; ')||'nenhuma identificada')+
+      '\nAtenção: nenhum teste marcado como aprovado antes da execução.':'';
+    $('development-plan').textContent=main+assessment;
   }
   function planImprovement(){
     if(!state.files['game.js']){feedback('Primeiro crie um jogo a partir do GDD.',true);return null;}

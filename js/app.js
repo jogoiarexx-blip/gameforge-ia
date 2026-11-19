@@ -304,7 +304,18 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('stage-mission').addEventListener('change',()=>{$('stage-seconds').disabled=$('stage-mission').disabled||$('stage-mission').value!=='survive';});
   $('stage-save').addEventListener('click',()=>stageEditorSave(false));
   $('stage-reset').addEventListener('click',()=>stageEditorSave(true));
+  function ensureEvidenceFresh(){
+    if(!state.files['game.js'])return;
+    let current=null;
+    try{current=JSON.parse(state.files['MATRIZ_REQUISITOS_GF14.json']||'null');}catch{}
+    const revision=GameForgeRequirementEvidence.fingerprint(state.files);
+    const requestRev=GameForgeRequirementEvidence.requestFingerprint({
+      instruction:$('instruction').value,gdd:$('gdd').value,spec:state.spec
+    });
+    if(!current||current.projectFingerprint!==revision||current.requestFingerprint!==requestRev)refreshEvidence();
+  }
   function projectSnapshot(){
+    ensureEvidenceFresh();
     roadmapSync();
     return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,assetProjectId,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,creationOptions:creationOptions(),rpgLayoutJson:$('rpg-layout-json').value,roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
   }
@@ -450,11 +461,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     return GameForgeAssetLibrary.materialize(assetProjectId,currentAssetManifest());
   }
   async function getExportFiles(){
-    const stored=state.files['MATRIZ_REQUISITOS_GF14.json'];
-    let matrix=null;try{matrix=JSON.parse(stored||'null');}catch{}
-    const revision=GameForgeRequirementEvidence.fingerprint(state.files);
-    const requestRev=GameForgeRequirementEvidence.requestFingerprint({instruction:$('instruction').value,gdd:$('gdd').value,spec:state.spec});
-    if(!matrix||matrix.projectFingerprint!==revision||matrix.requestFingerprint!==requestRev)refreshEvidence();
+    ensureEvidenceFresh();
     roadmapSaveFiles();
     const files={...state.files,...await assetBinaryFiles()};
     files['PROJETO.gameforge.json']=GameForgeProject.encode(projectSnapshot());

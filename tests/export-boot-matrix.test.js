@@ -372,6 +372,40 @@ test('GF-TRAIN-11: aquário exportado exige proximidade, caminha, abre interaç�
  assert.equal(b.telemetry().simulation.sales,1);
 });
 
+test('GF-TRAIN-13: NPC, diálogo, sequência de eventos, recompensa e save no game.js exportado',()=>{
+ const spec=parser.parseGdd('','Quero cuidar de aquário com missão: vender um peixe. Andar livremente com WASD. Dois tanques, crescer em dois segundos, meta de dez moedas.');
+ assert.equal(spec.simulation.story?.mission.steps[1].event,'finish');
+ const files=generator.generate(spec,'');validateFiles(files,'2d','simulation');
+ const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
+ const a=environment(files,'2d',storage),key=k=>{a.input('keydown',k);a.input('keyup',k);};
+ a.element('start').click();
+ assert.equal(a.telemetry().story.event,'talk');
+ key('1');assert.equal(a.telemetry().simulation.slots[0],null,'interação distante não executada');
+ a.input('keydown','ArrowRight');a.tick(280);a.input('keyup','ArrowRight');
+ assert.equal(a.telemetry().exploration.nearby,'guide');
+ const balance=a.telemetry().simulation.money;
+ key('e');
+ assert.equal(a.telemetry().story.event,'finish');
+ assert.equal(a.telemetry().simulation.money,balance,'falar com NPC não dá recompensa prematura');
+ key('e');assert.equal(a.telemetry().story.event,'finish','dialogar de novo não avança vendas');
+ a.input('keydown','ArrowLeft');a.tick(170);a.input('keyup','ArrowLeft');
+ a.input('keydown','ArrowUp');a.tick(120);a.input('keyup','ArrowUp');
+ assert.equal(a.telemetry().exploration.near,true);
+ key('e');key('1');key('2');
+ a.tick(140);key('3');
+ assert.equal(a.telemetry().simulation.story.completed,true);
+ assert.equal(a.telemetry().simulation.story.rewards,5);
+ assert.equal(a.telemetry().simulation.sales,1);
+ assert.equal(a.telemetry().state,'victory');
+ const money=a.telemetry().simulation.money;
+ key('3');assert.equal(a.telemetry().simulation.money,money);
+ const b=environment(files,'2d',storage);
+ b.element('overlay').children.find(x=>x.id==='simulation-continue').click();
+ assert.equal(b.telemetry().state,'victory');
+ assert.equal(b.telemetry().simulation.story.rewards,5);
+ assert.equal(b.telemetry().simulation.money,money);
+});
+
 test('GF-TRAIN-12: jogo livre exportado usa WASD, bloqueia ações distantes, salva posição e vence',()=>{
  const spec=parser.parseGdd('','Quero cuidar de aquário. Andar livremente com WASD. Dois tanques. Crescer em dois segundos, meta de dez moedas.');
  assert.equal(spec.simulation.exploration?.mode,'free');

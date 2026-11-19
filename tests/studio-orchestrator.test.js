@@ -76,7 +76,8 @@ test('GF-ARCH-13: sem instrução nem arquivos não inventa mecânica pronta',()
 test('GF-ARCH-13: integração com motor incremental inclui orquestração',()=>{
  require('../js/studio-intelligence');
  const Development=require('../js/development-engine');
- const plan=Development.plan('mais inimigos',{genre:'arena',dimension:'2d',stages:['a']},files);
+ const importedFiles={...files,'game.js':'// projeto legado sem GAME_SPEC serializado'};
+ const plan=Development.plan('mais inimigos',{genre:'arena',dimension:'2d',stages:['a']},importedFiles);
  assert.ok(plan.orchestration);
  assert.ok(plan.orchestration.agents.some(a=>a.id==='gameplay'&&a.status==='PLANNED'));
  assert.match(Development.report(plan),/Orquestração GF-ARCH-13/);

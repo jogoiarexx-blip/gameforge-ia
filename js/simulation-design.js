@@ -204,13 +204,13 @@ function compile(text,command=''){
     const first=stage('primeira (?:missao|tarefa)|missao 1|tarefa 1')||{event:'start',count:1};
     const second=stage('segunda (?:missao|tarefa)|missao 2|tarefa 2')||{event:config.domain==='farm'?'sell':'finish',count:1};
     const guards=[];
-    const stock=t.match(/\b(?:estoque|inventario)\s*(?:de|com|:|minimo de|pelo menos)?\s*(${numeric})\b|\b(?:ter|precisa(?:r)? de|com)\s+(?:pelo menos\s+)?(${numeric})\s+(?:itens?|peixes?|produtos?|colheitas?)\s+(?:no|em)\s+(?:estoque|inventario)\b/);
+    const stock=t.match(new RegExp('\\b(?:estoque|inventario)\\s*(?:de|com|:|minimo de|pelo menos)?\\s*('+numeric+')\\b|\\b(?:ter|precisa(?:r)? de|com)\\s+(?:pelo menos\\s+)?('+numeric+')\\s+(?:itens?|peixes?|produtos?|colheitas?)\\s+(?:no|em)\\s+(?:estoque|inventario)\\b'));
     if(stock){
      const requested=number(stock[1]||stock[2]),value=Math.max(1,Math.min(config.slots,requested));
      if(requested!==value)warnings.push('Inventário da missão limitado aos espaços existentes.');
      guards.push({kind:'stock',min:value});
     }
-    const time=t.match(/\b(?:aguardar|esperar|apos|depois de|somente apos|so depois de)\s*(${numeric})\s*segundos?\b/);
+    const time=t.match(new RegExp('\\b(?:aguardar|esperar|apos|depois de|somente apos|so depois de)\\s*('+numeric+')\\s*segundos?\\b'));
     if(time){
      const requested=number(time[1]),value=Math.max(1,Math.min(60,requested));
      if(requested!==value)warnings.push('Espera da missão limitada a 60 segundos jogados.');

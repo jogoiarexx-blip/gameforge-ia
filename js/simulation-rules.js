@@ -76,6 +76,7 @@ function gameForgeSimulationRulesFactory(events){
  function tick(s,c,dt){
   if(!Number.isFinite(dt)||dt<=0||s.complete)return;
   let remaining=Math.min(dt,1);
+  if(c.story?.version===3&&E)E.advance(s.story,c.story,remaining);
   if(!c.automation?.enabled||s.automation.paused){grow(s,c,remaining);return;}
   const period=c.automation.intervalSeconds;
   while(remaining>1e-10&&!s.complete){
@@ -85,14 +86,14 @@ function gameForgeSimulationRulesFactory(events){
   }
  }
  function win(s,c){return s.earned>=c.target&&(!c.story?.requiredForVictory||s.story?.completed===true);}
- function storyEvent(s,c,kind){
+ function storyEvent(s,c,kind,context){
   if(!c.story?.enabled||!s.story||!E)return;
-  const outcome=E.record(s.story,c.story,kind);
+  const outcome=E.record(s.story,c.story,kind,context);
   if(outcome.bonus)s.money+=outcome.bonus;
  }
- function talk(s,c){
+ function talk(s,c,npc=0){
   if(s.complete||!E||!c.story?.enabled||!s.story)return null;
-  const result=E.talk(s.story,c.story);
+  const result=E.talk(s.story,c.story,npc);
   if(result.bonus)s.money+=result.bonus;
   s.complete=win(s,c);
   return result.text;
@@ -106,6 +107,7 @@ function gameForgeSimulationRulesFactory(events){
  }
  function act(s,c,index,action){
   if(s.complete)return false;
+  const context=c.story?.version===3?{stock:c.domain==='farm'?s.inventory:s.slots.filter(Boolean).length}:undefined;
   const valid=Number.isInteger(index)&&index>=0&&index<s.slots.length;
   if(action==='sell'&&c.domain==='farm'){
    if(s.inventory<=0)return false;
@@ -117,16 +119,16 @@ function gameForgeSimulationRulesFactory(events){
     if(item||s.money<c.cost)return false;
     s.money-=c.cost;s.slots[index]={age:0,cared:cfg?.feedingRequired===false};
     if(cfg)s.slots[index].satiety=cfg.feedingRequired===false?100:0;
-    storyEvent(s,c,'start');s.complete=win(s,c);return true;
+    storyEvent(s,c,'start',context);s.complete=win(s,c);return true;
    }
    if(action==='care'){
     if(!canCare(s,c,index))return false;
     item.cared=true;if(cfg)item.satiety=100;
-    storyEvent(s,c,'care');s.complete=win(s,c);return true;
+    storyEvent(s,c,'care',context);s.complete=win(s,c);return true;
    }
    if(action==='clean'){
     if(!canClean(s,c,index))return false;
-    s.tanks[index].water=100;storyEvent(s,c,'clean');s.complete=win(s,c);return true;
+    s.tanks[index].water=100;storyEvent(s,c,'clean',context);s.complete=win(s,c);return true;
    }
    if(action==='finish'){
     if(!canFinish(s,c,index))return false;
@@ -135,7 +137,7 @@ function gameForgeSimulationRulesFactory(events){
     else {s.money+=value;s.earned+=value;s.sales++;}
    }else return false;
   }
-  storyEvent(s,c,action);
+  storyEvent(s,c,action,context);
   s.complete=win(s,c);
   return true;
  }
@@ -178,6 +180,7 @@ function gameForgeSimulationRulesFactory(events){
     if(c.story?.enabled){
      result.story={step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks};
      if(c.story.version===2)result.story.choice=v.story.choice;
+     if(c.story.version===3)result.story={missionIndex:v.story.missionIndex,step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks,elapsed:v.story.elapsed};
     }
     result.complete=win(result,c);
     return free?{state:result,selected:data.selected,position:{

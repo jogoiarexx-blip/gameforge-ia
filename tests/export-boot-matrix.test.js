@@ -345,6 +345,33 @@ test('GF-TRAIN-07: arquivo exportado salva, continua, reinicia e funciona com st
  assert.match(c.telemetry().persistence.status,/Não foi possível/);
 });
 
+test('GF-TRAIN-11: aquário exportado exige proximidade, caminha, abre interação e continua após save',()=>{
+ const spec=parser.parseGdd('','Quero cuidar de aquário, personagem andando entre tanques. Dois tanques, crescer em dois segundos, meta de dez moedas.');
+ assert.equal(spec.simulation.exploration?.enabled,true);
+ const files=generator.generate(spec,'');validateFiles(files,'2d','simulation');
+ const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
+ const a=environment(files,'2d',storage),key=k=>{a.input('keydown',k);a.input('keyup',k);};
+ a.element('start').click();key('ArrowRight');
+ assert.equal(a.telemetry().exploration.near,false);
+ key('e');key('1');
+ assert.equal(a.telemetry().simulation.slots[1],null,'não deve comprar sem alcançar o tanque');
+ a.tick(145);
+ assert.equal(a.telemetry().exploration.near,true);
+ key('e');assert.equal(a.telemetry().exploration.actionsOpen,true);
+ key('1');key('2');
+ assert.ok(a.telemetry().simulation.slots[1],'comprou próximo ao segundo tanque');
+ assert.equal(a.telemetry().simulation.slots[0],null);
+ a.element('body').children.find(x=>x.id==='simulation-save').click();
+ const b=environment(files,'2d',storage);
+ b.element('overlay').children.find(x=>x.id==='simulation-continue').click();
+ assert.equal(b.telemetry().selected.stage===undefined,false);
+ assert.equal(b.telemetry().exploration.near,true,'retoma na estação selecionada');
+ assert.equal(b.telemetry().exploration.actionsOpen,false);
+ b.input('keydown','e');b.tick(145);b.input('keydown','3');
+ assert.equal(b.telemetry().state,'victory','venda única conclui a meta');
+ assert.equal(b.telemetry().simulation.sales,1);
+});
+
 test('GF-TRAIN-10: exportação executa ciclo automático, pausa global e recupera vitória',()=>{
  for(const domain of ['farm','aquarium','shop']){
   const intro={farm:'Cuidar de fazenda',aquarium:'Cuidar de aquário',shop:'Administrar loja'}[domain];

@@ -29,6 +29,15 @@
      }
      return {image,width:canvas.width,height:canvas.height,hud,telemetry,errors:recentErrors.slice()};
    }
+   function inspect(){
+     const canvas=document.querySelector('#game')||document.querySelector('canvas');
+     let telemetry=null;
+     if(typeof window.__gameforgeTelemetry==='function'){
+       try{telemetry=window.__gameforgeTelemetry();}catch(e){err('Telemetria: '+e.message);}
+     }
+     return {canvas:canvas?{width:canvas.width||0,height:canvas.height||0}:null,
+       telemetry,errors:recentErrors.slice()};
+   }
    function key(name,down){
      if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' ','a','d','w','s'].includes(name))throw Error('Controle inválido');
      dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{key:name,bubbles:true}));
@@ -46,6 +55,7 @@
          case 'release': key(q.key,false);break;
          case 'reset': {const el=document.getElementById('restart');if(el)el.click();break;}
          case 'capture':result=snapshot();break;
+         case 'inspect':result=inspect();break;
          default:throw Error('Ação não permitida');
        }
        parent.postMessage({kind:prefix+'-response',id:q.id,ok:true,data:result},'*');

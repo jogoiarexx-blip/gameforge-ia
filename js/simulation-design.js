@@ -243,6 +243,8 @@ function compile(text,command=''){
     const defaults=[['start','care'],['finish','start'],['care','finish'],['start','finish']];
     const caption={start:config.start,care:config.care,finish:config.finish,sell:'Vender colheita',clean:'Trocar água'};
     const wantsConcurrent=/\b(?:objetivos simultaneos|tarefas simultaneas|objetivos paralelos|duas acoes por missao|dois objetivos por missao|objetivos ao mesmo tempo)\b/.test(t);
+    const wantsDependency=/\b(?:dependencia entre objetivos|objetivos dependentes|objetivo 2 depois do objetivo 1|segundo objetivo depende do primeiro)\b/.test(t);
+    const wantsItemReward=/\b(?:recompensas? em itens|kits? de recompensa|recompensa(?:s)? (?:de )?\d+ kits?|ganhar \d+ kits?)\b/.test(t);
     const otherName={aquarium:'Pesquisador',farm:'Feirante',shop:'Gerente'}[config.domain];
     const missions=Array.from({length:countM},(_,i)=>{
      const brief=slots[i]||'';
@@ -274,12 +276,18 @@ function compile(text,command=''){
       if(seconds!==requested)warnings.push('Espera de missão limitada a 60 segundos ativos.');
       requires.push({kind:'time',seconds});
      }
+     const dependency=/\b(?:objetivo 2 depois do objetivo 1|objetivo 2 apos (?:o )?objetivo 1|segundo objetivo (?:so )?depois do primeiro|segundo objetivo depende do primeiro)\b/.test(brief);
+     const rewardMatch=brief.match(/\b(?:recompensa(?:s)?\s*(?:de|:)?|ganhar)\s*(\d+|um|uma|dois|duas|tres|quatro)\s*kits?\b/);
+     const requestedItems=rewardMatch?number(rewardMatch[1]):/\brecompensas? em itens\b/.test(brief)?1:0;
+     const itemReward=Math.max(0,Math.min(3,requestedItems));
+     if(itemReward!==requestedItems)warnings.push('Recompensa da missão limitada a três kits de suprimentos.');
      return {id:'m'+(i+1),label:'Missão '+(i+1)+' · '+actions.map(a=>caption[a.event]||a.event).join(' + '),
-      objectives:actions,reward:3+2*i,requires};
+      objectives:actions.map((o,k)=>({...o,requiresFirst:k===1&&(dependency||wantsDependency&&!slots[i])})),reward:3+2*i,requires,itemReward};
     });
-    config.story={version:4,enabled:true,requiredForVictory:true,npc:{name,lines},npc2:{
+    const advanced=wantsDependency||wantsItemReward||missions.some(m=>m.itemReward>0||m.objectives.some(o=>o.requiresFirst));
+    config.story={version:advanced?5:4,enabled:true,requiredForVictory:true,npc:{name,lines},npc2:{
      name:otherName,lines:['Vamos cumprir a próxima missão.','Veja os objetivos no painel e cuide do estoque.','Parabéns, campanha concluída!']},
-     missions};
+     missions:advanced?missions:missions.map(m=>({id:m.id,label:m.label,objectives:m.objectives.map(o=>({event:o.event,count:o.count})),reward:m.reward,requires:m.requires}))};
    }
    // GF-TRAIN-14: duas opções executáveis de tarefa, sem árvore arbitrária de roteiros.
    const branchRequests=[...t.matchAll(/\b(?:escolhas? de dialogo|dialogo com escolhas|(?:missao|missoes) ramificadas?|dialogo ramificado|escolher entre (?:as )?(?:duas )?(?:missoes|tarefas|opcoes)|duas opcoes|dois caminhos|escolher entre (?:alimentar|regar|plantar|comprar|repor|vender|colher)\b)\b/g)];

@@ -926,8 +926,8 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       const result=await GameForgeAdvancedScenarioQA.run({...source,files,plan:p,html,onUpdate:message=>{
         $('gf16-summary').textContent=message;
       }});
-      if(p.codeFingerprint!==GameForgeRequirementEvidence.fingerprint(state.files)||
-         p.requestFingerprint!==GameForgeRequirementEvidence.requestFingerprint(currentRequirementSource())){
+      if(p.codeFingerprint!==GameForgeAdvancedScenarioQA.revision(state.files)||
+         p.requestFingerprint!==GameForgeAdvancedScenarioQA.requestRevision(currentRequirementSource())){
         $('gf16-summary').textContent='O projeto mudou enquanto o QA era executado. Resultados descartados para evitar evidências obsoletas.';
         return;
       }

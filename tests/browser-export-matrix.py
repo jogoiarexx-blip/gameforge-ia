@@ -717,13 +717,13 @@ def run():
             try:
                 chain_page.goto(origin + '/tests/_browser_output/chain-aquarium/index.html', wait_until='load')
                 chain_page.locator('#start').click()
-                assert chain_page.evaluate("window.__gameforgeTelemetry().simulation.story.missionIndex") == 0
-                assert chain_page.evaluate("window.__gameforgeTelemetry().exploration.guide2") is not None
+                chain_page.wait_for_function("window.__gameforgeTelemetry().simulation.story.missionIndex === 0", timeout=3500)
+                chain_page.wait_for_function("window.__gameforgeTelemetry().exploration.guide2 !== null", timeout=3500)
                 chain_page.keyboard.down('ArrowRight')
                 chain_page.wait_for_function("window.__gameforgeTelemetry().exploration.nearby === 'guide'", timeout=9000)
                 chain_page.keyboard.up('ArrowRight')
                 chain_page.keyboard.press('e')
-                assert chain_page.evaluate("window.__gameforgeTelemetry().story.event") == 'start'
+                chain_page.wait_for_function("window.__gameforgeTelemetry().story.event === 'start'", timeout=3500)
                 chain_page.keyboard.down('ArrowLeft')
                 chain_page.wait_for_function("window.__gameforgeTelemetry().player.x < 240", timeout=8000)
                 chain_page.keyboard.up('ArrowLeft')
@@ -732,8 +732,8 @@ def run():
                 chain_page.keyboard.up('ArrowUp')
                 chain_page.keyboard.press('e')
                 chain_page.keyboard.press('1')
-                assert chain_page.evaluate("window.__gameforgeTelemetry().simulation.story.missionIndex") == 1
-                assert chain_page.evaluate("window.__gameforgeTelemetry().simulation.story.rewards") == 3
+                chain_page.wait_for_function("window.__gameforgeTelemetry().simulation.story.missionIndex === 1", timeout=3500)
+                chain_page.wait_for_function("window.__gameforgeTelemetry().simulation.story.rewards === 3", timeout=3500)
                 chain_page.keyboard.down('ArrowDown')
                 chain_page.wait_for_function("window.__gameforgeTelemetry().player.y > 475", timeout=8000)
                 chain_page.keyboard.up('ArrowDown')
@@ -741,13 +741,13 @@ def run():
                 chain_page.wait_for_function("window.__gameforgeTelemetry().exploration.nearby === 'guide-2'", timeout=7000)
                 chain_page.keyboard.up('ArrowRight')
                 chain_page.keyboard.press('e')
-                assert chain_page.evaluate("window.__gameforgeTelemetry().simulation.story.npcTalks[1]") == 1
-                assert chain_page.evaluate("window.__gameforgeTelemetry().story.event") == 'finish'
+                chain_page.wait_for_function("window.__gameforgeTelemetry().simulation.story.npcTalks[1] === 1", timeout=3500)
+                chain_page.wait_for_function("window.__gameforgeTelemetry().story.event === 'finish'", timeout=3500)
                 chain_page.locator('#simulation-save').click()
                 saved = chain_page.evaluate("window.__gameforgeTelemetry().simulation.story")
                 chain_page.reload(wait_until='load')
                 chain_page.locator('#simulation-continue').click()
-                assert chain_page.evaluate("window.__gameforgeTelemetry().simulation.story") == saved
+                chain_page.wait_for_function("(s)=>JSON.stringify(window.__gameforgeTelemetry().simulation.story)===JSON.stringify(s)", arg=saved, timeout=3500)
                 chain_page.keyboard.down('ArrowLeft')
                 chain_page.wait_for_function("window.__gameforgeTelemetry().player.x < 240", timeout=7000)
                 chain_page.keyboard.up('ArrowLeft')
@@ -766,13 +766,13 @@ def run():
                 assert won['story']['npcTalks'] == [1, 1]
                 chain_page.reload(wait_until='load')
                 chain_page.locator('#simulation-continue').click()
-                assert chain_page.evaluate("window.__gameforgeTelemetry().simulation") == won
-                assert chain_page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+                chain_page.wait_for_function("(s)=>JSON.stringify(window.__gameforgeTelemetry().simulation)===JSON.stringify(s)", arg=won, timeout=3500)
+                assert chain_page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), chain_page.evaluate('({scrollWidth:document.documentElement.scrollWidth, innerWidth})')
                 chain_page.screenshot(path=str(screenshots / 'chain-aquarium-mobile.png'), full_page=True)
                 assert not chain_errors, chain_errors
                 results.append('chain-aquarium-mobile')
             except Exception as exc:
-                failures.append(('chain-aquarium-mobile', str(exc), chain_errors, []))
+                failures.append(('chain-aquarium-mobile', traceback.format_exc(limit=5), chain_errors, []))
             finally:
                 chain_page.close()
 

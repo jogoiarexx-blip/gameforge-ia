@@ -58,8 +58,10 @@
          case 'inspect':result=inspect();break;
          case 'qa-click':{
            // Permitido apenas para três controles conhecidos no jogo clonado.
-           if(!['simulation-save','simulation-continue','simulation-action-start'].includes(q.target))
+           if(!['simulation-save','simulation-continue','simulation-action-start','pause'].includes(q.target))
              throw Error('Ação QA não permitida');
+           if(q.target==='pause'&&window.__gameforgeQA18Storage?.kind!=='GF18_VIRTUAL_STORE')
+             throw Error('Pausa de QA permitida apenas no clone 3D virtual GF18');
            const button=document.getElementById(q.target);
            result={clicked:!!(button&&!button.disabled&&button.tagName==='BUTTON')};
            if(result.clicked)button.click();

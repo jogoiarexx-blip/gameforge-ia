@@ -215,7 +215,51 @@ function gameForgeSimulationRulesFactory(events){
    }catch(_){return null;}
   }
   const target=()=>typeof accessStorage==='function'?accessStorage():accessStorage;
-  function read(){if(!enabled)return null;try{return restore(target()?.getItem(key));}catch(_){return null;}}
+  // GF-TRAIN-18: migração opt-in de save para edições de missões ainda não iniciadas.
+  // Retém o registro antigo; só replica dados autenticados pelos validadores dos DOIS contratos.
+  function compatibleMigration(old,previous){
+   if(!old||typeof old!=='object'||old.saveMigration!==undefined||
+    !old.story||!c.story||old.story.version!==c.story.version||
+    ![4,5,6].includes(c.story.version)||!E||!previous?.state?.story)return false;
+   const withoutStory=x=>{
+    const copy=JSON.parse(JSON.stringify(x));delete copy.story;delete copy.saveMigration;return copy;
+   };
+   if(JSON.stringify(withoutStory(old))!==JSON.stringify(withoutStory(c)))return false;
+   const prior=previous.state.story;
+   if(old.story.missions.length!==c.story.missions.length)return false;
+   const logic=m=>JSON.stringify({id:m.id,objectives:m.objectives,reward:m.reward,requires:m.requires,
+    itemReward:m.itemReward,requiresMissions:m.requiresMissions});
+   return old.story.missions.every((m,i)=>{
+    const used=c.story.version===6?prior.missionStarted[i]||prior.missionDone[i]:
+     i<prior.missionIndex||(i===prior.missionIndex&&prior.started);
+    return !used||logic(m)===logic(c.story.missions[i]);
+   });
+  }
+  function migrate(){
+   const old=c.saveMigration?.previous;
+   if(c.saveMigration?.version!==1||!old||JSON.stringify(old).length>20000)return null;
+   try{
+    // A assinatura do save antigo deve coincidir com a configuração ANTERIOR completa.
+    const priorStore=persistence(old,title,accessStorage),previous=priorStore.read();
+    if(!priorStore.enabled||!previous||!compatibleMigration(old,previous))return null;
+    const state=JSON.parse(JSON.stringify(previous.state));
+    if(c.story.version===6){
+     for(let i=0;i<c.story.missions.length;i++)
+      if(!state.story.missionStarted[i])state.story.missionProgress[i]=c.story.missions[i].objectives.map(()=>0);
+    }else if(!state.story.completed&&!state.story.started){
+     state.story.progress=c.story.missions[state.story.missionIndex].objectives.map(()=>0);
+    }
+    const selected=previous.selected,position=previous.position;
+    const candidate={version:1,signature,state,selected,...(position?{position}:{})};
+    const verified=restore(JSON.stringify(candidate));
+    if(!verified||!write(verified.state,selected,position))return null;
+    return {...verified,migrated:true};
+   }catch(_){return null;}
+  }
+  function read(){
+   if(!enabled)return null;
+   try{return restore(target()?.getItem(key))||migrate();}catch(_){return null;}
+  }
   function write(state,selected,position){
    if(!enabled)return false;
    try{

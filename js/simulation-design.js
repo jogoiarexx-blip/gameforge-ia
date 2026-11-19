@@ -168,7 +168,7 @@ function compile(text,command=''){
    config.exploration.guide=true;
    const lastMission=[...t.matchAll(missionWords)].filter(m=>!negativeAt(t,m.index)).at(-1);
    const brief=lastMission?t.slice(lastMission.index):t;
-   const tasks=[...brief.matchAll(/\b(vender|venda|alimentar|regar|plantar|comprar|repor|colher|trocar (?:a )?agua)\s+(?:(\d+|um|uma|dois|duas|tres|quatro|cinco)\s+)?(?:peixes?|produtos?|colheitas?|itens?|sementes?|vezes|tanques?)?\b/g)];
+   const tasks=[...brief.matchAll(/\b(vender|venda|alimentar|regar|plantar|comprar|repor|colher|trocar (?:a )?agua)(?:\s+(\d+|um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez))?(?:\s+(?:peixes?|produtos?|colheitas?|itens?|sementes?|vezes|tanques?))?\b/g)];
    const action=tasks.find(m=>!negativeAt(brief,m.index));
    const named={vender:config.domain==='farm'?'sell':'finish',venda:config.domain==='farm'?'sell':'finish',
     alimentar:'care',regar:'care',plantar:'start',comprar:'start',repor:'start',

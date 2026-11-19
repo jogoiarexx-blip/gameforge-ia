@@ -205,7 +205,7 @@ function compile(text,command=''){
     const second=stage('segunda (?:missao|tarefa)|missao 2|tarefa 2')||{event:config.domain==='farm'?'sell':'finish',count:1};
     if(/\b(?:tres|3|quatro|4|cinco|5)\s+missoes\b/.test(t))pending.push({id:'simulation-chain-limit',description:'Até duas missões encadeadas disponíveis nesta versão',where:'Simulação 2D'});
     const guards=[];
-    const stock=t.match(new RegExp('\\b(?:estoque|inventario)\\s*(?:de|com|:|minimo de|pelo menos)?\\s*('+numeric+')\\b|\\b(?:ter|precisa(?:r)? de|com)\\s+(?:pelo menos\\s+)?('+numeric+')\\s+(?:itens?|peixes?|produtos?|colheitas?)\\s+(?:no|em)\\s+(?:estoque|inventario)\\b'));
+    const stock=t.match(new RegExp('\\b(?:estoque|inventario)\\s*(?:de|com|:|minimo de|pelo menos)?\\s*('+numeric+')\\b|\\b(?:ter|precisa(?:r)? de|com)\\s+(?:pelo menos\\s+)?('+numeric+')\\s+(?:itens?|item|peixes?|produtos?|colheitas?)\\s+(?:no|em)\\s+(?:estoque|inventario)\\b'));
     if(stock&&!negativeAt(t,stock.index)){
      const requested=number(stock[1]||stock[2]),value=Math.max(1,Math.min(config.slots,requested));
      if(requested!==value)warnings.push('Inventário da missão limitado aos espaços existentes.');

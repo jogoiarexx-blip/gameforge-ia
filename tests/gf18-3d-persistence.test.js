@@ -162,3 +162,62 @@ test('GF18: painel, scripts e bridge para storage virtual conectados',()=>{
  assert.match(app,/suite3DForCurrent/);
  assert.match(bridge,/GF18_VIRTUAL_STORE/);
 });
+
+test('GF18: fluxo de missões urbanas v2 usa chave própria e restaura objetivos',async()=>{
+ const plan=[{id:'mission-01',title:'Capturar provas',reward:200,steps:[
+  {id:'item-01',action:'collect',target:'evidence',quantity:1,requires:[]}
+ ]}];
+ const Flow=require('../js/urban-mission-flow')();
+ const base=Flow.initial(plan),record={...base,position:{x:6,z:9}};
+ const key='gameforge-urban-missions-v2-bairro-de-teste';
+ const v2spec={genre:'urban-action',dimension:'3d',title:'Bairro de teste',urbanMissions:plan};
+ const v2={...urban,spec:v2spec};
+ assert.equal(GF18.plan(v2).contract,'URBAN_MISSIONS_V2');
+ assert.equal(GF18.permittedKey(key),true);
+ assert.equal(GF18.permittedKey(key+':pending'),true);
+ assert.equal(GF18.sameUrbanMission(record,{
+  ...urbanState(6),stage:1,mission:{progress:Flow.progress(plan,record).steps,rewards:[]}
+ }),true);
+ assert.equal(GF18.sameUrbanMission({...record,counts:{'item-01':1}},{
+  ...urbanState(6),stage:1,mission:{progress:Flow.progress(plan,record).steps,rewards:[]}
+ }),false);
+ let count=0,deleted=0,closed=0;
+ const factory=()=>({set srcdoc(_){},remove(){deleted++;}});
+ const transport=()=>{const instance=++count;let moved=false,playing=false;return {
+  send:async(action,args={})=>{
+   if(action==='ping')return {ready:true};
+   if(action==='start'){playing=true;return {};}
+   if(action==='press'){moved=true;return {};}
+   if(action==='release')return {};
+   if(action==='qa-storage')return {virtual:true,entries:{[key]:JSON.stringify(record)}};
+   if(action==='inspect'){
+    const x=instance===2||moved?6:0;
+    const t={...urbanState(x),state:playing?'play':'menu',stage:1,
+     mission:{progress:Flow.progress(plan,{...record,position:{x,z:9}}).steps,rewards:[]}};
+    return {telemetry:t};
+   }
+   throw Error(action);
+  },close(){closed++}
+ }};
+ const result=await GF18.run({...v2,html,frameFactory:factory,transportFactory:transport,sleep:async()=>{}});
+ assert.equal(result.status,'PASS');
+ assert.equal(result.contract,'URBAN_MISSIONS_V2');
+ assert.equal(deleted,2);assert.equal(closed,2);
+});
+test('GF18: salva e valida registro real produzido pelas regras urbanas v2',()=>{
+ const Flow=require('../js/urban-mission-flow')();
+ const Save=require('../js/urban-save')();
+ const plan=[{id:'m1',title:'Missão',reward:10,steps:[
+  {id:'s1',action:'deliver',target:'warehouse',quantity:1,requires:[]}
+ ]}];
+ const fakeWindow={};
+ new Function('window','('+GF18.boot.toString()+')({});')(fakeWindow);
+ const key='gameforge-urban-missions-v2-teste';
+ const store=Save.create(()=>fakeWindow.localStorage,key,raw=>Flow.restore(plan,raw));
+ let state=Flow.initial(plan);state={...state,position:{x:5,z:7}};
+ assert.equal(store.write(state),true);
+ const restored=store.read();
+ assert.equal(restored.position.x,5);
+ assert.deepEqual(restored.rewards,[]);
+ assert.ok(Object.keys(fakeWindow.__gameforgeQA18Storage.dump()).includes(key));
+});

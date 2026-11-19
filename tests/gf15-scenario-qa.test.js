@@ -65,7 +65,7 @@ test('GF15: erros de runtime prevalecem sobre canvas ativo',()=>{
 });
 test('GF15: executa controle permitido, solta tecla e fecha canal',async()=>{
  const p=Scenarios.plan(source);
- const io=fakeTransport([snap(0,1),snap(0,1),snap(0,1),snap(0,1),snap(0,10),snap(0,10),snap(20,12)]);
+ const io=fakeTransport([snap(0,1),snap(0,1),snap(0,1),snap(0,10),snap(20,12)]);
  const result=await Scenarios.execute({...source,plan:p,transport:io,sleep:async()=>{}});
  assert.equal(result.kind,'TYPED_QA_RESULT');
  assert.ok(result.results.some(x=>x.id==='movement'&&x.result==='PASS'));

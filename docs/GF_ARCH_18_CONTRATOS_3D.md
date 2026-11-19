@@ -8,7 +8,7 @@ A GF-ARCH-18 amplia o laboratório de QA com o botão **Testar salvamento RPG/ur
 
 **RPG/arena/FPS 3D com checkpoint habilitado.** Os motores já têm a chave `gameforge-campaign-v1:<gênero>:<projectId>` e persistem somente depois de concluir uma fase; o checkpoint deve ser produzido pelo jogo durante o teste, não fabricado pelo laboratório. O cenário curto **retorna INCONCLUSIVE** quando não ocorrer uma transição de fase, pois não seria correto declarar que o salvamento foi testado. Caso um checkpoint legítimo surja, cria uma segunda instância e verifica os campos persistentes (fase, vida, pontuação, munição e dados RPG). O contrato de validação também é coberto por testes unitários de `world-rules.js`.
 
-O armazenamento virtual aceita somente as chaves de save urbano e de campanha, com tamanho máximo limitado, sem acesso aos dados reais do editor. O canal `qa-storage` só disponibiliza esse armazenamento injetado em clones GF17/GF18, nunca o `localStorage` original. Não há `eval` de instruções do usuário, APIs remotas nem agentes de IA executados.
+O armazenamento virtual aceita somente as chaves de save urbano e de campanha, com tamanho máximo limitado, sem acesso aos dados reais do editor. O clone GF18 fica dentro do viewport com opacidade mínima, atrás do Studio, com `pointer-events:none`, `aria-hidden`, `tabindex=-1` e bloqueio de pedidos de foco: isso permite o avanço dos frames 3D sem enviar eventos ao jogo ativo. Ele continua descartável e é removido no término. O canal `qa-storage` só disponibiliza esse armazenamento injetado em clones GF17/GF18, nunca o `localStorage` original. Não há `eval` de instruções do usuário, APIs remotas nem agentes de IA executados.
 
 ## Mudanças de arquivo
 

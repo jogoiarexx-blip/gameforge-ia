@@ -76,7 +76,7 @@
   if(data.missions.some(m=>m.stock>c.slots))throw Error('Estoque exigido maior que a quantidade de espaços do jogo ('+c.slots+').');
   const advanced=data.missions.some(m=>m.afterFirst||m.kits>0);
   if(c.story.version===4&&(advanced||data.graph))
-   throw Error('Motor v4 exportado não contém dependências, kits ou recompensas avançadas.');
+   throw Error('O motor já exportado v4 não contém dependências, kits ou recompensas avançadas.');
   if(c.story.version===5&&data.graph)
    throw Error('Motor v5 exportado não contém missões paralelas ou aceleradores. Crie um jogo novo v6.');
   const oldConfig=JSON.parse(JSON.stringify(c));

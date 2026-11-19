@@ -131,3 +131,15 @@ test('GF15: painel e carregamento de scripts estão conectados ao Studio',()=>{
  assert.match(app,/runTypedQa/);assert.match(app,/GameForgeScenarioQA\.attach/);
  assert.match(bridge,/case 'inspect':result=inspect/);
 });
+
+test('GF15: restrição negativa não dispara ações proibidas no roteiro',()=>{
+ const p=Scenarios.plan({...source,instruction:'Melhorar inimigos; não disparar tiros nem movimentar jogador'});
+ assert.equal(p.scenarios.find(x=>x.id==='fire').selected,false);
+ assert.equal(p.scenarios.find(x=>x.id==='movement').selected,false);
+});
+test('GF15: tela de menu ou derrota não produz falso erro de movimento',()=>{
+ const menu=snap(0);menu.telemetry.state='menu';
+ const defeat=snap(0);defeat.telemetry.state='defeat';
+ assert.equal(Scenarios.decide('movement',menu,snap(0)).result,'INCONCLUSIVE');
+ assert.equal(Scenarios.decide('fire',defeat,snap(),{during:snap(0,1,[],{playerBullets:0})}).result,'INCONCLUSIVE');
+});

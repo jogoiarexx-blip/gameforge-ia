@@ -19,6 +19,7 @@ function gameForgeSimulationBoot(){
  const guideText=()=>c.domain==='aquarium'?'Cuide da fome e da água: peixes adultos valem mais.':c.domain==='farm'?'Regue a plantação, colha quando crescer e venda o estoque.':'Reponha os produtos, atenda clientes e acompanhe o saldo.';
  function moveTarget(index){selected=Math.max(0,Math.min(c.slots-1,index));targetX=center(selected);actionsOpen=false;}
  const save=R.persistence(c,GAME_SPEC.title,()=>window.localStorage);
+ const patrol=free&&c.exploration.patrol?.enabled===true;
  if(save.enabled){el('start').textContent='Novo jogo';el('restart').textContent='Novo jogo';}
  let saved=save.read(),saveStatus=save.enabled?(saved?'Progresso disponível neste navegador':'Ainda não salvo'):'Desativado',saveElapsed=0;
  const continueButton=document.createElement('button');continueButton.id='simulation-continue';continueButton.type='button';continueButton.textContent='Continuar';continueButton.disabled=!saved;
@@ -30,7 +31,7 @@ function gameForgeSimulationBoot(){
  (el('restart').parentElement||document.body).appendChild(saveLabel);
  function persist(manual=false){
   if(!save.enabled||state==='menu')return;
-  const ok=save.write(s,selected,free?avatar:undefined);saveStatus=ok?'Salvo neste navegador':'Não foi possível salvar neste navegador';
+  const ok=save.write(s,selected,free?{x:avatar.x,y:avatar.y,...(patrol?{guideX:room.guide.x,guideDir:room.guide.dir===1?1:-1}:{})}:undefined);saveStatus=ok?'Salvo neste navegador':'Não foi possível salvar neste navegador';
   if(ok){saved=save.read();continueButton.disabled=!saved;}
   saveElapsed=0;if(manual)say(saveStatus);saveLabel.textContent=saveStatus;
  }
@@ -38,7 +39,7 @@ function gameForgeSimulationBoot(){
  continueButton.addEventListener('click',()=>{
   const data=save.read();if(!data){continueButton.disabled=true;say('Progresso indisponível. Comece um novo jogo.');return;}
   s=data.state;selected=data.selected;playerX=center(selected);targetX=playerX;actionsOpen=false;
-  held.clear();walkTo=null;if(free)avatar=data.position&&F.walkable(room,data.position.x,data.position.y)?{...data.position}:F.spawn(room);
+  held.clear();walkTo=null;if(free){avatar=data.position&&F.walkable(room,data.position.x,data.position.y)?{x:data.position.x,y:data.position.y}:F.spawn(room);if(patrol){room.guide.x=data.position.guideX;room.guide.dir=data.position.guideDir;}}
   state='play';paused=false;last=0;el('overlay').classList.add('hidden');
   if(s.complete)victory();else say('Progresso recuperado. O tempo fechado não alterou o jogo.');update();
  });
@@ -49,6 +50,15 @@ function gameForgeSimulationBoot(){
  // O painel contextual deve ficar fora da área recortada do canvas, inclusive em celulares.
  (canvas.parentElement?.parentElement||document.body).appendChild(panel);
  const buttons=[];
+ const choiceBar=document.createElement('div');choiceBar.id='simulation-choices';choiceBar.className='buttons';
+ (canvas.parentElement?.parentElement||document.body).appendChild(choiceBar);
+ const choiceButtons=[];
+ if(E&&c.story.version===2)for(let index=0;index<2;index++){
+  const button=document.createElement('button');button.id='simulation-choice-'+(index+1);button.type='button';
+  button.textContent=(index===0?'5 · ':'6 · ')+c.story.mission.branches[index].label;
+  button.addEventListener('click',()=>chooseChoice(index));
+  choiceBar.appendChild(button);choiceButtons.push(button);
+ }
  if(c.automation?.enabled){
   const toggle=document.createElement('button');toggle.id='simulation-automation';toggle.type='button';panel.appendChild(toggle);
   toggle.addEventListener('click',()=>{if(state==='play'){s.automation.paused=!s.automation.paused;persist();update();}});
@@ -65,13 +75,22 @@ function gameForgeSimulationBoot(){
  for(const [kind,label] of [['start',c.start],['care',c.care],['finish',c.finish],...(c.domain==='farm'?[['sell','Vender colheita']]:[]),...(c.aquariumCare?.waterEnabled?[['clean','Trocar água']]:[])]){
   const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>action(kind));panel.appendChild(b);buttons.push([b,kind]);
  }
- function begin(){s=R.create(c);selected=0;playerX=center(0);targetX=playerX;actionsOpen=false;held.clear();walkTo=null;npcTalks=0;if(free)avatar=F.spawn(room);state='play';paused=false;last=0;persist();el('overlay').classList.add('hidden');say('Comece em um espaço vazio. Meta: vender '+c.target+' moedas.');update();}
+ function begin(){s=R.create(c);selected=0;playerX=center(0);targetX=playerX;actionsOpen=false;held.clear();walkTo=null;npcTalks=0;if(free){avatar=F.spawn(room);if(patrol){room.guide.x=860;room.guide.dir=-1;}}state='play';paused=false;last=0;persist();el('overlay').classList.add('hidden');say('Comece em um espaço vazio. Meta: vender '+c.target+' moedas.');update();}
  el('start').addEventListener('click',begin);el('restart').addEventListener('click',begin);
  el('pause').addEventListener('click',()=>{if(state==='play'){paused=!paused;persist();update();}});
  el('control-help').textContent=free?'WASD/setas mover · E falar/interagir · 1–4 agir perto de uma estação · toque para caminhar':exploring?'← → caminhar entre estações · E interagir · 1 iniciar · 2 cuidar · 3 vender/colher · 4 limpar/vender · toque para aproximar':aquarium?'← → selecionar tanque · 1 comprar · 2 alimentar · 3 vender'+(c.aquariumCare.waterEnabled?' · 4 trocar água':''):'← → selecionar · 1 produzir · 2 cuidar · 3 colher/vender · 4 vender colheita';
  el('overlay-sub').textContent=c.label+': '+c.start+' → '+c.care+' → '+c.finish+(c.domain==='farm'?' → Vender':'')+(aquarium?'. O peixe cresce enquanto está alimentado'+(c.aquariumCare.waterEnabled?' e com água limpa':'')+'. O valor aumenta com a idade. Alimentar e trocar água são gratuitos.':'')+(save.enabled?'. Progresso salvo neste navegador. Fechado ou pausado, o tempo não avança. Novo jogo substitui o progresso anterior.':'. Salvamento desativado.');
- if(E)el('overlay-sub').textContent+=' Missão: fale com o '+c.story.npc.name+' e conclua as ações. Recompensa única de '+c.story.mission.reward+' moedas.';
+ if(E)el('overlay-sub').textContent+=' Missão: fale com o '+c.story.npc.name+' e conclua as ações. '+(c.story.version===2?'Escolha entre duas tarefas com 5 ou 6. Recompensas: 5 ou 8 moedas.':'Recompensa única de '+c.story.mission.reward+' moedas.');
  if(c.automation?.enabled)el('overlay-sub').textContent=c.label+'. Ciclo automático a cada '+c.automation.intervalSeconds+' s, com custos normais. Você pode desligar a automação e jogar manualmente. Pausar congela o jogo. '+(save.enabled?'Progresso salvo neste navegador. Novo jogo substitui o anterior.':'Salvamento desativado.');
+ function chooseChoice(index){
+  if(!E||c.story.version!==2||state!=='play'||paused||!free||
+    !room.guide||!F.inRange(avatar,room.guide,c.exploration.reach)){
+   say('Aproxime-se do NPC para escolher sua tarefa.');return;
+  }
+  if(!R.choose(s,c,index)){say('Fale com o NPC e escolha apenas uma tarefa.');return;}
+  say('Tarefa escolhida: '+c.story.mission.branches[index].label);
+  persist();update();
+ }
  function activate(target){
   if(!target){actionsOpen=false;say('Chegue perto de um aquário, canteiro, prateleira ou NPC.');update();return;}
   if(target.type==='npc'){
@@ -88,6 +107,7 @@ function gameForgeSimulationBoot(){
  function input(key){
   if(state!=='play'||paused)return;
   if(free){
+   if(key==='5'||key==='6'){chooseChoice(key==='5'?0:1);return;}
    if(key==='e'||key==='E'||key===' '){activate(F.nearest(avatar,room,c.exploration.reach));return;}
    const actKey={'1':'start','2':'care','3':'finish','4':aquarium?'clean':'sell'}[key];
    if(actKey)action(actKey);
@@ -112,7 +132,7 @@ function gameForgeSimulationBoot(){
   if(free&&directions.includes(e.key)){
    e.preventDefault();if(state==='play'&&!paused){held.add(e.key);walkTo=null;}return;
   }
-  const keys=exploring?['ArrowRight','ArrowLeft','a','A','d','D','e','E',' ','1','2','3','4']:['ArrowRight','ArrowLeft','1','2','3','4'];
+  const keys=exploring?['ArrowRight','ArrowLeft','a','A','d','D','e','E',' ','1','2','3','4','5','6']:['ArrowRight','ArrowLeft','1','2','3','4'];
   if(keys.includes(e.key)){e.preventDefault();if(!e.repeat)input(e.key);}
  });
  document.addEventListener('keyup',e=>{if(free)held.delete(e.key);});
@@ -149,6 +169,14 @@ function gameForgeSimulationBoot(){
  }
  function update(){
   if(exploring)panel.style.display=actionsOpen&&near()?'flex':'none';
+  const choices=E&&c.story.version===2?E.options(s.story,c.story):[];
+  const choiceReady=!!(choices.length&&state==='play'&&!paused&&free&&room.guide&&
+   F.inRange(avatar,room.guide,c.exploration.reach));
+  choiceBar.style.display=choiceReady?'flex':'none';
+  for(const [index,b] of choiceButtons.entries()){
+   b.disabled=!choiceReady;
+   b.textContent=(index===0?'5 · ':'6 · ')+(choices[index]?.label||c.story.mission.branches[index].label);
+  }
   if(c.automation?.enabled){const toggle=el('simulation-automation');toggle.textContent=s.automation.paused?'Ligar automação':'Desligar automação';toggle.disabled=state!=='play';}
   saveButton.disabled=state==='menu';saveLabel.textContent=saveStatus;
   el('health').textContent=s.money+' $';el('score').textContent=s.earned+'/'+c.target;el('ammo').textContent=aquarium?s.slots.filter(Boolean).length+' peixes':s.inventory;el('level').textContent=c.label;
@@ -170,7 +198,7 @@ function gameForgeSimulationBoot(){
   }
  }
  rootTelemetry();
- function rootTelemetry(){window.__gameforgeTelemetry=()=>({state,paused,frames,player:{x:free?avatar.x:exploring?playerX:selected,y:free?avatar.y:exploring?480:0},exploration:{enabled:exploring,mode:free?'free':exploring?'stations':'classic',x:free?avatar.x:playerX,y:free?avatar.y:480,target:free?walkTo:targetX,near:exploring?near():false,actionsOpen,npcTalks,nearby:free?F.nearest(avatar,room,c.exploration.reach)?.id||null:null},simulation:JSON.parse(JSON.stringify(s)),story:E?E.status(s.story,c.story):null,domain:c.domain,persistence:{enabled:save.enabled,key:save.key,status:saveStatus,available:!!saved},selected:aquarium?R.status(s,c,selected):null});}
+ function rootTelemetry(){window.__gameforgeTelemetry=()=>({state,paused,frames,player:{x:free?avatar.x:exploring?playerX:selected,y:free?avatar.y:exploring?480:0},exploration:{enabled:exploring,mode:free?'free':exploring?'stations':'classic',x:free?avatar.x:playerX,y:free?avatar.y:480,target:free?walkTo:targetX,near:exploring?near():false,actionsOpen,npcTalks,nearby:free?F.nearest(avatar,room,c.exploration.reach)?.id||null:null,guide:free&&room.guide?{x:room.guide.x,y:room.guide.y,dir:room.guide.dir||-1}:null},simulation:JSON.parse(JSON.stringify(s)),story:E?E.status(s.story,c.story):null,domain:c.domain,persistence:{enabled:save.enabled,key:save.key,status:saveStatus,available:!!saved},selected:aquarium?R.status(s,c,selected):null});}
  function drawRoom(){
   ctx.fillStyle=c.domain==='aquarium'?'#173c49':c.domain==='farm'?'#2b4935':'#293b50';
   ctx.fillRect(0,0,960,540);
@@ -265,6 +293,7 @@ function gameForgeSimulationBoot(){
   last=t;frames++;
   if(state==='play'&&!paused){
    if(free){
+    if(patrol)F.patrolGuide(room,dt,c.exploration.patrol);
     let dx=Number(held.has('ArrowRight')||held.has('d')||held.has('D'))-Number(held.has('ArrowLeft')||held.has('a')||held.has('A'));
     let dy=Number(held.has('ArrowDown')||held.has('s')||held.has('S'))-Number(held.has('ArrowUp')||held.has('w')||held.has('W'));
     if(dx||dy)walkTo=null;

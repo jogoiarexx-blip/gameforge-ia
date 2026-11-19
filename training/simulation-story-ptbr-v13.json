@@ -289,7 +289,7 @@
       }
     },
     {
-      "instruction": "Quero cuidar de aquário. Missão com escolhas de diálogo.",
+      "instruction": "Quero cuidar de aquário. Missão com múltiplos finais.",
       "expected": {
         "genre": "simulation",
         "domain": "aquarium",

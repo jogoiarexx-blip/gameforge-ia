@@ -629,9 +629,90 @@ def run():
             finally:
                 story_page.close()
 
+            # GF-TRAIN-14: escolha de ramo no NPC e checkpoint da missão em Chromium móvel.
+            branch_page = browser.new_page(viewport={'width': 390, 'height': 844})
+            branch_errors = []
+            branch_page.on('pageerror', lambda error: branch_errors.append(str(error)))
+            try:
+                branch_page.goto(origin + '/tests/_browser_output/branch-aquarium/index.html', wait_until='load')
+                branch_page.locator('#start').click()
+                assert branch_page.evaluate("window.__gameforgeTelemetry().simulation.story.choice") is None
+                branch_page.keyboard.press('6')
+                assert branch_page.evaluate("window.__gameforgeTelemetry().simulation.story.choice") is None
+                branch_page.keyboard.down('ArrowRight')
+                branch_page.wait_for_function("window.__gameforgeTelemetry().exploration.nearby === 'guide'", timeout=9000)
+                branch_page.keyboard.up('ArrowRight')
+                branch_page.keyboard.press('e')
+                assert branch_page.evaluate("window.__gameforgeTelemetry().story.event") == 'choice'
+                branch_page.locator('#simulation-choice-2').click()
+                assert branch_page.evaluate("window.__gameforgeTelemetry().simulation.story.choice") == 'b'
+                assert branch_page.evaluate("window.__gameforgeTelemetry().story.event") == 'finish'
+                branch_page.locator('#simulation-save').click()
+                before_branch = branch_page.evaluate("window.__gameforgeTelemetry().simulation.story")
+                branch_page.reload(wait_until='load')
+                branch_page.locator('#simulation-continue').click()
+                assert branch_page.evaluate("window.__gameforgeTelemetry().simulation.story") == before_branch
+                branch_page.keyboard.down('ArrowLeft')
+                branch_page.wait_for_function("window.__gameforgeTelemetry().player.x < 320", timeout=7000)
+                branch_page.keyboard.up('ArrowLeft')
+                branch_page.keyboard.down('ArrowUp')
+                branch_page.wait_for_function("window.__gameforgeTelemetry().exploration.near", timeout=6000)
+                branch_page.keyboard.up('ArrowUp')
+                branch_page.keyboard.press('e')
+                assert branch_page.evaluate("window.__gameforgeTelemetry().exploration.actionsOpen")
+                branch_page.keyboard.press('1')
+                branch_page.keyboard.press('2')
+                branch_page.wait_for_function('window.__gameforgeTelemetry().simulation.slots[0].age >= 2', timeout=7000)
+                branch_page.keyboard.press('3')
+                branch_page.wait_for_function("window.__gameforgeTelemetry().state === 'victory'", timeout=3000)
+                completed = branch_page.evaluate("window.__gameforgeTelemetry().simulation")
+                assert completed['story']['rewards'] == 8 and completed['story']['completed']
+                assert completed['story']['choice'] == 'b' and completed['sales'] == 1
+                branch_page.reload(wait_until='load')
+                branch_page.locator('#simulation-continue').click()
+                assert branch_page.evaluate("window.__gameforgeTelemetry().simulation") == completed
+                assert branch_page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+                branch_page.screenshot(path=str(screenshots / 'branch-aquarium-mobile.png'), full_page=True)
+                assert not branch_errors, branch_errors
+                results.append('branch-aquarium-mobile')
+            except Exception as exc:
+                failures.append(('branch-aquarium-mobile', str(exc), branch_errors, []))
+            finally:
+                branch_page.close()
+
+            # GF-TRAIN-14: patrulha no Chromium, pausa e save da localização do NPC.
+            patrol_page = browser.new_page(viewport={'width': 390, 'height': 844})
+            patrol_errors = []
+            patrol_page.on('pageerror', lambda error: patrol_errors.append(str(error)))
+            try:
+                patrol_page.goto(origin + '/tests/_browser_output/patrol-aquarium/index.html', wait_until='load')
+                patrol_page.locator('#start').click()
+                first = patrol_page.evaluate("window.__gameforgeTelemetry().exploration.guide.x")
+                patrol_page.wait_for_function("(x) => Math.abs(window.__gameforgeTelemetry().exploration.guide.x - x) > 5", arg=first, timeout=4000)
+                moving = patrol_page.evaluate("window.__gameforgeTelemetry().exploration.guide")
+                assert 810 <= moving['x'] <= 885
+                patrol_page.locator('#pause').click()
+                frozen = patrol_page.evaluate("window.__gameforgeTelemetry().exploration.guide")
+                patrol_page.wait_for_timeout(350)
+                assert patrol_page.evaluate("window.__gameforgeTelemetry().exploration.guide") == frozen, 'NPC deve congelar após a pausa'
+                patrol_page.locator('#simulation-save').click()
+                patrol_page.reload(wait_until='load')
+                patrol_page.locator('#simulation-continue').click()
+                restored = patrol_page.evaluate("window.__gameforgeTelemetry().exploration.guide")
+                assert abs(restored['x'] - frozen['x']) <= 3, (restored, frozen)
+                assert restored['dir'] == frozen['dir'], (restored, frozen)
+                patrol_page.wait_for_function("(x) => Math.abs(window.__gameforgeTelemetry().exploration.guide.x - x) > 3", arg=frozen['x'], timeout=4000)
+                assert not patrol_errors, patrol_errors
+                patrol_page.screenshot(path=str(screenshots / 'patrol-aquarium-mobile.png'), full_page=True)
+                results.append('patrol-aquarium-mobile')
+            except Exception as exc:
+                failures.append(('patrol-aquarium-mobile', str(exc), patrol_errors, []))
+            finally:
+                patrol_page.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 11 + len(graphics_matrix)
+            assert len(results) == len(matrix) + 13 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

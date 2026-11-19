@@ -1,3 +1,9 @@
+# GameForge Studio GF-TRAIN-14 — escolha de missões e NPC patrulhando
+
+O GameForge agora pode gerar, em **aquário, fazenda e loja 2D**, um NPC com diálogo que oferece **duas tarefas alternativas**. O jogador conversa com E, escolhe usando **5 ou 6** (ou botões), completa ações reais e recebe uma recompensa única de acordo com o ramo (5 ou 8 moedas). Exemplo: **“Crie um aquário com missão: escolher entre alimentar dois peixes ou vender três peixes. Quero NPC patrulhando.”** A patrulha horizontal opcional pode andar de um lado para outro, pausar e ter sua posição recuperada com o save. As missões antigas seguem funcionando.
+
+Detalhes, limitações e testes: [GF-TRAIN-14](docs/TREINAMENTO_GF_TRAIN_14_BRANCHES_PATROL.md). Não é um motor de narrativas livres, diálogos de IA ou NPCs inteligentes.
+
 # GameForge Studio GF-TRAIN-13 — missões, NPC e eventos reais
 
 O GameForge reconhece pedidos de **missão**, **tarefa**, **diálogo com NPC** e **falar com o guia** em simuladores 2D de aquário, fazenda e loja. O novo sistema executável acompanha conversa, ações econômicas em ordem e recompensa única de 5 moedas, registrando o progresso no save local. Exemplo: **“Quero criar um aquário com missão: falar com o cuidador e vender dois peixes.”** O jogo usa exploração livre com NPC, e só libera a vitória da missão depois que as ações acontecem. Escolhas de diálogo, histórias livres e NPCs com IA ainda não estão implementados.

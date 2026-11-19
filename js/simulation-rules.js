@@ -97,6 +97,13 @@ function gameForgeSimulationRulesFactory(events){
   s.complete=win(s,c);
   return result.text;
  }
+ function choose(s,c,index){
+  if(s.complete||!E||!c.story?.enabled||c.story.version!==2||!s.story)return false;
+  const choice=E.choose(s.story,c.story,index);
+  if(!choice.changed)return false;
+  s.complete=win(s,c);
+  return true;
+ }
  function act(s,c,index,action){
   if(s.complete)return false;
   const valid=Number.isInteger(index)&&index>=0&&index<s.slots.length;
@@ -143,6 +150,9 @@ function gameForgeSimulationRulesFactory(events){
     if(typeof raw!=='string'||raw.length>30000)return null;
     const data=JSON.parse(raw),v=data.state,cfg=care(c),free=c.exploration?.mode==='free';
     if(free&&(!data.position||!number(data.position.x,0,960)||!number(data.position.y,0,540)))return null;
+    const patrol=c.exploration?.patrol?.enabled;
+    if(patrol&&(!number(data.position.guideX,c.exploration.patrol.left,c.exploration.patrol.right)||
+      ![-1,1].includes(data.position.guideDir)))return null;
     if(data.version!==1||data.signature!==signature||!v||!number(data.selected,0,c.slots-1,true))return null;
     for(const k of ['money','earned','inventory','sales'])if(!number(v[k],0,1e9,true))return null;
     if(c.story?.enabled&&(!E||!E.validate(v.story,c.story)))return null;
@@ -165,9 +175,15 @@ function gameForgeSimulationRulesFactory(events){
      result.automation={elapsed:a.elapsed,paused:a.paused,actions:a.actions};
     }
     for(const k of ['money','earned','inventory','sales'])result[k]=v[k];
-    if(c.story?.enabled)result.story={step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks};
+    if(c.story?.enabled){
+     result.story={step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks};
+     if(c.story.version===2)result.story.choice=v.story.choice;
+    }
     result.complete=win(result,c);
-    return free?{state:result,selected:data.selected,position:{x:data.position.x,y:data.position.y}}:{state:result,selected:data.selected};
+    return free?{state:result,selected:data.selected,position:{
+     x:data.position.x,y:data.position.y,
+     ...(patrol?{guideX:data.position.guideX,guideDir:data.position.guideDir}:{})
+    }}:{state:result,selected:data.selected};
    }catch(_){return null;}
   }
   const target=()=>typeof accessStorage==='function'?accessStorage():accessStorage;
@@ -183,7 +199,7 @@ function gameForgeSimulationRulesFactory(events){
   }
   return {enabled,key,read,write,restore};
  }
- return {create,tick,act,talk,storyEvent,quote,status,canCare,canClean,canFinish,persistence};
+ return {create,tick,act,talk,choose,storyEvent,quote,status,canCare,canClean,canFinish,persistence};
 }
 root.gameForgeSimulationRulesFactory=gameForgeSimulationRulesFactory;
 if(typeof module!=='undefined')module.exports=gameForgeSimulationRulesFactory;

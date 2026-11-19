@@ -66,7 +66,20 @@ function gameForgeExploration2DFactory(){
   if(!target)return null;
   return target.type==='station'?{x:target.x+target.w/2,y:target.y+target.h+24}:{x:target.x-42,y:target.y};
  }
- return {layout,spawn,move,walkable,nearest,inRange,distance,hitAt,approachPoint};
+ function patrolGuide(scene,seconds,options){
+  const guide=scene?.guide;
+  if(!guide||!options?.enabled||!Number.isFinite(seconds)||seconds<=0)return false;
+  const left=Math.max(755,Math.min(875,options.left)),right=Math.min(900,Math.max(815,options.right));
+  const speed=Math.max(10,Math.min(90,options.speed));
+  if(left>=right)return false;
+  let dir=guide.dir===1?1:-1;
+  let next=guide.x+dir*speed*Math.min(seconds,.1);
+  if(next<left){next=left+(left-next);dir=1;}
+  if(next>right){next=right-(next-right);dir=-1;}
+  guide.x=clamp(next,left,right);guide.dir=dir;
+  return true;
+ }
+ return {layout,spawn,move,walkable,nearest,inRange,distance,hitAt,approachPoint,patrolGuide};
 }
 root.gameForgeExploration2DFactory=gameForgeExploration2DFactory;
 if(typeof module!=='undefined')module.exports=gameForgeExploration2DFactory;

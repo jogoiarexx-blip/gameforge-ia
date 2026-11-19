@@ -188,7 +188,7 @@ function compile(text,command=''){
    config.story={version:1,enabled:true,requiredForVictory:storyState.mission,
     npc:{name,lines},mission:{id:'primeira-tarefa',label,steps:storyState.mission?[{event:'talk',count:1},{event:objective,count}]:[{event:'talk',count:1}],reward:storyState.mission?5:0}};
    // GF-TRAIN-14: duas opções executáveis de tarefa, sem árvore arbitrária de roteiros.
-   const branchRequests=[...t.matchAll(/\b(?:escolhas? de dialogo|dialogo com escolhas|missoes? ramificadas?|escolher entre (?:as )?(?:duas )?(?:missoes|tarefas|opcoes)|duas opcoes|dois caminhos|escolher entre (?:alimentar|regar|plantar|comprar|repor|vender|colher)\b)\b/g)];
+   const branchRequests=[...t.matchAll(/\b(?:escolhas? de dialogo|dialogo com escolhas|(?:missao|missoes) ramificadas?|dialogo ramificado|escolher entre (?:as )?(?:duas )?(?:missoes|tarefas|opcoes)|duas opcoes|dois caminhos|escolher entre (?:alimentar|regar|plantar|comprar|repor|vender|colher)\b)\b/g)];
    const wantsBranch=branchRequests.length&& !negativeAt(t,branchRequests[branchRequests.length-1].index);
    if(wantsBranch&&storyState.mission){
     const pair=t.match(/\b(?:escolher entre|entre|opcoes?\s*:|caminhos?\s*:?)\s*(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|\d+))?(?:\s+(?:peixes?|produtos?|colheitas?|itens?|vezes|canteiros?|tanques?))?\s+ou\s+(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(um|uma|dois|duas|tres|quatro|cinco|seis|\d+))?\b/);

@@ -187,9 +187,40 @@ function compile(text,command=''){
    const label=storyState.mission?'Missão do '+name:'Diálogo do '+name;
    config.story={version:1,enabled:true,requiredForVictory:storyState.mission,
     npc:{name,lines},mission:{id:'primeira-tarefa',label,steps:storyState.mission?[{event:'talk',count:1},{event:objective,count}]:[{event:'talk',count:1}],reward:storyState.mission?5:0}};
-   if(/\b(?:escolhas? de dialogo|multiplos finais|missoes ramificadas|escolher entre missoes|dialogo ramificado)\b/.test(t))
-    pending.push({id:'simulation-story-branches',description:'Diálogo com escolhas e missões ramificadas ainda não implementado',where:'Simulação 2D'});
+   // GF-TRAIN-14: duas opções executáveis de tarefa, sem árvore arbitrária de roteiros.
+   const branchRequests=[...t.matchAll(/\b(?:escolhas? de dialogo|dialogo com escolhas|missoes? ramificadas?|escolher entre (?:as )?(?:duas )?(?:missoes|tarefas|opcoes)|duas opcoes|dois caminhos|escolher entre (?:alimentar|regar|plantar|comprar|repor|vender|colher)\b)\b/g)];
+   const wantsBranch=branchRequests.length&& !negativeAt(t,branchRequests[branchRequests.length-1].index);
+   if(wantsBranch&&storyState.mission){
+    const pair=t.match(/\b(?:escolher entre|entre|opcoes?\s*:|caminhos?\s*:?)\s*(alimentar|regar|plantar|comprar|repor|vender|colher)(?:\s+(?:peixes?|produtos?|colheitas?))?\s+ou\s+(alimentar|regar|plantar|comprar|repor|vender|colher)\b/);
+    const convert=word=>({alimentar:'care',regar:'care',plantar:'start',comprar:'start',repor:'start',
+      vender:config.domain==='farm'?'sell':'finish',colher:'finish'})[word];
+    const first=pair?convert(pair[1]):'care',second=pair?convert(pair[2]):'finish';
+    const readable={start:config.start,care:config.care,finish:config.finish,sell:'Vender colheita',clean:'Trocar água'};
+    config.story.version=2;
+    config.story.mission.steps=[{event:'talk',count:1}];
+    delete config.story.mission.reward;
+    config.story.mission.branches=[
+     {id:'a',label:readable[first]||config.care,event:first,count:1,reward:5},
+     {id:'b',label:readable[second]||config.finish,event:second,count:1,reward:8}
+    ];
+    config.story.npc.lines[0]='Escolha uma das duas tarefas no diálogo: tecla 5 ou 6.';
+    config.story.npc.lines[1]='Escolha uma tarefa antes de executar o objetivo.';
+   }else if(wantsBranch){
+    pending.push({id:'simulation-story-branches',description:'Duas opções jogáveis exigem missão explícita com NPC em sala livre',where:'Simulação 2D'});
+   }
+   if(/\b(?:multiplos finais|narrativa livre|mais de duas escolhas|tres caminhos|dialogos gerados por ia)\b/.test(t))
+    pending.push({id:'simulation-story-complex',description:'Narrativas livres, mais de duas opções ou múltiplos finais não implementados',where:'Simulação 2D'});
   }
+ }
+ // Patrulha horizontal verificável. Não aparece em projetos sem pedido afirmativo.
+ const patrolEvents=[...t.matchAll(/\b(?:npc|guia|personagem secundario|cuidador|agricultor|atendente)\s+(?:que\s+)?(?:patrulha|patrulhando|com patrulha|anda de um lado para outro|caminha de um lado para outro)|\bpatrulha do npc\b|\bnpc em patrulha\b/g)];
+ const patrol=patrolEvents.length&&!negativeAt(t,patrolEvents[patrolEvents.length-1].index);
+ if(patrol){
+  if(!config.exploration&&!walkRequests.length)config.exploration={version:2,mode:'free',enabled:true,speed:190,reach:55,guide:true};
+  if(config.exploration?.mode==='free'){
+   config.exploration.guide=true;
+   config.exploration.patrol={version:1,enabled:true,left:810,right:885,speed:36};
+  }else pending.push({id:'simulation-npc-patrol',description:'Patrulha exige exploração livre 2D com NPC',where:'Simulação 2D'});
  }
  const unsupported=[['paid-food',/comprar racao|racao (?:custa|paga)|comida (?:custa|paga)/,'Loja e cobrança de alimentação'],
  ['health',/doencas?|peixes? (?:morrem?|morrendo)|morte dos peixes|saude dos peixes/,'Saúde, doenças e morte de peixes'],

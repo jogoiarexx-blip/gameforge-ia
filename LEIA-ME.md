@@ -1,3 +1,11 @@
+# GameForge Studio GF-TRAIN-17 — dependências, kits e edição do jogo já criado
+
+Agora o GameForge permite **bloquear o segundo objetivo até o primeiro terminar** e entregar **kits de suprimentos como recompensa**, utilizados automaticamente para comprar, plantar ou repor sem gastar moedas em uma ação real. A campanha usa o contrato de missão **v5**, preservando as anteriores.
+
+No **Editor visual de missões** do Studio, há controles por missão para dependência e kits (0–3). Para modificar um jogo já gerado, clique em **Carregar missões do jogo criado → Salvar no game.js existente**. Não é necessário recriar o restante dos arquivos. Projetos de simulação **v4** podem alterar objetivos, mas só projetos exportados com motor **v5** aceitam kits e dependências. A edição invalida o progresso salvo anterior; faça backup antes.
+
+[Como usar e limites do GF-TRAIN-17](docs/TREINAMENTO_GF_TRAIN_17_DEPENDENCIAS_RECOMPENSAS_EDITOR.md).
+
 # GameForge Studio GF-TRAIN-16 — quatro missões e editor visual para leigos
 
 Agora o GameForge pode gerar **três ou quatro missões sequenciais de simulação 2D**, com **até dois objetivos simultâneos em cada uma**. O jogador conversa com dois NPCs alternados, cumpre os objetivos em qualquer ordem, ganha uma recompensa única por missão e recupera tudo pelo salvamento local.

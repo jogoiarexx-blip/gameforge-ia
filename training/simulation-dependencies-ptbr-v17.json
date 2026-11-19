@@ -1,0 +1,366 @@
+{
+  "version": 17,
+  "note": "30 instruções PT-BR com regressão de dependências e kits, não treinamento de pesos",
+  "cases": [
+    {
+      "instruction": "Quero cuidar de aquário. 3 missões encadeadas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Objetivo 2 depois do objetivo 1. Missão 2: comprar 1 e alimentar 1. Missão 3: comprar 1 e alimentar 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "aquarium",
+        "firstAfter": true,
+        "firstKits": 0,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 4 missões encadeadas com objetivos simultâneos. Missão 1: comprar 2 e alimentar 1. Objetivo 2 depois do objetivo 1. Recompensa de 1 kits. Missão 2: comprar 1 e alimentar 1. Missão 3: comprar 1 e alimentar 1. Missão 4: comprar 1 e alimentar 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "aquarium",
+        "firstAfter": true,
+        "firstKits": 1,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 3 missões encadeadas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Recompensa de 2 kits. Missão 2: comprar 1 e alimentar 1. Missão 3: comprar 1 e alimentar 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "aquarium",
+        "firstAfter": false,
+        "firstKits": 2,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 4 missões encadeadas com objetivos simultâneos. Missão 1: comprar 2 e alimentar 1. Objetivo 2 depois do objetivo 1. Recompensa de 3 kits. Missão 2: comprar 1 e alimentar 1. Missão 3: comprar 1 e alimentar 1. Missão 4: comprar 1 e alimentar 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "aquarium",
+        "firstAfter": true,
+        "firstKits": 3,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 3 missões encadeadas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Objetivo 2 depois do objetivo 1. Missão 2: comprar 1 e alimentar 1. Missão 3: comprar 1 e alimentar 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "aquarium",
+        "firstAfter": true,
+        "firstKits": 0,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 4 missões encadeadas com objetivos simultâneos. Missão 1: comprar 2 e alimentar 1. Recompensa de 1 kits. Missão 2: comprar 1 e alimentar 1. Missão 3: comprar 1 e alimentar 1. Missão 4: comprar 1 e alimentar 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "aquarium",
+        "firstAfter": false,
+        "firstKits": 1,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 3 missões encadeadas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Objetivo 2 depois do objetivo 1. Recompensa de 2 kits. Estoque de 2. Missão 2: comprar 1 e alimentar 1. Missão 3: comprar 1 e alimentar 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "aquarium",
+        "firstAfter": true,
+        "firstKits": 2,
+        "firstStock": 2,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 4 missões encadeadas com objetivos simultâneos. Missão 1: comprar 2 e alimentar 1. Objetivo 2 depois do objetivo 1. Recompensa de 3 kits. Esperar 3 segundos. Missão 2: comprar 1 e alimentar 1. Missão 3: comprar 1 e alimentar 1. Missão 4: comprar 1 e alimentar 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "aquarium",
+        "firstAfter": true,
+        "firstKits": 3,
+        "firstStock": 0,
+        "firstTime": 3
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 3 missões encadeadas com objetivos simultâneos. Missão 1: plantar 1 e regar 1. Objetivo 2 depois do objetivo 1. Missão 2: plantar 1 e regar 1. Missão 3: plantar 1 e regar 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "farm",
+        "firstAfter": true,
+        "firstKits": 0,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 4 missões encadeadas com objetivos simultâneos. Missão 1: plantar 2 e regar 1. Objetivo 2 depois do objetivo 1. Recompensa de 1 kits. Missão 2: plantar 1 e regar 1. Missão 3: plantar 1 e regar 1. Missão 4: plantar 1 e regar 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "farm",
+        "firstAfter": true,
+        "firstKits": 1,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 3 missões encadeadas com objetivos simultâneos. Missão 1: plantar 1 e regar 1. Recompensa de 2 kits. Missão 2: plantar 1 e regar 1. Missão 3: plantar 1 e regar 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "farm",
+        "firstAfter": false,
+        "firstKits": 2,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 4 missões encadeadas com objetivos simultâneos. Missão 1: plantar 2 e regar 1. Objetivo 2 depois do objetivo 1. Recompensa de 3 kits. Missão 2: plantar 1 e regar 1. Missão 3: plantar 1 e regar 1. Missão 4: plantar 1 e regar 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "farm",
+        "firstAfter": true,
+        "firstKits": 3,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 3 missões encadeadas com objetivos simultâneos. Missão 1: plantar 1 e regar 1. Objetivo 2 depois do objetivo 1. Missão 2: plantar 1 e regar 1. Missão 3: plantar 1 e regar 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "farm",
+        "firstAfter": true,
+        "firstKits": 0,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 4 missões encadeadas com objetivos simultâneos. Missão 1: plantar 2 e regar 1. Recompensa de 1 kits. Missão 2: plantar 1 e regar 1. Missão 3: plantar 1 e regar 1. Missão 4: plantar 1 e regar 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "farm",
+        "firstAfter": false,
+        "firstKits": 1,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 3 missões encadeadas com objetivos simultâneos. Missão 1: plantar 1 e regar 1. Objetivo 2 depois do objetivo 1. Recompensa de 2 kits. Estoque de 2. Missão 2: plantar 1 e regar 1. Missão 3: plantar 1 e regar 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "farm",
+        "firstAfter": true,
+        "firstKits": 2,
+        "firstStock": 2,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 4 missões encadeadas com objetivos simultâneos. Missão 1: plantar 2 e regar 1. Objetivo 2 depois do objetivo 1. Recompensa de 3 kits. Esperar 3 segundos. Missão 2: plantar 1 e regar 1. Missão 3: plantar 1 e regar 1. Missão 4: plantar 1 e regar 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "farm",
+        "firstAfter": true,
+        "firstKits": 3,
+        "firstStock": 0,
+        "firstTime": 3
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 3 missões encadeadas com objetivos simultâneos. Missão 1: repor 1 e atender 1. Objetivo 2 depois do objetivo 1. Missão 2: repor 1 e atender 1. Missão 3: repor 1 e atender 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "shop",
+        "firstAfter": true,
+        "firstKits": 0,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 4 missões encadeadas com objetivos simultâneos. Missão 1: repor 2 e atender 1. Objetivo 2 depois do objetivo 1. Recompensa de 1 kits. Missão 2: repor 1 e atender 1. Missão 3: repor 1 e atender 1. Missão 4: repor 1 e atender 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "shop",
+        "firstAfter": true,
+        "firstKits": 1,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 3 missões encadeadas com objetivos simultâneos. Missão 1: repor 1 e atender 1. Recompensa de 2 kits. Missão 2: repor 1 e atender 1. Missão 3: repor 1 e atender 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "shop",
+        "firstAfter": false,
+        "firstKits": 2,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 4 missões encadeadas com objetivos simultâneos. Missão 1: repor 2 e atender 1. Objetivo 2 depois do objetivo 1. Recompensa de 3 kits. Missão 2: repor 1 e atender 1. Missão 3: repor 1 e atender 1. Missão 4: repor 1 e atender 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "shop",
+        "firstAfter": true,
+        "firstKits": 3,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 3 missões encadeadas com objetivos simultâneos. Missão 1: repor 1 e atender 1. Objetivo 2 depois do objetivo 1. Missão 2: repor 1 e atender 1. Missão 3: repor 1 e atender 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "shop",
+        "firstAfter": true,
+        "firstKits": 0,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 4 missões encadeadas com objetivos simultâneos. Missão 1: repor 2 e atender 1. Recompensa de 1 kits. Missão 2: repor 1 e atender 1. Missão 3: repor 1 e atender 1. Missão 4: repor 1 e atender 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "shop",
+        "firstAfter": false,
+        "firstKits": 1,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 3 missões encadeadas com objetivos simultâneos. Missão 1: repor 1 e atender 1. Objetivo 2 depois do objetivo 1. Recompensa de 2 kits. Estoque de 2. Missão 2: repor 1 e atender 1. Missão 3: repor 1 e atender 1.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "shop",
+        "firstAfter": true,
+        "firstKits": 2,
+        "firstStock": 2,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 4 missões encadeadas com objetivos simultâneos. Missão 1: repor 2 e atender 1. Objetivo 2 depois do objetivo 1. Recompensa de 3 kits. Esperar 3 segundos. Missão 2: repor 1 e atender 1. Missão 3: repor 1 e atender 1. Missão 4: repor 1 e atender 1.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "shop",
+        "firstAfter": true,
+        "firstKits": 3,
+        "firstStock": 0,
+        "firstTime": 3
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Três missões encadeadas com objetivos simultâneos e recompensas em itens.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "aquarium",
+        "firstAfter": false,
+        "firstKits": 1,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Quatro missões encadeadas. Missão 1: plantar 1 e regar 1. Recompensa dois kits.",
+      "expected": {
+        "version": 5,
+        "total": 4,
+        "domain": "farm",
+        "firstAfter": false,
+        "firstKits": 2,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. Três missões encadeadas. Missão 1: repor 1 e atender 1. Segundo objetivo depende do primeiro.",
+      "expected": {
+        "version": 5,
+        "total": 3,
+        "domain": "shop",
+        "firstAfter": true,
+        "firstKits": 0,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Três missões encadeadas com objetivos simultâneos.",
+      "expected": {
+        "version": 4,
+        "total": 3,
+        "domain": "aquarium",
+        "firstAfter": false,
+        "firstKits": 0,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões encadeadas.",
+      "expected": {
+        "version": 3,
+        "total": 2,
+        "domain": "aquarium",
+        "firstAfter": false,
+        "firstKits": 0,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão com escolhas de diálogo.",
+      "expected": {
+        "version": 2,
+        "total": 1,
+        "domain": "aquarium",
+        "firstAfter": false,
+        "firstKits": 0,
+        "firstStock": 0,
+        "firstTime": 0
+      }
+    }
+  ]
+}

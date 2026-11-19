@@ -62,7 +62,7 @@
    return {changed:true,bonus:m.reward,completed:s.completed,checkpoint:true};
   }
   function advance(s,c,dt){
-   if(c?.version===4)return parallelAdvance(s,c,dt);
+   if(c?.version===4||c?.version===5)return parallelAdvance(s,c,dt);
    if(!c||c.version!==3||!chainValidate(s,c)||!number(dt,0,1)||s.completed)return false;
    if(s.missionIndex===1&&s.step===1){s.elapsed=Math.min(600,s.elapsed+dt);return true;}
    return false;
@@ -72,15 +72,17 @@
   function validParallel(c){
    if(!validNpc(c.npc2)||!Array.isArray(c.missions)||c.missions.length<3||c.missions.length>4||c.mission!==undefined)return false;
    return c.missions.every((m,i)=>m&&m.id==='m'+(i+1)&&typeof m.label==='string'&&m.label.length>0&&m.label.length<=110&&
-    finite(m.reward,0,50)&&Array.isArray(m.objectives)&&m.objectives.length>=1&&m.objectives.length<=2&&
+    finite(m.reward,0,50)&&(c.version!==5||finite(m.itemReward,0,3))&&Array.isArray(m.objectives)&&m.objectives.length>=1&&m.objectives.length<=2&&
     new Set(m.objectives.map(o=>o.event)).size===m.objectives.length&&
-    m.objectives.every(o=>o&&tasks.has(o.event)&&finite(o.count,1,5))&&
+    m.objectives.every((o,k)=>o&&tasks.has(o.event)&&finite(o.count,1,5)&&
+     (c.version!==5||(typeof o.requiresFirst==='boolean'&&(!o.requiresFirst||k===1))))&&
     Array.isArray(m.requires)&&m.requires.length<=2&&new Set(m.requires.map(r=>r.kind)).size===m.requires.length&&
     m.requires.every(r=>r&&(r.kind==='stock'?finite(r.min,1,12):r.kind==='time'?finite(r.seconds,1,60):false)));
   }
   function parallelCreate(c){
    return {missionIndex:0,started:false,progress:c.missions[0].objectives.map(()=>0),
-    completed:false,rewards:0,talks:0,npcTalks:[0,0],elapsed:0};
+    completed:false,rewards:0,talks:0,npcTalks:[0,0],elapsed:0,
+    ...(c.version===5?{itemsEarned:0}:{})};
   }
   function parallelValidate(s,c){
    if(!s||typeof s!=='object'||!finite(s.missionIndex,0,c.missions.length)||
@@ -92,6 +94,7 @@
    if(done!==s.completed)return false;
    const reward=c.missions.slice(0,i).reduce((n,m)=>n+m.reward,0);
    if(s.rewards!==reward)return false;
+   if(c.version===5&&(!finite(s.itemsEarned,0,12)||s.itemsEarned!==c.missions.slice(0,i).reduce((n,m)=>n+m.itemReward,0)))return false;
    if(done)return !s.started&&s.progress.length===0&&s.elapsed===0&&s.talks>=i;
    const m=c.missions[i];
    if(s.progress.length!==m.objectives.length)return false;
@@ -109,10 +112,13 @@
    if(!s.started)return {complete:false,missionIndex:i,total:n,event:'talk',npc:i%2,
     text:'Missão '+(i+1)+'/'+n+' · Fale com '+(i%2===0?c.npc.name:c.npc2.name)};
    const labels={start:'Iniciar',care:'Cuidar',finish:'Finalizar',sell:'Vender',clean:'Limpar'};
-   const chunks=m.objectives.map((o,k)=>labels[o.event]+' '+s.progress[k]+'/'+o.count);
+   const chunks=m.objectives.map((o,k)=>labels[o.event]+' '+s.progress[k]+'/'+o.count+
+    (c.version===5&&o.requiresFirst&&s.progress[0]<m.objectives[0].count?' (bloqueado até objetivo 1)':''));
    const guards=m.requires.map(r=>r.kind==='stock'?'estoque '+r.min:'aguardar '+r.seconds+'s ('+Math.floor(s.elapsed)+'s)');
    return {complete:false,missionIndex:i,total:n,event:m.objectives[0].event,
-    objectives:m.objectives.map((o,k)=>({event:o.event,count:o.count,progress:s.progress[k]})),
+    objectives:m.objectives.map((o,k)=>({event:o.event,count:o.count,progress:s.progress[k],
+     locked:!!(c.version===5&&o.requiresFirst&&s.progress[0]<m.objectives[0].count)})),
+    ...(c.version===5?{itemsEarned:s.itemsEarned,itemReward:m.itemReward}:{}),
     text:'Missão '+(i+1)+'/'+n+' · '+chunks.join(' + ')+(guards.length?' · '+guards.join(' e '):'')};
   }
   function parallelRecord(s,c,type,context){
@@ -126,7 +132,8 @@
    }
    if(!s.started)return {changed:false,bonus:0,completed:false};
    const k=m.objectives.findIndex(o=>o.event===type);
-   if(k<0||s.progress[k]>=m.objectives[k].count)return {changed:false,bonus:0,completed:false};
+   if(k<0||s.progress[k]>=m.objectives[k].count||
+    (c.version===5&&m.objectives[k].requiresFirst&&s.progress[0]<m.objectives[0].count))return {changed:false,bonus:0,completed:false};
    for(const r of m.requires){
     if(r.kind==='stock'&&(!finite(context?.stock,0,1e6)||context.stock<r.min))return {changed:false,bonus:0,completed:false};
     if(r.kind==='time'&&s.elapsed+1e-7<r.seconds)return {changed:false,bonus:0,completed:false};
@@ -134,10 +141,13 @@
    s.progress[k]++;
    const fulfilled=m.objectives.every((o,index)=>s.progress[index]===o.count);
    if(!fulfilled)return {changed:true,bonus:0,completed:false};
-   s.rewards+=m.reward;s.missionIndex++;s.elapsed=0;s.started=false;
+   s.rewards+=m.reward;
+   const items=c.version===5?m.itemReward:0;
+   if(items)s.itemsEarned+=items;
+   s.missionIndex++;s.elapsed=0;s.started=false;
    s.completed=s.missionIndex===c.missions.length;
    s.progress=s.completed?[]:c.missions[s.missionIndex].objectives.map(()=>0);
-   return {changed:true,bonus:m.reward,completed:s.completed,checkpoint:true};
+   return {changed:true,bonus:m.reward,items,completed:s.completed,checkpoint:true};
   }
   function parallelAdvance(s,c,dt){
    if(!parallelValidate(s,c)||!number(dt,0,1)||s.completed||!s.started)return false;
@@ -145,11 +155,11 @@
    return true;
   }
   function validConfig(c){
-   if(!c||![1,2,3,4].includes(c.version)||c.enabled!==true||typeof c.requiredForVictory!=='boolean')return false;
+   if(!c||![1,2,3,4,5].includes(c.version)||c.enabled!==true||typeof c.requiredForVictory!=='boolean')return false;
    if(!c.npc||!['Cuidador','Agricultor','Atendente'].includes(c.npc.name)||
       !Array.isArray(c.npc.lines)||c.npc.lines.length!==3||c.npc.lines.some(s=>typeof s!=='string'||s.length>170))return false;
    if(c.version===3)return validChain(c);
-   if(c.version===4)return validParallel(c);
+   if(c.version===4||c.version===5)return validParallel(c);
    const m=c.mission;
    if(!m||m.id!=='primeira-tarefa'||typeof m.label!=='string'||m.label.length>170||!Array.isArray(m.steps))return false;
    if(c.version===1)return finite(m.reward,0,50)&&m.steps.length>=1&&m.steps.length<=3&&
@@ -163,7 +173,7 @@
   function create(c){
    if(!validConfig(c))throw Error('Configuração de eventos inválida.');
    if(c.version===3)return chainCreate();
-   if(c.version===4)return parallelCreate(c);
+   if(c.version===4||c.version===5)return parallelCreate(c);
    const state={step:0,count:0,completed:false,rewards:0,talks:0};
    if(c.version===2)state.choice=null;
    return state;
@@ -171,7 +181,7 @@
   function validate(s,c){
    if(!validConfig(c))return false;
    if(c.version===3)return chainValidate(s,c);
-   if(c.version===4)return parallelValidate(s,c);
+   if(c.version===4||c.version===5)return parallelValidate(s,c);
    if(!s||typeof s!=='object'||!finite(s.talks,0,1e6)||
       typeof s.completed!=='boolean'||!finite(s.count,0,5))return false;
    if(c.version===1){
@@ -197,7 +207,7 @@
   function status(s,c){
    if(!s||!c)return {complete:false,text:'Sem missão'};
    if(c.version===3)return chainStatus(s,c);
-   if(c.version===4)return parallelStatus(s,c);
+   if(c.version===4||c.version===5)return parallelStatus(s,c);
    if(s.completed)return {complete:true,text:'Missão concluída · recompensa '+s.rewards+' moedas',choice:c.version===2?s.choice:null};
    if(c.version===2){
     if(s.step===0)return {complete:false,event:'talk',text:c.mission.label+' · Converse com o guia 0/1'};
@@ -221,7 +231,7 @@
   }
   function record(s,c,type,context){
    if(c?.version===3)return chainRecord(s,c,type,context);
-   if(c?.version===4)return parallelRecord(s,c,type,context);
+   if(c?.version===4||c?.version===5)return parallelRecord(s,c,type,context);
    if(!validate(s,c)||!whitelist.has(type))return {changed:false,bonus:0,completed:!!s?.completed};
    if(type==='talk')s.talks=Math.min(1e6,s.talks+1);
    if(s.completed)return {changed:false,bonus:0,completed:true};
@@ -249,7 +259,7 @@
   }
   function talk(s,c,npc=0){
    const result=record(s,c,'talk',c.version>=3?{npc}:undefined);
-   if(c.version===4){
+   if(c.version===4||c.version===5){
     const guide=npc===0?c.npc:c.npc2;
     const correct=s.missionIndex%2===npc;
     const line=s.completed?guide.lines[2]:correct?result.changed?guide.lines[0]:guide.lines[1]:

@@ -160,8 +160,8 @@ test('GF16: backup aceita relatório e resultado sem modificar arquivos do jogo'
  assert.deepEqual(files,before);
 });
 test('GF16: código real produz IDs e métricas limitadas sem alterar regras',()=>{
- for(const path of ['runtime-template','shooter-runtime','three-runtime']){
-  const code=fs.readFileSync(path.join(__dirname,'..','js',path+'.js'),'utf8');
+ for(const moduleName of ['runtime-template','shooter-runtime','three-runtime']){
+  const code=fs.readFileSync(path.join(__dirname,'..','js',moduleName+'.js'),'utf8');
   assert.match(code,/enemySamples:enemies\.slice\(0,8\)/);
   assert.match(code,/bossHp:/);
  }

@@ -149,6 +149,48 @@ function compile(text,command=''){
   config.exploration={version:2,mode:'free',enabled:true,speed:190,reach:55,guide};
  }
  const pending=[];
+ // GF-TRAIN-13: gramática limitada de missões reais, sem converter texto livre em código.
+ const storyMentions=[];
+ const missionWords=/\b(?:missao|missoes|tarefa|tarefas|quest|desafio de npc)\b/g;
+ const dialogueWords=/\b(?:dialogos?|conversar com (?:o )?(?:npc|guia|cuidador|agricultor|atendente)|falar com (?:o )?(?:npc|guia|cuidador|agricultor|atendente))\b/g;
+ for(const m of t.matchAll(missionWords))storyMentions.push({index:m.index,kind:'mission',enabled:!negativeAt(t,m.index)});
+ for(const m of t.matchAll(dialogueWords))storyMentions.push({index:m.index,kind:'dialogue',enabled:!negativeAt(t,m.index)});
+ const storyState={mission:false,dialogue:false};
+ for(const event of storyMentions.sort((a,b)=>a.index-b.index))storyState[event.kind]=event.enabled;
+ if(storyState.mission||storyState.dialogue){
+  const forbidden=walkRequests.length&&movement!=='free';
+  if(!forbidden&&!config.exploration){
+   config.exploration={version:2,mode:'free',enabled:true,speed:190,reach:55,guide:true};
+  }
+  if(config.exploration?.mode!=='free'){
+   pending.push({id:'simulation-story-free',description:'NPC com missão precisa do cenário livre 2D; escolha exploração livre',where:'Simulação 2D'});
+  }else{
+   config.exploration.guide=true;
+   const lastMission=[...t.matchAll(missionWords)].filter(m=>!negativeAt(t,m.index)).at(-1);
+   const brief=lastMission?t.slice(lastMission.index):t;
+   const tasks=[...brief.matchAll(/\b(vender|venda|alimentar|regar|plantar|comprar|repor|colher|trocar (?:a )?agua)\s+(?:(\d+|um|uma|dois|duas|tres|quatro|cinco)\s+)?(?:peixes?|produtos?|colheitas?|itens?|sementes?|vezes|tanques?)?\b/g)];
+   const action=tasks.find(m=>!negativeAt(brief,m.index));
+   const named={vender:config.domain==='farm'?'sell':'finish',venda:config.domain==='farm'?'sell':'finish',
+    alimentar:'care',regar:'care',plantar:'start',comprar:'start',repor:'start',
+    colher:'finish','trocar a agua':'clean','trocar agua':'clean'};
+   let objective=storyState.mission?(named[action?.[1]]|| (config.domain==='farm'?'sell':'finish')):'talk';
+   if(objective==='clean'&&config.domain!=='aquarium')objective='care';
+   if(objective==='sell'&&config.domain!=='farm')objective='finish';
+   let count=action?.[2]?number(action[2]):1;
+   if(!Number.isFinite(count))count=1;
+   if(count>5){warnings.push('Missão limitada a 5 ações');count=5;}
+   count=Math.max(1,count);
+   const name={aquarium:'Cuidador',farm:'Agricultor',shop:'Atendente'}[config.domain];
+   const lines={aquarium:['Cuide dos peixes e acompanhe a missão.','Os peixes crescem enquanto recebem cuidados.','Muito bem! Você completou nossa missão.'],
+    farm:['Cuide dos canteiros e conclua a tarefa.','Aguarde o crescimento antes de colher.','A fazenda agradece seu trabalho!'],
+    shop:['Atenda os clientes e cumpra a missão.','Reponha o estoque para continuar.','Excelente! A tarefa foi concluída.']}[config.domain];
+   const label=storyState.mission?'Missão do '+name:'Diálogo do '+name;
+   config.story={version:1,enabled:true,requiredForVictory:storyState.mission,
+    npc:{name,lines},mission:{id:'primeira-tarefa',label,steps:storyState.mission?[{event:'talk',count:1},{event:objective,count}]:[{event:'talk',count:1}],reward:storyState.mission?5:0}};
+   if(/\b(?:escolhas? de dialogo|multiplos finais|missoes ramificadas|escolher entre missoes|dialogo ramificado)\b/.test(t))
+    pending.push({id:'simulation-story-branches',description:'Diálogo com escolhas e missões ramificadas ainda não implementado',where:'Simulação 2D'});
+  }
+ }
  const unsupported=[['paid-food',/comprar racao|racao (?:custa|paga)|comida (?:custa|paga)/,'Loja e cobrança de alimentação'],
  ['health',/doencas?|peixes? (?:morrem?|morrendo)|morte dos peixes|saude dos peixes/,'Saúde, doenças e morte de peixes'],
  ['breeding',/reproduzir|reproducao|cruzar peixes/,'Reprodução e genética'],

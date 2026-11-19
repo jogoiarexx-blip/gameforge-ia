@@ -9,7 +9,7 @@ const E=require('../js/simulation-events.js')();
 const R=require('../js/simulation-rules.js')(E);
 const Editor=require('../js/simulation-quest-editor.js');
 const corpus=require('../training/simulation-dependencies-ptbr-v17.json');
-const base='Quero cuidar de aquário. Três missões encadeadas com objetivos simultâneos. Missão 1: comprar 2 e alimentar 1. Objetivo 2 depois do objetivo 1. Recompensa de 2 kits. Missão 2: comprar 1 e alimentar 1. Recompensa de 1 kit. Missão 3: comprar 1 e alimentar 1.';
+const base='Quero cuidar de aquário. Três missões encadeadas com objetivos simultâneos. Missão 1: comprar 2 e alimentar 1. Objetivo 2 depois do objetivo 1. Recompensa de 2 kits. Missão 2: comprar 1 e alimentar 1. Recompensa de 1 kit. Missão 3: comprar 1 e alimentar 1. Crescer em dois segundos.';
 test('GF-TRAIN-17: 30 instruções reais compilam e mantêm versões anteriores',()=>{
  assert.equal(corpus.cases.length,30);
  const failures=[];

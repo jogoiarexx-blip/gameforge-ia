@@ -67,8 +67,9 @@
          }
          case 'qa-storage':{
            // Acesso EXCLUSIVO ao armazenamento virtual injetado no clone GF17.
-           const virtual=window.__gameforgeQA17Storage;
-           if(!virtual||virtual.kind!=='GF17_VIRTUAL_STORE'||typeof virtual.dump!=='function')
+           const virtual=window.__gameforgeQA18Storage||window.__gameforgeQA17Storage;
+           if(!virtual||!['GF17_VIRTUAL_STORE','GF18_VIRTUAL_STORE'].includes(virtual.kind)||
+              typeof virtual.dump!=='function')
              throw Error('Armazenamento virtual indisponível');
            result={virtual:true,entries:virtual.dump()};
            break;

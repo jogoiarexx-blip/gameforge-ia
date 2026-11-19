@@ -9,6 +9,7 @@ const dims=(genre,dim)=>genre+'-'+dim;
 const support={
  'simulation-automation':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.automation + GameForgeSimulationRules.tick',test:'tests/simulation-automation.test.js',pattern:/automacao|automatic|automatizar|idle/},
  'simulation-walk':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.exploration + gameForgeSimulationBoot',test:'tests/simulation-exploration.test.js',pattern:/personagem andando|caminhar|andar|interagir|aproximar/},
+ 'simulation-free':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.exploration.mode=free + gameForgeExploration2DFactory',test:'tests/simulation-free-movement.test.js',pattern:/exploracao livre|movimentacao livre|andar livremente|caminhar livremente|wasd/},
  'simulation-save':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.persistence + GameForgeSimulationRules.persistence',test:'tests/simulation-save.test.js',pattern:/salvar|salvamento|save|continuar|guardar progresso/},
  'aquarium-care':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.aquariumCare + GameForgeSimulationRules',test:'tests/aquarium-care.test.js',pattern:/aquario|peixe|fome|alimentar|crescer|agua/},
  'visual-profile':{all:true,contract:'GAME_SPEC.renderProfile + gameForgeGraphicsFactory',test:'tests/graphics.test.js',pattern:/pixel|cartoon|low.?poly|ilustrad|realista|qualidade|sombras|particulas|por do sol/},
@@ -54,7 +55,7 @@ function capability(id,spec){
  const key=normalizeId(id),definition=support[key];
  if(!definition)return {id:key,allowed:false,implemented:false,reason:'Sem contrato executável catalogado para este requisito.'};
  const allowed=!!(definition.all||definition.engines.includes(physicalEngine(spec)));
- return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk'].includes(key),contract:definition.contract,test:definition.test,
+ return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk','simulation-free'].includes(key),contract:definition.contract,test:definition.test,
    reason:allowed?'Mecânica do motor identificada; verificar GAME_SPEC e testes.':'O motor '+physicalEngine(spec)+' não implementa este parâmetro.'};
 }
 function provenance(item,source,command){
@@ -90,7 +91,7 @@ function audit(spec,gdd='',instruction=''){
   const cap=capability(entry.id,spec);
   // "Pendente" não é promovido só porque há uma capacidade com nome semelhante.
   const status=kind==='pending'?(cap.contract&&!cap.allowed?'incompativel':'pendente'):
-    !cap.allowed?'incompativel':cap.implemented&&['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk'].includes(entry.id)?'implementada':'configurada';
+    !cap.allowed?'incompativel':cap.implemented&&['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk','simulation-free'].includes(entry.id)?'implementada':'configurada';
   const where=String(entry.where||'Jogo inteiro');
   const origin=provenance(entry,gdd,instruction);
   const reason=status==='implementada'?'Módulo funcional existente no runtime com teste automatizado.':
@@ -126,7 +127,14 @@ function check(spec){
   errors.push('Número de fases fora do limite do motor.');
  const persistence=spec.simulation?.persistence;
  if(persistence&&(persistence.version!==1||typeof persistence.enabled!=='boolean'))errors.push('Salvamento de simulação inválido.');
- const automation=spec.simulation?.automation;
+ const exploration=spec.simulation?.exploration;
+  if(exploration){
+   if(engine!=='simulation-2d'||exploration.enabled!==true||!Number.isFinite(exploration.speed)||!Number.isFinite(exploration.reach))errors.push('Exploração de simulação inválida.');
+   if(exploration.mode==='free'){
+    if(exploration.version!==2||exploration.speed<70||exploration.speed>350||exploration.reach<15||exploration.reach>100||typeof exploration.guide!=='boolean')errors.push('Exploração livre fora dos limites.');
+   }else if(exploration.version!==1||exploration.mode!==undefined)errors.push('Modo por estações inválido.');
+  }
+  const automation=spec.simulation?.automation;
  if(automation){
   if(engine!=='simulation-2d'||automation.version!==1||automation.enabled!==true||!Number.isFinite(automation.intervalSeconds)||automation.intervalSeconds<1||automation.intervalSeconds>60)errors.push('Automação de simulação inválida.');
   for(const key of ['start','care','finish','sell','clean'])if(typeof automation[key]!=='boolean')errors.push('Automação: '+key+' deve ser booleano.');

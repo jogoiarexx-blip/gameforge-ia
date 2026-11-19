@@ -56,6 +56,23 @@
          case 'reset': {const el=document.getElementById('restart');if(el)el.click();break;}
          case 'capture':result=snapshot();break;
          case 'inspect':result=inspect();break;
+         case 'qa-click':{
+           // Permitido apenas para três controles conhecidos no jogo clonado.
+           if(!['simulation-save','simulation-continue','simulation-action-start'].includes(q.target))
+             throw Error('Ação QA não permitida');
+           const button=document.getElementById(q.target);
+           result={clicked:!!(button&&!button.disabled&&button.tagName==='BUTTON')};
+           if(result.clicked)button.click();
+           break;
+         }
+         case 'qa-storage':{
+           // Acesso EXCLUSIVO ao armazenamento virtual injetado no clone GF17.
+           const virtual=window.__gameforgeQA17Storage;
+           if(!virtual||virtual.kind!=='GF17_VIRTUAL_STORE'||typeof virtual.dump!=='function')
+             throw Error('Armazenamento virtual indisponível');
+           result={virtual:true,entries:virtual.dump()};
+           break;
+         }
          default:throw Error('Ação não permitida');
        }
        parent.postMessage({kind:prefix+'-response',id:q.id,ok:true,data:result},'*');

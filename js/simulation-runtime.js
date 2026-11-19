@@ -73,7 +73,7 @@ function gameForgeSimulationBoot(){
   persist();update();
  }
  for(const [kind,label] of [['start',c.start],['care',c.care],['finish',c.finish],...(c.domain==='farm'?[['sell','Vender colheita']]:[]),...(c.aquariumCare?.waterEnabled?[['clean','Trocar água']]:[])]){
-  const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>action(kind));panel.appendChild(b);buttons.push([b,kind]);
+  const b=document.createElement('button');b.type='button';b.id='simulation-action-'+kind;b.textContent=label;b.addEventListener('click',()=>action(kind));panel.appendChild(b);buttons.push([b,kind]);
  }
  function begin(){s=R.create(c);selected=0;playerX=center(0);targetX=playerX;actionsOpen=false;held.clear();walkTo=null;npcTalks=0;if(free){avatar=F.spawn(room);if(patrol){room.guide.x=860;room.guide.dir=-1;}}state='play';paused=false;last=0;persist();el('overlay').classList.add('hidden');say('Comece em um espaço vazio. Meta: vender '+c.target+' moedas.');update();}
  el('start').addEventListener('click',begin);el('restart').addEventListener('click',begin);

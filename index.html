@@ -176,10 +176,16 @@ Derrote o chefe.
         </section></details>
         <details class="studio-disclosure development-disclosure"><summary><span>Melhorar sem recomeçar</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="dev-cycle" aria-label="Motor de evolução contínua">
           <div class="qa-workbench-title"><span class="eyebrow">09 / MOTOR DE EVOLUÇÃO</span><strong>Melhore o jogo sem recomeçar</strong></div>
-          <p class="hint">Escreva uma melhoria acima e clique em Planejar ou Aplicar melhoria. Com IA, são feitas etapas separadas de planejamento e geração. Sem IA, somente as alterações suportadas são implementadas.</p>
+          <p class="hint">Escreva uma melhoria acima e clique em Planejar ou Preparar proposta. Revise os arquivos e aprove explicitamente antes de aplicar. Com IA, a geração é separada do planejamento. Sem IA, somente as alterações suportadas são implementadas.</p>
           <label class="repo-source-opt"><input type="checkbox" id="deep-plan" checked> Planejamento aprofundado no modo com IA (pode consumir mais tokens)</label>
-          <div class="dev-controls"><button class="outline small" id="plan-improvement">▤ Planejar alteração</button><button class="primary small" id="improve" disabled>✦ Aplicar melhoria</button><button class="outline small" id="undo-improvement" disabled>↶ Desfazer</button></div>
+          <div class="dev-controls"><button class="outline small" id="plan-improvement">▤ Planejar alteração</button><button class="primary small" id="improve" disabled>✦ Preparar proposta</button><button class="outline small" id="undo-improvement" disabled>↶ Desfazer</button></div>
           <div id="development-plan" class="dev-plan" aria-live="polite">Nenhuma melhoria planejada.</div>
+          <section id="dev-candidate" class="dev-plan" aria-label="Revisão da proposta" hidden>
+            <strong>Proposta pronta para revisão</strong>
+            <p id="dev-candidate-summary" class="hint"></p>
+            <details><summary>Ver trechos que serão alterados</summary><pre id="dev-candidate-diff" class="dev-plan" aria-label="Prévia das modificações"></pre></details>
+            <div class="dev-controls"><button type="button" id="dev-candidate-accept" class="primary small">✓ Aprovar e testar</button><button type="button" id="dev-candidate-discard" class="outline small">Descartar proposta</button></div>
+          </section>
           <div id="dev-history" class="hint">Histórico: projeto ainda não gerado.</div>
           <div class="dev-controls"><button id="create-3d" type="button" class="outline small">◈ Criar projeto Three.js/Vite no backend</button></div>
           <div id="create-3d-result" class="hint">Opção para projetos separados no servidor, com Node.js e compilação. Para jogar em 3D aqui, escolha um exemplo 3D e clique em Criar novo jogo no modo Sem IA.</div>
@@ -286,6 +292,7 @@ Derrote o chefe.
   <script src="./js/asset-library.js"></script>
   <script src="./js/generator.js"></script>
   <script src="./js/studio-intelligence.js"></script>
+  <script src="./js/studio-orchestrator.js"></script>
   <script src="./js/development-engine.js"></script>
   <script src="./js/gdd-roadmap.js"></script>
   <script src="./js/zip.js"></script>

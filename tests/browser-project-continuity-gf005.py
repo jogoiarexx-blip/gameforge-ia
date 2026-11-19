@@ -132,18 +132,22 @@ def run():
             restored.locator('.tools-collection > summary').click()
             restored.locator('.development-disclosure > summary').click()
             restored.locator('#instruction').fill('adicione uma fase "Terceira Etapa"')
+            before_approval=restored.locator('#file-editor').input_value()
             restored.locator('#improve').click()
-            # O QA visual usa até 10 tentativas de 5 s para conectar à
-            # prévia 3D. Esperar o resultado terminal antes de dar Desfazer
-            # evita que um QA ainda em curso sobrescreva o feedback do ZIP.
+            restored.locator('#dev-candidate').wait_for(state='visible',timeout=20000)
+            assert restored.locator('#file-editor').input_value()==before_approval, 'Alterou antes da aprovação'
+            assert 'game.js' in restored.locator('#dev-candidate-summary').inner_text()
+            restored.locator('#dev-candidate-accept').click()
+            # A proposta agora exige aprovação explícita. QA segue assíncrono;
+            # aguarde o resultado terminal antes de usar Desfazer.
             restored.wait_for_function("""()=>{
                 const t=document.querySelector('#feedback')?.textContent||'';
-                return t.includes('Melhoria salva')||
-                    t.includes('Mudança aplicada, mas QA não concluiu')||
+                return t.includes('Proposta aplicada')||
+                    t.includes('Proposta aplicada, mas QA não concluiu')||
                     t.includes('Possível regressão detectada')||
-                    t.includes('Falha na melhoria');
+                    t.includes('Proposta não aplicada');
             }""",timeout=110000)
-            assert 'Falha na melhoria' not in restored.locator('#feedback').inner_text()
+            assert 'Proposta não aplicada' not in restored.locator('#feedback').inner_text()
             # GF-005 confirma mutação durável; mensagem final de QA é assunto
             # do teste visual independente, não uma condição de persistência.
             restored.wait_for_function("""()=>{

@@ -76,7 +76,9 @@ test('backup portável permite os novos relatórios do Studio sem bloquear expor
  const snap=original();
  snap.files['BRIEF_E_CHECKLIST_STUDIO.md']='# relatório de teste';
  snap.files['MAPA_DEPENDENCIAS.json']='{}';
+ snap.files['PLANO_AGENTES_STUDIO.md']='# relatório de teste';
  const restored=backup.decode(backup.encode(snap));
  assert.equal(restored.files['BRIEF_E_CHECKLIST_STUDIO.md'],snap.files['BRIEF_E_CHECKLIST_STUDIO.md']);
  assert.equal(restored.files['MAPA_DEPENDENCIAS.json'],snap.files['MAPA_DEPENDENCIAS.json']);
+ assert.equal(restored.files['PLANO_AGENTES_STUDIO.md'],snap.files['PLANO_AGENTES_STUDIO.md']);
 });

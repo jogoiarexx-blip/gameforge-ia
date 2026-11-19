@@ -68,8 +68,22 @@ function gameForgeSimulationBoot(){
  el('control-help').textContent=free?'WASD/setas mover · E falar/interagir · 1–4 agir perto de uma estação · toque para caminhar':exploring?'← → caminhar entre estações · E interagir · 1 iniciar · 2 cuidar · 3 vender/colher · 4 limpar/vender · toque para aproximar':aquarium?'← → selecionar tanque · 1 comprar · 2 alimentar · 3 vender'+(c.aquariumCare.waterEnabled?' · 4 trocar água':''):'← → selecionar · 1 produzir · 2 cuidar · 3 colher/vender · 4 vender colheita';
  el('overlay-sub').textContent=c.label+': '+c.start+' → '+c.care+' → '+c.finish+(c.domain==='farm'?' → Vender':'')+(aquarium?'. O peixe cresce enquanto está alimentado'+(c.aquariumCare.waterEnabled?' e com água limpa':'')+'. O valor aumenta com a idade. Alimentar e trocar água são gratuitos.':'')+(save.enabled?'. Progresso salvo neste navegador. Fechado ou pausado, o tempo não avança. Novo jogo substitui o progresso anterior.':'. Salvamento desativado.');
  if(c.automation?.enabled)el('overlay-sub').textContent=c.label+'. Ciclo automático a cada '+c.automation.intervalSeconds+' s, com custos normais. Você pode desligar a automação e jogar manualmente. Pausar congela o jogo. '+(save.enabled?'Progresso salvo neste navegador. Novo jogo substitui o anterior.':'Salvamento desativado.');
+ function activate(target){
+  if(!target){actionsOpen=false;say('Chegue perto de um aquário, canteiro, prateleira ou NPC.');update();return;}
+  if(target.type==='npc'){actionsOpen=false;npcTalks++;say(target.label+': '+guideText());update();return;}
+  const same=selected===target.index&&actionsOpen;
+  selected=target.index;actionsOpen=!same;
+  say(actionsOpen?'Estação '+(selected+1)+': escolha uma ação.':'Interação fechada.');
+  update();
+ }
  function input(key){
   if(state!=='play'||paused)return;
+  if(free){
+   if(key==='e'||key==='E'||key===' '){activate(F.nearest(avatar,room,c.exploration.reach));return;}
+   const actKey={'1':'start','2':'care','3':'finish','4':aquarium?'clean':'sell'}[key];
+   if(actKey)action(actKey);
+   return;
+  }
   if(exploring){
    if(key==='ArrowRight'||key==='d'||key==='D'){moveTarget(selected+1);update();return;}
    if(key==='ArrowLeft'||key==='a'||key==='A'){moveTarget(selected-1);update();return;}
@@ -84,12 +98,27 @@ function gameForgeSimulationBoot(){
   }
   const k={'1':'start','2':'care','3':'finish','4':aquarium?'clean':'sell'}[key];if(k)action(k);
  }
+ const directions=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D'];
  document.addEventListener('keydown',e=>{
+  if(free&&directions.includes(e.key)){
+   e.preventDefault();if(state==='play'&&!paused){held.add(e.key);walkTo=null;}return;
+  }
   const keys=exploring?['ArrowRight','ArrowLeft','a','A','d','D','e','E',' ','1','2','3','4']:['ArrowRight','ArrowLeft','1','2','3','4'];
   if(keys.includes(e.key)){e.preventDefault();if(!e.repeat)input(e.key);}
  });
+ document.addEventListener('keyup',e=>{if(free)held.delete(e.key);});
+ window.addEventListener('blur',()=>held.clear());
  canvas.addEventListener('pointerdown',e=>{
   const rect=canvas.getBoundingClientRect(),x=(e.clientX-rect.left)*960/rect.width,y=(e.clientY-rect.top)*540/rect.height;
+  if(free){
+   if(state!=='play'||paused)return;
+   const target=F.hitAt(room,x,y);
+   if(target&&F.inRange(avatar,target,c.exploration.reach)){activate(target);return;}
+   const destination=target?F.approachPoint(target):{x,y};
+   if(F.walkable(room,destination.x,destination.y)){walkTo=destination;actionsOpen=false;update();}
+   else say('Esse local está ocupado. Caminhe ao redor do obstáculo.');
+   return;
+  }
   if(y>=110&&y<450){
    const chosen=Math.max(0,Math.min(c.slots-1,Math.floor(x/(960/c.slots))));
    if(exploring){
@@ -101,6 +130,11 @@ function gameForgeSimulationBoot(){
  });
  for(const button of document.querySelectorAll('[data-control]')){
   if(button.dataset.control==='fire'){button.textContent=exploring?'INTERAGIR':aquarium?'COMPRAR':'PRODUZIR';button.addEventListener('pointerdown',e=>{e.preventDefault();if(exploring)input('e');else action('start');});}
+  else if(free&&['up','down','left','right'].includes(button.dataset.control)){
+   const key={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'}[button.dataset.control];
+   button.addEventListener('pointerdown',e=>{e.preventDefault();held.add(key);walkTo=null;});
+   for(const event of ['pointerup','pointercancel','pointerleave'])button.addEventListener(event,()=>held.delete(key));
+  }
   else if(['left','right'].includes(button.dataset.control))button.addEventListener('pointerdown',e=>{e.preventDefault();input(button.dataset.control==='left'?'ArrowLeft':'ArrowRight');});
   else button.disabled=true;
  }
@@ -118,7 +152,7 @@ function gameForgeSimulationBoot(){
      (c.aquariumCare.waterEnabled?' · Água '+Math.ceil(q.water)+'%':'')+
      (q.blocked.length?' · Precisa: '+q.blocked.join(', '):q.stage==='adult'?' · Pronto para vender':' · Crescendo'):'');
   }
-  if(exploring)el('mission').textContent+=' · '+(near()?(actionsOpen?'Interação aberta':'Aperte E para interagir'):'Caminhando...');
+  if(exploring)el('mission').textContent+=' · '+(free?(actionsOpen?'Interação aberta':F.nearest(avatar,room,c.exploration.reach)?.type==='npc'?'E para falar com o guia':'Explore com WASD; E interage perto de objetos'):(near()?(actionsOpen?'Interação aberta':'Aperte E para interagir'):'Caminhando...'));
   if(c.automation?.enabled)el('mission').textContent+=' · Automação '+(s.automation.paused?'desligada':'ligada');
   for(const [b,k] of buttons){
    const item=s.slots[selected];
@@ -126,7 +160,7 @@ function gameForgeSimulationBoot(){
   }
  }
  rootTelemetry();
- function rootTelemetry(){window.__gameforgeTelemetry=()=>({state,paused,frames,player:{x:exploring?playerX:selected,y:exploring?480:0},exploration:{enabled:exploring,x:playerX,target:targetX,near:exploring?near():false,actionsOpen},simulation:JSON.parse(JSON.stringify(s)),domain:c.domain,persistence:{enabled:save.enabled,key:save.key,status:saveStatus,available:!!saved},selected:aquarium?R.status(s,c,selected):null});}
+ function rootTelemetry(){window.__gameforgeTelemetry=()=>({state,paused,frames,player:{x:free?avatar.x:exploring?playerX:selected,y:free?avatar.y:exploring?480:0},exploration:{enabled:exploring,mode:free?'free':exploring?'stations':'classic',x:free?avatar.x:playerX,y:free?avatar.y:480,target:free?walkTo:targetX,near:exploring?near():false,actionsOpen,npcTalks,nearby:free?F.nearest(avatar,room,c.exploration.reach)?.id||null:null},simulation:JSON.parse(JSON.stringify(s)),domain:c.domain,persistence:{enabled:save.enabled,key:save.key,status:saveStatus,available:!!saved},selected:aquarium?R.status(s,c,selected):null});}
  function draw(){
   ctx.fillStyle=c.domain==='aquarium'?'#103d57':c.domain==='farm'?'#153d2a':'#243046';ctx.fillRect(0,0,960,540);V?.backdrop(ctx,960,540,frames/60);
   ctx.font='22px sans-serif';ctx.fillStyle='#fff';ctx.fillText(c.label+' · '+c.cost+' $ para iniciar · '+(aquarium?'Adulto até ':'Venda ')+c.price+' $',22,48);

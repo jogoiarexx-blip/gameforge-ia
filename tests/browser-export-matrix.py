@@ -776,9 +776,85 @@ def run():
             finally:
                 chain_page.close()
 
+            # GF-TRAIN-16: editor visual real, sem código ou perda do GDD.
+            editor_page = browser.new_page(viewport={'width': 390, 'height': 844})
+            editor_errors = []
+            editor_page.on('pageerror', lambda error: editor_errors.append(str(error)))
+            try:
+                editor_page.goto(origin + '/index.html', wait_until='load')
+                before_gdd = editor_page.locator('#gdd').input_value()
+                editor_page.locator('#quest-editor > summary').click()
+                editor_page.locator('#qe-domain').select_option('shop')
+                editor_page.locator('#qe-total').select_option('4')
+                assert editor_page.locator('#qe-rows fieldset').count() == 4
+                editor_page.locator('#qe-action-0-1').select_option('start')
+                editor_page.locator('#qe-preview').click()
+                assert 'duas ações diferentes' in editor_page.locator('#qe-result').inner_text()
+                editor_page.locator('#qe-action-0-1').select_option('care')
+                editor_page.locator('#qe-count-0-0').fill('2')
+                editor_page.locator('#qe-stock-1').fill('1')
+                editor_page.locator('#qe-time-2').fill('3')
+                editor_page.locator('#qe-preview').click()
+                preview_text = editor_page.locator('#qe-command').input_value()
+                assert '4 missões encadeadas' in preview_text and 'Missão 1: repor 2 e atender 1' in preview_text
+                editor_page.locator('#qe-apply').click()
+                assert editor_page.locator('#gdd').input_value() == before_gdd
+                assert preview_text in editor_page.locator('#instruction').input_value()
+                assert editor_page.evaluate("""() => {
+                    const c = GameForgeParser.parseGdd('',document.getElementById('instruction').value).simulation;
+                    return c.story.version===4&&c.story.missions.length===4&&c.story.missions[1].requires.some(r=>r.kind==='stock')&&c.story.missions[2].requires.some(r=>r.kind==='time');
+                }""")
+                assert not editor_errors, editor_errors
+                editor_page.screenshot(path=str(screenshots / 'quest-editor-mobile.png'), full_page=True)
+                results.append('quest-editor-mobile')
+            except Exception as exc:
+                failures.append(('quest-editor-mobile', str(exc), editor_errors, []))
+            finally:
+                editor_page.close()
+
+            # GF-TRAIN-16: missão paralela jogável, etapa 2 e continuação em aparelho móvel.
+            parallel_page = browser.new_page(viewport={'width': 390, 'height': 844})
+            parallel_errors = []
+            parallel_page.on('pageerror', lambda error: parallel_errors.append(str(error)))
+            try:
+                parallel_page.goto(origin + '/tests/_browser_output/parallel-aquarium/index.html', wait_until='load')
+                parallel_page.locator('#start').click()
+                assert parallel_page.evaluate("window.__gameforgeTelemetry().story.total") == 3
+                assert parallel_page.evaluate("window.__gameforgeTelemetry().exploration.guide2") is not None
+                parallel_page.keyboard.down('ArrowRight')
+                parallel_page.wait_for_function("window.__gameforgeTelemetry().exploration.nearby === 'guide'", timeout=9000)
+                parallel_page.keyboard.up('ArrowRight')
+                parallel_page.keyboard.press('e')
+                assert parallel_page.evaluate("window.__gameforgeTelemetry().simulation.story.started")
+                parallel_page.keyboard.down('ArrowLeft')
+                parallel_page.wait_for_function("window.__gameforgeTelemetry().player.x < 240", timeout=8000)
+                parallel_page.keyboard.up('ArrowLeft')
+                parallel_page.keyboard.down('ArrowUp')
+                parallel_page.wait_for_function("window.__gameforgeTelemetry().exploration.near", timeout=7000)
+                parallel_page.keyboard.up('ArrowUp')
+                parallel_page.keyboard.press('e')
+                parallel_page.keyboard.press('1')
+                assert parallel_page.evaluate("window.__gameforgeTelemetry().simulation.story.progress") == [1, 0]
+                parallel_page.keyboard.press('2')
+                assert parallel_page.evaluate("window.__gameforgeTelemetry().simulation.story.missionIndex") == 1
+                assert parallel_page.evaluate("window.__gameforgeTelemetry().simulation.story.rewards") == 3
+                parallel_page.locator('#simulation-save').click()
+                saved_state = parallel_page.evaluate("window.__gameforgeTelemetry().simulation.story")
+                parallel_page.reload(wait_until='load')
+                parallel_page.locator('#simulation-continue').click()
+                assert parallel_page.evaluate("window.__gameforgeTelemetry().simulation.story") == saved_state
+                assert parallel_page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+                assert not parallel_errors, parallel_errors
+                parallel_page.screenshot(path=str(screenshots / 'parallel-aquarium-mobile.png'), full_page=True)
+                results.append('parallel-aquarium-mobile')
+            except Exception as exc:
+                failures.append(('parallel-aquarium-mobile', str(exc), parallel_errors, []))
+            finally:
+                parallel_page.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 14 + len(graphics_matrix)
+            assert len(results) == len(matrix) + 16 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

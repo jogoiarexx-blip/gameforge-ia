@@ -852,9 +852,97 @@ def run():
             finally:
                 parallel_page.close()
 
+            # GF-TRAIN-17: dependência, kit utilizável e save no jogo v5 exportado.
+            reward_page = browser.new_page(viewport={'width': 390, 'height': 844})
+            reward_errors = []
+            reward_page.on('pageerror', lambda error: reward_errors.append(str(error)))
+            try:
+                reward_page.goto(origin + '/tests/_browser_output/reward-aquarium/index.html', wait_until='load')
+                reward_page.locator('#start').click()
+                assert reward_page.evaluate('window.__gameforgeTelemetry().simulation.story.itemsEarned') == 0
+                reward_page.keyboard.down('ArrowRight')
+                reward_page.wait_for_function("window.__gameforgeTelemetry().exploration.nearby === 'guide'", timeout=9000)
+                reward_page.keyboard.up('ArrowRight')
+                reward_page.keyboard.press('e')
+                assert reward_page.evaluate("window.__gameforgeTelemetry().story.objectives[1].locked")
+                reward_page.keyboard.down('ArrowLeft')
+                reward_page.wait_for_function("window.__gameforgeTelemetry().player.x < 240", timeout=8000)
+                reward_page.keyboard.up('ArrowLeft')
+                reward_page.keyboard.down('ArrowUp')
+                reward_page.wait_for_function("window.__gameforgeTelemetry().exploration.near", timeout=7000)
+                reward_page.keyboard.up('ArrowUp')
+                reward_page.keyboard.press('e')
+                reward_page.keyboard.press('1')
+                assert not reward_page.evaluate("window.__gameforgeTelemetry().story.objectives[1].locked")
+                reward_page.keyboard.press('2')
+                reward_page.wait_for_function("window.__gameforgeTelemetry().simulation.kits === 2", timeout=4000)
+                assert reward_page.evaluate("window.__gameforgeTelemetry().simulation.story.itemsEarned") == 2
+                assert reward_page.evaluate("window.__gameforgeTelemetry().simulation.story.missionIndex") == 1
+                reward_page.locator('#simulation-save').click()
+                reward_page.reload(wait_until='load')
+                reward_page.locator('#simulation-continue').click()
+                assert reward_page.evaluate("window.__gameforgeTelemetry().simulation.kits") == 2
+                assert reward_page.evaluate("window.__gameforgeTelemetry().simulation.story.itemsEarned") == 2
+                reward_page.keyboard.down('ArrowRight')
+                reward_page.wait_for_function("window.__gameforgeTelemetry().exploration.nearby === 'station-1'", timeout=8500)
+                reward_page.keyboard.up('ArrowRight')
+                reward_page.keyboard.press('e')
+                before_money = reward_page.evaluate("window.__gameforgeTelemetry().simulation.money")
+                reward_page.keyboard.press('1')
+                reward_page.wait_for_function("window.__gameforgeTelemetry().simulation.kits === 1", timeout=3500)
+                assert reward_page.evaluate("window.__gameforgeTelemetry().simulation.money") == before_money
+                assert reward_page.evaluate("window.__gameforgeTelemetry().simulation.kitsUsed") == 1
+                assert 'Kits: 1' in reward_page.locator('#ammo').inner_text()
+                assert not reward_errors, reward_errors
+                reward_page.screenshot(path=str(screenshots / 'reward-aquarium-mobile.png'), full_page=True)
+                results.append('reward-aquarium-mobile')
+            except Exception:
+                failures.append(('reward-aquarium-mobile', traceback.format_exc(limit=5), reward_errors, []))
+            finally:
+                reward_page.close()
+
+            # GF-TRAIN-17: construir, carregar e atualizar missões de projeto já gerado sem substituir GDD.
+            edit_page = browser.new_page(viewport={'width': 390, 'height': 844})
+            edit_errors = []
+            edit_page.on('pageerror', lambda error: edit_errors.append(str(error)))
+            edit_page.on('dialog', lambda dialog: dialog.accept())
+            try:
+                edit_page.goto(origin + '/index.html', wait_until='load')
+                edit_page.locator('#gdd').fill('')
+                before_gdd = edit_page.locator('#gdd').input_value()
+                edit_page.locator('#quest-editor > summary').click()
+                edit_page.locator('#qe-after-0').check()
+                edit_page.locator('#qe-kits-0').fill('2')
+                edit_page.locator('#qe-apply').click()
+                assert edit_page.evaluate("""() => GameForgeParser.parseGdd('',document.getElementById('instruction').value).simulation.story.version===5""")
+                edit_page.locator('#generate').click()
+                edit_page.wait_for_function("document.getElementById('rerun') && !document.getElementById('rerun').disabled", timeout=17000)
+                edit_page.locator('#qe-load').click()
+                assert edit_page.locator('#qe-after-0').is_checked()
+                assert edit_page.locator('#qe-kits-0').input_value() == '2'
+                edit_page.locator('#qe-kits-0').fill('3')
+                edit_page.locator('#qe-count-0-0').fill('2')
+                edit_page.locator('#qe-save').click()
+                assert 'Missões aplicadas' in edit_page.locator('#qe-result').inner_text()
+                edit_page.locator('#file-list .file-item').filter(has_text='game.js').first.click()
+                assert edit_page.evaluate("""() => {
+                  const text=document.getElementById('file-editor').value;
+                  const spec=GameForgeQuestEditor.extractGenerated({'game.js':text}).spec;
+                  return spec.simulation.story.missions[0].itemReward===3 &&
+                    spec.simulation.story.missions[0].objectives[0].count===2;
+                }""")
+                assert edit_page.locator('#gdd').input_value() == before_gdd
+                assert not edit_errors, edit_errors
+                edit_page.screenshot(path=str(screenshots / 'quest-edit-existing-mobile.png'), full_page=True)
+                results.append('quest-edit-existing-mobile')
+            except Exception:
+                failures.append(('quest-edit-existing-mobile', traceback.format_exc(limit=5), edit_errors, []))
+            finally:
+                edit_page.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 16 + len(graphics_matrix)
+            assert len(results) == len(matrix) + 18 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

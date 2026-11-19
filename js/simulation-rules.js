@@ -180,7 +180,7 @@ function gameForgeSimulationRulesFactory(events){
     if(c.story?.enabled){
      result.story={step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks};
      if(c.story.version===2)result.story.choice=v.story.choice;
-     if(c.story.version===3)result.story={missionIndex:v.story.missionIndex,step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks,elapsed:v.story.elapsed};
+     if(c.story.version===3)result.story={missionIndex:v.story.missionIndex,step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks,npcTalks:[...v.story.npcTalks],elapsed:v.story.elapsed};
     }
     result.complete=win(result,c);
     return free?{state:result,selected:data.selected,position:{

@@ -65,7 +65,7 @@ def run():
                 suite=json.loads(page.locator('#file-editor').input_value())
                 assert suite['version']==16 and suite['kind']=='ISOLATED_ADVANCED_QA_RESULT'
                 assert suite['isolated'] is True
-                assert 'allow-same-origin' not in suite['originPolicy']
+                assert suite['originPolicy']=='sandbox=allow-scripts (no allow-same-origin)'
                 assert suite['results'] and {x['id'] for x in suite['results']}>={'enemy','boss','mission','save'}
                 assert all(x['result'] in ('PASS','FAIL','INCONCLUSIVE') for x in suite['results'])
                 page.locator('#file-list').get_by_text('MATRIZ_REQUISITOS_GF14.json',exact=True).click()

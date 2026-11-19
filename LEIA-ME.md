@@ -1,3 +1,13 @@
+# GameForge GF-TRAIN-18 — missões em paralelo, itens diferentes e migração controlada
+
+O GameForge agora possui contrato de missão **v6** para simuladores de **aquário, fazenda e loja 2D**: até quatro missões com pré-requisitos em grafo acíclico. Por exemplo: concluir missão 1 desbloqueia missões 2 e 3; concluir ambas desbloqueia missão 4. O jogador pode alternar entre as linhas desbloqueadas falando com seus dois NPCs. Cada linha mantém seu progresso.
+
+**Recompensas jogáveis:** os **kits** permitem comprar/plantar/repor gratuitamente; os **aceleradores** adiantam em metade do tempo o crescimento ao cuidar da produção. O HUD e o save preservam ambos os consumíveis.
+
+No **Editor visual de missões**, habilite **Missões paralelas com pré-requisitos**, selecione as etapas anteriores e escolha um tipo de item por missão. Para um projeto já criado e compatível, **Carregar missões do jogo criado → Salvar no game.js existente**. Há opção explícita de tentar **migração conservadora do save** para edições somente de missões ainda não iniciadas; o backup antigo é preservado, e save incompatível é rejeitado.
+
+[Instruções, testes e limitações do GF-TRAIN-18](docs/TREINAMENTO_GF_TRAIN_18_GRAFO_ITENS_MIGRACAO.md).
+
 # GameForge Studio GF-TRAIN-17 — dependências, kits e edição do jogo já criado
 
 Agora o GameForge permite **bloquear o segundo objetivo até o primeiro terminar** e entregar **kits de suprimentos como recompensa**, utilizados automaticamente para comprar, plantar ou repor sem gastar moedas em uma ação real. A campanha usa o contrato de missão **v5**, preservando as anteriores.

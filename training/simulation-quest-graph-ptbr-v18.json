@@ -1,0 +1,651 @@
+{
+  "version": 18,
+  "note": "30 solicitações de grafo e recompensas tipadas; corpus de regressão do compilador determinístico, não treinamento de pesos",
+  "cases": [
+    {
+      "instruction": "Quero cuidar de aquário. 3 missões paralelas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Recompensa de 2 aceleradores. Missão 2: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 3: comprar 1 e alimentar 1.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 4 missões paralelas com objetivos simultâneos. Missão 1: comprar 2 e alimentar 1. Recompensa de 1 kits. Missão 2: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 3: comprar 1 e alimentar 1. Missão 4: comprar 1 e alimentar 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "kit",
+          "count": 1
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 3 missões paralelas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Recompensa de 2 kits. Missão 2: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 3: comprar 1 e alimentar 1.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "kit",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 4 missões paralelas com objetivos simultâneos. Missão 1: comprar 2 e alimentar 1. Recompensa de 2 aceleradores. Missão 2: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 3: comprar 1 e alimentar 1. Missão 4: comprar 1 e alimentar 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 3 missões paralelas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Missão 2: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 3: comprar 1 e alimentar 1.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "kit",
+          "count": 0
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 4 missões paralelas com objetivos simultâneos. Missão 1: comprar 2 e alimentar 1. Recompensa de 1 kits. Missão 2: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 3: comprar 1 e alimentar 1. Missão 4: comprar 1 e alimentar 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "kit",
+          "count": 1
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 3 missões paralelas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Recompensa de 2 aceleradores. Missão 2: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 3: comprar 1 e alimentar 1.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 4 missões paralelas com objetivos simultâneos. Missão 1: comprar 2 e alimentar 1. Recompensa de 3 kits. Missão 2: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 3: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 4: comprar 1 e alimentar 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "kit",
+          "count": 3
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 3 missões paralelas com objetivos simultâneos. Missão 1: comprar 1 e alimentar 1. Missão 2: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 3: comprar 1 e alimentar 1.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "kit",
+          "count": 0
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. 4 missões paralelas com objetivos simultâneos. Missão 1: comprar 2 e alimentar 1. Recompensa de 2 aceleradores. Missão 2: comprar 1 e alimentar 1. Desbloquear após etapas 1. Missão 3: comprar 1 e alimentar 1. Missão 4: comprar 1 e alimentar 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 3 missões paralelas com objetivos simultâneos. Missão 1: plantar 1 e regar 1. Recompensa de 2 aceleradores. Missão 2: plantar 1 e regar 1. Desbloquear após etapas 1. Missão 3: plantar 1 e regar 1.",
+      "expected": {
+        "domain": "farm",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 4 missões paralelas com objetivos simultâneos. Missão 1: plantar 2 e regar 1. Recompensa de 1 kits. Missão 2: plantar 1 e regar 1. Desbloquear após etapas 1. Missão 3: plantar 1 e regar 1. Missão 4: plantar 1 e regar 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "farm",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "kit",
+          "count": 1
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 3 missões paralelas com objetivos simultâneos. Missão 1: plantar 1 e regar 1. Recompensa de 2 kits. Missão 2: plantar 1 e regar 1. Desbloquear após etapas 1. Missão 3: plantar 1 e regar 1.",
+      "expected": {
+        "domain": "farm",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "kit",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 4 missões paralelas com objetivos simultâneos. Missão 1: plantar 2 e regar 1. Recompensa de 2 aceleradores. Missão 2: plantar 1 e regar 1. Desbloquear após etapas 1. Missão 3: plantar 1 e regar 1. Missão 4: plantar 1 e regar 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "farm",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 3 missões paralelas com objetivos simultâneos. Missão 1: plantar 1 e regar 1. Missão 2: plantar 1 e regar 1. Desbloquear após etapas 1. Missão 3: plantar 1 e regar 1.",
+      "expected": {
+        "domain": "farm",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "kit",
+          "count": 0
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 4 missões paralelas com objetivos simultâneos. Missão 1: plantar 2 e regar 1. Recompensa de 1 kits. Missão 2: plantar 1 e regar 1. Desbloquear após etapas 1. Missão 3: plantar 1 e regar 1. Missão 4: plantar 1 e regar 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "farm",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "kit",
+          "count": 1
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 3 missões paralelas com objetivos simultâneos. Missão 1: plantar 1 e regar 1. Recompensa de 2 aceleradores. Missão 2: plantar 1 e regar 1. Desbloquear após etapas 1. Missão 3: plantar 1 e regar 1.",
+      "expected": {
+        "domain": "farm",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 4 missões paralelas com objetivos simultâneos. Missão 1: plantar 2 e regar 1. Recompensa de 3 kits. Missão 2: plantar 1 e regar 1. Desbloquear após etapas 1. Missão 3: plantar 1 e regar 1. Desbloquear após etapas 1. Missão 4: plantar 1 e regar 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "farm",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "kit",
+          "count": 3
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 3 missões paralelas com objetivos simultâneos. Missão 1: plantar 1 e regar 1. Missão 2: plantar 1 e regar 1. Desbloquear após etapas 1. Missão 3: plantar 1 e regar 1.",
+      "expected": {
+        "domain": "farm",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "kit",
+          "count": 0
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. 4 missões paralelas com objetivos simultâneos. Missão 1: plantar 2 e regar 1. Recompensa de 2 aceleradores. Missão 2: plantar 1 e regar 1. Desbloquear após etapas 1. Missão 3: plantar 1 e regar 1. Missão 4: plantar 1 e regar 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "farm",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 3 missões paralelas com objetivos simultâneos. Missão 1: repor 1 e atender 1. Recompensa de 2 aceleradores. Missão 2: repor 1 e atender 1. Desbloquear após etapas 1. Missão 3: repor 1 e atender 1.",
+      "expected": {
+        "domain": "shop",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 4 missões paralelas com objetivos simultâneos. Missão 1: repor 2 e atender 1. Recompensa de 1 kits. Missão 2: repor 1 e atender 1. Desbloquear após etapas 1. Missão 3: repor 1 e atender 1. Missão 4: repor 1 e atender 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "shop",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "kit",
+          "count": 1
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 3 missões paralelas com objetivos simultâneos. Missão 1: repor 1 e atender 1. Recompensa de 2 kits. Missão 2: repor 1 e atender 1. Desbloquear após etapas 1. Missão 3: repor 1 e atender 1.",
+      "expected": {
+        "domain": "shop",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "kit",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 4 missões paralelas com objetivos simultâneos. Missão 1: repor 2 e atender 1. Recompensa de 2 aceleradores. Missão 2: repor 1 e atender 1. Desbloquear após etapas 1. Missão 3: repor 1 e atender 1. Missão 4: repor 1 e atender 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "shop",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 3 missões paralelas com objetivos simultâneos. Missão 1: repor 1 e atender 1. Missão 2: repor 1 e atender 1. Desbloquear após etapas 1. Missão 3: repor 1 e atender 1.",
+      "expected": {
+        "domain": "shop",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "kit",
+          "count": 0
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 4 missões paralelas com objetivos simultâneos. Missão 1: repor 2 e atender 1. Recompensa de 1 kits. Missão 2: repor 1 e atender 1. Desbloquear após etapas 1. Missão 3: repor 1 e atender 1. Missão 4: repor 1 e atender 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "shop",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "kit",
+          "count": 1
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 3 missões paralelas com objetivos simultâneos. Missão 1: repor 1 e atender 1. Recompensa de 2 aceleradores. Missão 2: repor 1 e atender 1. Desbloquear após etapas 1. Missão 3: repor 1 e atender 1.",
+      "expected": {
+        "domain": "shop",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 4 missões paralelas com objetivos simultâneos. Missão 1: repor 2 e atender 1. Recompensa de 3 kits. Missão 2: repor 1 e atender 1. Desbloquear após etapas 1. Missão 3: repor 1 e atender 1. Desbloquear após etapas 1. Missão 4: repor 1 e atender 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "shop",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "kit",
+          "count": 3
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 3 missões paralelas com objetivos simultâneos. Missão 1: repor 1 e atender 1. Missão 2: repor 1 e atender 1. Desbloquear após etapas 1. Missão 3: repor 1 e atender 1.",
+      "expected": {
+        "domain": "shop",
+        "version": 6,
+        "total": 3,
+        "firstCount": 1,
+        "firstReward": {
+          "kind": "kit",
+          "count": 0
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": null
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. 4 missões paralelas com objetivos simultâneos. Missão 1: repor 2 e atender 1. Recompensa de 2 aceleradores. Missão 2: repor 1 e atender 1. Desbloquear após etapas 1. Missão 3: repor 1 e atender 1. Missão 4: repor 1 e atender 1. Desbloquear após etapas 2 e 3.",
+      "expected": {
+        "domain": "shop",
+        "version": 6,
+        "total": 4,
+        "firstCount": 2,
+        "firstReward": {
+          "kind": "boost",
+          "count": 2
+        },
+        "secondDeps": [
+          0
+        ],
+        "thirdDeps": [
+          0
+        ],
+        "fourthDeps": [
+          1,
+          2
+        ]
+      }
+    }
+  ]
+}

@@ -63,6 +63,7 @@
   }
   function advance(s,c,dt){
    if(c?.version===4||c?.version===5)return parallelAdvance(s,c,dt);
+   if(c?.version===6)return graphAdvance(s,c,dt);
    if(!c||c.version!==3||!chainValidate(s,c)||!number(dt,0,1)||s.completed)return false;
    if(s.missionIndex===1&&s.step===1){s.elapsed=Math.min(600,s.elapsed+dt);return true;}
    return false;
@@ -154,12 +155,123 @@
    s.elapsed=Math.min(600,s.elapsed+dt);
    return true;
   }
+  // GF-TRAIN-18: grafo acíclico de até quatro missões, com duas linhas de recompensa.
+  // Dependências só podem apontar para missões anteriores, garantindo ausência de ciclos.
+  const itemKinds=new Set(['kit','boost']);
+  function validGraph(c){
+   if(!validNpc(c.npc2)||!Array.isArray(c.missions)||c.missions.length<3||c.missions.length>4||c.mission!==undefined)return false;
+   return c.missions.every((m,i)=>m&&m.id==='m'+(i+1)&&typeof m.label==='string'&&m.label.length>0&&m.label.length<=110&&
+    finite(m.reward,0,50)&&m.itemReward&&itemKinds.has(m.itemReward.kind)&&finite(m.itemReward.count,0,3)&&
+    Array.isArray(m.requiresMissions)&&m.requiresMissions.length<=i&&
+    new Set(m.requiresMissions).size===m.requiresMissions.length&&m.requiresMissions.every(n=>finite(n,0,i-1))&&
+    Array.isArray(m.objectives)&&m.objectives.length>=1&&m.objectives.length<=2&&
+    new Set(m.objectives.map(o=>o.event)).size===m.objectives.length&&
+    m.objectives.every((o,k)=>o&&tasks.has(o.event)&&finite(o.count,1,5)&&
+     typeof o.requiresFirst==='boolean'&&(!o.requiresFirst||k===1))&&
+    Array.isArray(m.requires)&&m.requires.length<=2&&new Set(m.requires.map(r=>r.kind)).size===m.requires.length&&
+    m.requires.every(r=>r&&(r.kind==='stock'?finite(r.min,1,12):r.kind==='time'?finite(r.seconds,1,60):false)));
+  }
+  function graphCreate(c){
+   const n=c.missions.length;
+   return {missionProgress:c.missions.map(m=>m.objectives.map(()=>0)),missionStarted:Array(n).fill(false),
+    missionDone:Array(n).fill(false),elapsedByMission:Array(n).fill(0),activeMission:-1,
+    completed:false,rewards:0,itemsEarned:{kit:0,boost:0},talks:0,npcTalks:[0,0]};
+  }
+  function graphValidate(s,c){
+   if(!s||typeof s!=='object'||!finite(s.activeMission,-1,c.missions.length-1)||
+    typeof s.completed!=='boolean'||!finite(s.rewards,0,200)||!finite(s.talks,0,1e6)||
+    !Array.isArray(s.npcTalks)||s.npcTalks.length!==2||!s.npcTalks.every(t=>finite(t,0,1e6))||
+    s.npcTalks[0]+s.npcTalks[1]!==s.talks||!s.itemsEarned||
+    !finite(s.itemsEarned.kit,0,12)||!finite(s.itemsEarned.boost,0,12))return false;
+   const n=c.missions.length,arrays=[s.missionProgress,s.missionStarted,s.missionDone,s.elapsedByMission];
+   if(arrays.some(x=>!Array.isArray(x)||x.length!==n))return false;
+   let coins=0,kits=0,boosts=0;
+   for(let i=0;i<n;i++){
+    const m=c.missions[i],p=s.missionProgress[i],done=s.missionDone[i],started=s.missionStarted[i],elapsed=s.elapsedByMission[i];
+    if(typeof done!=='boolean'||typeof started!=='boolean'||!number(elapsed,0,600)||
+     !Array.isArray(p)||p.length!==m.objectives.length||p.some((v,k)=>!finite(v,0,m.objectives[k].count)))return false;
+    const fulfilled=p.every((v,k)=>v===m.objectives[k].count);
+    if(done!==fulfilled&&started)return false;
+    if(done&&!started)return false;
+    if(!started&&(done||elapsed!==0||p.some(v=>v!==0)))return false;
+    if(started&&m.requiresMissions.some(j=>!s.missionDone[j]))return false;
+    if(done){coins+=m.reward;if(m.itemReward.kind==='kit')kits+=m.itemReward.count;
+     else boosts+=m.itemReward.count;}
+   }
+   if(coins!==s.rewards||kits!==s.itemsEarned.kit||boosts!==s.itemsEarned.boost||
+    s.completed!==s.missionDone.every(Boolean))return false;
+   if(s.activeMission>=0&&(!s.missionStarted[s.activeMission]||s.missionDone[s.activeMission]))return false;
+   if(s.completed&&s.activeMission!==-1)return false;
+   return true;
+  }
+  function graphAvailable(s,c,npc){
+   return c.missions.map((m,i)=>i).filter(i=>!s.missionDone[i]&&i%2===npc&&
+    c.missions[i].requiresMissions.every(j=>s.missionDone[j]));
+  }
+  function graphStatus(s,c){
+   const n=c.missions.length,done=s.missionDone.filter(Boolean).length;
+   if(s.completed)return {complete:true,total:n,missionIndex:n,
+    text:n+' missões concluídas · '+s.rewards+' moedas · '+s.itemsEarned.kit+' kits e '+s.itemsEarned.boost+' aceleradores'};
+   const selected=s.activeMission;
+   if(selected<0){
+    const g0=graphAvailable(s,c,0),g1=graphAvailable(s,c,1),next=Math.min(g0[0]??Infinity,g1[0]??Infinity);
+    return {complete:false,total:n,missionIndex:Number.isFinite(next)?next:0,event:'talk',
+     npc:g0.includes(next)?0:1,available:[...g0,...g1],
+     text:'Missões '+done+'/'+n+' · Fale com '+(g0.includes(next)?c.npc.name:c.npc2.name)+' para ativar uma tarefa'};
+   }
+   const m=c.missions[selected],p=s.missionProgress[selected];
+   const labels={start:'Iniciar',care:'Cuidar',finish:'Finalizar',sell:'Vender',clean:'Limpar'};
+   const objectives=m.objectives.map((o,k)=>({event:o.event,count:o.count,progress:p[k],
+    locked:!!(o.requiresFirst&&p[0]<m.objectives[0].count)}));
+   const clauses=m.requires.map(r=>r.kind==='stock'?'estoque '+r.min:
+    'esperar '+r.seconds+'s ('+Math.floor(s.elapsedByMission[selected])+'s)');
+   return {complete:false,total:n,missionIndex:selected,available:[...graphAvailable(s,c,0),...graphAvailable(s,c,1)],
+    event:objectives[0].event,objectives,itemsEarned:s.itemsEarned,itemReward:m.itemReward,
+    text:'Missão '+(selected+1)+'/'+n+' · '+objectives.map((o,k)=>labels[o.event]+' '+o.progress+'/'+o.count+(o.locked?' 🔒':'')).join(' + ')+
+     (clauses.length?' · '+clauses.join(' e '):'')};
+  }
+  function graphRecord(s,c,type,context){
+   if(!graphValidate(s,c)||s.completed||!whitelist.has(type))return {changed:false,bonus:0,completed:!!s?.completed};
+   if(type==='talk'){
+    const npc=context?.npc;
+    if(!finite(npc,0,1))return {changed:false,bonus:0,completed:false};
+    const available=graphAvailable(s,c,npc);
+    if(!available.length)return {changed:false,bonus:0,completed:false};
+    // Troca deliberada de missão por conversa, sem contabilizar a mesma ação em dois objetivos.
+    const chosen=s.activeMission>=0&&available.includes(s.activeMission)?s.activeMission:
+     (available.find(i=>s.missionStarted[i])??available[0]);
+    const changed=s.activeMission!==chosen||!s.missionStarted[chosen];
+    s.activeMission=chosen;s.missionStarted[chosen]=true;
+    s.talks=Math.min(1e6,s.talks+1);s.npcTalks[npc]=Math.min(1e6,s.npcTalks[npc]+1);
+    return {changed,bonus:0,completed:false,missionIndex:chosen};
+   }
+   const i=s.activeMission;if(i<0)return {changed:false,bonus:0,completed:false};
+   const m=c.missions[i],p=s.missionProgress[i],k=m.objectives.findIndex(o=>o.event===type);
+   if(k<0||p[k]>=m.objectives[k].count||(m.objectives[k].requiresFirst&&p[0]<m.objectives[0].count))
+    return {changed:false,bonus:0,completed:false};
+   for(const r of m.requires){
+    if(r.kind==='stock'&&(!finite(context?.stock,0,1e6)||context.stock<r.min))return {changed:false,bonus:0,completed:false};
+    if(r.kind==='time'&&s.elapsedByMission[i]+1e-7<r.seconds)return {changed:false,bonus:0,completed:false};
+   }
+   p[k]++;
+   if(!p.every((v,index)=>v===m.objectives[index].count))return {changed:true,bonus:0,completed:false};
+   s.missionDone[i]=true;s.activeMission=-1;s.rewards+=m.reward;
+   s.itemsEarned[m.itemReward.kind]+=m.itemReward.count;
+   s.completed=s.missionDone.every(Boolean);
+   return {changed:true,bonus:m.reward,itemRewards:{kind:m.itemReward.kind,count:m.itemReward.count},
+    completed:s.completed,checkpoint:true};
+  }
+  function graphAdvance(s,c,dt){
+   if(!graphValidate(s,c)||!number(dt,0,1)||s.completed||s.activeMission<0)return false;
+   const i=s.activeMission;s.elapsedByMission[i]=Math.min(600,s.elapsedByMission[i]+dt);return true;
+  }
   function validConfig(c){
-   if(!c||![1,2,3,4,5].includes(c.version)||c.enabled!==true||typeof c.requiredForVictory!=='boolean')return false;
+   if(!c||![1,2,3,4,5,6].includes(c.version)||c.enabled!==true||typeof c.requiredForVictory!=='boolean')return false;
    if(!c.npc||!['Cuidador','Agricultor','Atendente'].includes(c.npc.name)||
       !Array.isArray(c.npc.lines)||c.npc.lines.length!==3||c.npc.lines.some(s=>typeof s!=='string'||s.length>170))return false;
    if(c.version===3)return validChain(c);
    if(c.version===4||c.version===5)return validParallel(c);
+   if(c.version===6)return validGraph(c);
    const m=c.mission;
    if(!m||m.id!=='primeira-tarefa'||typeof m.label!=='string'||m.label.length>170||!Array.isArray(m.steps))return false;
    if(c.version===1)return finite(m.reward,0,50)&&m.steps.length>=1&&m.steps.length<=3&&
@@ -174,6 +286,7 @@
    if(!validConfig(c))throw Error('Configuração de eventos inválida.');
    if(c.version===3)return chainCreate();
    if(c.version===4||c.version===5)return parallelCreate(c);
+   if(c.version===6)return graphCreate(c);
    const state={step:0,count:0,completed:false,rewards:0,talks:0};
    if(c.version===2)state.choice=null;
    return state;
@@ -182,6 +295,7 @@
    if(!validConfig(c))return false;
    if(c.version===3)return chainValidate(s,c);
    if(c.version===4||c.version===5)return parallelValidate(s,c);
+   if(c.version===6)return graphValidate(s,c);
    if(!s||typeof s!=='object'||!finite(s.talks,0,1e6)||
       typeof s.completed!=='boolean'||!finite(s.count,0,5))return false;
    if(c.version===1){
@@ -208,6 +322,7 @@
    if(!s||!c)return {complete:false,text:'Sem missão'};
    if(c.version===3)return chainStatus(s,c);
    if(c.version===4||c.version===5)return parallelStatus(s,c);
+   if(c.version===6)return graphStatus(s,c);
    if(s.completed)return {complete:true,text:'Missão concluída · recompensa '+s.rewards+' moedas',choice:c.version===2?s.choice:null};
    if(c.version===2){
     if(s.step===0)return {complete:false,event:'talk',text:c.mission.label+' · Converse com o guia 0/1'};
@@ -232,6 +347,7 @@
   function record(s,c,type,context){
    if(c?.version===3)return chainRecord(s,c,type,context);
    if(c?.version===4||c?.version===5)return parallelRecord(s,c,type,context);
+   if(c?.version===6)return graphRecord(s,c,type,context);
    if(!validate(s,c)||!whitelist.has(type))return {changed:false,bonus:0,completed:!!s?.completed};
    if(type==='talk')s.talks=Math.min(1e6,s.talks+1);
    if(s.completed)return {changed:false,bonus:0,completed:true};
@@ -259,6 +375,12 @@
   }
   function talk(s,c,npc=0){
    const result=record(s,c,'talk',c.version>=3?{npc}:undefined);
+   if(c.version===6){
+    const guide=npc===0?c.npc:c.npc2;
+    const line=s.completed?guide.lines[2]:result.changed?guide.lines[0]:
+     graphAvailable(s,c,npc).length?guide.lines[1]:'Ainda não há missão liberada com este personagem.';
+    return {text:guide.name+': '+line,bonus:result.bonus,completed:result.completed,changed:result.changed};
+   }
    if(c.version===4||c.version===5){
     const guide=npc===0?c.npc:c.npc2;
     const correct=s.missionIndex%2===npc;

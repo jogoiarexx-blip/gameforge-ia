@@ -304,7 +304,18 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('stage-mission').addEventListener('change',()=>{$('stage-seconds').disabled=$('stage-mission').disabled||$('stage-mission').value!=='survive';});
   $('stage-save').addEventListener('click',()=>stageEditorSave(false));
   $('stage-reset').addEventListener('click',()=>stageEditorSave(true));
+  function ensureEvidenceFresh(){
+    if(!state.files['game.js'])return;
+    let current=null;
+    try{current=JSON.parse(state.files['MATRIZ_REQUISITOS_GF14.json']||'null');}catch{}
+    const revision=GameForgeRequirementEvidence.fingerprint(state.files);
+    const requestRev=GameForgeRequirementEvidence.requestFingerprint({
+      instruction:$('instruction').value,gdd:$('gdd').value,spec:state.spec
+    });
+    if(!current||current.projectFingerprint!==revision||current.requestFingerprint!==requestRev)refreshEvidence();
+  }
   function projectSnapshot(){
+    ensureEvidenceFresh();
     roadmapSync();
     return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,assetProjectId,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,creationOptions:creationOptions(),rpgLayoutJson:$('rpg-layout-json').value,roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
   }
@@ -395,7 +406,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const src=$('file-editor').value;
     if(src.length>2000000){feedback('Arquivo muito grande para edição no navegador.',true);return;}
     state.files[state.selected]=src;
-    if(['game.js','style.css','index.html'].includes(state.selected)){qaState.last=null;qaState.baseline=null;}
+    if(['game.js','style.css','index.html'].includes(state.selected)){
+      qaState.last=null;qaState.baseline=null;
+      refreshEvidence();
+    }
     listFiles();selectFile(state.selected);if(!qaState.candidate)saveState();
     if(['game.js','style.css','index.html'].includes(state.selected))runPreview();
     feedback('Alteração aplicada ao arquivo '+state.selected+'.');
@@ -447,6 +461,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     return GameForgeAssetLibrary.materialize(assetProjectId,currentAssetManifest());
   }
   async function getExportFiles(){
+    ensureEvidenceFresh();
     roadmapSaveFiles();
     const files={...state.files,...await assetBinaryFiles()};
     files['PROJETO.gameforge.json']=GameForgeProject.encode(projectSnapshot());
@@ -603,6 +618,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         if($('instruction').value.trim())state.files['COMANDO_ORIGINAL.md']='# Comando original\\n\\n'+$('instruction').value;
         $('development-plan').textContent=GameForgeIntent.report(spec);
         state.files['RELATORIO_REFERENCIAS.md']=repoKnowledge.report(references())+'\nModo sem IA: estas recomendações não foram automaticamente aplicadas ao motor do jogo.\n';
+        refreshEvidence();
         log(`[Sem IA] Tipo ${spec.genre}, ${spec.stages.length} fase(s), código gerado no navegador.`);
         log('[Sem IA] '+spec.implementation.applied.length+' instruções transformadas em configurações do jogo; '+spec.implementation.pending.length+' pendências.');
         feedback('Jogo gerado: '+spec.implementation.applied.length+' configurações aplicadas, '+spec.implementation.pending.length+' requisito(s) ainda não implementado(s). Confira a prévia.');
@@ -767,6 +783,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       pushHistory(pending.instruction);
       state.files=files;
       if(pending.output.spec)state.spec=pending.output.spec;
+      refreshEvidence();
       const task=pending.activeTaskId&&preparedTaskId===pending.activeTaskId?selectedRoadmap():null;
       if(task&&task.id===pending.activeTaskId){
         roadmapTasks=GameForgeRoadmap.changeStatus(roadmapTasks,task.id,'em andamento','Código aprovado; aguardando QA e revisão manual.');
@@ -821,6 +838,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   }
   $('dev-candidate-accept').addEventListener('click',()=>projectOperation(acceptStagedImprovement));
   $('dev-candidate-discard').addEventListener('click',discardStagedImprovement);
+  $('gf14-inspect').addEventListener('click',()=>{if(refreshEvidence()){listFiles();saveState();feedback('Mapa de código e matriz de requisitos atualizados sem marcar testes pendentes como aprovados.');}});
   $('plan-improvement').addEventListener('click',planImprovement);
   $('improve').addEventListener('click',()=>projectOperation(improveGame));
   $('undo-improvement').addEventListener('click',undoImprovement);
@@ -830,6 +848,33 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   /* Laboratório de QA visual v0.4: executa jogo no iframe e testa regressões. */
   const qaState={last:null,baseline:null,vision:null,candidate:null,baseCode:null};
   const qaStatus=message=>{$('qa-status').textContent=message;};
+
+  function refreshEvidence(qaReport=null){
+    if(!state.files['game.js']){
+      $('gf14-summary').textContent='Nenhum jogo foi gerado para análise.';
+      return null;
+    }
+    const codeMap=GameForgeCodeProvenance.index(state.files);
+    const matrix=GameForgeRequirementEvidence.extract({
+      instruction:$('instruction').value,gdd:$('gdd').value,spec:state.spec,files:state.files
+    });
+    const examined=GameForgeRequirementEvidence.evaluate(matrix,{files:state.files,qa:qaReport});
+    state.files['MAPA_CODIGO_GF14.json']=JSON.stringify(codeMap,null,2);
+    state.files['MATRIZ_REQUISITOS_GF14.json']=JSON.stringify(examined,null,2);
+    state.files['MANIFESTO_AGENTES_GF14.json']=JSON.stringify(GameForgeAgentHandoff.create({instruction:$('instruction').value,spec:state.spec,files:state.files}),null,2);
+    state.files['RELATORIO_REQUISITOS_GF14.md']=GameForgeRequirementEvidence.report(examined)+
+      '\n'+GameForgeCodeProvenance.report(codeMap);
+    $('gf14-summary').textContent='GF-ARCH-14 — '+examined.summary.total+' requisito(s), '+
+      examined.summary.observedPartial+' observação(ões) parciais, '+
+      examined.summary.issues+' alerta(s), '+examined.summary.unsupported+' pendência(s).\n'+
+      codeMap.definitions.length+' símbolo(s) localizados e '+codeMap.links.length+
+      ' relação(ões) inferidas entre arquivos.\n'+
+      (qaReport?'Resultados deste QA incorporados; nenhum requisito marcado como totalmente aprovado.':
+       'Sem teste executado para esta avaliação. Clique em Testar comportamento para observar o jogo.')+
+      '\nConfira os relatórios na lista de arquivos e no ZIP exportado.';
+    return {codeMap,matrix:examined};
+  }
+
   function qaButtons(){
     const ready=!!state.files['game.js'],has=!!qaState.last,ref=!!qaState.baseline,ai=state.mode==='ai';
     $('qa-run').disabled=!ready;
@@ -872,6 +917,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       document.querySelector('#qa-after').nextElementSibling.textContent='Após movimento';
       $('qa-report').textContent=fmtReport(report);
       state.files['RELATORIO_QA.md']=qaReportMarkdown(report);
+      refreshEvidence(report);
       qaStatus('QA concluído: '+report.issues.length+' alerta(s). Capturas comparáveis pelo botão “Comparar”.');
       log('[QA] '+report.issues.length+' alertas, '+report.passes.length+' verificações aprovadas.');
       if(qaState.candidate){

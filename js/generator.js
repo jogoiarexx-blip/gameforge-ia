@@ -70,6 +70,10 @@
     const advanced=!three&&['lane-defense','block-td'].includes(spec.genre);
     const simulation=spec.genre==='simulation'&&!three;
     const simulationRules=root.gameForgeSimulationRulesFactory||(typeof require==='function'?require('./simulation-rules'):null);
+    const withStory=simulation&&spec.simulation?.story?.enabled===true;
+    const eventsFactory=withStory?(root.gameForgeSimulationEventsFactory||(typeof require==='function'?require('./simulation-events'):null)):null;
+    if(withStory&&typeof eventsFactory!=='function')throw Error('Máquina de eventos não está instalada no GameForge Studio.');
+    const eventsModule=withStory?'const GameForgeSimulationEvents = ('+eventsFactory.toString()+')();\n':'';
     const simulationBoot=root.gameForgeSimulationBoot||(typeof require==='function'?require('./simulation-runtime'):null);
     const freeMovement=simulation&&spec.simulation?.exploration?.mode==='free';
     const explorationFactory=freeMovement?(root.gameForgeExploration2DFactory||(typeof require==='function'?require('./exploration-2d'):null)):null;
@@ -107,7 +111,7 @@
     const cacheModule=!three?'const gameForgeRenderCacheFactory = '+cacheFactory.toString()+';\n':'';
     const graphicsModule=cacheModule+'const GameForgeGraphics = ('+gfxFactory.toString()+')(GAME_SPEC);\n';
     const graphicsTelemetry='\nif(typeof window.__gameforgeTelemetry==="function"){const rawTelemetry=window.__gameforgeTelemetry;window.__gameforgeTelemetry=()=>({...rawTelemetry(),graphics:GameForgeGraphics.snapshot()});}\n';
-    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+graphicsModule+(simulation?'const GameForgeSimulationRules = ('+simulationRules.toString()+')();\n':'')+explorationModule+rules+combatModule+branchModule+'('+runtime.toString()+')();\n'+graphicsTelemetry;
+    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+graphicsModule+(eventsModule)+(simulation?'const GameForgeSimulationRules = ('+simulationRules.toString()+')('+(withStory?'GameForgeSimulationEvents':'')+');\n':'')+explorationModule+rules+combatModule+branchModule+'('+runtime.toString()+')();\n'+graphicsTelemetry;
     const css=BASE_CSS;
     const dependencies=three?{'engine-3d.js':root.GameForgeThreeSource,'THREE-LICENSE.txt':root.GameForgeThreeLicense}:{};
     const shooterManifest=spec.genre==='shooter' ? {'MANIFESTO_SHMUP.md':

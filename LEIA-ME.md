@@ -1,3 +1,9 @@
+# GameForge Studio GF-TRAIN-13 — missões, NPC e eventos reais
+
+O GameForge reconhece pedidos de **missão**, **tarefa**, **diálogo com NPC** e **falar com o guia** em simuladores 2D de aquário, fazenda e loja. O novo sistema executável acompanha conversa, ações econômicas em ordem e recompensa única de 5 moedas, registrando o progresso no save local. Exemplo: **“Quero criar um aquário com missão: falar com o cuidador e vender dois peixes.”** O jogo usa exploração livre com NPC, e só libera a vitória da missão depois que as ações acontecem. Escolhas de diálogo, histórias livres e NPCs com IA ainda não estão implementados.
+
+Veja [documentação do GF-TRAIN-13](docs/TREINAMENTO_EVENTOS_GF_TRAIN_13.md).
+
 # GameForge Studio GF-TRAIN-12 — exploração livre 2D (nova opção)
 
 Aquário, fazenda e loja 2D agora também reconhecem pedidos como **“quero andar livremente com WASD”** ou **“movimentação livre”**. O jogo gerado cria uma sala 2D com obstáculos, estações e um NPC guia opcional: use WASD/setas ou toque para caminhar e E/INTERAGIR para agir perto dos objetos. O save recupera a posição. Modo clássico e caminhada por estações seguem disponíveis. Não há pathfinding automático, IA de NPC ou múltiplas salas.

@@ -1,13 +1,15 @@
 /* Regras puras e serializáveis: ciclos econômicos e cuidado de aquários. */
 (function(root){
-function gameForgeSimulationRulesFactory(){
+function gameForgeSimulationRulesFactory(events){
  'use strict';
+ const E=events||null;
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
  const care=c=>c.domain==='aquarium'&&c.aquariumCare?.enabled?c.aquariumCare:null;
  function create(c){
   const s={money:c.startingMoney,earned:0,inventory:0,sales:0,slots:Array.from({length:c.slots},()=>null),complete:false};
   if(c.automation?.enabled)s.automation={elapsed:0,paused:false,actions:0};
   if(care(c))s.tanks=Array.from({length:c.slots},()=>({water:100}));
+  if(c.story?.enabled){if(!E)throw Error('Motor de eventos não disponível.');s.story=E.create(c.story);}
   return s;
  }
  function quote(item,c){
@@ -82,6 +84,19 @@ function gameForgeSimulationRulesFactory(){
    if(s.automation.elapsed+1e-9>=period){s.automation.elapsed=0;automate(s,c);}
   }
  }
+ function win(s,c){return s.earned>=c.target&&(!c.story?.requiredForVictory||s.story?.completed===true);}
+ function storyEvent(s,c,kind){
+  if(!c.story?.enabled||!s.story||!E)return;
+  const outcome=E.record(s.story,c.story,kind);
+  if(outcome.bonus)s.money+=outcome.bonus;
+ }
+ function talk(s,c){
+  if(s.complete||!E||!c.story?.enabled||!s.story)return null;
+  const result=E.talk(s.story,c.story);
+  if(result.bonus)s.money+=result.bonus;
+  s.complete=win(s,c);
+  return result.text;
+ }
  function act(s,c,index,action){
   if(s.complete)return false;
   const valid=Number.isInteger(index)&&index>=0&&index<s.slots.length;
@@ -95,15 +110,16 @@ function gameForgeSimulationRulesFactory(){
     if(item||s.money<c.cost)return false;
     s.money-=c.cost;s.slots[index]={age:0,cared:cfg?.feedingRequired===false};
     if(cfg)s.slots[index].satiety=cfg.feedingRequired===false?100:0;
-    return true;
+    storyEvent(s,c,'start');s.complete=win(s,c);return true;
    }
    if(action==='care'){
     if(!canCare(s,c,index))return false;
-    item.cared=true;if(cfg)item.satiety=100;return true;
+    item.cared=true;if(cfg)item.satiety=100;
+    storyEvent(s,c,'care');s.complete=win(s,c);return true;
    }
    if(action==='clean'){
     if(!canClean(s,c,index))return false;
-    s.tanks[index].water=100;return true;
+    s.tanks[index].water=100;storyEvent(s,c,'clean');s.complete=win(s,c);return true;
    }
    if(action==='finish'){
     if(!canFinish(s,c,index))return false;
@@ -112,7 +128,8 @@ function gameForgeSimulationRulesFactory(){
     else {s.money+=value;s.earned+=value;s.sales++;}
    }else return false;
   }
-  s.complete=s.earned>=c.target;
+  storyEvent(s,c,action);
+  s.complete=win(s,c);
   return true;
  }
  // Save local versionado: nunca avança relógio de parede nem aceita outro contrato.
@@ -128,7 +145,8 @@ function gameForgeSimulationRulesFactory(){
     if(free&&(!data.position||!number(data.position.x,0,960)||!number(data.position.y,0,540)))return null;
     if(data.version!==1||data.signature!==signature||!v||!number(data.selected,0,c.slots-1,true))return null;
     for(const k of ['money','earned','inventory','sales'])if(!number(v[k],0,1e9,true))return null;
-    if(v.money>c.startingMoney+v.earned||v.earned>v.sales*c.price||v.sales>1e6||v.inventory>1e6)return null;
+    if(c.story?.enabled&&(!E||!E.validate(v.story,c.story)))return null;
+    if(v.money>c.startingMoney+v.earned+(c.story?.enabled?v.story.rewards:0)||v.earned>v.sales*c.price||v.sales>1e6||v.inventory>1e6)return null;
     if(c.domain!=='aquarium'&&v.earned!==v.sales*c.price||c.domain!=='farm'&&v.inventory!==0)return null;
     if(!Array.isArray(v.slots)||v.slots.length!==c.slots)return null;
     const result=create(c);
@@ -147,7 +165,8 @@ function gameForgeSimulationRulesFactory(){
      result.automation={elapsed:a.elapsed,paused:a.paused,actions:a.actions};
     }
     for(const k of ['money','earned','inventory','sales'])result[k]=v[k];
-    result.complete=result.earned>=c.target;
+    if(c.story?.enabled)result.story={step:v.story.step,count:v.story.count,completed:v.story.completed,rewards:v.story.rewards,talks:v.story.talks};
+    result.complete=win(result,c);
     return free?{state:result,selected:data.selected,position:{x:data.position.x,y:data.position.y}}:{state:result,selected:data.selected};
    }catch(_){return null;}
   }
@@ -164,7 +183,7 @@ function gameForgeSimulationRulesFactory(){
   }
   return {enabled,key,read,write,restore};
  }
- return {create,tick,act,quote,status,canCare,canClean,canFinish,persistence};
+ return {create,tick,act,talk,storyEvent,quote,status,canCare,canClean,canFinish,persistence};
 }
 root.gameForgeSimulationRulesFactory=gameForgeSimulationRulesFactory;
 if(typeof module!=='undefined')module.exports=gameForgeSimulationRulesFactory;

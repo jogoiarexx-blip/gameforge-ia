@@ -51,6 +51,8 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Construir exemplos reais para o navegador
         run: node tools/build-browser-fixtures.cjs
+      - name: GF-ARCH-16 — prévia descartável e evidências avançadas no Chromium
+        run: python tests/browser-gf16-isolated.py
       - name: GF-ARCH-15 — cenários por requisito no Chromium
         run: python tests/browser-gf15-scenarios.py
       - name: GF-ARCH-14 — evidências e exportação de relatórios no Chromium

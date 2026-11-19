@@ -16,18 +16,19 @@
     new Set(m.requires.map(r=>r.kind)).size===m.requires.length&&
     m.requires.every(r=>r&&(r.kind==='stock'?finite(r.min,1,12):r.kind==='time'?finite(r.seconds,1,60):false)));
   }
-  function chainCreate(){return {missionIndex:0,step:0,count:0,completed:false,rewards:0,talks:0,elapsed:0};}
+  function chainCreate(){return {missionIndex:0,step:0,count:0,completed:false,rewards:0,talks:0,npcTalks:[0,0],elapsed:0};}
   function chainValidate(s,c){
    if(!s||typeof s!=='object'||!finite(s.missionIndex,0,2)||!finite(s.step,0,1)||
-    !finite(s.count,0,5)||!finite(s.talks,0,1e6)||!number(s.elapsed,0,600)||
+    !finite(s.count,0,5)||!finite(s.talks,0,1e6)||!Array.isArray(s.npcTalks)||s.npcTalks.length!==2||
+    !s.npcTalks.every(n=>finite(n,0,1e6))||s.talks!==s.npcTalks[0]+s.npcTalks[1]||!number(s.elapsed,0,600)||
     typeof s.completed!=='boolean'||!finite(s.rewards,0,100))return false;
    const i=s.missionIndex;
    if(s.completed!==(i===2)||s.rewards!==(i===0?0:i===1?c.missions[0].reward:c.missions[0].reward+c.missions[1].reward))return false;
-   if(i===2)return s.step===0&&s.count===0&&s.talks>=2;
+   if(i===2)return s.step===0&&s.count===0&&s.npcTalks[0]>=1&&s.npcTalks[1]>=1;
    if(i===0&&s.elapsed!==0)return false;
    if(i===1&&s.talks<1)return false;
-   if(s.step===0)return s.count===0&&(i===0?s.talks===0:s.talks>=1);
-   return s.talks>i&&s.count<c.missions[i].count;
+   if(s.step===0)return s.count===0&&(i===0?s.npcTalks[0]===0&&s.npcTalks[1]===0:s.npcTalks[0]>=1&&s.npcTalks[1]===0);
+   return s.npcTalks[i]>=1&&(i===0?s.npcTalks[1]===0:s.npcTalks[0]>=1)&&s.count<c.missions[i].count;
   }
   function chainStatus(s,c){
    if(s.completed)return {complete:true,missionIndex:2,total:2,text:'Duas missões concluídas · bônus total '+s.rewards+' moedas'};
@@ -45,7 +46,7 @@
    const i=s.missionIndex,m=c.missions[i];
    if(type==='talk'){
     if(context?.npc!==i)return {changed:false,bonus:0,completed:false};
-    s.talks=Math.min(1e6,s.talks+1);
+    s.talks=Math.min(1e6,s.talks+1);s.npcTalks[i]=Math.min(1e6,s.npcTalks[i]+1);
     if(s.step===0){s.step=1;return {changed:true,bonus:0,completed:false};}
     return {changed:false,bonus:0,completed:false};
    }

@@ -372,6 +372,46 @@ test('GF-TRAIN-11: aquário exportado exige proximidade, caminha, abre interaç�
  assert.equal(b.telemetry().simulation.sales,1);
 });
 
+test('GF-TRAIN-15: dois NPCs, duas missões, inventário e tempo no jogo offline exportado',()=>{
+ const spec=parser.parseGdd('','Quero cuidar de aquário. Duas missões encadeadas. Primeira missão: comprar um peixe. Segunda missão: vender um peixe, estoque de um peixe e esperar 3 segundos. Dois tanques, crescer em dois segundos, meta de dez moedas.');
+ assert.equal(spec.simulation.story.version,3);
+ const files=generator.generate(spec,'');validateFiles(files,'2d','simulation');
+ const mem=new Map(),storage={getItem:k=>mem.get(k)||null,setItem:(k,v)=>mem.set(k,v)};
+ const h=environment(files,'2d',storage),key=k=>{h.input('keydown',k);h.input('keyup',k);};
+ h.element('start').click();
+ assert.equal(h.telemetry().story.missionIndex,0);
+ assert.ok(h.telemetry().exploration.guide2);
+ h.input('keydown','ArrowRight');h.tick(280);h.input('keyup','ArrowRight');
+ assert.equal(h.telemetry().exploration.nearby,'guide');
+ key('e');assert.equal(h.telemetry().story.event,'start');
+ h.input('keydown','ArrowLeft');h.tick(195);h.input('keyup','ArrowLeft');
+ h.input('keydown','ArrowUp');h.tick(120);h.input('keyup','ArrowUp');
+ assert.equal(h.telemetry().exploration.near,true,'aproximou-se do tanque');
+ key('e');key('1');assert.equal(h.telemetry().story.missionIndex,1);
+ assert.equal(h.telemetry().simulation.story.rewards,3);
+ h.input('keydown','ArrowDown');h.tick(120);h.input('keyup','ArrowDown');
+ h.input('keydown','ArrowRight');h.tick(150);h.input('keyup','ArrowRight');
+ assert.equal(h.telemetry().exploration.nearby,'guide-2');
+ key('e');assert.equal(h.telemetry().story.event,'finish');
+ assert.equal(h.telemetry().simulation.story.npcTalks[1],1);
+ h.element('body').children.find(x=>x.id==='simulation-save').click();
+ const b=environment(files,'2d',storage);b.element('overlay').children.find(x=>x.id==='simulation-continue').click();
+ assert.equal(b.telemetry().simulation.story.missionIndex,1);
+ assert.equal(b.telemetry().simulation.story.npcTalks[1],1);
+ b.input('keydown','ArrowLeft');b.tick(150);b.input('keyup','ArrowLeft');
+ b.input('keydown','ArrowUp');b.tick(120);b.input('keyup','ArrowUp');
+ assert.equal(b.telemetry().exploration.near,true);
+ b.input('keydown','e');b.input('keydown','2');b.tick(220);b.input('keydown','3');
+ assert.equal(b.telemetry().state,'victory');
+ assert.equal(b.telemetry().simulation.story.rewards,10);
+ assert.equal(b.telemetry().simulation.sales,1);
+ const won=JSON.stringify(b.telemetry().simulation);b.input('keydown','3');
+ assert.equal(JSON.stringify(b.telemetry().simulation),won);
+ const c=environment(files,'2d',storage);c.element('overlay').children.find(x=>x.id==='simulation-continue').click();
+ assert.equal(c.telemetry().state,'victory');
+ assert.equal(JSON.stringify(c.telemetry().simulation),won);
+});
+
 test('GF-TRAIN-14: ramo B do NPC avança somente após escolha, venda e save no game.js',()=>{
  const spec=parser.parseGdd('','Cuidar de aquário. Missão com escolhas de diálogo. Dois tanques, crescer em dois segundos, meta de dez moedas.');
  assert.equal(spec.simulation.story.version,2);

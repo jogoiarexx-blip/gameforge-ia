@@ -1,0 +1,392 @@
+{
+  "version": 15,
+  "note": "30 frases de regressão PT-BR — não treino de pesos",
+  "cases": [
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões encadeadas.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missões em sequência.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões seguidas.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões: primeira missão: comprar um peixe. segunda missão: vender um peixe.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões: primeira missão: alimentar dois peixes. segunda missão: vender tres peixes.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "care",
+        "firstCount": 2,
+        "second": "finish",
+        "secondCount": 3,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões: primeira missão: comprar 2 peixes. segunda missão: alimentar dois peixes.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 2,
+        "second": "care",
+        "secondCount": 2,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Duas missões: primeira missão: plantar dois canteiros. segunda missão: vender uma colheita.",
+      "expected": {
+        "domain": "farm",
+        "version": 3,
+        "first": "start",
+        "firstCount": 2,
+        "second": "sell",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Missões encadeadas. Primeira missão: regar um canteiro. Segunda missão: colher um canteiro.",
+      "expected": {
+        "domain": "farm",
+        "version": 3,
+        "first": "care",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. Duas missões: primeira missão: repor tres produtos. segunda missão: vender dois produtos.",
+      "expected": {
+        "domain": "shop",
+        "version": 3,
+        "first": "start",
+        "firstCount": 3,
+        "second": "finish",
+        "secondCount": 2,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. Duas missões: primeira missão: repor. segunda missão: vender.",
+      "expected": {
+        "domain": "shop",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões. Segunda missão: vender um peixe, estoque de um peixe.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": [
+          "stock:1"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões. Segunda missão: vender um peixe, ter um peixe no estoque.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": [
+          "stock:1"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Duas missões. Segunda missão: vender um item, precisa de 2 itens no estoque.",
+      "expected": {
+        "domain": "farm",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "sell",
+        "secondCount": 1,
+        "guards": [
+          "stock:2"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. Duas missões. Estoque minimo de 3 itens.",
+      "expected": {
+        "domain": "shop",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": [
+          "stock:3"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões. Segunda missão: vender, inventario de 2.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": [
+          "stock:2"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões. Segunda missão: vender um peixe, esperar cinco segundos.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": [
+          "time:5"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões. Segunda missão: vender, aguardar dez segundos.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": [
+          "time:10"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Duas missões. Segunda missão: vender, apos 4 segundos.",
+      "expected": {
+        "domain": "farm",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "sell",
+        "secondCount": 1,
+        "guards": [
+          "time:4"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero administrar uma loja. Duas missões. Segunda missão: vender, depois de 3 segundos.",
+      "expected": {
+        "domain": "shop",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": [
+          "time:3"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões. Segunda missão: vender, esperar 90 segundos.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": [
+          "time:60"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões. Segunda missão: vender, estoque de um peixe e aguardar 5 segundos.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": [
+          "stock:1",
+          "time:5"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de fazenda. Duas missões. Segunda missão: vender, ter 1 item no estoque e esperar 3 segundos.",
+      "expected": {
+        "domain": "farm",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "sell",
+        "secondCount": 1,
+        "guards": [
+          "stock:1",
+          "time:3"
+        ]
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões. Sem esperar 5 segundos.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões. Sem estoque de 2.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas missões. NPC patrulhando.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Primeira missão: comprar um peixe. segunda missão: vender um peixe.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Duas tarefas seguidas.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 3,
+        "first": "start",
+        "firstCount": 1,
+        "second": "finish",
+        "secondCount": 1,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão: vender um peixe.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 1,
+        "first": null,
+        "firstCount": null,
+        "second": null,
+        "secondCount": null,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Missão com escolhas de diálogo.",
+      "expected": {
+        "domain": "aquarium",
+        "version": 2,
+        "first": null,
+        "firstCount": null,
+        "second": null,
+        "secondCount": null,
+        "guards": []
+      }
+    },
+    {
+      "instruction": "Quero cuidar de aquário. Quero andar livremente.",
+      "expected": {
+        "domain": "aquarium",
+        "version": null,
+        "first": null,
+        "firstCount": null,
+        "second": null,
+        "secondCount": null,
+        "guards": []
+      }
+    }
+  ]
+}

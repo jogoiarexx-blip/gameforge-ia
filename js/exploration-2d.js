@@ -4,7 +4,7 @@
 function gameForgeExploration2DFactory(){
  const WIDTH=960,HEIGHT=540,RADIUS=13;
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
- function layout(slots,domain='aquarium',withGuide=true){
+ function layout(slots,domain='aquarium',withGuide=true,withSecondNpc=false){
   const count=Math.max(1,Math.min(12,Math.trunc(Number(slots)||1))),cols=Math.min(count,4);
   const stations=Array.from({length:count},(_,index)=>{
    const col=index%cols,row=Math.floor(index/cols),cx=(col+1)*WIDTH/(cols+1),cy=148+row*127;
@@ -13,8 +13,10 @@ function gameForgeExploration2DFactory(){
   const furniture=count<=4?[{id:'counter',type:'obstacle',x:425,y:309,w:110,h:36}]:[];
   const guide=withGuide?{id:'guide',type:'npc',x:860,y:485,r:14,
    label:domain==='aquarium'?'Cuidador':domain==='farm'?'Agricultor':'Atendente'}:null;
+  const guide2=withGuide&&withSecondNpc?{id:'guide-2',type:'npc',x:700,y:450,r:14,
+   label:domain==='aquarium'?'Pesquisador':domain==='farm'?'Feirante':'Gerente'}:null;
   return {width:WIDTH,height:HEIGHT,bounds:{left:25,top:90,right:935,bottom:520},radius:RADIUS,
-   stations,furniture,guide};
+   stations,furniture,guide,guide2};
  }
  function rectDistance(x,y,r){
   const dx=x-clamp(x,r.x,r.x+r.w),dy=y-clamp(y,r.y,r.y+r.h);
@@ -22,7 +24,7 @@ function gameForgeExploration2DFactory(){
  }
  function hitCircleRect(x,y,rad,rect){return rectDistance(x,y,rect)<rad-1e-6;}
  function obstacles(scene){
-  return [...scene.stations,...scene.furniture,...(scene.guide?[{x:scene.guide.x-12,y:scene.guide.y-12,w:24,h:24}]:[])];
+  return [...scene.stations,...scene.furniture,...(scene.guide?[{x:scene.guide.x-12,y:scene.guide.y-12,w:24,h:24}]:[]),...(scene.guide2?[{x:scene.guide2.x-12,y:scene.guide2.y-12,w:24,h:24}]:[])];
  }
  function walkable(scene,x,y){
   if(!Number.isFinite(x)||!Number.isFinite(y))return false;
@@ -50,13 +52,13 @@ function gameForgeExploration2DFactory(){
  }
  function inRange(actor,target,reach=55){return !!target&&distance(actor,target)<=clamp(Number(reach)||55,15,100);}
  function nearest(actor,scene,reach=55){
-  const list=[...scene.stations,...(scene.guide?[scene.guide]:[])];
+  const list=[...scene.stations,...(scene.guide?[scene.guide]:[]),...(scene.guide2?[scene.guide2]:[])];
   let best=null,d=Infinity;
   for(const item of list){const next=distance(actor,item);if(next<d){d=next;best=item;}}
   return d<=reach?best:null;
  }
  function hitAt(scene,x,y){
-  for(const item of [...scene.stations,...(scene.guide?[scene.guide]:[])]){
+  for(const item of [...scene.stations,...(scene.guide?[scene.guide]:[]),...(scene.guide2?[scene.guide2]:[])]){
    if(item.type==='station'&&x>=item.x&&x<=item.x+item.w&&y>=item.y&&y<=item.y+item.h)return item;
    if(item.type==='npc'&&Math.hypot(item.x-x,item.y-y)<item.r+12)return item;
   }

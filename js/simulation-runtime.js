@@ -10,7 +10,7 @@ function gameForgeSimulationBoot(){
  const exploring=c.exploration?.enabled===true;
  const free=exploring&&c.exploration?.mode==='free';
  const F=free?GameForgeExploration2D:null;
- const room=free?F.layout(c.slots,c.domain,c.exploration.guide):null;
+ const room=free?F.layout(c.slots,c.domain,c.exploration.guide,c.story?.version===3):null;
  const center=index=>960*(index+.5)/c.slots;
  let playerX=center(0),targetX=playerX,actionsOpen=false;
  let avatar=free?F.spawn(room):null,walkTo=null,npcTalks=0;
@@ -80,7 +80,9 @@ function gameForgeSimulationBoot(){
  el('pause').addEventListener('click',()=>{if(state==='play'){paused=!paused;persist();update();}});
  el('control-help').textContent=free?'WASD/setas mover · E falar/interagir · 1–4 agir perto de uma estação · toque para caminhar':exploring?'← → caminhar entre estações · E interagir · 1 iniciar · 2 cuidar · 3 vender/colher · 4 limpar/vender · toque para aproximar':aquarium?'← → selecionar tanque · 1 comprar · 2 alimentar · 3 vender'+(c.aquariumCare.waterEnabled?' · 4 trocar água':''):'← → selecionar · 1 produzir · 2 cuidar · 3 colher/vender · 4 vender colheita';
  el('overlay-sub').textContent=c.label+': '+c.start+' → '+c.care+' → '+c.finish+(c.domain==='farm'?' → Vender':'')+(aquarium?'. O peixe cresce enquanto está alimentado'+(c.aquariumCare.waterEnabled?' e com água limpa':'')+'. O valor aumenta com a idade. Alimentar e trocar água são gratuitos.':'')+(save.enabled?'. Progresso salvo neste navegador. Fechado ou pausado, o tempo não avança. Novo jogo substitui o progresso anterior.':'. Salvamento desativado.');
- if(E)el('overlay-sub').textContent+=' Missão: fale com o '+c.story.npc.name+' e conclua as ações. '+(c.story.version===2?'Escolha entre duas tarefas com 5 ou 6. Recompensas: 5 ou 8 moedas.':'Recompensa única de '+c.story.mission.reward+' moedas.');
+ if(E)el('overlay-sub').textContent+=' '+(c.story.version===3?
+   'Duas missões em sequência: fale com '+c.story.npc.name+', conclua a primeira, depois procure '+c.story.npc2.name+'. Recompensas de 3 e 7 moedas.':
+   'Missão: fale com o '+c.story.npc.name+' e conclua as ações. '+(c.story.version===2?'Escolha entre duas tarefas com 5 ou 6. Recompensas: 5 ou 8 moedas.':'Recompensa única de '+c.story.mission.reward+' moedas.'));
  if(c.automation?.enabled)el('overlay-sub').textContent=c.label+'. Ciclo automático a cada '+c.automation.intervalSeconds+' s, com custos normais. Você pode desligar a automação e jogar manualmente. Pausar congela o jogo. '+(save.enabled?'Progresso salvo neste navegador. Novo jogo substitui o anterior.':'Salvamento desativado.');
  function chooseChoice(index){
   if(!E||c.story.version!==2||state!=='play'||paused||!free||
@@ -95,7 +97,7 @@ function gameForgeSimulationBoot(){
   if(!target){actionsOpen=false;say('Chegue perto de um aquário, canteiro, prateleira ou NPC.');update();return;}
   if(target.type==='npc'){
    actionsOpen=false;npcTalks++;
-   if(E){const line=R.talk(s,c);say(line||target.label+': '+guideText());if(s.complete)victory();persist();}
+   if(E){const line=R.talk(s,c,target.id==='guide-2'?1:0);say(line||target.label+': '+guideText());if(s.complete)victory();persist();}
    else say(target.label+': '+guideText());
    update();return;
   }
@@ -198,7 +200,7 @@ function gameForgeSimulationBoot(){
   }
  }
  rootTelemetry();
- function rootTelemetry(){window.__gameforgeTelemetry=()=>({state,paused,frames,player:{x:free?avatar.x:exploring?playerX:selected,y:free?avatar.y:exploring?480:0},exploration:{enabled:exploring,mode:free?'free':exploring?'stations':'classic',x:free?avatar.x:playerX,y:free?avatar.y:480,target:free?walkTo:targetX,near:exploring?near():false,actionsOpen,npcTalks,nearby:free?F.nearest(avatar,room,c.exploration.reach)?.id||null:null,guide:free&&room.guide?{x:room.guide.x,y:room.guide.y,dir:room.guide.dir||-1}:null},simulation:JSON.parse(JSON.stringify(s)),story:E?E.status(s.story,c.story):null,domain:c.domain,persistence:{enabled:save.enabled,key:save.key,status:saveStatus,available:!!saved},selected:aquarium?R.status(s,c,selected):null});}
+ function rootTelemetry(){window.__gameforgeTelemetry=()=>({state,paused,frames,player:{x:free?avatar.x:exploring?playerX:selected,y:free?avatar.y:exploring?480:0},exploration:{enabled:exploring,mode:free?'free':exploring?'stations':'classic',x:free?avatar.x:playerX,y:free?avatar.y:480,target:free?walkTo:targetX,near:exploring?near():false,actionsOpen,npcTalks,nearby:free?F.nearest(avatar,room,c.exploration.reach)?.id||null:null,guide:free&&room.guide?{x:room.guide.x,y:room.guide.y,dir:room.guide.dir||-1}:null,guide2:free&&room.guide2?{x:room.guide2.x,y:room.guide2.y}:null},simulation:JSON.parse(JSON.stringify(s)),story:E?E.status(s.story,c.story):null,domain:c.domain,persistence:{enabled:save.enabled,key:save.key,status:saveStatus,available:!!saved},selected:aquarium?R.status(s,c,selected):null});}
  function drawRoom(){
   ctx.fillStyle=c.domain==='aquarium'?'#173c49':c.domain==='farm'?'#2b4935':'#293b50';
   ctx.fillRect(0,0,960,540);
@@ -234,8 +236,7 @@ function gameForgeSimulationBoot(){
    ctx.fillText((aquarium?'Tanque ':c.domain==='farm'?'Canteiro ':'Prateleira ')+(station.index+1),station.x+3,station.y-7);
    ctx.fillText(item?(aquarium?R.status(s,c,station.index).label:'Em produção'):'Vazio',station.x+3,station.y+station.h+14);
   }
-  if(room.guide){
-   const guide=room.guide;
+  for(const guide of [room.guide,room.guide2].filter(Boolean)){
    ctx.fillStyle='#1a3544';ctx.beginPath();ctx.arc(guide.x,guide.y+5,18,0,Math.PI*2);ctx.fill();
    ctx.fillStyle='#e8bd8d';ctx.beginPath();ctx.arc(guide.x,guide.y-8,11,0,Math.PI*2);ctx.fill();
    ctx.fillStyle='#f5eac4';ctx.font='bold 12px sans-serif';ctx.fillText(guide.label,guide.x-31,guide.y-27);

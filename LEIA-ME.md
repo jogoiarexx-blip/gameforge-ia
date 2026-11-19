@@ -1,3 +1,11 @@
+# GameForge Studio GF-TRAIN-15 — duas missões encadeadas e dois NPCs
+
+Já é possível pedir **duas missões em sequência** num simulador de aquário, fazenda ou loja 2D, com um NPC para começar cada missão. A segunda pode exigir **estoque mínimo**, **espera de segundos de jogo ativo**, ou ambos, antes de contabilizar a tarefa real. Os avanços e recompensas (3 e 7 moedas) são salvos e restaurados.
+
+**Teste:** “Quero um aquário com duas missões encadeadas. Primeira missão: comprar um peixe. Segunda missão: vender um peixe, ter um peixe no estoque e esperar cinco segundos. Personagem andando livremente.” O sistema gera uma sequência de tarefas verificáveis, não diálogos de IA ou missões arbitrárias.
+
+Leia os [detalhes técnicos do GF-TRAIN-15](docs/TREINAMENTO_GF_TRAIN_15_CHAINED_QUESTS.md).
+
 # GameForge Studio GF-TRAIN-14 — escolha de missões e NPC patrulhando
 
 O GameForge agora pode gerar, em **aquário, fazenda e loja 2D**, um NPC com diálogo que oferece **duas tarefas alternativas**. O jogador conversa com E, escolhe usando **5 ou 6** (ou botões), completa ações reais e recebe uma recompensa única de acordo com o ramo (5 ou 8 moedas). Exemplo: **“Crie um aquário com missão: escolher entre alimentar dois peixes ou vender três peixes. Quero NPC patrulhando.”** A patrulha horizontal opcional pode andar de um lado para outro, pausar e ter sua posição recuperada com o save. As missões antigas seguem funcionando.

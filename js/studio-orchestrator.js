@@ -14,14 +14,20 @@ const roles=[
 ];
 const DOCUMENTS=new Set(['RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','CAMPANHA_EDITOR.md','BRIEF_E_CHECKLIST_STUDIO.md','MAPA_DEPENDENCIAS.json']);
 const EDITABLE=new Set(['game.js','style.css']);
-function restrictions(instruction){
- const result=[];
- for(const clause of String(instruction||'').split(/[.;!?\n]|\bmas\b|\bpor[eé]m\b/i)){
-  const c=clause.trim();
-  if(/\b(?:n[aã]o|sem|evitar|preservar|preserve|mantenha|manter|nunca)\b/i.test(c))result.push(c.slice(0,180));
+function clauses(instruction){
+ const positive=[],negative=[];
+ for(const part of String(instruction||'').split(/[.;!?\n]|\bmas\b|\bpor[eé]m\b/i)){
+  const raw=part.trim();if(!raw)continue;
+  const marker=/\b(?:n[aã]o|sem|evitar|preservar|preserve|mantenha|manter|nunca)\b/i.exec(raw);
+  if(marker){
+   const before=raw.slice(0,marker.index).trim(),after=raw.slice(marker.index).trim();
+   if(before)positive.push(before);
+   if(after)negative.push(after.slice(0,180));
+  }else positive.push(raw);
  }
- return [...new Set(result)].slice(0,20);
+ return {positive,negative};
 }
+function restrictions(instruction){return [...new Set(clauses(instruction).negative)].slice(0,20);}
 function protectedFiles(instruction,files){
  const available=new Set(Object.keys(files||{}));
  const protectedPaths=new Set();
@@ -34,9 +40,7 @@ function protectedFiles(instruction,files){
  }
  return [...protectedPaths].sort();
 }
-function intentText(instruction){
- return norm(String(instruction||'').split(/[.;!?\n]|\bmas\b|\bpor[eé]m\b/i).filter(c=>!restrictions(c).length).join(' ')||instruction);
-}
+function intentText(instruction){return norm(clauses(instruction).positive.join(' '));}
 function chooseTargets(role,files,protectedPaths){
  const available=Object.keys(files||{}),blocked=new Set(protectedPaths);
  const engine=available.some(k=>k.startsWith('js/'));

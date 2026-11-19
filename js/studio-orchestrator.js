@@ -16,7 +16,7 @@ const DOCUMENTS=new Set(['RELATORIO_EVOLUCAO.md','PLANO_DESENVOLVIMENTO.md','CAM
 const EDITABLE=new Set(['game.js','style.css']);
 function clauses(instruction){
  const positive=[],negative=[];
- for(const part of String(instruction||'').split(/[.;!?\n]|\bmas\b|\bpor[eé]m\b/i)){
+ for(const part of String(instruction||'').split(/(?:[.!?](?=\s|$))|[;\n]|\bmas\b|\bpor[eé]m\b/i)){
   const raw=part.trim();if(!raw)continue;
   const marker=/\b(?:n[aã]o|sem|evitar|preservar|preserve|mantenha|manter|nunca)\b/i.exec(raw);
   if(marker){

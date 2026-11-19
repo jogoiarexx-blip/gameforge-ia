@@ -603,6 +603,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         if($('instruction').value.trim())state.files['COMANDO_ORIGINAL.md']='# Comando original\\n\\n'+$('instruction').value;
         $('development-plan').textContent=GameForgeIntent.report(spec);
         state.files['RELATORIO_REFERENCIAS.md']=repoKnowledge.report(references())+'\nModo sem IA: estas recomendações não foram automaticamente aplicadas ao motor do jogo.\n';
+        refreshEvidence();
         log(`[Sem IA] Tipo ${spec.genre}, ${spec.stages.length} fase(s), código gerado no navegador.`);
         log('[Sem IA] '+spec.implementation.applied.length+' instruções transformadas em configurações do jogo; '+spec.implementation.pending.length+' pendências.');
         feedback('Jogo gerado: '+spec.implementation.applied.length+' configurações aplicadas, '+spec.implementation.pending.length+' requisito(s) ainda não implementado(s). Confira a prévia.');
@@ -821,6 +822,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   }
   $('dev-candidate-accept').addEventListener('click',()=>projectOperation(acceptStagedImprovement));
   $('dev-candidate-discard').addEventListener('click',discardStagedImprovement);
+  $('gf14-inspect').addEventListener('click',()=>{if(refreshEvidence()){listFiles();saveState();feedback('Mapa de código e matriz de requisitos atualizados sem marcar testes pendentes como aprovados.');}});
   $('plan-improvement').addEventListener('click',planImprovement);
   $('improve').addEventListener('click',()=>projectOperation(improveGame));
   $('undo-improvement').addEventListener('click',undoImprovement);
@@ -830,6 +832,32 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   /* Laboratório de QA visual v0.4: executa jogo no iframe e testa regressões. */
   const qaState={last:null,baseline:null,vision:null,candidate:null,baseCode:null};
   const qaStatus=message=>{$('qa-status').textContent=message;};
+
+  function refreshEvidence(qaReport=null){
+    if(!state.files['game.js']){
+      $('gf14-summary').textContent='Nenhum jogo foi gerado para análise.';
+      return null;
+    }
+    const codeMap=GameForgeCodeProvenance.index(state.files);
+    const matrix=GameForgeRequirementEvidence.extract({
+      instruction:$('instruction').value,gdd:$('gdd').value,spec:state.spec,files:state.files
+    });
+    const examined=GameForgeRequirementEvidence.evaluate(matrix,{files:state.files,qa:qaReport});
+    state.files['MAPA_CODIGO_GF14.json']=JSON.stringify(codeMap,null,2);
+    state.files['MATRIZ_REQUISITOS_GF14.json']=JSON.stringify(examined,null,2);
+    state.files['RELATORIO_REQUISITOS_GF14.md']=GameForgeRequirementEvidence.report(examined)+
+      '\n'+GameForgeCodeProvenance.report(codeMap);
+    $('gf14-summary').textContent='GF-ARCH-14 — '+examined.summary.total+' requisito(s), '+
+      examined.summary.observedPartial+' observação(ões) parciais, '+
+      examined.summary.issues+' alerta(s), '+examined.summary.unsupported+' pendência(s).\n'+
+      codeMap.definitions.length+' símbolo(s) localizados e '+codeMap.links.length+
+      ' relação(ões) inferidas entre arquivos.\n'+
+      (qaReport?'Resultados deste QA incorporados; nenhum requisito marcado como totalmente aprovado.':
+       'Sem teste executado para esta avaliação. Clique em Testar comportamento para observar o jogo.')+
+      '\nConfira os relatórios na lista de arquivos e no ZIP exportado.';
+    return {codeMap,matrix:examined};
+  }
+
   function qaButtons(){
     const ready=!!state.files['game.js'],has=!!qaState.last,ref=!!qaState.baseline,ai=state.mode==='ai';
     $('qa-run').disabled=!ready;
@@ -872,6 +900,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       document.querySelector('#qa-after').nextElementSibling.textContent='Após movimento';
       $('qa-report').textContent=fmtReport(report);
       state.files['RELATORIO_QA.md']=qaReportMarkdown(report);
+      refreshEvidence(report);
       qaStatus('QA concluído: '+report.issues.length+' alerta(s). Capturas comparáveis pelo botão “Comparar”.');
       log('[QA] '+report.issues.length+' alertas, '+report.passes.length+' verificações aprovadas.');
       if(qaState.candidate){

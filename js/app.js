@@ -845,6 +845,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const examined=GameForgeRequirementEvidence.evaluate(matrix,{files:state.files,qa:qaReport});
     state.files['MAPA_CODIGO_GF14.json']=JSON.stringify(codeMap,null,2);
     state.files['MATRIZ_REQUISITOS_GF14.json']=JSON.stringify(examined,null,2);
+    state.files['MANIFESTO_AGENTES_GF14.json']=JSON.stringify(GameForgeAgentHandoff.create({instruction:$('instruction').value,spec:state.spec,files:state.files}),null,2);
     state.files['RELATORIO_REQUISITOS_GF14.md']=GameForgeRequirementEvidence.report(examined)+
       '\n'+GameForgeCodeProvenance.report(codeMap);
     $('gf14-summary').textContent='GF-ARCH-14 — '+examined.summary.total+' requisito(s), '+

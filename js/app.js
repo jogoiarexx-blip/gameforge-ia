@@ -588,6 +588,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       if(mode==='offline'){
         lastPlan=GameForgeDevelopment.plan($('instruction').value,spec,{});
         state.files=GameForgeGenerator.generate(spec,$('gdd').value);
+        if(typeof GameForgeStudioOrchestrator!=='undefined'){
+          const plan=GameForgeStudioOrchestrator.plan({instruction:$('instruction').value,spec,files:state.files});
+          state.files['PLANO_AGENTES_STUDIO.md']=GameForgeStudioOrchestrator.report(plan);
+        }
         if(rootGameForgeStudio()){
           const studio=GameForgeStudioIntelligence.review({instruction:$('instruction').value,spec,files:state.files,changedFiles:['game.js']});
           state.files['BRIEF_E_CHECKLIST_STUDIO.md']=GameForgeStudioIntelligence.report(studio);
@@ -660,6 +664,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(devHistory.length>4)devHistory.shift();renderHistory();
   }
   function undoImprovement(){
+    if(stagedImprovement){feedback('Descarte a proposta pendente antes de desfazer.',true);return;}
     if(qaState.candidate){feedback('Resolva a correção candidata antes de desfazer uma melhoria.',true);return;}
     const previous=devHistory.pop();if(!previous)return;
     state.files=previous.files;
@@ -672,6 +677,13 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     listFiles();selectFile('game.js');runPreview();renderHistory();saveState();qaButtons();
     feedback('Melhoria desfeita. Arquivos anteriores restaurados.');
   }
+  let stagedImprovement=null;
+  function candidateReset(){
+    stagedImprovement=null;
+    $('dev-candidate').hidden=true;
+    $('dev-candidate-summary').textContent='';
+    $('improve').disabled=!state.files['game.js'];
+  }
   function rootGameForgeStudio(){return typeof GameForgeStudioIntelligence!=='undefined'&&!!GameForgeStudioIntelligence.review;}
   function displayPlan(p){
     const main=p.tasks?.length ? p.tasks.map((t,i)=>`${i+1}. ${t.title} — ${t.rationale||t.why}${t.possible===false?' (exige IA)':''}\n   Testes: ${(t.checks||[]).join('; ')}`).join('\n') +
@@ -682,7 +694,13 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       '\nGate de qualidade: '+studio.gate.status+' — '+studio.gate.reason+
       '\nRestrições preservadas: '+(studio.brief.restrictions.join('; ')||'nenhuma identificada')+
       '\nAtenção: nenhum teste marcado como aprovado antes da execução.':'';
-    $('development-plan').textContent=main+assessment;
+    const route=p.orchestration;
+    const routing=route?'\n\n[GF-ARCH-13] Planejamento especializado (nenhum agente executado):\n'+
+      route.agents.filter(a=>a.status==='PLANNED').map(a=>'• '+a.name+': '+(a.targetFiles.join(', ')||'revisão necessária')).join('\n')+
+      '\nProtegidos: '+(route.protectedFiles.join(', ')||'nenhum arquivo explicitamente nomeado')+
+      '\nDependentes: '+(route.impacted.join(', ')||'não identificados')+
+      '\nQA: todos os gates pendentes. A proposta exigirá aprovação.':'';
+    $('development-plan').textContent=main+assessment+routing;
   }
   function planImprovement(){
     if(!state.files['game.js']){feedback('Primeiro crie um jogo a partir do GDD.',true);return null;}
@@ -691,6 +709,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const p=GameForgeDevelopment.plan(instruction,state.spec,state.files);lastPlan=p;displayPlan(p);return p;
   }
   async function improveGame(){
+    if(stagedImprovement){feedback('Revise ou descarte a proposta anterior primeiro.',true);return;}
     if(qaState.candidate){feedback('Aceite ou descarte a correção candidata primeiro.',true);return;}
     const planned=planImprovement();if(!planned)return;
     const instruction=$('instruction').value.trim();
@@ -716,29 +735,70 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         displayPlan(data.plan||planned);lastPlan=data.plan||planned;
         output={changed:true,files:{...state.files,...data.files,'PLANO_DESENVOLVIMENTO.md':data.plan_report||''},applied:data.implemented||[],pending:data.pending||[]};
       }
+      const proposedFiles={...output.files,
+        'RELATORIO_EVOLUCAO.md':GameForgeDevelopment.report({...planned,
+          pending:[...new Set([...(planned.pending||[]),...(output.pending||[])])]},output.applied)};
+      const route=planned.orchestration||GameForgeStudioOrchestrator.plan({instruction,spec:state.spec,files:state.files});
+      const candidate=GameForgeStudioOrchestrator.stage({currentFiles:state.files,proposedFiles,route});
+      stagedImprovement={candidate,output,planned,instruction,activeTaskId:activeTask?.id||null};
+      $('dev-candidate-summary').textContent='Arquivos alterados: '+candidate.filesTouched.join(', ')+
+        '. Restrições preservadas no plano: '+(candidate.restricted.join('; ')||'nenhuma explícita')+
+        '. Código ainda NÃO aplicado. Para rejeitar, escolha Descartar.';
+      $('dev-candidate').hidden=false;
+      $('improve').disabled=true;
+      feedback('Proposta preparada. Confira a lista de arquivos e clique em Aprovar e testar ou Descartar.');
+    }catch(e){feedback('Falha na melhoria: '+(e.name==='AbortError'?'API excedeu tempo limite':e.message),true);log('[Evolução] '+e.message);}
+    finally{$('improve').disabled=!!stagedImprovement||!state.files['game.js'];status(state.files['game.js']?'Prévia disponível':'Pronto para criar');}
+  }
+  async function acceptStagedImprovement(){
+    const pending=stagedImprovement;
+    if(!pending){feedback('Nenhuma proposta aguardando aprovação.',true);return;}
+    if($('instruction').value.trim()!==pending.instruction){
+      feedback('A instrução mudou. Descarte a proposta e gere outra para evitar conflito.',true);return;
+    }
+    if(qaState.candidate){feedback('Resolva primeiro a correção candidata do QA.',true);return;}
+    $('dev-candidate-accept').disabled=true;
+    try{
+      const files=GameForgeStudioOrchestrator.apply(state.files,pending.candidate,{approved:true});
       const before=qaState.last;
-      pushHistory(instruction);
-      state.files=output.files;
-      if(activeTask&&activeTask.id===preparedTaskId){roadmapTasks=GameForgeRoadmap.changeStatus(roadmapTasks,activeTask.id,'em andamento','Código modificado; aguardando execução do QA e revisão manual.');roadmapSaveFiles();roadmapRender();}
-      if(output.spec)state.spec=output.spec;
-      state.files['RELATORIO_EVOLUCAO.md']=GameForgeDevelopment.report({...planned,pending:[...new Set([...(planned.pending||[]),...(output.pending||[])])]},output.applied);
+      pushHistory(pending.instruction);
+      state.files=files;
+      if(pending.output.spec)state.spec=pending.output.spec;
+      const task=pending.activeTaskId&&preparedTaskId===pending.activeTaskId?selectedRoadmap():null;
+      if(task&&task.id===pending.activeTaskId){
+        roadmapTasks=GameForgeRoadmap.changeStatus(roadmapTasks,task.id,'em andamento','Código aprovado; aguardando QA e revisão manual.');
+        roadmapSaveFiles();roadmapRender();
+      }
+      candidateReset();
       listFiles();selectFile('game.js');runPreview();saveState();
-      log('[Evolução] '+output.applied.join(', '));
-      feedback('Melhoria aplicada ao projeto existente. Executando teste de regressão...');
+      log('[Evolução aprovada] '+pending.candidate.filesTouched.join(', '));
+      feedback('Alterações aprovadas. Executando teste de regressão...');
       try{
         const report=await qaRun();
-        if(before && report.issues.length>before.issues.length){
+        if(before&&report.issues.length>before.issues.length){
           log('[Regressão] Alertas aumentaram: '+before.issues.length+' → '+report.issues.length+'. Arquivos restaurados.');
-          undoImprovement();feedback('Possível regressão detectada; código anterior restaurado.',true);return;
+          undoImprovement();
+          feedback('Possível regressão detectada; versão anterior restaurada.',true);
+          return;
         }
         if(before)qaState.baseline=before;
-        if(activeTask&&activeTask.id===preparedTaskId){roadmapTasks=GameForgeRoadmap.changeStatus(roadmapTasks,activeTask.id,'aguardando revisão',`QA executado: ${report.issues.length} alerta(s). Revisão funcional manual pendente.`);roadmapSaveFiles();roadmapRender();}
-        feedback('Melhoria salva. QA executado: '+report.issues.length+' alertas. Revise jogabilidade e imagens.');
-      }catch(e){log('[Teste indisponível] '+e.message);feedback('Mudança aplicada, mas QA não concluiu. Use Desfazer se houver problemas.',true);}
+        if(task&&task.id===preparedTaskId){
+          roadmapTasks=GameForgeRoadmap.changeStatus(roadmapTasks,task.id,'aguardando revisão',
+            'QA executado: '+report.issues.length+' alerta(s). Teste humano pendente.');
+          roadmapSaveFiles();roadmapRender();
+        }
+        feedback('Proposta aplicada. QA executado: '+report.issues.length+' alerta(s). Revise o jogo manualmente.');
+      }catch(e){log('[QA indisponível] '+e.message);feedback('Proposta aplicada, mas QA não concluiu. Use Desfazer caso necessário.',true);}
       renderHistory();roadmapRender();saveState();
-    }catch(e){feedback('Falha na melhoria: '+(e.name==='AbortError'?'API excedeu tempo limite':e.message),true);log('[Evolução] '+e.message);}
-    finally{$('improve').disabled=!state.files['game.js'];status(state.files['game.js']?'Prévia disponível':'Pronto para criar');}
+    }catch(e){feedback('Proposta não aplicada: '+e.message,true);log('[Aprovação] '+e.message);}
+    finally{$('dev-candidate-accept').disabled=false;}
   }
+  function discardStagedImprovement(){
+    if(!stagedImprovement)return;
+    candidateReset();
+    feedback('Proposta descartada. Nenhum arquivo do projeto foi alterado.');
+  }
+
   async function create3dFromGdd(){
     const msg=$('create-3d-result');const btn=$('create-3d');
     const spec=analyze();if(!spec)return;
@@ -756,6 +816,8 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       document.getElementById('eng-refresh')?.click();
     }catch(e){msg.textContent='3D indisponível: '+e.message;}finally{btn.disabled=false;}
   }
+  $('dev-candidate-accept').addEventListener('click',()=>projectOperation(acceptStagedImprovement));
+  $('dev-candidate-discard').addEventListener('click',discardStagedImprovement);
   $('plan-improvement').addEventListener('click',planImprovement);
   $('improve').addEventListener('click',()=>projectOperation(improveGame));
   $('undo-improvement').addEventListener('click',undoImprovement);

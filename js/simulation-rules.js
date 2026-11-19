@@ -148,7 +148,7 @@ function gameForgeSimulationRulesFactory(){
     }
     for(const k of ['money','earned','inventory','sales'])result[k]=v[k];
     result.complete=result.earned>=c.target;
-    return {state:result,selected:data.selected,position:free?{x:data.position.x,y:data.position.y}:null};
+    return free?{state:result,selected:data.selected,position:{x:data.position.x,y:data.position.y}}:{state:result,selected:data.selected};
    }catch(_){return null;}
   }
   const target=()=>typeof accessStorage==='function'?accessStorage():accessStorage;

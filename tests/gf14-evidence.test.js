@@ -121,3 +121,9 @@ test('GF14: exportação verifica revisão antes de emitir arquivos',()=>{
  assert.match(source,/current\.projectFingerprint!==revision/);
  assert.match(source,/refreshEvidence\(\)/);
 });
+
+test('GF14: mesma exigência no pedido e nas pendências continua não implementada',()=>{
+ const matrix=R.extract({instruction:'Sistema de crafting',spec:{implementation:{pending:[{description:'Sistema de crafting'}]}},files});
+ assert.equal(matrix.requirements.length,1);
+ assert.equal(matrix.requirements[0].status,'UNSUPPORTED');
+});

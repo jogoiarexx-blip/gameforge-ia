@@ -182,3 +182,12 @@ test('GF16: asset GLB, motor 3D ou missões alterados invalidam evidências',()=
  assert.equal(GF16.valid(result,source,{...files,'engine-3d.js':'nova revisão'}),false);
  assert.equal(GF16.valid(result,{...source,spec:{...source.spec,stages:['Nova fase']}},files),false);
 });
+
+test('GF16: clone bloqueia focus(), sem alterar HTML do jogo original',()=>{
+ const original='<html><head><title>Teste</title></head><body><canvas id="game"></canvas></body></html>';
+ const clone=GF16.protectFocus(original);
+ assert.ok(clone.includes('HTMLElement.prototype.focus=function(){}'));
+ assert.ok(clone.includes('window.focus=function(){}'));
+ assert.ok(clone.includes('<title>Teste</title>'));
+ assert.equal(original.includes('HTMLElement.prototype.focus'),false);
+});

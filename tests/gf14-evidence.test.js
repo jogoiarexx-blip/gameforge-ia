@@ -117,7 +117,7 @@ test('GF14: alteração de instrução ou GDD invalida revisão dos requisitos',
 });
 test('GF14: exportação verifica revisão antes de emitir arquivos',()=>{
  const source=fs.readFileSync(path.join(__dirname,'..','js/app.js'),'utf8');
- assert.match(source,/matrix\.requestFingerprint!==requestRev/);
- assert.match(source,/matrix\.projectFingerprint!==revision/);
+ assert.match(source,/current\.requestFingerprint!==requestRev/);
+ assert.match(source,/current\.projectFingerprint!==revision/);
  assert.match(source,/refreshEvidence\(\)/);
 });

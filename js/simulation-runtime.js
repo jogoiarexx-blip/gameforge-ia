@@ -45,7 +45,8 @@ function gameForgeSimulationBoot(){
  window.addEventListener('pagehide',()=>persist());
  document.addEventListener('visibilitychange',()=>{if(document.hidden){persist();if(state==='play')paused=true;update();}});
  const panel=document.createElement('div');panel.className='buttons';panel.style.padding='10px';
- (canvas.parentElement||document.body).appendChild(panel);
+ // O painel contextual deve ficar fora da área recortada do canvas, inclusive em celulares.
+ (canvas.parentElement?.parentElement||document.body).appendChild(panel);
  const buttons=[];
  if(c.automation?.enabled){
   const toggle=document.createElement('button');toggle.id='simulation-automation';toggle.type='button';panel.appendChild(toggle);

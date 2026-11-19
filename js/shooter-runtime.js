@@ -28,7 +28,7 @@ function gameForgeShooterBoot() {
   const SIM_DT=1/60,MAX_SIM_STEPS=5;
   let simulationAccumulator=0,simulationSteps=0;
   let waveSpawned=0,spawnClock=0,groupStep=0,boss=null,bossSeen=false,health=100,lives=3,weapon=1,shield=0,fireClock=0,invuln=0;
-  let player={x:W/2,y:H-92,r:19,afterimages:[]},enemies=[],friendly=[],hostile=[],drops=[],particles=[];
+  let player={x:W/2,y:H-92,r:19,afterimages:[]},enemies=[],friendly=[],hostile=[],drops=[],particles=[],enemySerial=0;
   let speedLevel=0,flash=0,shake=0,quality=V?V.quality:'high',qualitySamples=0,fpsEstimate=60;
   const keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
   let mouse={x:W/2,y:H/2,down:false},audio=null;
@@ -107,7 +107,7 @@ function gameForgeShooterBoot() {
     if(pattern==='cross')x=offset%2===0?85:W-85;
     if(pattern==='swarm')x=central+Math.sin(offset*2.1)*280;
     const kind=idx%7===5?'sniper':idx%9===7?'tank':idx%4===0?'weaver':'scout';
-    enemies.push({x,y,baseX:x,r:kind==='tank'?22:kind==='sniper'?18:16,hp:kind==='tank'?4:kind==='sniper'?3:2,
+    enemies.push({id:++enemySerial,x,y,baseX:x,r:kind==='tank'?22:kind==='sniper'?18:16,hp:kind==='tank'?4:kind==='sniper'?3:2,
       max:kind==='tank'?4:kind==='sniper'?3:2,t:rand(0,2),shot:rand(.8,2.2),kind,pattern,speed:phase.enemySpeed*(kind==='tank'?.65:1),dead:false});
   }
   function spawnWave(dt){
@@ -304,7 +304,7 @@ function gameForgeShooterBoot() {
     ctx.font='13px system-ui';ctx.fillText('ESCUDO  '+shield+'    CRÉDITOS  '+credits,30,61);ctx.fillText('ARMA '+weapon+'   MOTOR '+(speedLevel+1),30,78);
     if(paused&&state==='play'){ctx.fillStyle='#030a22bd';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 54px system-ui';ctx.textAlign='center';ctx.fillText('PAUSADO',W/2,H/2);ctx.textAlign='left';}
   }
-  window.__gameforgeTelemetry=()=>({state,paused,frames,clock:time,stage:stageIndex,genre:'shooter',player:{x:player.x,y:player.y,radius:player.r,screenX:player.x,screenY:player.y},enemies:enemies.length,enemyBullets:hostile.length,playerBullets:friendly.length,bossHp:boss?.hp??null,spawned:waveSpawned,weapon,lives,credits,speedLevel,quality,simulationHz:60,simulationSteps});
+  window.__gameforgeTelemetry=()=>({state,paused,frames,clock:time,stage:stageIndex,genre:'shooter',player:{x:player.x,y:player.y,radius:player.r,screenX:player.x,screenY:player.y},enemies:enemies.length,enemySamples:enemies.slice(0,8).map(e=>({id:e.id,x:e.x,y:e.y})),bossAlive:!!boss,enemyBullets:hostile.length,playerBullets:friendly.length,bossHp:boss?.hp??null,spawned:waveSpawned,weapon,lives,credits,speedLevel,quality,simulationHz:60,simulationSteps});
   function loop(ms){
     const rawDt=Math.max(0,(ms-last)/1000);last=ms;
     if((!V||V.profile.quality==='auto')&&rawDt>0&&rawDt<.25){fpsEstimate=fpsEstimate*.96+(.04/rawDt);qualitySamples+=rawDt;if(qualitySamples>3){qualitySamples=0;quality=fpsEstimate<38?'low':'high';}}

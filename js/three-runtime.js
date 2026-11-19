@@ -719,7 +719,7 @@ function gameForgeThreeBoot(){
  window.__gameforgeTelemetry=()=>{
   vec.set(player.x,player.y+1,player.z);if(camera)vec.project(camera);
   return {dimension:'3d',genre,state,paused,frames,simulationHz:60,simulationSteps,stage:stage+1,stages:stages.length,layout:['arena','fps','rpg'].includes(genre)?(configAt(stage).layout||'cross'):'engine-default',
-   enemyArchetypes:enemies.map(e=>e.archetype),eventsFired:[...firedEvents],
+   enemyArchetypes:enemies.map(e=>e.archetype),enemySamples:enemies.slice(0,8).map(e=>({id:e.id,x:e.x,z:e.z})),bossHp:enemies.find(e=>e.boss)?.hp??null,bossAlive:enemies.some(e=>e.boss),eventsFired:[...firedEvents],
    missionSteps:missionPlan().length,missionStepIndex,
    sideQuestSteps:sideQuestPlan().length,sideQuestStepIndex:npcSideStepIndex,
    campaignEffect:campaignEffect?{...campaignEffect}:null,

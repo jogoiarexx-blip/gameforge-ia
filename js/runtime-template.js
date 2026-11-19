@@ -73,7 +73,7 @@ function gameForgeBoot() {
   let stage = 0, hp = 100, score = 0, ammo = 40, xp = 0, upgrades = 0;
   let state = 'menu', paused = false, clock = 0, stageClock = 0, lastTime = 0, renderedFrames=0;
   let player = {x:W/2,y:H/2,r:17,vx:0,vy:0,angle:0};
-  let enemies=[], bullets=[], drops=[], particles=[], platforms=[], obstacles=[];
+  let enemies=[], bullets=[], drops=[], particles=[], platforms=[], obstacles=[],enemySerial=0;
   let arenaBulletGrid=null;
   let cameraX=0, traveled=0, invulnerable=0, fireDelay=0, reloadDelay=0;
   let platformCheckpoint={x:70,y:350},platformCheckpointIndex=-1,platformDeaths=0,platformTraps=[],platformSparks=[],platformDefeated=[];
@@ -97,7 +97,7 @@ function gameForgeBoot() {
       const count=Math.min(22,configAt(stage).enemies>0?clamp(configAt(stage).enemies,1,45):Math.round((10+stage*2)*tuning.enemyMultiplier*tuning.difficulty));
       for(let i=0;i<count;i++){
         const p=platforms[2+i];
-        enemies.push({x:p.x+p.w*.5,y:p.y-18,r:18,hp:1,phase:rand(0,6),speed:30+(i%3)*12,kind:i%4===0?'armored':i%3===0?'scout':'walker',hitFlash:0,patrolLeft:p.x+20,patrolRight:p.x+p.w-20,dir:i%2?1:-1});
+        enemies.push({id:++enemySerial,x:p.x+p.w*.5,y:p.y-18,r:18,hp:1,phase:rand(0,6),speed:30+(i%3)*12,kind:i%4===0?'armored':i%3===0?'scout':'walker',hitFlash:0,patrolLeft:p.x+20,patrolRight:p.x+p.w-20,dir:i%2?1:-1});
       }
       for(let i=1;i<platforms.length;i+=2){const p=platforms[i];drops.push({x:p.x+p.w*.5,y:p.y-45,r:11,kind:'coin'});}
       for(let i=4;i<platforms.length;i+=5){const p=platforms[i];if(!p.checkpoint)platformTraps.push({x:p.x+p.w*.5-22,y:p.y-13,w:44,h:13});}
@@ -116,7 +116,7 @@ function gameForgeBoot() {
     const edge=Math.floor(rand(0,4));
     const x=edge<2? (edge===0?25:W-25):rand(25,W-25);
     const y=edge>=2? (edge===2?25:H-25):rand(25,H-25);
-    enemies.push({x,y,r:boss?31:15,hp:Math.max(1,Math.round((boss?8+stage*2:2+Math.floor(stage/2))*tuning.difficulty*(boss?tuning.bossMultiplier:1))),boss,speed:(boss?34:45+stage*5)*tuning.difficulty,phase:rand(0,6)});
+    enemies.push({id:++enemySerial,x,y,r:boss?31:15,hp:Math.max(1,Math.round((boss?8+stage*2:2+Math.floor(stage/2))*tuning.difficulty*(boss?tuning.bossMultiplier:1))),boss,speed:(boss?34:45+stage*5)*tuning.difficulty,phase:rand(0,6)});
   }
   function start() {stage=0;hp=100;score=0;ammo=40;xp=0;upgrades=0;clock=0;resetStage();}
   function nextStage() {
@@ -390,7 +390,7 @@ function gameForgeBoot() {
     if(spec.genre==='racing'){ctx.fillStyle='#07121bd9';ctx.fillRect(18,68,170,70);ctx.fillStyle='#f4f7fa';ctx.font='bold 22px sans-serif';ctx.fillText(Math.round(racingSpeed*.36)+' km/h',30,99);ctx.font='14px sans-serif';ctx.fillText('Percurso '+Math.floor(traveled/100)+' m',30,123);}
     if(state==='play'&&paused){ctx.fillStyle='#0b1024be';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 44px sans-serif';ctx.textAlign='center';ctx.fillText('PAUSADO',W/2,H/2);ctx.textAlign='left';}
   }
-  window.__gameforgeTelemetry = () => ({state,paused,frames:renderedFrames,clock,stage,genre:spec.genre,player:{x:player.x,y:player.y,screenX:player.x-(spec.genre==='platform'?cameraX:0),screenY:player.y,radius:player.r},enemies:enemies.length,graphicsQuality,graphicsFrameMs:Math.round(graphicsFrameAverage*1000),racing:spec.genre==='racing'?{speed:Math.round(racingSpeed),distance:Math.round(traveled),hits:racingHits}:null,checkpoint:spec.genre==='platform'?platformCheckpointIndex:null,falls:spec.genre==='platform'?platformDeaths:null,traps:spec.genre==='platform'?platformTraps.length:null});
+  window.__gameforgeTelemetry = () => ({state,paused,frames:renderedFrames,clock,stage,genre:spec.genre,player:{x:player.x,y:player.y,screenX:player.x-(spec.genre==='platform'?cameraX:0),screenY:player.y,radius:player.r},enemies:enemies.length,enemySamples:enemies.slice(0,8).map(e=>({id:e.id,x:e.x,y:e.y})),bossHp:enemies.find(e=>e.boss)?.hp??null,bossAlive:enemies.some(e=>e.boss),graphicsQuality,graphicsFrameMs:Math.round(graphicsFrameAverage*1000),racing:spec.genre==='racing'?{speed:Math.round(racingSpeed),distance:Math.round(traveled),hits:racingHits}:null,checkpoint:spec.genre==='platform'?platformCheckpointIndex:null,falls:spec.genre==='platform'?platformDeaths:null,traps:spec.genre==='platform'?platformTraps.length:null});
   // Passo de simulacao fixo: evita fisica dependente do FPS e espiral apos aba suspensa.
   const SIM_STEP=1/60,MAX_SIM_STEPS=5;
   let simulationAccumulator=0;

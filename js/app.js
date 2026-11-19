@@ -312,7 +312,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const requestRev=GameForgeRequirementEvidence.requestFingerprint({
       instruction:$('instruction').value,gdd:$('gdd').value,spec:state.spec
     });
-    if(!current||current.projectFingerprint!==revision||current.requestFingerprint!==requestRev)refreshEvidence();
+    const hadAdvanced=!!state.files['RESULTADOS_AVANCADOS_GF16.json'];
+    const advanced=advancedSuiteForCurrent();
+    if(!current||current.projectFingerprint!==revision||current.requestFingerprint!==requestRev||
+       (hadAdvanced&&!advanced))refreshEvidence();
   }
   function projectSnapshot(){
     ensureEvidenceFresh();
@@ -840,6 +843,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('dev-candidate-discard').addEventListener('click',discardStagedImprovement);
   $('gf14-inspect').addEventListener('click',()=>{if(refreshEvidence()){listFiles();saveState();feedback('Mapa de código e matriz de requisitos atualizados sem marcar testes pendentes como aprovados.');}});
   $('gf15-run').addEventListener('click',()=>projectOperation(runTypedQa));
+  $('gf16-run').addEventListener('click',()=>projectOperation(runAdvancedQa));
   $('plan-improvement').addEventListener('click',planImprovement);
   $('improve').addEventListener('click',()=>projectOperation(improveGame));
   $('undo-improvement').addEventListener('click',undoImprovement);
@@ -848,7 +852,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
 
   /* Laboratório de QA visual v0.4: executa jogo no iframe e testa regressões. */
   const qaState={last:null,baseline:null,vision:null,candidate:null,baseCode:null};
-  let gf15Running=false;
+  let gf15Running=false, gf16Running=false;
   const qaStatus=message=>{$('qa-status').textContent=message;};
 
   function currentRequirementSource(){
@@ -895,6 +899,57 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       gf15Running=false;qaButtons();
     }
   }
+  function advancedSuiteForCurrent(){
+    let suite=null;
+    try{suite=JSON.parse(state.files['RESULTADOS_AVANCADOS_GF16.json']||'null');}catch{}
+    if(!suite)return null;
+    if(!GameForgeAdvancedScenarioQA.valid(suite,currentRequirementSource(),state.files)){
+      delete state.files['RESULTADOS_AVANCADOS_GF16.json'];
+      delete state.files['RELATORIO_AVANCADO_GF16.md'];
+      $('gf16-summary').textContent='Código ou requisitos alterados. Descartadas as observações GF16 anteriores; teste novamente.';
+      return null;
+    }
+    return suite;
+  }
+  async function runAdvancedQa(){
+    if(!state.files['game.js']||gf16Running||gf15Running)return;
+    if(stagedImprovement||qaState.candidate){
+      feedback('Revise ou descarte a proposta pendente antes de testar.',true);return;
+    }
+    gf16Running=true;qaButtons();
+    try{
+      const source=currentRequirementSource(),files={...state.files},spec=state.spec||GameForgeParser.parseGdd($('gdd').value);
+      const p=GameForgeAdvancedScenarioQA.plan({...source,files});
+      if(!p.scenarios.some(x=>x.selected)){
+        $('gf16-summary').textContent='Nenhum teste avançado aplicável aos requisitos atuais. Descreva missões, inimigos, chefes ou salvamento.';
+        return;
+      }
+      const exportFiles={...files,...await assetBinaryFiles()};
+      const html=GameForgeGenerator.shell(spec.title,exportFiles['style.css'],exportFiles['game.js'],true,exportFiles);
+      const result=await GameForgeAdvancedScenarioQA.run({...source,files,plan:p,html,onUpdate:message=>{
+        $('gf16-summary').textContent=message;
+      }});
+      if(p.codeFingerprint!==GameForgeAdvancedScenarioQA.revision(state.files)||
+         p.requestFingerprint!==GameForgeAdvancedScenarioQA.requestRevision(currentRequirementSource())){
+        $('gf16-summary').textContent='O projeto mudou enquanto o QA era executado. Resultados descartados para evitar evidências obsoletas.';
+        return;
+      }
+      state.files['RESULTADOS_AVANCADOS_GF16.json']=JSON.stringify(result,null,2);
+      state.files['RELATORIO_AVANCADO_GF16.md']=GameForgeAdvancedScenarioQA.report(result);
+      refreshEvidence();
+      $('gf16-summary').textContent='GF-ARCH-16 — prévia descartável encerrada. '+result.results.length+
+        ' cenário(s): '+result.counts.pass+' observação(ões) positivas, '+
+        result.counts.inconclusive+' inconclusivo(s), '+result.counts.fail+' falha(s).\n'+
+        'Sua prévia principal não recebeu comandos. PASS significa apenas o comportamento observado, nunca a mecânica completa.';
+      listFiles();saveState();
+      feedback('QA avançado concluído na cópia isolada. Consulte os relatórios no projeto.');
+    }catch(err){
+      $('gf16-summary').textContent='Teste avançado não concluído: '+String(err?.message||err);
+      feedback('Erro no teste descartável: '+String(err?.message||err),true);
+    }finally{
+      gf16Running=false;qaButtons();
+    }
+  }
   function refreshEvidence(qaReport=null){
     if(!state.files['game.js']){
       $('gf14-summary').textContent='Nenhum jogo foi gerado para análise.';
@@ -905,7 +960,8 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       instruction:$('instruction').value,gdd:$('gdd').value,spec:state.spec,files:state.files
     });
     const general=GameForgeRequirementEvidence.evaluate(matrix,{files:state.files,qa:qaReport});
-    const examined=GameForgeScenarioQA.attach(general,typedSuiteForCurrent(),currentRequirementSource(),state.files);
+    const tested=GameForgeScenarioQA.attach(general,typedSuiteForCurrent(),currentRequirementSource(),state.files);
+    const examined=GameForgeAdvancedScenarioQA.attach(tested,advancedSuiteForCurrent(),currentRequirementSource(),state.files);
     state.files['MAPA_CODIGO_GF14.json']=JSON.stringify(codeMap,null,2);
     state.files['MATRIZ_REQUISITOS_GF14.json']=JSON.stringify(examined,null,2);
     state.files['MANIFESTO_AGENTES_GF14.json']=JSON.stringify(GameForgeAgentHandoff.create({instruction:$('instruction').value,spec:state.spec,files:state.files}),null,2);
@@ -924,8 +980,9 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
 
   function qaButtons(){
     const ready=!!state.files['game.js'],has=!!qaState.last,ref=!!qaState.baseline,ai=state.mode==='ai';
-    $('qa-run').disabled=!ready||gf15Running;
-    $('gf15-run').disabled=!ready||gf15Running;
+    $('qa-run').disabled=!ready||gf15Running||gf16Running;
+    $('gf15-run').disabled=!ready||gf15Running||gf16Running;
+    $('gf16-run').disabled=!ready||gf15Running||gf16Running;
     $('qa-baseline').disabled=!has;
     $('qa-compare').disabled=!(has&&ref);
     $('qa-vision').disabled=!(has&&ai);
@@ -951,7 +1008,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     }finally{t.close();}
   }
   async function qaRun(){
-    if(!state.files['game.js']||gf15Running)return;
+    if(!state.files['game.js']||gf15Running||gf16Running)return;
     $('qa-run').disabled=true;qaStatus('Executando roteiro de testes...');
     try{
       $('preview-box').scrollIntoView({block:'center',inline:'nearest'});

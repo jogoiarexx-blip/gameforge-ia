@@ -18,22 +18,30 @@
     return {event:o.event,count:Number(o.count)};
    });
    if(objectives[0].event===objectives[1].event)throw Error('Escolha duas ações diferentes na missão '+(i+1)+'.');
-   const stock=safe(m.stock??0,0,12),seconds=safe(m.seconds??0,0,60),kits=safe(m.kits??0,0,3);
+   const stock=safe(m.stock??0,0,12),seconds=safe(m.seconds??0,0,60),
+    kits=safe(m.kits??0,0,3),boosts=safe(m.boosts??0,0,3);
    const afterFirst=m.afterFirst===true;
-   if(stock===null||seconds===null||kits===null)throw Error('Estoque, espera ou recompensa fora do limite na missão '+(i+1)+'.');
-   return {objectives,stock,seconds,kits,afterFirst};
+   const prereq=m.prerequisites===undefined?[]:m.prerequisites;
+   if(stock===null||seconds===null||kits===null||boosts===null)
+    throw Error('Estoque, espera ou recompensas fora do limite na missão '+(i+1)+'.');
+   if(kits>0&&boosts>0)throw Error('Escolha um tipo de recompensa por missão: kits OU aceleradores.');
+   if(!Array.isArray(prereq)||new Set(prereq).size!==prereq.length||
+    prereq.some(j=>!integer(j,0,i-1)))throw Error('Dependências da missão '+(i+1)+' devem apontar apenas para missões anteriores.');
+   return {objectives,stock,seconds,kits,boosts,afterFirst,prerequisites:[...prereq]};
   });
-  return {domain:data.domain,missions};
+  return {domain:data.domain,missions,graph:data.graph===true||missions.some(m=>m.boosts>0)};
  }
  function buildPrompt(data){
   const d=normalize(data),domain=domains[d.domain],n=d.missions.length;
-  const lines=[domain.intro+'. '+n+' missões encadeadas com objetivos simultâneos. Personagem andando livremente com WASD.'];
+  const lines=[domain.intro+'. '+n+(d.graph?' missões paralelas':' missões encadeadas')+' com objetivos simultâneos. Personagem andando livremente com WASD.'];
   for(const [i,m] of d.missions.entries()){
    let line='Missão '+(i+1)+': '+m.objectives.map(o=>domain.actions[o.event]+' '+o.count).join(' e ')+'.';
    if(m.stock>0)line+=' Estoque de '+m.stock+'.';
    if(m.seconds>0)line+=' Esperar '+m.seconds+' segundos.';
    if(m.afterFirst)line+=' Objetivo 2 depois do objetivo 1.';
    if(m.kits>0)line+=' Recompensa de '+m.kits+' kits.';
+   if(m.boosts>0)line+=' Recompensa de '+m.boosts+' aceleradores.';
+   if(d.graph&&m.prerequisites.length)line+=' Desbloquear após etapas '+m.prerequisites.map(x=>x+1).join(' e ')+'.';
    lines.push(line);
   }
   return lines.join('\n');
@@ -47,8 +55,8 @@
   const match=game.match(/const GAME_SPEC = ([^\r\n]+);\r?\n/);
   if(!match)throw Error('Não foi possível localizar a configuração original do jogo.');
   let spec;try{spec=JSON.parse(match[1]);}catch{throw Error('GAME_SPEC não é JSON puro: não será alterado automaticamente.');}
-  if(spec?.genre!=='simulation'||!([4,5].includes(spec.simulation?.story?.version)))
-   throw Error('Editor de projeto pronto disponível somente para missões v4 ou v5 de simulação 2D.');
+  if(spec?.genre!=='simulation'||!([4,5,6].includes(spec.simulation?.story?.version)))
+   throw Error('Editor de projeto pronto disponível somente para missões v4, v5 ou v6 de simulação 2D.');
   return {spec,match,game};
  }
  function fromSpec(files){
@@ -57,8 +65,10 @@
    objectives:m.objectives.map(o=>({event:o.event,count:o.count})),
    stock:m.requires.find(r=>r.kind==='stock')?.min||0,
    seconds:m.requires.find(r=>r.kind==='time')?.seconds||0,
-   kits:m.itemReward||0,afterFirst:!!m.objectives[1]?.requiresFirst
-  }))};
+   kits:typeof m.itemReward==='number'?m.itemReward:m.itemReward?.kind==='kit'?m.itemReward.count:0,
+   boosts:m.itemReward?.kind==='boost'?m.itemReward.count:0,
+   prerequisites:[...(m.requiresMissions||[])],afterFirst:!!m.objectives[1]?.requiresFirst
+  })),graph:story.version===6};
  }
  function editGenerated(files,proposed){
   const {spec,match,game}=extractGenerated(files),data=normalize(proposed),c=spec.simulation;

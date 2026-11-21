@@ -13,7 +13,7 @@
   const W=512,H=288,platform=spec.genre==='platform';
   canvas.width=W;canvas.height=H;ctx.imageSmoothingEnabled=false;
   const stages=Array.isArray(spec.stages)&&spec.stages.length?spec.stages:['Primeira fase'];
-  const keys=new Set(),touch={left:false,right:false,up:false,down:false,fire:false};
+  const keys=new Set(),touch={left:false,right:false,up:false,down:false,fire:false,attack:false};
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const stateId='gameforge-snes2d-v1-'+String(spec.title).slice(0,60);
   if(!animator||typeof animator.create!=='function')throw Error('GF-SNES-02 exige Animator Controller no game.js; regenere o jogo no Studio.');
@@ -103,7 +103,7 @@
     jump=jump||!!(pad.buttons?.[0]?.pressed);
    }
    const axis=Number(right)-Number(left),v=axis*135*(spec.tuning?.playerSpeedMultiplier||1);
-   const attack=platform?(keys.has('x')||keys.has('X')):jump;
+   const attack=platform?(keys.has('x')||keys.has('X')||touch.attack):jump;
    const attackEdge=attack&&!lastAttack;
    lastAttack=attack;
    if(axis)player.face=axis;
@@ -222,6 +222,14 @@
   text('start').addEventListener('click',begin);
   text('restart').addEventListener('click',begin);
   text('pause').addEventListener('click',togglePause);
+  if(platform){
+   const parent=document.querySelector('.touch');
+   if(parent){
+    const button=document.createElement('button');button.className='action';
+    button.dataset.control='attack';button.textContent='ATACAR';button.setAttribute('aria-label','Atacar');
+    parent.appendChild(button);
+   }
+  }
   for(const button of document.querySelectorAll('[data-control]')){
    const control=button.dataset.control,flag=control==='fire'?'fire':control;
    const on=e=>{e.preventDefault();touch[flag]=true;if(button.setPointerCapture&&e.pointerId!=null)try{button.setPointerCapture(e.pointerId)}catch(_){};};
@@ -256,7 +264,7 @@
    player:{x:player.x,y:player.y,vx:player.vx,vy:player.vy,grounded:player.onGround},
    health,score,collected,required,camera:{x:camera.x,y:camera.y},map:world.telemetry(),
    enemies:enemies.filter(x=>x.alive).length,goalUnlocked:collected>=required,
-   animation:animator.snapshot(player.animator),customSprites:{player:animator.hasCustom('player'),
+   animation:animator.snapshot(player.animator),attackHitboxes:animator.hitboxes(player.animator,player),customSprites:{player:animator.hasCustom('player'),
     enemy:animator.hasCustom('enemy')}
   });
   loadLevel(0);

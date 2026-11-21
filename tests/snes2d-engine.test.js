@@ -94,3 +94,19 @@ test('GF-SNES-01: nenhum motor 2D anterior é substituído',()=>{
   assert.ok(files['game.js'].includes(genre==='rpg'?'gameForgeExpanded2DBoot':'gameForgeBoot'));
  }
 });
+
+test('GF-SNES-01: Studio aceita documentos SNES 2D e preserva motor selecionado no backup',()=>{
+ const Project=require('../js/project-backup.js');
+ const spec=Parser.parseGdd(sample,'',{genre:'platform',dimension:'2d',engineMode:'snes2d'});
+ const files=Generator.generate(spec,sample);
+ assert.ok(Project.allowedFiles.includes('SNES2D_CONTRATO.json'));
+ assert.ok(Project.allowedFiles.includes('SNES2D_LEIA.md'));
+ const raw=Project.encode({name:'Bosque SNES',gdd:sample,instruction:'',files,
+  selected:'SNES2D_CONTRATO.json',
+  creationOptions:{engineMode:'snes2d',dimension:'2d',genre:'platform'}});
+ const restored=Project.decode(raw);
+ assert.equal(restored.creationOptions.engineMode,'snes2d');
+ assert.equal(restored.selected,'SNES2D_CONTRATO.json');
+ assert.equal(restored.files['SNES2D_LEIA.md'],files['SNES2D_LEIA.md']);
+ assert.equal(restored.files['game.js'],files['game.js']);
+});

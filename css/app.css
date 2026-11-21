@@ -322,3 +322,17 @@ body{background:radial-gradient(ellipse at 50% 0%,#17263b 0%,#0a1120 54%) fixed}
   html{scroll-behavior:auto}
   .disclosure-marker,.primary,.outline{transition:none}
 }
+
+
+/* GF-SNES-02: editor de tiles e atlas responsivo para celular. */
+.sn2-editor-panel{padding:14px;display:grid;gap:10px;border:1px solid #305568;border-radius:10px;background:#0d2130}
+.sn2-editor-panel>strong{color:#e7fff4}
+.sn2-editor-panel .hint{margin:0;font-size:12px;line-height:1.5;white-space:normal}
+.sn2-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sn2-actions button{flex:1 1 120px}
+.sn2-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.sn2-grid label{font-size:12px;color:#bcdcd7;display:grid;gap:5px;min-width:0}
+.sn2-grid select,.sn2-grid input{width:100%;min-width:0;max-width:100%;background:#152e3f;color:#edfaff;padding:8px;border:1px solid #3e5f73;border-radius:7px}
+#sn2-canvas{display:block;width:100%;max-width:720px;height:auto;aspect-ratio:16 / 9;border:1px solid #5e919b;border-radius:6px;background:#12263e;image-rendering:pixelated;touch-action:none;cursor:crosshair}
+#sn2-result{color:#b4e9c9}
+@media(max-width:650px){.sn2-editor-panel{padding:9px}.sn2-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sn2-actions button{flex:1 1 calc(50% - 6px)}}

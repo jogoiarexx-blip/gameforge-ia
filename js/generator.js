@@ -50,7 +50,7 @@
     const mechanics={simulation:'Ciclo econômico 2D com produção, cuidado, espera e venda. Uma meta de receita, com salvamento local opcional e continuação no mesmo navegador.',rpg:'Mapa de 2400 × 1600 com câmera, combate, XP, poções, inventário, guardião e relíquias para liberar o portal.','tower-defense':'Construção de torres por grade, dois tipos de torre, melhorias, ondas, recursos e defesa da base.','lane-defense':'Cinco linhas, quatro unidades originais, economia geradora, inimigos atacando unidades, chefes, ondas e dispositivos de emergência por linha.','block-td':'Campo em blocos, três alturas, quatro tipos de torre/extrator, bônus de altura, escolhas permanentes entre ondas e chefes.',fps:'Câmera em primeira pessoa, movimento, mira por teclado/toque, tiros e recarga.',arena:'Exploração, combate, coleta e saída por objetivos.',racing:'Direção, obstáculos e progressão.',platform:'Movimento, saltos e progressão.'};
     const understood=(spec.implementation?.applied||[]).map(x=>'- '+x.description+' ('+x.where+')').join('\\n');
     const stillNeeded=(spec.implementation?.pending||[]).map(x=>'- '+x.description+' ('+x.where+')').join('\\n');
-    return `# Relatório da geração\\n\\n- Título: ${spec.title}\n- Estilo: ${spec.genre}\n- Dimensão: ${spec.dimension||'2d'}\n- Fases: ${spec.stages.join(' / ')}\n- Motor: ${spec.dimension==='3d'?'Three.js r180 local, personagens e ambientes procedurais; uma fase carregada por vez':'Canvas 2D local'}\n- Modelo: ${mechanics[spec.genre]||'Shoot’em up com ondas, melhorias e chefes.'}\n\n${spec.genre==='lane-defense'?'## Recursos do motor por linhas implementados\n\n- Tabuleiro 5x9, coleta manual de recursos, cards com custo e recarga.\n- Ondas reproduzíveis, dano na mesma faixa, proteção de uso único e derrota por segundo vazamento.\n- Até 40 títulos de fases importados. O conteúdo e habilidades próprios de cada fase ainda precisam de programação.\n\n## Fora do motor genérico\n\n- Catálogo completo, chefes roteirizados, minigames, atlas animados, PWA e testes em dispositivos reais não foram criados automaticamente.\n\n':''}## Interpretação da ideia ou GDD\n\n${spec.detected.map(x=>'- '+x).join('\n')}\n\n## Traduzido para o código do jogo\n\n${understood||'- Configuração padrão do motor'}\n\n## Ainda precisa de programação\n\n${stillNeeded||'- Nenhum requisito adicional sinalizado'}\n\n## Limites\n\n${spec.limitations.map(x=>'- '+x).join('\n')}\n\n## Como jogar e publicar\n\nAbra index.html e mantenha todos os arquivos do ZIP juntos. No 3D, engine-3d.js e sua licença acompanham o projeto. O motor de nave 3D possui ondas, chefes, tiros inimigos, power-ups e HUD próprios; o RPG 3D tem progressão básica. O HTML único também inclui a biblioteca; não baixa código de CDN. As regras livres do GDD não são implementadas automaticamente pelo modo sem IA.\n`;
+    return `# Relatório da geração\\n\\n- Título: ${spec.title}\n- Estilo: ${spec.genre}\n- Dimensão: ${spec.dimension||'2d'}\n- Fases: ${spec.stages.join(' / ')}\n- Motor: ${spec.engineMode==='snes2d'?'SNES 2D GF-SNES-01 com tiles em chunks, colisão AABB, câmera e editor de tiles; não exporta ROM':spec.dimension==='3d'?'Three.js r180 local, personagens e ambientes procedurais; uma fase carregada por vez':'Canvas 2D local'}\n- Modelo: ${mechanics[spec.genre]||'Shoot’em up com ondas, melhorias e chefes.'}\n\n${spec.genre==='lane-defense'?'## Recursos do motor por linhas implementados\n\n- Tabuleiro 5x9, coleta manual de recursos, cards com custo e recarga.\n- Ondas reproduzíveis, dano na mesma faixa, proteção de uso único e derrota por segundo vazamento.\n- Até 40 títulos de fases importados. O conteúdo e habilidades próprios de cada fase ainda precisam de programação.\n\n## Fora do motor genérico\n\n- Catálogo completo, chefes roteirizados, minigames, atlas animados, PWA e testes em dispositivos reais não foram criados automaticamente.\n\n':''}## Interpretação da ideia ou GDD\n\n${spec.detected.map(x=>'- '+x).join('\n')}\n\n## Traduzido para o código do jogo\n\n${understood||'- Configuração padrão do motor'}\n\n## Ainda precisa de programação\n\n${stillNeeded||'- Nenhum requisito adicional sinalizado'}\n\n## Limites\n\n${spec.limitations.map(x=>'- '+x).join('\n')}\n\n## Como jogar e publicar\n\nAbra index.html e mantenha todos os arquivos do ZIP juntos. No 3D, engine-3d.js e sua licença acompanham o projeto. O motor de nave 3D possui ondas, chefes, tiros inimigos, power-ups e HUD próprios; o RPG 3D tem progressão básica. O HTML único também inclui a biblioteca; não baixa código de CDN. As regras livres do GDD não são implementadas automaticamente pelo modo sem IA.\n`;
   }
   function generate(spec, gdd) {
     if(spec?.engineAvailability?.status==='blocked')throw Error(spec.engineAvailability.reason);
@@ -63,10 +63,12 @@
       if(errors.length)throw Error('GAME_SPEC incompatível: '+errors.join('; '));
     }
     const three=spec.dimension==='3d';
+    const snes=spec.engineMode==='snes2d';
+    if(snes&&(three||!['platform','rpg'].includes(spec.genre)||spec.snes2d?.version!==1))throw Error('Motor SNES 2D exige configuração Plataforma/RPG 2D v1.');
     if(!three && spec.genre!=='simulation' && typeof gameForgeBoot !== 'function')throw new Error('Modelo básico não carregado');
     if(spec.genre==='shooter' && !three && typeof gameForgeShooterBoot !== 'function')throw new Error('Motor de nave não carregado');
     const data=JSON.stringify(spec).replace(/<\//g,'<\\/');
-    const expanded=!three&&['rpg','tower-defense'].includes(spec.genre);
+    const expanded=!three&&!snes&&['rpg','tower-defense'].includes(spec.genre);
     const advanced=!three&&['lane-defense','block-td'].includes(spec.genre);
     const simulation=spec.genre==='simulation'&&!three;
     const simulationRules=root.gameForgeSimulationRulesFactory||(typeof require==='function'?require('./simulation-rules'):null);
@@ -79,7 +81,11 @@
     const explorationFactory=freeMovement?(root.gameForgeExploration2DFactory||(typeof require==='function'?require('./exploration-2d'):null)):null;
     if(freeMovement&&typeof explorationFactory!=='function')throw Error('Motor de exploração livre ausente no Studio. Atualize a aplicação.');
     const explorationModule=freeMovement?'const GameForgeExploration2D = ('+explorationFactory.toString()+')();\n':'';
-    const runtime=simulation?simulationBoot:three?(spec.genre==='urban-action'?(spec.urbanMissions?.length?root.gameForgeUrbanMissionBoot:root.gameForgeUrban3DBoot):spec.genre==='shooter'?root.gameForgeShooter3DBoot:root.gameForgeThreeBoot):advanced?root.gameForgeAdvancedTDBoot:expanded?root.gameForgeExpanded2DBoot:spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
+    const snesWorldFactory=snes?(root.gameForgeSNES2DWorldFactory||(typeof require==='function'?require('./snes2d-world'):null)):null;
+    const snesBoot=snes?(root.gameForgeSNES2DBoot||(typeof require==='function'?require('./snes2d-runtime'):null)):null;
+    if(snes&&(typeof snesWorldFactory!=='function'||typeof snesBoot!=='function'))throw Error('Motor SNES 2D não carregado; atualize o Studio.');
+    const snesModule=snes?'const GameForgeSNES2D = ('+snesWorldFactory.toString()+')(GAME_SPEC);\n':'';
+    const runtime=snes?snesBoot:simulation?simulationBoot:three?(spec.genre==='urban-action'?(spec.urbanMissions?.length?root.gameForgeUrbanMissionBoot:root.gameForgeUrban3DBoot):spec.genre==='shooter'?root.gameForgeShooter3DBoot:root.gameForgeThreeBoot):advanced?root.gameForgeAdvancedTDBoot:expanded?root.gameForgeExpanded2DBoot:spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
     if(typeof runtime!=='function')throw Error('Motor '+spec.genre+' '+(spec.dimension||'2d')+' não carregado. Atualize o Studio.');
     if(three&&!root.GameForgeThreeSource)throw Error('Biblioteca 3D local ausente. Atualize o Studio.');
     if(advanced&&typeof root.gameForgeTDRulesFactory!=='function')throw Error('Motor de regras Tower Defense não carregado. Atualize o Studio.');
@@ -111,7 +117,7 @@
     const cacheModule=!three?'const gameForgeRenderCacheFactory = '+cacheFactory.toString()+';\n':'';
     const graphicsModule=cacheModule+'const GameForgeGraphics = ('+gfxFactory.toString()+')(GAME_SPEC);\n';
     const graphicsTelemetry='\nif(typeof window.__gameforgeTelemetry==="function"){const rawTelemetry=window.__gameforgeTelemetry;window.__gameforgeTelemetry=()=>({...rawTelemetry(),graphics:GameForgeGraphics.snapshot()});}\n';
-    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+graphicsModule+(eventsModule)+(simulation?'const GameForgeSimulationRules = ('+simulationRules.toString()+')('+(withStory?'GameForgeSimulationEvents':'')+');\n':'')+explorationModule+rules+combatModule+branchModule+'('+runtime.toString()+')();\n'+graphicsTelemetry;
+    const code='/* Jogo criado no modo sem IA. Código editável. */\nconst GAME_SPEC = '+data+';\n'+graphicsModule+snesModule+(eventsModule)+(simulation?'const GameForgeSimulationRules = ('+simulationRules.toString()+')('+(withStory?'GameForgeSimulationEvents':'')+');\n':'')+explorationModule+rules+combatModule+branchModule+'('+runtime.toString()+')();\n'+graphicsTelemetry;
     const css=BASE_CSS;
     const dependencies=three?{'engine-3d.js':root.GameForgeThreeSource,'THREE-LICENSE.txt':root.GameForgeThreeLicense}:{};
     const shooterManifest=spec.genre==='shooter' ? {'MANIFESTO_SHMUP.md':
@@ -139,6 +145,9 @@
       'style.css':css,
       'game.js':code,
       'GDD_original.md':String(gdd||''),
+      ...(snes?{'SNES2D_CONTRATO.json':JSON.stringify({version:1,engine:'snes2d',
+       genre:spec.genre,config:spec.snes2d,stages:spec.stages},null,2),
+       'SNES2D_LEIA.md':'# Motor SNES 2D · GF-SNES-01\n\nMotor offline no game.js com cenário procedural em tiles 16px, chunks 32×18, camadas e colisão AABB. Controles: WASD/setas, espaço para pular (plataforma) ou atacar (RPG), tecla T alterna edição de colisões no mapa. Tocar/clique altera obstáculos durante edição. Controles na tela e gamepad básico. Fases possuem cristais e saída liberada após coletá-los.\n\nNão é um emulador de SNES nem uma ROM .sfc. Não importa os scripts do SNES Engine Studio dinamicamente, não gera cutscenes narrativas ou mapas artísticos a partir de texto livre.\n'}:{}),
       ...(spec.actionModel?{'MODELO_ACOES.json':JSON.stringify(spec.actionModel,null,2),
         'PLANO_ACOES.md':(root.GameForgeMissionSemantics||(typeof require==='function'?require('./mission-semantics'):null))?.report(spec.actionModel)||''}:{}),
       'RELATORIO_GERACAO.md':generationReport(spec),

@@ -7,7 +7,7 @@ const root=path.resolve(__dirname,'..');
 for(const name of [
  'runtime-template','shooter-runtime','world-rules','software-renderer','three-runtime',
  'shooter-3d-runtime','strategy-rules','expanded-2d-runtime','advanced-td-rules',
- 'advanced-td-runtime','combat-economy','urban-rules','urban-runtime','urban-mission-flow','urban-mission-runtime','mission-semantics'
+ 'advanced-td-runtime','combat-economy','urban-rules','urban-runtime','urban-mission-flow','urban-mission-runtime','mission-semantics','snes2d-world','snes2d-runtime'
 ])require(path.join(root,'js',name+'.js'));
 require(path.join(root,'vendor/three-source.js'));
 const parser=require(path.join(root,'js/parser.js'));
@@ -105,6 +105,15 @@ const graphSpec=parser.parseGdd('','Cuidar de aquário. Quatro missões paralela
 const graphFiles=generator.generate(graphSpec,'');validateFiles(graphFiles,'2d','simulation');
 const graphDir=path.join(output,'graph-aquarium');fs.mkdirSync(graphDir);
 for(const [filename,contents] of Object.entries(graphFiles))fs.writeFileSync(path.join(graphDir,filename),contents);
+// GF-SNES-01: duas exportações reais com TileMap no browser e no celular.
+for(const genre of ['platform','rpg']){
+ const gdd='# Expedição SNES 2D\n\n## Fase 1 - Bosque\nCaminhe e colete cristais.\n\n## Fase 2 - Ruínas\nAtravesse o mapa com cuidado.\n';
+ const spec=parser.parseGdd(gdd,'',{dimension:'2d',genre,engineMode:'snes2d'});
+ const files=generator.generate(spec,gdd);
+ validateFiles(files,'2d',genre);
+ const id='snes2d-'+genre,dir=path.join(output,id);fs.mkdirSync(dir);
+ for(const [filename,contents] of Object.entries(files))fs.writeFileSync(path.join(dir,filename),contents);
+}
 fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

@@ -95,6 +95,13 @@
      }
     }
    }
+   // GF-SNES-02: replay de edições do Studio sobre o mapa procedural, por fase.
+   const saved=Array.isArray(config.maps?.stages)?config.maps.stages[stage]:null;
+   if(Array.isArray(saved))for(const entry of saved.slice(0,1024)){
+    if(!entry||!LAYERS.includes(entry.layer)||
+     ![entry.x,entry.y,entry.id].every(Number.isInteger))continue;
+    setTile(entry.layer,entry.x,entry.y,entry.id);
+   }
    return info();
   }
   function solid(x,y){return tileAt('collision',x,y)!==0;}
@@ -205,7 +212,8 @@
    for(const name of show)for(const ch of visibleChunks(camera))renderLayer(ctx,ch,name);
    ctx.restore();
   }
-  function info(){return {...dims,chunks:chunks.size,genre,theme:config.theme||'forest'};}
+  function info(){return {...dims,chunks:chunks.size,genre,theme:config.theme||'forest',
+   mappedStages:Array.isArray(config.maps?.stages)?config.maps.stages.length:0};}
   function telemetry(){return {...info(),cacheHits,dirtyDraws,drawCalls:painted};}
   build(0);
   return {TILE,COLS,ROWS,LAYERS,build,info,telemetry,coords,tileAt,setTile,fillRect,

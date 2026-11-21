@@ -303,10 +303,13 @@
     if(engineMode==='snes2d'){
       interpreted.snes2d={version:1,tileSize:16,chunkCols:32,chunkRows:18,
        layers:['background','ground','decoration','foreground','collision'],
-       theme:interpreted.worldOptions?.theme||'forest',editorEnabled:true};
-      interpreted.implementation.applied.push({id:'snes-tileworld',description:'Motor SNES 2D: mapa em chunks de 32×18 tiles, cinco camadas, autotile por vizinhança, colisão AABB, câmera suave e editor local de tiles',where:'Plataforma/RPG 2D'});
+       theme:interpreted.worldOptions?.theme||'forest',editorEnabled:true,
+       maps:{version:1,stages:[]},sprites:{}};
+      interpreted.implementation.applied.push({id:'snes-tileworld',description:'Motor SNES 2D: chunks de 32×18 tiles, cinco camadas, colisão AABB e câmera suave, com editor visual por fase no Studio',where:'Plataforma/RPG 2D'});
+      interpreted.implementation.applied.push({id:'snes-animation',description:'Sprite Atlas em PNG/WEBP com JSON opcional, estados idle/walk/jump/attack/hurt e hitboxes por quadro',where:'Plataforma/RPG 2D'});
+      interpreted.implementation.applied.push({id:'snes-map-editor',description:'Editor visual integrado ao Studio com pintura por chunk, layers, histórico de desfazer, JSON de mapa e exportação no game.js',where:'Studio SNES 2D'});
       interpreted.detected.push('Motor executável: SNES 2D (Canvas pixel art)');
-      interpreted.limitations.unshift('GF-SNES-01 gera um novo motor HTML em Canvas para Plataforma e RPG 2D; exportar ROM SNES, importar sprite sheets, editar vários mapas no Studio, cutscenes e chefes específicos não estão implementados neste motor.');
+      interpreted.limitations.unshift('GF-SNES-02: editor visual de mapas e importação de spritesheets são opcionais após gerar o jogo. Os mapas são editados por chunk, em camadas; não há conversão de ROM SNES, animações 3D, cutscenes complexas nem chefes roteirizados.');
     }
     if(genre==='simulation'){
       const sim=simulationDesign.compile(combined,extra);

@@ -48,6 +48,11 @@
    const p=coords(x,y),c=get(p.cx,p.cy,true),i=p.ty*COLS+p.tx;
    if(c.layers[layer][i]===id)return false;
    c.layers[layer][i]=id;c.dirty.add(layer);
+   // Autotile: editar um tile de borda invalida também o cache do chunk vizinho.
+   if(layer==='ground'||layer==='foreground')for(const [ox,oy] of [[-TILE,0],[TILE,0],[0,-TILE],[0,TILE]]){
+    const near=coords(x+ox,y+oy),other=get(near.cx,near.cy);
+    if(other)other.dirty.add(layer);
+   }
    return true;
   }
   function fillRect(layer,x,y,w,h,id){
@@ -169,6 +174,16 @@
      const x=(i%COLS)*TILE,y=floor(i/COLS)*TILE;
      if(canvas)gc.drawImage(canvas,t*TILE,0,TILE,TILE,x,y,TILE,TILE);
      else{gc.fillStyle=palette.ground;gc.fillRect(x,y,TILE,TILE);}
+     if(name==='ground'&&t===2){
+      // Arestas conectadas por máscara N/E/S/W — não desenhar separação interna.
+      const wx=(ch.cx*COLS+(i%COLS))*TILE,wy=(ch.cy*ROWS+floor(i/COLS))*TILE;
+      const mask=autotileMask(wx,wy,'ground');
+      gc.fillStyle=palette.edge;
+      if(!(mask&1))gc.fillRect(x,y,TILE,2);
+      if(!(mask&2))gc.fillRect(x+TILE-2,y,2,TILE);
+      if(!(mask&4))gc.fillRect(x,y+TILE-2,TILE,2);
+      if(!(mask&8))gc.fillRect(x,y,2,TILE);
+     }
     }
     ch.dirty.delete(name);dirtyDraws++;
    }else cacheHits++;

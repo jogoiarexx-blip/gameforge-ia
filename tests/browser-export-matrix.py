@@ -1117,9 +1117,82 @@ def run():
             finally:
                 studio_snes.close()
 
+            # GF-SNES-02: editor visual real no Studio, undo/redo, importação PNG/atlas e aplicação em game.js.
+            gf_snes2_page = browser.new_page(viewport={'width': 390, 'height': 844})
+            snes2_errors = []
+            gf_snes2_page.on('pageerror', lambda error: snes2_errors.append(str(error)))
+            try:
+                import base64
+                gf_snes2_page.goto(origin + '/index.html', wait_until='load')
+                gf_snes2_page.locator('#gdd').fill('# Labirinto SNES 2D\n\n## Fase 1 - Bosque\nJogo de plataforma com inimigos.')
+                gf_snes2_page.locator('.engine-disclosure > summary').click()
+                gf_snes2_page.locator('#game-dimension').select_option('2d')
+                gf_snes2_page.locator('#game-style').select_option('platform')
+                gf_snes2_page.locator('#game-engine-mode').select_option('snes2d')
+                gf_snes2_page.locator('#generate').click()
+                gf_snes2_page.wait_for_function("document.getElementById('rerun') && !document.getElementById('rerun').disabled", timeout=17000)
+                gf_snes2_page.locator('#sn2-editor > summary').click()
+                gf_snes2_page.locator('#sn2-load').click()
+                assert 'Mapa aberto' in gf_snes2_page.locator('#sn2-result').inner_text()
+                assert 'chunk 1,1' in gf_snes2_page.locator('#sn2-metrics').inner_text()
+                gf_snes2_page.locator('#sn2-layer').select_option('collision')
+                gf_snes2_page.locator('#sn2-tile').select_option('1')
+                canvas = gf_snes2_page.locator('#sn2-canvas')
+                box = canvas.bounding_box()
+                assert box is not None and box['width'] > 100
+                canvas.click(position={'x': 96/512*box['width'], 'y': 96/288*box['height']})
+                assert '1 modificações' in gf_snes2_page.locator('#sn2-metrics').inner_text()
+                gf_snes2_page.locator('#sn2-undo').click()
+                assert '0 modificações' in gf_snes2_page.locator('#sn2-metrics').inner_text()
+                gf_snes2_page.locator('#sn2-redo').click()
+                assert '1 modificações' in gf_snes2_page.locator('#sn2-metrics').inner_text()
+                gf_snes2_page.locator('#sn2-apply').click()
+                assert 'atualizados' in gf_snes2_page.locator('#sn2-result').inner_text()
+                gf_snes2_page.locator('#file-list .file-item').filter(has_text='SNES2D_MAPAS.json').first.click()
+                assert '"collision"' in gf_snes2_page.locator('#file-editor').input_value()
+                # A imagem é gerada inteiramente no navegador; não depende de serviços externos.
+                sheet = gf_snes2_page.evaluate("""() => {
+                  const c=document.createElement('canvas');c.width=c.height=64;
+                  const x=c.getContext('2d');x.fillStyle='#44adcc';x.fillRect(0,0,64,64);
+                  x.fillStyle='#ffc483';for(let y=0;y<4;y++)for(let i=0;i<4;i++)x.fillRect(i*16+4,y*16+1,8,8);
+                  return c.toDataURL('image/png');
+                }""")
+                gf_snes2_page.locator('#sn2-player-image').set_input_files({
+                    'name':'hero.png','mimeType':'image/png','buffer':base64.b64decode(sheet.split(',',1)[1])
+                })
+                frames = {f'f{y}_{x}':{'x':x*16,'y':y*16,'w':16,'h':16} for y in range(4) for x in range(4)}
+                animations = {name:{'fps':8,'frames':[f'f{i}_{x}' for x in range(4)]}
+                              for i,name in enumerate(['idle','walk','attack','hurt'])}
+                animations['attack']['hitboxes']=[{'frame':1,'x':12,'y':3,'w':5,'h':9}]
+                atlas = json.dumps({'frames':frames,'animations':animations}).encode()
+                gf_snes2_page.locator('#sn2-player-atlas').set_input_files({
+                    'name':'atlas.json','mimeType':'application/json','buffer':atlas
+                })
+                gf_snes2_page.locator('#sn2-sprite-import').click()
+                gf_snes2_page.wait_for_function("'Spritesheets importadas' in document.getElementById('sn2-result').textContent")
+                gf_snes2_page.locator('#sn2-apply').click()
+                assert 'atualizados' in gf_snes2_page.locator('#sn2-result').inner_text()
+                gf_snes2_page.locator('#file-list .file-item').filter(has_text='SNES2D_ATLAS.json').first.click()
+                assert '"player"' in gf_snes2_page.locator('#file-editor').input_value()
+                gf_snes2_page.locator('#file-list .file-item').filter(has_text='game.js').first.click()
+                assert gf_snes2_page.evaluate("""() => {
+                  const source=document.getElementById('file-editor').value;
+                  const data=GameForgeSNES2DEditor.extractGenerated({'game.js':source});
+                  return data.spec.snes2d.maps.stages[0].length===1 &&
+                    data.spec.snes2d.sprites.player.width===64 &&
+                    source.includes('const GameForgeSNES2DAnimator = ');
+                }""")
+                assert not snes2_errors, snes2_errors
+                gf_snes2_page.screenshot(path=str(screenshots / 'snes2d-editor-atlas-mobile.png'),full_page=True)
+                results.append('snes2d-editor-atlas-mobile')
+            except Exception:
+                failures.append(('snes2d-editor-atlas-mobile', traceback.format_exc(limit=6), snes2_errors, []))
+            finally:
+                gf_snes2_page.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 23 + len(graphics_matrix)
+            assert len(results) == len(matrix) + 24 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

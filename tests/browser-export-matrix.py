@@ -1042,9 +1042,84 @@ def run():
             finally:
                 graph_editor.close()
 
+            # GF-SNES-01: HTML real com mapas por chunks, câmera, controles e edição.
+            for snes_genre in ['platform', 'rpg']:
+                label = 'snes2d-' + snes_genre + '-mobile'
+                snes_page = browser.new_page(viewport={'width': 390, 'height': 844})
+                snes_errors, snes_remote = [], []
+                snes_page.on('pageerror', lambda error: snes_errors.append(str(error)))
+                def on_snes_request(route):
+                    if route.request.url.startswith(origin + '/'):
+                        route.continue_()
+                    else:
+                        snes_remote.append(route.request.url)
+                        route.abort()
+                snes_page.route('**/*', on_snes_request)
+                try:
+                    snes_page.goto(origin + '/tests/_browser_output/snes2d-' + snes_genre + '/index.html', wait_until='load')
+                    snes_page.wait_for_function("typeof window.__gameforgeTelemetry === 'function'")
+                    assert snes_page.evaluate("window.__gameforgeTelemetry().engine") == 'snes2d'
+                    assert snes_page.evaluate("window.__gameforgeTelemetry().map.chunks") == (4 if snes_genre == 'platform' else 6)
+                    snes_page.locator('#start').click()
+                    assert snes_page.evaluate("window.__gameforgeTelemetry().state") == 'play'
+                    initial = snes_page.evaluate("window.__gameforgeTelemetry().player.x")
+                    snes_page.keyboard.down('ArrowRight')
+                    snes_page.wait_for_function("(base) => window.__gameforgeTelemetry().player.x > base+24", arg=initial, timeout=5500)
+                    snes_page.keyboard.up('ArrowRight')
+                    assert snes_page.evaluate("window.__gameforgeTelemetry().map.dirtyDraws") > 0
+                    assert snes_page.evaluate("window.__gameforgeTelemetry().map.cacheHits") > 0
+                    snes_page.keyboard.press('t')
+                    assert snes_page.evaluate("window.__gameforgeTelemetry().edited")
+                    original = snes_page.evaluate("window.__gameforgeSNES2D.getTile('collision',96,160)")
+                    assert snes_page.evaluate("""() => window.__gameforgeSNES2D.setTile('collision',96,160,
+                        window.__gameforgeSNES2D.getTile('collision',96,160)?0:1)""")
+                    assert snes_page.evaluate("window.__gameforgeSNES2D.getTile('collision',96,160)") != original
+                    snes_page.keyboard.press('t')
+                    snes_page.locator('#pause').click()
+                    assert snes_page.evaluate("window.__gameforgeTelemetry().paused")
+                    snes_page.locator('#pause').click()
+                    assert not snes_page.evaluate("window.__gameforgeTelemetry().paused")
+                    assert not snes_errors, snes_errors
+                    assert not snes_remote, snes_remote
+                    snes_page.screenshot(path=str(screenshots / (label + '.png')), full_page=True)
+                    results.append(label)
+                except Exception:
+                    failures.append((label, traceback.format_exc(limit=6), snes_errors, snes_remote))
+                finally:
+                    snes_page.close()
+
+            # GF-SNES-01: escolha manual do motor e geração no próprio Studio móvel.
+            studio_snes = browser.new_page(viewport={'width': 390, 'height': 844})
+            snes_studio_errors = []
+            studio_snes.on('pageerror', lambda error: snes_studio_errors.append(str(error)))
+            try:
+                studio_snes.goto(origin + '/index.html', wait_until='load')
+                studio_snes.locator('#gdd').fill('# Bosque das Quatro Torres\\n\\n## Fase 1 - Bosque\\nUm jogo de plataforma 2D.')
+                studio_snes.locator('.engine-disclosure > summary').click()
+                studio_snes.locator('#game-dimension').select_option('2d')
+                studio_snes.locator('#game-style').select_option('platform')
+                studio_snes.locator('#game-engine-mode').select_option('snes2d')
+                assert studio_snes.evaluate("""() => {
+                   const s=GameForgeParser.parseGdd(document.getElementById('gdd').value,
+                     document.getElementById('instruction').value,{
+                     dimension:'2d',genre:'platform',engineMode:document.getElementById('game-engine-mode').value
+                   });return s.engineMode==='snes2d' && s.snes2d.version===1;
+                }""")
+                studio_snes.locator('#generate').click()
+                studio_snes.wait_for_function("document.getElementById('rerun') && !document.getElementById('rerun').disabled", timeout=17000)
+                studio_snes.locator('#file-list .file-item').filter(has_text='SNES2D_CONTRATO.json').first.click()
+                assert '"snes2d"' in studio_snes.locator('#file-editor').input_value()
+                assert not snes_studio_errors, snes_studio_errors
+                studio_snes.screenshot(path=str(screenshots / 'snes2d-studio-mobile.png'), full_page=True)
+                results.append('snes2d-studio-mobile')
+            except Exception:
+                failures.append(('snes2d-studio-mobile', traceback.format_exc(limit=6), snes_studio_errors, []))
+            finally:
+                studio_snes.close()
+
             print(json.dumps({'passed': results, 'failed': failures}, ensure_ascii=False))
             assert not failures, f'GF-002 navegador encontrou {len(failures)} falha(s): {failures}'
-            assert len(results) == len(matrix) + 20 + len(graphics_matrix)
+            assert len(results) == len(matrix) + 23 + len(graphics_matrix)
         finally:
             browser.close()
             server.shutdown()

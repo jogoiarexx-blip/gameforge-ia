@@ -1169,7 +1169,7 @@ def run():
                     'name':'atlas.json','mimeType':'application/json','buffer':atlas
                 })
                 gf_snes2_page.locator('#sn2-sprite-import').click()
-                gf_snes2_page.wait_for_function("'Spritesheets importadas' in document.getElementById('sn2-result').textContent")
+                gf_snes2_page.wait_for_function("document.getElementById('sn2-result').textContent.includes('Spritesheets importadas')", timeout=12000)
                 gf_snes2_page.locator('#sn2-apply').click()
                 assert 'atualizados' in gf_snes2_page.locator('#sn2-result').inner_text()
                 gf_snes2_page.locator('#file-list .file-item').filter(has_text='SNES2D_ATLAS.json').first.click()

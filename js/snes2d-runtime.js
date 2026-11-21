@@ -107,7 +107,7 @@
     const hit=world.move(player,v*dt,player.vy*dt);
     if(hit.hitY){if(player.vy>0)player.onGround=true;player.vy=0;}
     else player.onGround=false;
-    if(player.y>world.info().height-14)injure();
+    if(player.y>=world.info().height-player.h-1)injure();
    }else{
     const vx=axis,vy=Number(down)-Number(up),mag=Math.max(1,Math.hypot(vx,vy));
     world.move(player,vx/mag*128*dt,vy/mag*128*dt);

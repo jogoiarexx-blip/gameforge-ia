@@ -9,7 +9,7 @@
   const devHistory=[];let lastPlan=null;
   let roadmapTasks=[],selectedTaskId=null,preparedTaskId=null,roadmapCount=60,roadmapSource=null;
   const example=$('gdd').value;
-  function creationOptions(){return {dimension:$('game-dimension').value,genre:$('game-style').value,theme:$('game-theme').value,size:Number($('game-world-size').value),quality:$('game-quality').value,graphicsQuality:$('game-graphics-2d').value,visualStyle:$('game-visual-style').value};}
+  function creationOptions(){return {engineMode:$('game-engine-mode').value,dimension:$('game-dimension').value,genre:$('game-style').value,theme:$('game-theme').value,size:Number($('game-world-size').value),quality:$('game-quality').value,graphicsQuality:$('game-graphics-2d').value,visualStyle:$('game-visual-style').value};}
   function renderStyles(){
     const prior=$('game-style').value,dimension=$('game-dimension').value;
     const genres=GameForgeParser.styles[dimension]||Object.keys(GameForgeParser.labels);
@@ -19,10 +19,12 @@
   function enableAutoDetection(){
     $('game-dimension').value='auto';
     $('game-style').value='auto';
+    $('game-engine-mode').value='auto';
     renderStyles();
   }
   function restoreCreationOptions(options){
     const o=options||{};$('game-dimension').value=['2d','3d'].includes(o.dimension)?o.dimension:'auto';renderStyles();
+    $('game-engine-mode').value=['default','snes2d'].includes(o.engineMode)?o.engineMode:'auto';
     if([...$('game-style').options].some(x=>x.value===o.genre))$('game-style').value=o.genre;
     $('game-graphics-2d').value=['low','medium','high'].includes(o.graphicsQuality)?o.graphicsQuality:'auto';$('game-visual-style').value=['forest','neon','desert','ruins'].includes(o.visualStyle)?o.visualStyle:'auto';
     $('game-theme').value=['forest','desert','neon','ruins'].includes(o.theme)?o.theme:'auto';$('game-world-size').value=o.size===72?'72':'48';$('game-quality').value=['low','high'].includes(o.quality)?o.quality:'auto';

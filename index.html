@@ -62,6 +62,8 @@ Derrote o chefe.
         <details class="studio-disclosure engine-disclosure"><summary><span>Personalizar tipo e gráficos</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="engine-settings" aria-label="Estilo e gráficos do jogo">
           <div class="mini-head"><span>Como será seu jogo?</span><span class="tag">Até 30 fases</span></div>
           <div class="split"><div><label for="game-dimension">Dimensão</label><select id="game-dimension"><option value="auto">Detectar pelo GDD</option><option value="2d">2D · Canvas</option><option value="3d">3D · Three.js</option></select></div><div><label for="game-style">Estilo de jogo</label><select id="game-style"><option value="auto">Detectar pelo GDD</option></select></div></div>
+          <label for="game-engine-mode">Motor 2D</label><select id="game-engine-mode"><option value="auto">Detectar pelo pedido</option><option value="default">GameForge clássico</option><option value="snes2d">SNES 2D · tiles e chunks (GF-SNES-01)</option></select>
+          <p class="hint">O novo motor SNES 2D funciona inicialmente com Plataforma e RPG 2D em Canvas. Traz câmera, tiles, camadas, colisões, sprites e edição básica dentro do jogo (tecla T). Não gera ROM de Super Nintendo nem altera seus outros motores.</p>
           <label for="game-theme">Ambiente 3D</label><select id="game-theme"><option value="auto">Detectar pelo GDD</option><option value="forest">Floresta e vilarejo</option><option value="desert">Deserto dourado</option><option value="neon">Cidade neon</option><option value="ruins">Ruínas e mistério</option></select>
           <div class="split"><div><label for="game-world-size">Área 3D</label><select id="game-world-size"><option value="48">Padrão</option><option value="72">Ampla</option></select></div><div><label for="game-quality">Gráficos 3D</label><select id="game-quality"><option value="auto">Adaptativos</option><option value="low">Leves</option><option value="high">Altos</option></select></div></div>
           <div class="split"><div><label for="game-graphics-2d">Qualidade gráfica geral</label><select id="game-graphics-2d"><option value="auto">Automática</option><option value="low">Leve</option><option value="medium">Equilibrada</option><option value="high">Alta</option></select></div><div><label for="game-visual-style">Tema visual geral</label><select id="game-visual-style"><option value="auto">Padrão</option><option value="forest">Natureza</option><option value="neon">Neon</option><option value="desert">Deserto</option><option value="ruins">Ruínas</option></select></div></div><p class="hint">O tema escolhido vale para a próxima criação. No pedido, você pode escrever “pixel art”, “cartoon”, “ilustrado”, “low poly”, “pôr do sol” ou “sem sombras”. Os novos motores geram cenários e personagens procedurais; regras livres e assets detalhados continuam exigindo desenvolvimento.</p>
@@ -318,6 +320,8 @@ Derrote o chefe.
   <script src="./js/shooter-3d-runtime.js"></script>
   <script src="./js/strategy-rules.js"></script>
   <script src="./js/expanded-2d-runtime.js"></script>
+  <script src="./js/snes2d-world.js"></script>
+  <script src="./js/snes2d-runtime.js"></script>
   <script src="./js/advanced-td-rules.js"></script>
   <script src="./js/advanced-td-runtime.js"></script>
   <script src="./js/qa-bridge.js"></script>

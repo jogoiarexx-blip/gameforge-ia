@@ -116,6 +116,12 @@
     }:sourceInference;
     const explicitGenre=options.genre&&options.genre!=='auto'?options.genre:null;
     let genre=explicitGenre||(urbanProfile?.identified?'urban-action':requestedGenre||detectGenre(combined));
+    // GF-SNES-01: motor opcional; nunca substitui silenciosamente o runtime normal.
+    const wantsSNES=/(?:\b(?:snes|super nintendo)\b.{0,25}\b(?:engine|motor|2d|tiles?|16 bits)\b|\b(?:engine|motor)\b.{0,12}\bsnes\b)/.test(direct)||
+     /\b(?:motor snes 2d|engine snes 2d)\b/.test(norm);
+    const engineMode=options.engineMode==='snes2d'?'snes2d':
+     options.engineMode==='default'?'default':wantsSNES?'snes2d':'default';
+    if(engineMode==='snes2d'&&!explicitGenre&&genreInference.confidence==='baixa')genre='platform';
     const excludes3d=/\b(?:sem 3d|nao quero 3d|nao usar 3d|evitar 3d|fora de escopo.{0,18}3d)\b/.test(direct);
     const recentDimension=!excludes3d&&/\b(?:3d|three[.]?js|tres dimensoes|terceira dimensao)\b/.test(direct)?'3d':
       /\b(?:2d|duas dimensoes|canvas)\b/.test(direct)?'2d':null;
@@ -130,7 +136,10 @@
     const inferred3d=positive3d;
     const autoDimension=genre==='urban-action'?'3d':declared2d&&!declared3d?'2d':declared3d?'3d':genre==='fps'?'3d':
       sourceCorpus?.match(source.trim()?source:extra)?.dimension|| (inferred3d?'3d':'2d');
-    let dimension=options.dimension&&options.dimension!=='auto'?options.dimension:recentDimension||autoDimension;
+    let dimension=options.dimension&&options.dimension!=='auto'?options.dimension:
+      engineMode==='snes2d'?'2d':recentDimension||autoDimension;
+    if(engineMode==='snes2d'&&(dimension!=='2d'||!['platform','rpg'].includes(genre)))
+      throw Error('Motor SNES 2D GF-SNES-01 disponível apenas para Plataforma ou RPG em 2D. Selecione um desses estilos ou o motor clássico.');
     const genreOverrideWarning=explicitGenre&&genreInference.confidence==='alta'&&genreInference.genre!==explicitGenre
       ?'O GDD indica '+(labels[genreInference.genre]||genreInference.genre)+', mas está selecionado manualmente '+(labels[explicitGenre]||explicitGenre)+'. Selecione "Detectar pelo GDD" para usar a identificação automática.':null;
     if(!styles[dimension])throw Error('Dimensão não compatível.');
@@ -290,6 +299,15 @@
       return designIR?designIR.enrich(compiled,source,extra):compiled;
     }
     const interpreted=intentCompiler?intentCompiler.compile(compiled,source,extra,options):compiled;
+    interpreted.engineMode=engineMode;
+    if(engineMode==='snes2d'){
+      interpreted.snes2d={version:1,tileSize:16,chunkCols:32,chunkRows:18,
+       layers:['background','ground','decoration','foreground','collision'],
+       theme:interpreted.worldOptions?.theme||'forest',editorEnabled:true};
+      interpreted.implementation.applied.push({id:'snes-tileworld',description:'Motor SNES 2D: mapa em chunks de 32×18 tiles, cinco camadas, autotile por vizinhança, colisão AABB, câmera suave e editor local de tiles',where:'Plataforma/RPG 2D'});
+      interpreted.detected.push('Motor executável: SNES 2D (Canvas pixel art)');
+      interpreted.limitations.unshift('GF-SNES-01 gera um novo motor HTML em Canvas para Plataforma e RPG 2D; exportar ROM SNES, importar sprite sheets, editar vários mapas no Studio, cutscenes e chefes específicos não estão implementados neste motor.');
+    }
     if(genre==='simulation'){
       const sim=simulationDesign.compile(combined,extra);
       interpreted.simulation=sim.config;

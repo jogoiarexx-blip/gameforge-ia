@@ -1,3 +1,11 @@
+# GF-SNES-01 — Motor SNES 2D incorporado ao GameForge
+
+**Novo motor selecionável:** Personalizar tipo e gráficos → Motor 2D → **SNES 2D · tiles e chunks**. Primeiro suporte para **Plataforma 2D** e **RPG 2D com câmera superior**, ambos executáveis no navegador e em dispositivos móveis. Também aceita pedidos em português com "motor SNES 2D" e escolhe esse motor quando compatível.
+
+O código de \`js/snes2d-world.js\` e \`js/snes2d-runtime.js\` reaproveita os conceitos e módulos do [SNES Engine Studio](https://github.com/jogoiarexx-blip/Snes-engine-Studio): tiles de 16px, mapa em chunks 32×18, cinco camadas, atlas pixel-art, cache de tiles, câmera suave e colisão AABB. O jogo exportado incorpora o motor ao \`game.js\`, sem conexão de rede, mantém fases jogáveis e inclui um editor **básico** de colisões acessível pela tecla T. Não cria ROM SNES, importa sprite sheets nem reproduz campanhas livres completas nesta fase.
+
+[Documentação e limitações do GF-SNES-01](docs/GF_SNES_01_MOTOR_TILEWORLD.md).
+
 # GameForge GF-TRAIN-18 — missões em paralelo, itens diferentes e migração controlada
 
 O GameForge agora possui contrato de missão **v6** para simuladores de **aquário, fazenda e loja 2D**: até quatro missões com pré-requisitos em grafo acíclico. Por exemplo: concluir missão 1 desbloqueia missões 2 e 3; concluir ambas desbloqueia missão 4. O jogador pode alternar entre as linhas desbloqueadas falando com seus dois NPCs. Cada linha mantém seu progresso.

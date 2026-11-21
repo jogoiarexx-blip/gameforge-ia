@@ -18,6 +18,7 @@ const support={
  'simulation-dependencies':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.version=5 + objectives[].requiresFirst',test:'tests/simulation-dependencies.test.js',pattern:/objetivo 2 depois|segundo objetivo depende|dependencia entre objetivos/},
  'simulation-item-rewards':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.version=5 + itemReward, s.kits, s.kitsUsed',test:'tests/simulation-dependencies.test.js',pattern:/recompensas? em itens|recompensa de \d+ kits?|kits de recompensa/},
  'simulation-quest-graph':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.version=6 + requiresMissions + gameForgeSimulationEventsFactory.graphRecord',test:'tests/simulation-quest-graph.test.js',pattern:/missoes paralelas|missoes em paralelo|dependencias entre missoes|desbloquear apos etapas/},
+ 'snes-tileworld':{engines:['platform-2d','rpg-2d'],contract:'GAME_SPEC.engineMode=snes2d + gameForgeSNES2DWorldFactory + gameForgeSNES2DBoot',test:'tests/snes2d-engine.test.js',pattern:/snes|super nintendo|motor 16 bits|tiles com chunks/},
  'simulation-typed-items':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.version=6 + itemReward.kind + s.items + s.itemsUsed',test:'tests/simulation-quest-graph.test.js',pattern:/aceleradores?|boosters?|recompensa (?:de )?\d+ kits?/},
  'simulation-conditions':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.missions[].requires + GameForgeSimulationRules.tick/act',test:'tests/simulation-chains.test.js',pattern:/estoque minimo|inventario|aguardar|esperar|segundos/},
  'simulation-save':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.persistence + GameForgeSimulationRules.persistence',test:'tests/simulation-save.test.js',pattern:/salvar|salvamento|save|continuar|guardar progresso/},
@@ -65,7 +66,7 @@ function capability(id,spec){
  const key=normalizeId(id),definition=support[key];
  if(!definition)return {id:key,allowed:false,implemented:false,reason:'Sem contrato executável catalogado para este requisito.'};
  const allowed=!!(definition.all||definition.engines.includes(physicalEngine(spec)));
- return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk','simulation-free','simulation-story','simulation-branches','simulation-patrol','simulation-chain','simulation-conditions','simulation-parallel','simulation-dependencies','simulation-item-rewards','simulation-quest-graph','simulation-typed-items'].includes(key),contract:definition.contract,test:definition.test,
+ return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk','simulation-free','simulation-story','simulation-branches','simulation-patrol','simulation-chain','simulation-conditions','simulation-parallel','simulation-dependencies','simulation-item-rewards','simulation-quest-graph','simulation-typed-items','snes-tileworld'].includes(key),contract:definition.contract,test:definition.test,
    reason:allowed?'Mecânica do motor identificada; verificar GAME_SPEC e testes.':'O motor '+physicalEngine(spec)+' não implementa este parâmetro.'};
 }
 function provenance(item,source,command){
@@ -125,6 +126,17 @@ function check(spec){
  const errors=[];
  if(!spec||typeof spec!=='object')return ['GAME_SPEC não é objeto.'];
  const engine=physicalEngine(spec),stages=spec.stages||[];
+ if(spec.engineMode!==undefined&&spec.engineMode!=='default'&&spec.engineMode!=='snes2d')
+  errors.push('Identificador de motor desconhecido.');
+ if(spec.engineMode==='snes2d'){
+  const c=spec.snes2d;
+  if(!['platform-2d','rpg-2d'].includes(engine)||!c||c.version!==1||c.tileSize!==16||
+   c.chunkCols!==32||c.chunkRows!==18||
+   !Array.isArray(c.layers)||JSON.stringify(c.layers)!==JSON.stringify(['background','ground','decoration','foreground','collision'])||
+   !['forest','neon','desert','ruins'].includes(c.theme)||
+   c.editorEnabled!==true)
+    errors.push('Contrato SNES 2D inválido: somente Plataforma/RPG 2D com tiles 16px e chunks 32×18.');
+ }
  if(spec.genre==='simulation'){
   const c=spec.simulation;
   if(spec.dimension!=='2d'||!c||!['farm','aquarium','shop'].includes(c.domain))errors.push('Contrato de simulação 2D ausente ou inválido.');

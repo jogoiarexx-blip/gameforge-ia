@@ -5,7 +5,7 @@
  'use strict';
  function gameForgeSNES2DBoot(){
   'use strict';
-  const spec=GAME_SPEC,world=GameForgeSNES2D;
+  const spec=GAME_SPEC,world=GameForgeSNES2D,animator=typeof GameForgeSNES2DAnimator!=='undefined'?GameForgeSNES2DAnimator:null;
   if(!world||spec.engineMode!=='snes2d'||!['platform','rpg'].includes(spec.genre))
    throw Error('Configuração SNES 2D inválida.');
   const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
@@ -13,11 +13,12 @@
   const W=512,H=288,platform=spec.genre==='platform';
   canvas.width=W;canvas.height=H;ctx.imageSmoothingEnabled=false;
   const stages=Array.isArray(spec.stages)&&spec.stages.length?spec.stages:['Primeira fase'];
-  const keys=new Set(),touch={left:false,right:false,up:false,down:false,fire:false};
+  const keys=new Set(),touch={left:false,right:false,up:false,down:false,fire:false,attack:false};
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const stateId='gameforge-snes2d-v1-'+String(spec.title).slice(0,60);
+  if(!animator||typeof animator.create!=='function')throw Error('GF-SNES-02 exige Animator Controller no game.js; regenere o jogo no Studio.');
   let state='menu',paused=false,frames=0,last=0,ticks=0,stage=0,health=3,score=0;
-  let edit=false,gamepadLast=false,jumpLast=false,damageCooldown=0,elapsed=0,toastUntil=0;
+  let edit=false,gamepadLast=false,jumpLast=false,lastAttack=false,damageCooldown=0,elapsed=0,toastUntil=0;
   let player={x:32,y:platform?195:62,w:13,h:16,vx:0,vy:0,onGround:false,face:1};
   let enemies=[],crystals=[],required=0,collected=0,exit={x:0,y:0};
   let camera=world.createCamera(),lastMove=0,lastJump=0;
@@ -33,7 +34,8 @@
    stage=clamp(index,0,stages.length-1);
    world.build(stage);camera=world.createCamera();edit=false;damageCooldown=0;
    const bounds=world.info();
-   player={x:32,y:platform?176:62,w:13,h:16,vx:0,vy:0,onGround:false,face:1};
+   player={x:32,y:platform?176:62,w:13,h:16,vx:0,vy:0,onGround:false,face:1,
+    animator:animator.create('player')};
    if(platform){player.y=14*16-player.h;player.onGround=true;}
    enemies=[];crystals=[];
    const yStart=platform?204:100,qty=3+Math.min(stage,5);
@@ -49,7 +51,8 @@
    for(let i=0;i<Math.min(2+stage,7);i++){
     const x=platform?280+i*240:200+i*170,y=platform?208:80+(i%3)*90;
     if(world.blocked(x,y,13,14))continue;
-    enemies.push({x,y,w:13,h:14,home:x,phase:i*0.7,dir:i%2?1:-1,alive:true});
+    enemies.push({x,y,w:13,h:14,home:x,phase:i*0.7,dir:i%2?1:-1,alive:true,
+     face:i%2?1:-1,animator:animator.create('enemy')});
    }
    updateHud();
   }
@@ -61,13 +64,13 @@
    text('timer').textContent=Math.floor(elapsed)+'s';
    text('mission').textContent=(stages[stage]||'Fase')+' · '+(collected===required?'Saída liberada':'Colete os cristais');
    text('control-help').textContent=platform?
-    'A/D/setas: mover · espaço: pular · T: editar tiles · P: pausa':
+    'A/D/setas: mover · espaço: pular · X: atacar · T: mapa · P: pausa':
     'WASD/setas: explorar · espaço: ataque · T: editar tiles · P: pausa';
    text('pause').textContent=paused?'Continuar':'Pausar';
   }
   function begin(){
    keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);
-   stage=0;health=3;score=0;elapsed=0;frames=0;last=0;ticks=0;
+   stage=0;health=3;score=0;elapsed=0;frames=0;last=0;ticks=0;lastAttack=false;jumpLast=false;
    loadLevel(0);state='play';paused=false;edit=false;
    text('overlay').classList.add('hidden');show('Mundo em tiles pronto!');updateHud();
   }
@@ -100,6 +103,9 @@
     jump=jump||!!(pad.buttons?.[0]?.pressed);
    }
    const axis=Number(right)-Number(left),v=axis*135*(spec.tuning?.playerSpeedMultiplier||1);
+   const attack=platform?(keys.has('x')||keys.has('X')||touch.attack):jump;
+   const attackEdge=attack&&!lastAttack;
+   lastAttack=attack;
    if(axis)player.face=axis;
    if(platform){
     if(jump&&!jumpLast&&player.onGround){player.vy=-292;player.onGround=false;show('Pulo!',.5);}
@@ -111,14 +117,21 @@
    }else{
     const vx=axis,vy=Number(down)-Number(up),mag=Math.max(1,Math.hypot(vx,vy));
     world.move(player,vx/mag*128*dt,vy/mag*128*dt);
-    if(jump&&!jumpLast)for(const enemy of enemies){
-     if(!enemy.alive)continue;
-     if(Math.hypot(enemy.x-player.x,enemy.y-player.y)<39){
-      enemy.alive=false;score+=25;show('Inimigo derrotado! +25');break;
+   }
+   jumpLast=jump;
+   animator.update(player.animator,dt,{move:!!axis||(!platform&&(up||down)),
+    jump:platform&&!player.onGround,attack:attackEdge,hurt:damageCooldown>1.1});
+   // Hitboxes saem do quadro real de ataque e não do simples botão pressionado.
+   for(const hit of animator.hitboxes(player.animator,player)){
+    for(const enemy of enemies){
+     if(!enemy.alive||enemy.lastHitSerial===player.animator.attackSerial)continue;
+     if(hit.x<enemy.x+enemy.w&&hit.x+hit.w>enemy.x&&
+      hit.y<enemy.y+enemy.h&&hit.y+hit.h>enemy.y){
+      enemy.alive=false;enemy.lastHitSerial=player.animator.attackSerial;
+      score+=25;show('Golpe certeiro! +25');break;
      }
     }
    }
-   jumpLast=jump;
    for(const enemy of enemies){
     if(!enemy.alive)continue;
     enemy.phase+=dt;
@@ -126,6 +139,8 @@
     const nextX=enemy.x+delta;
     if(Math.abs(nextX-enemy.home)>32||world.blocked(nextX,enemy.y,enemy.w,enemy.h))enemy.dir*=-1;
     else enemy.x=nextX;
+    enemy.face=enemy.dir;
+    animator.update(enemy.animator,dt,{move:true});
     if(Math.abs(enemy.x-player.x)<13&&Math.abs(enemy.y-player.y)<16)injure();
    }
    for(const crystal of crystals)if(!crystal.taken&&Math.abs(crystal.x-player.x)<16&&Math.abs(crystal.y-player.y)<24){
@@ -135,7 +150,8 @@
    world.updateCamera(camera,player,dt,player.face);
    updateHud();
   }
-  function sprite(x,y,mode,frame=0){
+  function sprite(x,y,mode,frame=0,entity=null){
+   if(entity?.animator&&animator.draw(ctx,entity.animator,x-camera.x,y-camera.y,entity.face??1))return;
    ctx.save();
    ctx.translate(Math.floor(x-camera.x),Math.floor(y-camera.y));
    if(mode==='player'){
@@ -171,8 +187,8 @@
     ctx.fillStyle='#242c3a';ctx.fillRect(x-6,y-17,18,40);
     ctx.fillStyle='#dcbd76';ctx.fillRect(x+1,y,5,6);
    }
-   for(const enemy of enemies)if(enemy.alive)sprite(enemy.x,enemy.y,'enemy',Math.floor(enemy.phase*6));
-   sprite(player.x,player.y,'player',Math.floor(elapsed*10));
+   for(const enemy of enemies)if(enemy.alive)sprite(enemy.x,enemy.y,'enemy',Math.floor(enemy.phase*6),enemy);
+   sprite(player.x,player.y,'player',Math.floor(elapsed*10),player);
    world.render(ctx,camera,true);
    if(edit){
     ctx.strokeStyle='#ffdc65';ctx.lineWidth=1;
@@ -206,6 +222,14 @@
   text('start').addEventListener('click',begin);
   text('restart').addEventListener('click',begin);
   text('pause').addEventListener('click',togglePause);
+  if(platform){
+   const parent=document.querySelector('.touch');
+   if(parent){
+    const button=document.createElement('button');button.className='action';
+    button.dataset.control='attack';button.textContent='ATACAR';button.setAttribute('aria-label','Atacar');
+    parent.appendChild(button);
+   }
+  }
   for(const button of document.querySelectorAll('[data-control]')){
    const control=button.dataset.control,flag=control==='fire'?'fire':control;
    const on=e=>{e.preventDefault();touch[flag]=true;if(button.setPointerCapture&&e.pointerId!=null)try{button.setPointerCapture(e.pointerId)}catch(_){};};
@@ -239,7 +263,9 @@
    stageCount:stages.length,genre:spec.genre,engine:'snes2d',edited:edit,
    player:{x:player.x,y:player.y,vx:player.vx,vy:player.vy,grounded:player.onGround},
    health,score,collected,required,camera:{x:camera.x,y:camera.y},map:world.telemetry(),
-   enemies:enemies.filter(x=>x.alive).length,goalUnlocked:collected>=required
+   enemies:enemies.filter(x=>x.alive).length,goalUnlocked:collected>=required,
+   animation:animator.snapshot(player.animator),attackHitboxes:animator.hitboxes(player.animator,player),customSprites:{player:animator.hasCustom('player'),
+    enemy:animator.hasCustom('enemy')}
   });
   loadLevel(0);
   curtain(spec.title,'Motor SNES 2D · tiles e chunks · '+(platform?'Plataforma':'Exploração superior')+' · offline','Jogar agora');

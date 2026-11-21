@@ -1,3 +1,12 @@
+# GF-SNES-02 — Animator e editor de TileMaps no GameForge
+
+**Agora:** o motor SNES 2D possui animações por estados e hitboxes de ataque vinculadas a frames, spritesheets PNG/WEBP com atlas JSON e editor visual por fase/chunk diretamente no Studio. Mapas e imagens importadas são incorporados ao game.js para exportação HTML offline, sem substituir os outros motores.
+
+**Uso:** crie um jogo Plataforma/RPG com Motor 2D → SNES 2D, abra **SNES 2D · Editor de mapas e animações**, clique **Carregar jogo gerado**, pinte ou importe mapas, adicione PNG/WEBP/atlas e confirme em **Aplicar ao jogo**. Modelo de atlas: [SNES2D_ATLAS_MODELO.json](examples/SNES2D_ATLAS_MODELO.json).
+
+[Guia e limites técnicos do GF-SNES-02](docs/GF_SNES_02_ANIMATOR_MAPAS.md).
+
+---
 # GF-SNES-01 — Motor SNES 2D incorporado ao GameForge
 
 **Novo motor selecionável:** Personalizar tipo e gráficos → Motor 2D → **SNES 2D · tiles e chunks**. Primeiro suporte para **Plataforma 2D** e **RPG 2D com câmera superior**, ambos executáveis no navegador e em dispositivos móveis. Também aceita pedidos em português com "motor SNES 2D" e escolhe esse motor quando compatível.

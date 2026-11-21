@@ -7,7 +7,7 @@ const root=path.resolve(__dirname,'..');
 for(const name of [
  'runtime-template','shooter-runtime','world-rules','software-renderer','three-runtime',
  'shooter-3d-runtime','strategy-rules','expanded-2d-runtime','advanced-td-rules',
- 'advanced-td-runtime','combat-economy','urban-rules','urban-runtime','urban-mission-flow','urban-mission-runtime','mission-semantics','snes2d-world','snes2d-runtime'
+ 'advanced-td-runtime','combat-economy','urban-rules','urban-runtime','urban-mission-flow','urban-mission-runtime','mission-semantics','snes2d-world','snes2d-runtime','snes2d-animator'
 ])require(path.join(root,'js',name+'.js'));
 require(path.join(root,'vendor/three-source.js'));
 const parser=require(path.join(root,'js/parser.js'));

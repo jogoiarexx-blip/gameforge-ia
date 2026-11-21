@@ -83,8 +83,11 @@
     const explorationModule=freeMovement?'const GameForgeExploration2D = ('+explorationFactory.toString()+')();\n':'';
     const snesWorldFactory=snes?(root.gameForgeSNES2DWorldFactory||(typeof require==='function'?require('./snes2d-world'):null)):null;
     const snesBoot=snes?(root.gameForgeSNES2DBoot||(typeof require==='function'?require('./snes2d-runtime'):null)):null;
-    if(snes&&(typeof snesWorldFactory!=='function'||typeof snesBoot!=='function'))throw Error('Motor SNES 2D não carregado; atualize o Studio.');
-    const snesModule=snes?'const GameForgeSNES2D = ('+snesWorldFactory.toString()+')(GAME_SPEC);\n':'';
+    const snesAnimatorFactory=snes?(root.gameForgeSNES2DAnimatorFactory||(typeof require==='function'?require('./snes2d-animator'):null)):null;
+    if(snes&&(typeof snesWorldFactory!=='function'||typeof snesBoot!=='function'||
+      typeof snesAnimatorFactory!=='function'))throw Error('Motor SNES 2D / Animator não carregado; atualize o Studio.');
+    const snesModule=snes?'const GameForgeSNES2D = ('+snesWorldFactory.toString()+')(GAME_SPEC);\n'+
+     'const GameForgeSNES2DAnimator = ('+snesAnimatorFactory.toString()+')(GAME_SPEC.snes2d.sprites||{});\n':'';
     const runtime=snes?snesBoot:simulation?simulationBoot:three?(spec.genre==='urban-action'?(spec.urbanMissions?.length?root.gameForgeUrbanMissionBoot:root.gameForgeUrban3DBoot):spec.genre==='shooter'?root.gameForgeShooter3DBoot:root.gameForgeThreeBoot):advanced?root.gameForgeAdvancedTDBoot:expanded?root.gameForgeExpanded2DBoot:spec.genre==='shooter'?gameForgeShooterBoot:gameForgeBoot;
     if(typeof runtime!=='function')throw Error('Motor '+spec.genre+' '+(spec.dimension||'2d')+' não carregado. Atualize o Studio.');
     if(three&&!root.GameForgeThreeSource)throw Error('Biblioteca 3D local ausente. Atualize o Studio.');
@@ -146,8 +149,13 @@
       'game.js':code,
       'GDD_original.md':String(gdd||''),
       ...(snes?{'SNES2D_CONTRATO.json':JSON.stringify({version:1,engine:'snes2d',
-       genre:spec.genre,config:spec.snes2d,stages:spec.stages},null,2),
-       'SNES2D_LEIA.md':'# Motor SNES 2D · GF-SNES-01\n\nMotor offline no game.js com cenário procedural em tiles 16px, chunks 32×18, camadas e colisão AABB. Controles: WASD/setas, espaço para pular (plataforma) ou atacar (RPG), tecla T alterna edição de colisões no mapa. Tocar/clique altera obstáculos durante edição. Controles na tela e gamepad básico. Fases possuem cristais e saída liberada após coletá-los.\n\nNão é um emulador de SNES nem uma ROM .sfc. Não importa os scripts do SNES Engine Studio dinamicamente, não gera cutscenes narrativas ou mapas artísticos a partir de texto livre.\n'}:{}),
+       genre:spec.genre,config:{...spec.snes2d,sprites:undefined},stages:spec.stages},null,2),
+       'SNES2D_MAPAS.json':JSON.stringify(spec.snes2d.maps||{version:1,stages:[]},null,2),
+       'SNES2D_ATLAS.json':JSON.stringify({version:1,roles:Object.fromEntries(['player','enemy'].filter(role=>spec.snes2d.sprites?.[role]).map(role=>[
+         role,{width:spec.snes2d.sprites[role].width,height:spec.snes2d.sprites[role].height,
+          frames:spec.snes2d.sprites[role].frames,animations:spec.snes2d.sprites[role].animations,
+          embeddedInGameJs:true}]))},null,2),
+       'SNES2D_LEIA.md':'# Motor SNES 2D · GF-SNES-02\n\nMotor offline no game.js com cenário procedural em tiles 16px, chunks 32×18, camadas e colisão AABB. Controles: WASD/setas, espaço para pular (plataforma) ou atacar (RPG), tecla T alterna edição de colisões no mapa. Tocar/clique altera obstáculos durante edição. Controles na tela e gamepad básico. Fases possuem cristais e saída liberada após coletá-los.\n\nO Studio oferece editor de mapas por fase/chunk, importação de PNG/WEBP e atlas JSON, e Animator Controller com ataques por hitboxes de quadro. Clique em Aplicar ao jogo para salvar alterações no game.js.\n\nNão é um emulador de SNES nem uma ROM .sfc. Não importa os scripts do SNES Engine Studio dinamicamente, não gera cutscenes narrativas ou mapas artísticos a partir de texto livre.\n'}:{}),
       ...(spec.actionModel?{'MODELO_ACOES.json':JSON.stringify(spec.actionModel,null,2),
         'PLANO_ACOES.md':(root.GameForgeMissionSemantics||(typeof require==='function'?require('./mission-semantics'):null))?.report(spec.actionModel)||''}:{}),
       'RELATORIO_GERACAO.md':generationReport(spec),

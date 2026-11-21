@@ -1450,6 +1450,23 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('gdd').addEventListener('change',saveState);$('instruction').addEventListener('change',saveState);$('project-name').addEventListener('change',saveState);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!qaState.candidate)saveState();});
   renderStyles();
+  if(globalThis.GameForgeSNES2DEditor){
+    globalThis.GameForgeSNES2DEditor.mount({
+      document,root:$('sn2-editor'),
+      getGenerated:()=>state.files,
+      onEdit:result=>{
+        if(qaState.candidate||stagedImprovement)
+          throw Error('Aceite ou descarte a correção pendente antes de editar o jogo.');
+        state.files=result.files;state.spec=result.spec;
+        qaState.last=null;qaState.baseline=null;
+        refreshEvidence();listFiles();
+        if(state.selected&&state.files[state.selected])selectFile(state.selected);
+        else selectFile('game.js');
+        saveState();runPreview();
+        feedback('GF-SNES-02: mapa e atlas incorporados ao jogo exportável. Prévia atualizada.');
+      }
+    });
+  }
   if(globalThis.GameForgeQuestEditor){
     globalThis.GameForgeQuestEditor.mount({
       document,root:$('quest-editor'),instruction:$('instruction'),

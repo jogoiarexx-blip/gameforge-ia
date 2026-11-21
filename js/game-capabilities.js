@@ -18,6 +18,8 @@ const support={
  'simulation-dependencies':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.version=5 + objectives[].requiresFirst',test:'tests/simulation-dependencies.test.js',pattern:/objetivo 2 depois|segundo objetivo depende|dependencia entre objetivos/},
  'simulation-item-rewards':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.version=5 + itemReward, s.kits, s.kitsUsed',test:'tests/simulation-dependencies.test.js',pattern:/recompensas? em itens|recompensa de \d+ kits?|kits de recompensa/},
  'simulation-quest-graph':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.version=6 + requiresMissions + gameForgeSimulationEventsFactory.graphRecord',test:'tests/simulation-quest-graph.test.js',pattern:/missoes paralelas|missoes em paralelo|dependencias entre missoes|desbloquear apos etapas/},
+ 'snes-animation':{engines:['platform-2d','rpg-2d'],contract:'GameForgeSNES2DAnimator + atlas PNG/WEBP + hitboxes por quadro',test:'tests/snes2d-animator.test.js',pattern:/spritesheet|atlas|animacao de ataque|animação de ataque/},
+ 'snes-map-editor':{engines:['platform-2d','rpg-2d'],contract:'SNES2D_MAPAS.json + GameForgeSNES2DEditor + GameForgeSNES2D.build',test:'tests/snes2d-animator.test.js',pattern:/editor de tiles|editor de mapas|mapa em chunks/},
  'snes-tileworld':{engines:['platform-2d','rpg-2d'],contract:'GAME_SPEC.engineMode=snes2d + gameForgeSNES2DWorldFactory + gameForgeSNES2DBoot',test:'tests/snes2d-engine.test.js',pattern:/snes|super nintendo|motor 16 bits|tiles com chunks/},
  'simulation-typed-items':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.version=6 + itemReward.kind + s.items + s.itemsUsed',test:'tests/simulation-quest-graph.test.js',pattern:/aceleradores?|boosters?|recompensa (?:de )?\d+ kits?/},
  'simulation-conditions':{engines:['simulation-2d'],contract:'GAME_SPEC.simulation.story.missions[].requires + GameForgeSimulationRules.tick/act',test:'tests/simulation-chains.test.js',pattern:/estoque minimo|inventario|aguardar|esperar|segundos/},
@@ -66,7 +68,7 @@ function capability(id,spec){
  const key=normalizeId(id),definition=support[key];
  if(!definition)return {id:key,allowed:false,implemented:false,reason:'Sem contrato executável catalogado para este requisito.'};
  const allowed=!!(definition.all||definition.engines.includes(physicalEngine(spec)));
- return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk','simulation-free','simulation-story','simulation-branches','simulation-patrol','simulation-chain','simulation-conditions','simulation-parallel','simulation-dependencies','simulation-item-rewards','simulation-quest-graph','simulation-typed-items','snes-tileworld'].includes(key),contract:definition.contract,test:definition.test,
+ return {id:key,allowed,implemented:['combat-store','simulation-cycle','aquarium-care','simulation-save','simulation-automation','simulation-walk','simulation-free','simulation-story','simulation-branches','simulation-patrol','simulation-chain','simulation-conditions','simulation-parallel','simulation-dependencies','simulation-item-rewards','simulation-quest-graph','simulation-typed-items','snes-tileworld','snes-animation','snes-map-editor'].includes(key),contract:definition.contract,test:definition.test,
    reason:allowed?'Mecânica do motor identificada; verificar GAME_SPEC e testes.':'O motor '+physicalEngine(spec)+' não implementa este parâmetro.'};
 }
 function provenance(item,source,command){
@@ -136,6 +138,34 @@ function check(spec){
    !['forest','neon','desert','ruins'].includes(c.theme)||
    c.editorEnabled!==true)
     errors.push('Contrato SNES 2D inválido: somente Plataforma/RPG 2D com tiles 16px e chunks 32×18.');
+  if(c?.maps!=null){
+   const bounds=spec.genre==='rpg'?{width:1536,height:576}:{width:2048,height:288};
+   const names=['background','ground','decoration','foreground','collision'];
+   if(c.maps.version!==1||!Array.isArray(c.maps.stages)||c.maps.stages.length>stages.length)
+    errors.push('SNES 2D: mapas por fase inválidos.');
+   else for(const [i,changes] of c.maps.stages.entries()){
+    if(!Array.isArray(changes)||changes.length>1024){errors.push('SNES 2D: fase '+(i+1)+' excede 1024 edições.');continue;}
+    for(const entry of changes)if(!entry||!names.includes(entry.layer)||
+     !Number.isInteger(entry.x)||!Number.isInteger(entry.y)||
+     entry.x<0||entry.y<0||entry.x>=bounds.width||entry.y>=bounds.height||
+     entry.x%16||entry.y%16||!Number.isInteger(entry.id)||entry.id<0||entry.id>15){
+      errors.push('SNES 2D: tile de fase '+(i+1)+' inválido.');break;
+     }
+   }
+  }
+  if(c?.sprites!=null){
+   if(typeof c.sprites!=='object'||Array.isArray(c.sprites)||Object.keys(c.sprites).some(r=>!['player','enemy'].includes(r)))
+    errors.push('SNES 2D: papéis de sprites inválidos.');
+   else {
+    const A=root.gameForgeSNES2DAnimatorFactory||(typeof require==='function'?require('./snes2d-animator'):null);
+    for(const [role,value] of Object.entries(c.sprites)){
+     try{
+      if(typeof A!=='function')throw Error('Falta controlador SNES 2D.');
+      A({[role]:value});
+     }catch(e){errors.push('SNES 2D: atlas '+role+' inválido: '+e.message);}
+    }
+   }
+  }
  }
  if(spec.genre==='simulation'){
   const c=spec.simulation;

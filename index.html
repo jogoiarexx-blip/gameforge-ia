@@ -62,8 +62,8 @@ Derrote o chefe.
         <details class="studio-disclosure engine-disclosure"><summary><span>Personalizar tipo e gráficos</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="engine-settings" aria-label="Estilo e gráficos do jogo">
           <div class="mini-head"><span>Como será seu jogo?</span><span class="tag">Até 30 fases</span></div>
           <div class="split"><div><label for="game-dimension">Dimensão</label><select id="game-dimension"><option value="auto">Detectar pelo GDD</option><option value="2d">2D · Canvas</option><option value="3d">3D · Three.js</option></select></div><div><label for="game-style">Estilo de jogo</label><select id="game-style"><option value="auto">Detectar pelo GDD</option></select></div></div>
-          <label for="game-engine-mode">Motor 2D</label><select id="game-engine-mode"><option value="auto">Detectar pelo pedido</option><option value="default">GameForge clássico</option><option value="snes2d">SNES 2D · tiles e chunks (GF-SNES-01)</option></select>
-          <p class="hint">O novo motor SNES 2D funciona inicialmente com Plataforma e RPG 2D em Canvas. Traz câmera, tiles, camadas, colisões, sprites e edição básica dentro do jogo (tecla T). Não gera ROM de Super Nintendo nem altera seus outros motores.</p>
+          <label for="game-engine-mode">Motor 2D</label><select id="game-engine-mode"><option value="auto">Detectar pelo pedido</option><option value="default">GameForge clássico</option><option value="snes2d">SNES 2D · animações + editor (GF-SNES-02)</option></select>
+          <p class="hint">O novo motor SNES 2D funciona inicialmente com Plataforma e RPG 2D em Canvas. Traz câmera, tiles, camadas, Animator Controller e edição no Studio por fase e chunk. Não gera ROM de Super Nintendo nem altera seus outros motores.</p>
           <label for="game-theme">Ambiente 3D</label><select id="game-theme"><option value="auto">Detectar pelo GDD</option><option value="forest">Floresta e vilarejo</option><option value="desert">Deserto dourado</option><option value="neon">Cidade neon</option><option value="ruins">Ruínas e mistério</option></select>
           <div class="split"><div><label for="game-world-size">Área 3D</label><select id="game-world-size"><option value="48">Padrão</option><option value="72">Ampla</option></select></div><div><label for="game-quality">Gráficos 3D</label><select id="game-quality"><option value="auto">Adaptativos</option><option value="low">Leves</option><option value="high">Altos</option></select></div></div>
           <div class="split"><div><label for="game-graphics-2d">Qualidade gráfica geral</label><select id="game-graphics-2d"><option value="auto">Automática</option><option value="low">Leve</option><option value="medium">Equilibrada</option><option value="high">Alta</option></select></div><div><label for="game-visual-style">Tema visual geral</label><select id="game-visual-style"><option value="auto">Padrão</option><option value="forest">Natureza</option><option value="neon">Neon</option><option value="desert">Deserto</option><option value="ruins">Ruínas</option></select></div></div><p class="hint">O tema escolhido vale para a próxima criação. No pedido, você pode escrever “pixel art”, “cartoon”, “ilustrado”, “low poly”, “pôr do sol” ou “sem sombras”. Os novos motores geram cenários e personagens procedurais; regras livres e assets detalhados continuam exigindo desenvolvimento.</p>
@@ -87,6 +87,35 @@ Derrote o chefe.
           <textarea id="rpg-layout-json" rows="4" spellcheck="false" placeholder='Cole aqui o JSON exportado pelo editor de fases'></textarea>
           <p class="hint">A configuração será aplicada ao próximo jogo RPG 2D gerado. O editor pode enviar o layout diretamente para este Studio.</p>
         </section></details>
+        <details id="sn2-editor" class="studio-disclosure sn2-disclosure"><summary><span>SNES 2D · Editor de mapas e animações</span><span class="disclosure-marker" aria-hidden="true">+</span></summary>
+          <section class="sn2-editor-panel" aria-label="Editor integrado GF-SNES-02">
+            <strong>Editor visual SNES 2D</strong>
+            <p class="hint">Gere um jogo SNES 2D e clique em Carregar jogo. Edite camadas por fase e por chunk. As alterações só ficam definitivas ao clicar em Aplicar ao jogo.</p>
+            <div class="sn2-actions"><button type="button" id="sn2-load" class="outline small">Carregar jogo gerado</button><button type="button" id="sn2-apply" class="primary small">Aplicar ao jogo</button></div>
+            <div class="sn2-grid">
+              <label for="sn2-stage">Fase<select id="sn2-stage"><option value="0">Carregar primeiro</option></select></label>
+              <label for="sn2-chunk-x">Chunk horizontal<select id="sn2-chunk-x"><option value="0">Coluna 1</option></select></label>
+              <label for="sn2-chunk-y">Chunk vertical<select id="sn2-chunk-y"><option value="0">Linha 1</option></select></label>
+              <label for="sn2-layer">Camada<select id="sn2-layer"><option value="background">Fundo</option><option value="ground">Terreno</option><option value="decoration">Decoração</option><option value="foreground">Parede/frente</option><option value="collision">Colisão</option></select></label>
+              <label for="sn2-brush">Ferramenta<select id="sn2-brush"><option value="paint">Pincel</option><option value="erase">Apagar</option></select></label>
+              <label for="sn2-tile">Tile<select id="sn2-tile"><option value="1">1 · base</option><option value="2">2 · borda</option><option value="3">3 · detalhe</option><option value="4">4 · planta</option><option value="5">5 · parede</option><option value="6">6 · variante</option><option value="7">7 · luz</option></select></label>
+            </div>
+            <canvas id="sn2-canvas" width="512" height="288" aria-label="Pinte tiles sobre o mapa por clique ou toque"></canvas>
+            <p id="sn2-metrics" class="hint">Mapa não carregado.</p>
+            <div class="sn2-actions"><button type="button" id="sn2-undo" class="outline small">Desfazer</button><button type="button" id="sn2-redo" class="outline small">Refazer</button><button type="button" id="sn2-export" class="outline small">Baixar JSON do mapa</button><button type="button" id="sn2-import" class="outline small">Importar JSON do mapa</button></div>
+            <input type="file" id="sn2-map-file" accept=".json,application/json" hidden>
+            <strong>Personagens e spritesheets</strong>
+            <p class="hint">PNG ou WEBP (até 480 KB) com atlas JSON opcional. Sem JSON, use uma grade de 4 colunas × 4 linhas: idle, walk, attack e hurt. Quadro jump reutiliza idle. O atlas usa frames e animations como no SNES Engine Studio.</p>
+            <div class="sn2-grid">
+              <label for="sn2-player-image">Spritesheet do jogador<input type="file" id="sn2-player-image" accept=".png,.webp,image/png,image/webp"></label>
+              <label for="sn2-player-atlas">Atlas JSON do jogador<input type="file" id="sn2-player-atlas" accept=".json,application/json"></label>
+              <label for="sn2-enemy-image">Spritesheet dos inimigos<input type="file" id="sn2-enemy-image" accept=".png,.webp,image/png,image/webp"></label>
+              <label for="sn2-enemy-atlas">Atlas JSON dos inimigos<input type="file" id="sn2-enemy-atlas" accept=".json,application/json"></label>
+            </div>
+            <button id="sn2-sprite-import" type="button" class="outline small">Importar spritesheets e atlas</button>
+            <p class="hint">Sprites incorporados ao game.js exportado. Mapas salvos por fase no JSON e no backup. Não gera ROM SNES.</p>
+            <p id="sn2-result" class="hint" role="status" aria-live="polite">Gere um jogo SNES 2D.</p>
+          </section></details>
         <details class="studio-disclosure knowledge-disclosure"><summary><span>Biblioteca de técnicas dos seus jogos</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><section class="repo-learning" aria-label="Biblioteca de conhecimento dos jogos">
           <div class="mini-head"><span>05 / Biblioteca dos seus jogos</span><button type="button" id="knowledge-refresh" class="small outline">Buscar padrões</button></div>
           <p class="hint">Técnicas identificadas nos seus jogos para orientar melhorias. As referências não são sistemas automaticamente importados.</p>
@@ -322,6 +351,8 @@ Derrote o chefe.
   <script src="./js/expanded-2d-runtime.js"></script>
   <script src="./js/snes2d-world.js"></script>
   <script src="./js/snes2d-runtime.js"></script>
+  <script src="./js/snes2d-animator.js"></script>
+  <script src="./js/snes2d-editor.js"></script>
   <script src="./js/advanced-td-rules.js"></script>
   <script src="./js/advanced-td-runtime.js"></script>
   <script src="./js/qa-bridge.js"></script>

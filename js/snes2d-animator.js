@@ -51,8 +51,13 @@
       h.x+h.w>128||h.y+h.h>128)throw Error('Atlas: hitbox inválida em '+state);
      return {frame:h.frame,x:h.x,y:h.y,w:h.w,h:h.h};
     });
-    states[state]={fps,loop:Array.isArray(raw)?state!=='attack'&&state!=='hurt':raw.loop!==false,
-     frames:sframes,hitboxes};
+    const activeBoxes=boxes.length?hitboxes:state==='attack'?[
+      {frame:Math.min(1,sframes.length-1),x:12,y:3,w:6,h:11}
+     ]:[];
+    states[state]={fps,
+     loop:Array.isArray(raw)?state!=='attack'&&state!=='hurt':
+      raw.loop===undefined?(state!=='attack'&&state!=='hurt'):raw.loop!==false,
+     frames:sframes,hitboxes:activeBoxes};
    }
    if(!states.idle)throw Error('Atlas: animação idle obrigatória.');
    for(const state of STATES)if(!states[state])states[state]=states.idle;

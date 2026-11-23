@@ -9,13 +9,13 @@ const EDITOR=new Set(['arena-3d','fps-3d','rpg-3d']);
 const URBAN='urban-action-3d';
 const rules=[
  {id:'scene-glb',title:'Posicionar GLB no cenário por fase',pattern:s=>
-   /\b(glb|gltf|modelos? 3d)\b/.test(s)&&/\b(cenario|cena|fase|mapa|editor|posicionar|arrastar|colocar|inserir|adicionar)\b/.test(s),
+   /\b(glbs?|gltfs?|modelos? 3d)\b/.test(s)&&/\b(cenario|cena|fase|mapa|editor|posicionar|arrastar|colocar|inserir|adicionar)\b/.test(s),
    status:e=>EDITOR.has(e)?'manual':'pendente',
    contract:'SCENE3D_LAYOUT.json + GameForgeScene3DLayout + GameForgeGLB.decode',
    test:'tests/scene3d-glb.test.js',
    action:'Importar GLB como Cenário no Studio, posicionar pelo editor 3D, aplicar ao jogo e verificar o ZIP.'},
  {id:'glb-animation',title:'Personagem GLB com rig e animações',pattern:s=>
-   /\b(glb|gltf|modelos? 3d)\b/.test(s)&&/\b(animad[oa]s?|animacoes?|andar|correr|atacar|ataque|rig|esqueleto|ossos?|retarget|t-pose|clips?)\b/.test(s),
+   /\b(glbs?|gltfs?|modelos? 3d)\b/.test(s)&&/\b(animad[oa]s?|animacoes?|andar|correr|atacar|ataque|rig|esqueleto|ossos?|retarget|t-pose|clips?)\b/.test(s),
    status:e=>e===URBAN?'parcial':'pendente',
    contract:'GameForgeActorAnimations no motor urbano; GLB importado não cria clips ausentes',
    test:'tests/actor-animations.test.js',

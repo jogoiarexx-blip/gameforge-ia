@@ -70,7 +70,7 @@ def run():
                 editor.locator("#send").click()
                 studio.locator("#scene3d-receive").click()
                 studio.locator("#scene3d-apply").click()
-                studio.wait_for_function("document.querySelector('#preview').hasAttribute('srcdoc')",timeout=30000)
+                studio.wait_for_function("""()=>document.querySelector("#preview").srcdoc.includes('"x":9')""",timeout=30000)
                 latest=studio.evaluate("document.querySelector('#preview').srcdoc")
                 assert '"x":9' in latest, "Alteracao de cena nao entrou no game.js"
                 studio.reload(wait_until="load")

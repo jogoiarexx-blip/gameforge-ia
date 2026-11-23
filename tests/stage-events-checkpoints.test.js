@@ -663,6 +663,7 @@ test('GF-TRAIN-21: fase simples salva progresso real, retoma na mesma posicao e 
  assert.ok(key&&key!==R.checkpointKey(spec));
  assert.equal(a.telemetry().midStageAvailable,false);
  a.start();a.key('keydown','w');a.tick(180);a.key('keyup','w');
+ a.elements.pause.click(); // pausa grava o estado atual, alem do autosave periodico
  const saved=R.readMidStage(store.get(key),spec);
  assert.ok(saved,'save real deve existir após 3 segundos de simulação');
  assert.equal(saved.stage,0);assert.ok(saved.stageClock>=2.9);

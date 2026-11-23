@@ -148,6 +148,9 @@
       'style.css':css,
       'game.js':code,
       'GDD_original.md':String(gdd||''),
+      ...(spec.dimension==='3d'&&['arena','fps','rpg'].includes(spec.genre)&&
+        Array.isArray(spec.stageConfig)&&spec.stageConfig.some(s=>Array.isArray(s?.sceneObjects)&&s.sceneObjects.length)?
+        {'SCENE3D_LAYOUT.json':JSON.stringify({version:1,stages:spec.stages.map((_,i)=>({objects:spec.stageConfig[i]?.sceneObjects||[]}))},null,2)}:{}),
       ...(snes?{'SNES2D_CONTRATO.json':JSON.stringify({version:1,engine:'snes2d',
        genre:spec.genre,config:{...spec.snes2d,sprites:undefined},stages:spec.stages},null,2),
        'SNES2D_MAPAS.json':JSON.stringify(spec.snes2d.maps||{version:1,stages:[]},null,2),

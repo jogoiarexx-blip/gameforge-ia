@@ -306,7 +306,8 @@ Derrote o chefe.
 <div class="split"><div><label for="scene-asset-x">Posição X</label><input id="scene-asset-x" type="number" min="-35" max="35" step="1" value="5"></div><div><label for="scene-asset-z">Posição Z</label><input id="scene-asset-z" type="number" min="-35" max="35" step="1" value="5"></div></div>
 <label for="scene-asset-scale">Escala adicional</label><input id="scene-asset-scale" type="number" min="0.2" max="4" step="0.1" value="1">
 <button id="scene-asset-remove" class="small outline" type="button">Remover objeto importado</button>
-<div id="scene-asset-status" class="hint" role="status" aria-live="polite">Nenhum modelo adicionado.</div></div></details>
+<div id="scene-asset-status" class="hint" role="status" aria-live="polite">Nenhum modelo adicionado.</div>
+<pre id="scene-asset-audit" class="hint" role="status" aria-live="polite" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit">A análise de compatibilidade aparecerá aqui após escolher um GLB.</pre></div></details>
 <details class="studio-disclosure model-disclosure"><summary><span>Personagens e animações 3D</span><span class="disclosure-marker" aria-hidden="true">+</span></summary><div class="asset-inspector"><strong>Inspeção de personagem GLB/GLTF</strong><label class="small file-btn" for="model-file">Importar modelo (inspeção estrutural)</label><input type="file" id="model-file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json"><div id="model-report" class="hint">Verifica malhas, rig, ossos e clipes localmente. Pose e qualidade visual exigem laboratório 3D.</div>
 <div class="character-create"><strong>Gerar personagem 3D procedural</strong><label for="character-name">Nome</label><input id="character-name" type="text" maxlength="50" value="Personagem 01">
 <div class="split"><div><label for="character-style">Tipo</label><select id="character-style"><option value="soldado">Soldado</option><option value="exploradora">Exploradora</option><option value="zumbi">Zumbi</option><option value="policial">Policial</option></select></div><div><label for="character-height">Altura (m)</label><input id="character-height" type="number" min="0.4" max="3.5" step="0.05" value="1.75"></div></div>
@@ -372,6 +373,7 @@ Derrote o chefe.
   <script src="./js/advanced-scenario-qa.js"></script>
   <script src="./js/save-resume-qa.js"></script>
   <script src="./js/model-inspector.js"></script>
+  <script src="./js/glb-readiness.js"></script>
   <script src="./js/repository-lessons.js"></script>
   <script src="./js/repository-knowledge.js"></script>
   <dialog id="project-restore-dialog" aria-labelledby="project-restore-title">

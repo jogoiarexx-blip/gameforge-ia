@@ -522,7 +522,7 @@ function gameForgeThreeBoot(){
     const angle=R.clamp(Number(entry.yaw)||0,-180,180)*Math.PI/180;
     const tint=typeof entry.color==='string'&&/^#[a-f0-9]{6}$/i.test(entry.color)?
       parseInt(entry.color.slice(1),16):0x779bc5;
-    const group=new T.Group();group.position.set(x,0,z);group.rotation.y=angle;
+    const group=new T.Group();group.userData.gameForgeScene3D=String(entry.id||'').slice(0,32);group.position.set(x,0,z);group.rotation.y=angle;
     group.scale.setScalar(scale);world.add(group);
     const mat=material(tint);
     const addBox=(w,h,d,cy)=>box(w,h,d,mat,group,0,cy,0);

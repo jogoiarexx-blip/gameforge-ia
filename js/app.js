@@ -1302,7 +1302,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       }
       qaState.last=null;qaState.baseline=null;runPreview();saveState();
       $('scene-asset-status').textContent='Posicao/escala salvas no modelo selecionado.';
-    }catch(err){feedback('Nao foi possivel alterar o modelo: '+err.message,true);}
+    }catch(err){restoreSceneAssetControls(id);feedback('Nao foi possivel alterar o modelo: '+err.message,true);}
   });
   $('scene-asset-remove').addEventListener('click',()=>projectOperation(async()=>{
     const id=$('scene-asset-select').value;if(!id)return;

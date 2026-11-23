@@ -511,6 +511,41 @@ function gameForgeThreeBoot(){
     const sightMaterial=new T.MeshBasicMaterial({color:0xffffff,depthTest:false,depthWrite:false});materials.push(sightMaterial);const sight=new T.Mesh(geometry(new T.RingGeometry(.003,.005,12)),sightMaterial);sight.position.z=-.5;sight.renderOrder=1000;camera.add(sight);
    }
   }
+  // GF-OPEN-02: objetos decorativos e colisoes configurados no editor visual.
+  if(['arena','fps','rpg'].includes(genre)&&Array.isArray(stageRules.sceneObjects)){
+   let lights=0;
+   for(const entry of stageRules.sceneObjects.slice(0,24)){
+    if(!entry||!['crate','pillar','wall','tree','lamp'].includes(entry.kind))continue;
+    const x=R.clamp(Number(entry.x)||0,-size*.38,size*.38);
+    const z=R.clamp(Number(entry.z)||0,-size*.38,size*.38);
+    const scale=R.clamp(Number(entry.scale)||1,.4,3);
+    const angle=R.clamp(Number(entry.yaw)||0,-180,180)*Math.PI/180;
+    const tint=typeof entry.color==='string'&&/^#[a-f0-9]{6}$/i.test(entry.color)?
+      parseInt(entry.color.slice(1),16):0x779bc5;
+    const group=new T.Group();group.userData.gameForgeScene3D=String(entry.id||'').slice(0,32);group.position.set(x,0,z);group.rotation.y=angle;
+    group.scale.setScalar(scale);world.add(group);
+    const mat=material(tint);
+    const addBox=(w,h,d,cy)=>box(w,h,d,mat,group,0,cy,0);
+    const addMesh=(g,cy)=>mesh(g,mat,group,0,cy,0);
+    let w=0,d=0;
+    if(entry.kind==='crate'){addBox(1.4,1.4,1.4,.7);w=d=1.4;}
+    if(entry.kind==='pillar'){addMesh(new T.CylinderGeometry(.5,.6,3,8),1.5);w=d=1.2;}
+    if(entry.kind==='wall'){addBox(3,2,.6,1);w=3;d=.6;}
+    if(entry.kind==='tree'){
+     addMesh(new T.CylinderGeometry(.2,.28,2.2,6),1.1);
+     addMesh(new T.ConeGeometry(1.25,2.7,6),3.1);w=d=.7;
+    }
+    if(entry.kind==='lamp'&&lights++<2){
+     addMesh(new T.CylinderGeometry(.1,.15,3,8),1.5);
+     addMesh(new T.SphereGeometry(.35,8,6),3.2);
+     if(!software){const light=new T.PointLight(tint,7,9,2);light.position.y=3.2;group.add(light);}
+    }
+    if(entry.collidable&&w>0&&d>0){
+     const a=Math.abs(Math.cos(angle)),b=Math.abs(Math.sin(angle));
+     solids.push({x,z,w:scale*(w*a+d*b),d:scale*(d*a+w*b)});
+    }
+   }
+  }
   for(const entry of importedSceneModels){
    const model=entry.model.clone(true),anchor=new T.Group(),p=entry.placement;
    const coordinate=(v,def)=>Number.isFinite(Number(v))?R.clamp(Number(v),-size*.4,size*.4):def;

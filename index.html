@@ -87,7 +87,17 @@ Derrote o chefe.
           <textarea id="rpg-layout-json" rows="4" spellcheck="false" placeholder='Cole aqui o JSON exportado pelo editor de fases'></textarea>
           <p class="hint">A configuração será aplicada ao próximo jogo RPG 2D gerado. O editor pode enviar o layout diretamente para este Studio.</p>
         </section></details>
-        <details id="sn2-editor" class="studio-disclosure sn2-disclosure"><summary><span>SNES 2D · Editor de mapas e animações</span><span class="disclosure-marker" aria-hidden="true">+</span></summary>
+        <details class="studio-disclosure scene3d-disclosure"><summary><span>Cenários 3D · Editor visual (GF-OPEN-02)</span><span class="disclosure-marker" aria-hidden="true">+</span></summary>
+<section class="project-backups" aria-label="Editor de cenas 3D">
+<strong>Editor visual de objetos e luzes 3D</strong>
+<p class="hint">Para Arena, FPS e RPG 3D: coloque caixas, paredes, pilares, árvores e luminárias por fase. Arraste com o mouse, escolha rotação, escala e colisão. GLBs personalizados continuam na biblioteca de modelos. Até 24 objetos e duas luzes por fase.</p>
+<a class="subtle-link" href="./tools/scene3d-editor.html" target="_blank" rel="noopener noreferrer">Abrir editor de cena 3D ↗</a>
+<label for="scene3d-json">Layout de cena (JSON)</label>
+<textarea id="scene3d-json" rows="4" spellcheck="false" placeholder='Use Enviar ao Studio no editor visual e clique em Receber'></textarea>
+<div class="row"><button type="button" id="scene3d-receive" class="small outline">Receber cena do editor</button><button type="button" id="scene3d-apply" class="small outline">Aplicar ao jogo gerado</button></div>
+<p class="hint">Ao gerar um novo jogo 3D, as posições serão incluídas no código exportado. Para jogo já criado, Aplicar atualiza apenas a configuração da cena, preservando o restante da programação.</p>
+</section></details>
+<details id="sn2-editor" class="studio-disclosure sn2-disclosure"><summary><span>SNES 2D · Editor de mapas e animações</span><span class="disclosure-marker" aria-hidden="true">+</span></summary>
           <section class="sn2-editor-panel" aria-label="Editor integrado GF-SNES-02">
             <strong>Editor visual SNES 2D</strong>
             <p class="hint">Gere um jogo SNES 2D e clique em Carregar jogo. Edite camadas por fase e por chunk. As alterações só ficam definitivas ao clicar em Aplicar ao jogo.</p>
@@ -375,6 +385,7 @@ Derrote o chefe.
   <script src="./js/save-resume-qa.js"></script>
   <script src="./js/model-inspector.js"></script>
   <script src="./js/glb-readiness.js"></script>
+  <script src="./js/scene3d-layout.js"></script>
   <script src="./js/repository-lessons.js"></script>
   <script src="./js/repository-knowledge.js"></script>
   <dialog id="project-restore-dialog" aria-labelledby="project-restore-title">

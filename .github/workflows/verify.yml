@@ -73,6 +73,8 @@ jobs:
         run: python tests/browser-gf-open-02b-glb.py
       - name: GF-OPEN-02c — colisoes e rotas no editor Chromium
         run: python tests/browser-gf-open-02c-navigation.py
+      - name: GF-TRAIN-19 — diagnostico Three.js em Chromium
+        run: python tests/browser-gf-train-19.py
       - name: Salvar capturas do navegador para auditoria
         if: always()
         uses: actions/upload-artifact@v4

@@ -1468,7 +1468,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('scene3d-open').addEventListener('click',event=>{
     try{
       const manifest=currentAssetManifest();
+      const worldSize=Number(GameForgeProject.activeSpec(state.files,null)?.worldOptions?.size||
+        state.spec?.worldOptions?.size||48);
       const context={version:1,projectId:assetProjectId,
+        worldSize:[48,72].includes(worldSize)?worldSize:48,
         assets:manifest.assets.filter(a=>a.role==='scene').map(a=>({
           id:a.id,name:a.name,bytes:a.bytes,sha256:a.sha256||null,role:a.role
         }))};

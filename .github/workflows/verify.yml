@@ -73,3 +73,19 @@ jobs:
           path: tests/_browser_output/screenshots/*.png
           if-no-files-found: ignore
           retention-days: 7
+
+  glb_optimizer:
+    name: Otimizacao real de GLB (Node 20)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout do mesmo commit
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Instalar glTF-Transform para testes offline
+        run: npm install --no-audit --no-fund
+      - name: Executar conversao GLB real e validar leitor GameForge
+        run: npm run verify:glb-optimizer

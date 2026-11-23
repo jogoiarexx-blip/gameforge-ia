@@ -48,6 +48,17 @@ test('GF-TRAIN-19: comando recente cancela antigo requisito não implementado',(
  assert.deepEqual(changed.items.map(x=>x.id),['checkpoints']);
  assert.deepEqual(changed.items[0].origin,{document:'Comando',line:1,excerpt:'Agora quero checkpoint persistente em cada fase.'});
 });
+test('GF-TRAIN-19: negação é específica ao recurso pedido, não ao termo sem IA',()=>{
+ const positive=Trainer.inspect({genre:'arena',dimension:'3d'},'',
+  'Jogo 3D sem IA, colocar GLB no cenário.');
+ assert.equal(positive.items.find(x=>x.id==='scene-glb')?.status,'manual');
+ const positive2=Trainer.inspect({genre:'fps',dimension:'3d'},'',
+  'FPS 3D sem multiplayer e com controles no celular.');
+ assert.equal(positive2.items.find(x=>x.id==='mobile-controls')?.status,'parcial');
+ const negative=Trainer.inspect({genre:'arena',dimension:'3d'},'',
+  'Arena 3D. Sem checkpoints. Não quero GLB animado.');
+ assert.equal(negative.items.length,0);
+});
 test('GF-TRAIN-19: registros mantêm origem e ordem das linhas, sem publicar informações pessoais',()=>{
  const report=Trainer.inspect({genre:'rpg',dimension:'3d'},
   '# RPG\nPreciso posicionar GLB no cenário\nQuero colisão com paredes',

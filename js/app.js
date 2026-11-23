@@ -167,6 +167,13 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     // Um GDD recém-importado não deve herdar o GAME_SPEC de outro jogo salvo.
     const generatedGdd=typeof state.files['GDD_original.md']==='string'?state.files['GDD_original.md'].trim():null;
     state.spec=generatedGdd===md?GameForgeProject.activeSpec(state.files,spec):spec;
+    const sceneText=$('scene3d-json')?.value.trim();
+    if(sceneText){
+      try{
+        spec=GameForgeScene3DLayout.apply(spec,sceneText);
+        state.spec=GameForgeScene3DLayout.apply(state.spec,sceneText);
+      }catch(e){feedback('Cena 3D inválida: '+e.message,true);return null;}
+    }
     const urbanOnly=spec.genre==='urban-action';
     $('download-urban-plan').classList.toggle('hidden',!urbanOnly);
     $('generate').disabled=(urbanOnly&&['planned','blocked'].includes(spec.engineAvailability?.status))||!!spec.designIR?.blocked?.length;
@@ -324,7 +331,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   function projectSnapshot(){
     ensureEvidenceFresh();
     roadmapSync();
-    return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,assetProjectId,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,creationOptions:creationOptions(),rpgLayoutJson:$('rpg-layout-json').value,roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
+    return {gdd:$('gdd').value,name:$('project-name').value,instruction:$('instruction').value,assetProjectId,files:state.files,selected:state.selected,pinnedReferences,history:devHistory.slice(-4),deepPlan:$('deep-plan').checked,creationOptions:creationOptions(),rpgLayoutJson:$('rpg-layout-json').value,scene3dJson:$('scene3d-json').value,roadmapRecords:roadmapTasks.map(({id,status,notes,revision})=>({id,status,notes,revision})),selectedTaskId};
   }
   function storageMessage(result){
     $('project-storage-status').textContent=result.message;
@@ -353,6 +360,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     clearTimeout(saveTimer);
     $('gdd').value=snap.gdd;$('project-name').value=snap.name;$('instruction').value=snap.instruction;
     $('rpg-layout-json').value=typeof snap.rpgLayoutJson==='string'?snap.rpgLayoutJson:'';
+    $('scene3d-json').value=typeof snap.scene3dJson==='string'?snap.scene3dJson:'';
     pinnedReferences=snap.pinnedReferences.filter(x=>repoKnowledge.entries.some(r=>r.id===x));
     devHistory.length=0;devHistory.push(...snap.history);
     $('deep-plan').checked=snap.deepPlan;
@@ -1374,6 +1382,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const value=await file.text();unrestoredProject=false;$('gdd').value=value; // Não cortar o documento importado
     $('instruction').value=''; // Não misturar comando de outro projeto com o novo documento.
     $('rpg-layout-json').value='';
+    $('scene3d-json').value='';
     enableAutoDetection(); // Arquivos novos sempre começam com interpretação automática.
     const parsed=analyze();if(parsed)$('project-name').value=parsed.title;
     $('file-indicator').textContent=file.name+' · '+(file.size/1024).toFixed(1)+' KB · '+(parsed?.sectionCount||0)+' capítulos';feedback('GDD integral carregado: '+file.name+' ('+file.size+' bytes).');saveState();e.target.value='';
@@ -1436,12 +1445,47 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       enableAutoDetection();
       $('instruction').value='';
       $('rpg-layout-json').value='';
+      $('scene3d-json').value='';
     }
   });
   $('gdd').addEventListener('input',()=>{renderReferences();scheduleSave();});
   $('instruction').addEventListener('input',()=>{renderReferences();scheduleSave();});
   $('project-name').addEventListener('input',scheduleSave);
   $('rpg-layout-json').addEventListener('input',scheduleSave);
+  $('scene3d-json').addEventListener('input',scheduleSave);
+  $('scene3d-receive').addEventListener('click',()=>{
+    try{
+      const raw=localStorage.getItem('gameforge-scene3d-transfer-v1');
+      if(!raw)throw Error('Nenhuma cena enviada. Use Enviar ao Studio no editor visual.');
+      const normalized=GameForgeScene3DLayout.normalize(raw);
+      $('scene3d-json').value=JSON.stringify(normalized,null,2);
+      scheduleSave();feedback('Cena recebida: '+normalized.stages.length+' fase(s). Gere o jogo 3D ou clique em Aplicar ao jogo gerado.');
+    }catch(e){feedback('Erro ao receber cena: '+e.message,true);}
+  });
+  $('scene3d-apply').addEventListener('click',async()=>{
+    try{
+      if(qaState.candidate||stagedImprovement||projectOperations)throw Error('Conclua correções e operações pendentes antes de editar.');
+      if(!state.files['game.js']||!state.files['engine-3d.js'])throw Error('Primeiro gere um jogo 3D no modo Sem IA.');
+      const raw=$('scene3d-json').value.trim();
+      if(!raw)throw Error('Importe uma cena válida antes de aplicar.');
+      const original=GameForgeProject.activeSpec(state.files,null);
+      if(!original)throw Error('GAME_SPEC não encontrado no game.js.');
+      const updated=GameForgeScene3DLayout.apply(original,raw);
+      const re=/const GAME_SPEC = \{[^\n]*\};/;
+      if(!re.test(state.files['game.js']))throw Error('Formato do GAME_SPEC não reconhecido. Não alterado.');
+      const next=state.files['game.js'].replace(re,'const GAME_SPEC = '+JSON.stringify(updated)+';');
+      if(next===state.files['game.js'])throw Error('A cena já foi aplicada.');
+      pushHistory('GF-OPEN-02: atualizar cena 3D');
+      state.files['game.js']=next;
+      state.files['SCENE3D_LAYOUT.json']=JSON.stringify(GameForgeScene3DLayout.extract(updated),null,2);
+      state.spec=updated;
+      state.files['index.html']=GameForgeGenerator.shell(updated.title,state.files['style.css'],next,false,state.files);
+      qaState.last=null;qaState.baseline=null;refreshEvidence();
+      listFiles();selectFile('game.js');saveState();
+      const playable=await runPreview();
+      feedback('Cena 3D aplicada ao game.js e ao ZIP. '+(playable?'Prévia atualizada.':'Revise a prévia.'),!playable);
+    }catch(e){feedback('Não foi possível aplicar cena 3D: '+e.message,true);}
+  });
   $('rpg-layout-receive').addEventListener('click',()=>{
     try{
       const raw=localStorage.getItem('gameforge-rpg-layout-transfer-v1');

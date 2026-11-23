@@ -50,12 +50,23 @@ button:hover{background:#36638c}button:disabled{opacity:.4;cursor:not-allowed}
 <fieldset><legend>Transformação</legend>
 <div class="row" aria-label="Modo de transformação"><button type="button" id="mode-move">Mover (W)</button><button type="button" id="mode-rotate">Girar (E)</button><button type="button" id="mode-scale">Escala (R)</button></div>
 <small>Selecione o objeto e arraste no cenário para o modo ativo; valores numéricos fazem ajustes precisos.</small>
+<div class="row"><label>Encaixe da posição
+<select id="snap-move"><option value="0.25">0,25 m</option><option value="0.5">0,5 m</option><option value="1">1 m</option><option value="0">Livre</option></select></label>
+<label>Encaixe da rotação
+<select id="snap-angle"><option value="5">5°</option><option value="15">15°</option><option value="45">45°</option><option value="0">Livre</option></select></label></div>
 <label for="name">Nome</label><input id="name" maxlength="40">
 <div class="row"><label>X<input id="x" type="number" min="-16" max="16" step=".25"></label><label>Z<input id="z" type="number" min="-16" max="16" step=".25"></label></div>
 <div class="row"><label>Rotação (°)<input id="yaw" type="number" min="-180" max="180" step="15"></label><label>Escala<input id="scale" type="number" min=".4" max="3" step=".1"></label></div>
 <label for="color">Cor</label><input id="color" type="color" value="#6699bb">
 <label><input id="collidable" type="checkbox" checked> Bloqueia movimento (colisão aproximada)</label>
 <div class="row"><button id="undo">Desfazer</button><button id="redo">Refazer</button></div>
+</fieldset>
+<fieldset><legend>Colisões e passagem (GF-OPEN-02c)</legend>
+<label><input type="checkbox" id="show-colliders" checked> Exibir caixas de colisão aproximadas</label>
+<label for="world-size">Tamanho do mundo</label>
+<select id="world-size"><option value="48">48 m</option><option value="72">72 m</option></select>
+<button id="route-check" type="button">Verificar passagem na fase</button>
+<output id="route-status" role="status" aria-live="polite">A verificação considera apenas obstáculos do editor. Não garante um caminho jogável.</output>
 </fieldset>
 <fieldset><legend>Salvar e transferir</legend>
 <div class="row"><button id="send">Enviar ao Studio</button><button id="download">Baixar JSON</button></div>
@@ -69,6 +80,7 @@ button:hover{background:#36638c}button:disabled{opacity:.4;cursor:not-allowed}
 </main>
 <script src="../vendor/three-source.js"></script>
 <script src="../js/scene3d-layout.js"></script>
+<script src="../js/scene3d-navigation.js"></script>
 <script src="../js/asset-library.js"></script>
 <script src="../js/glb-runtime.js"></script>
 <script>
@@ -78,6 +90,8 @@ const $=id=>document.getElementById(id),API=window.GameForgeScene3DLayout;
 const limit=(x,min,max)=>Math.max(min,Math.min(max,x));
 let stages=[{objects:[]}],index=0,selected=null,seq=1,history=[],future=[],drag=null;
 let mode='move',projectId='',availableAssets=[],assetCache=new Map();
+const NAV=window.GameForgeScene3DNavigation,glbGeometryBounds=Object.create(null);
+let diagnosticsEnabled=false,colliderRoot,routeRoot;
 const assetById=id=>availableAssets.find(a=>a.id===id);
 let T,scene,camera,renderer,raycaster,ground,objectsRoot,gizmo;
 let theta=.65,phi=1.02,dist=32;
@@ -95,6 +109,8 @@ try{
   ground.rotation.x=-Math.PI/2;ground.position.y=-.03;scene.add(ground);
   scene.add(new T.GridHelper(36,36,0x86b5b4,0x658185));
   objectsRoot=new T.Group();scene.add(objectsRoot);raycaster=new T.Raycaster();
+  colliderRoot=new T.Group();scene.add(colliderRoot);
+  routeRoot=new T.Group();scene.add(routeRoot);
   gizmo=new T.Group();scene.add(gizmo);
   const axis=(color,rotate,py)=>{
    const m=new T.Mesh(new T.BoxGeometry(.08,.08,2.5),new T.MeshBasicMaterial({color,depthTest:false}));
@@ -131,10 +147,17 @@ function showGLB(g,e){
   for(const child of g.children.slice()){
    g.remove(child);child.traverse(x=>{x.geometry?.dispose();x.material?.dispose();});
   }
+  model.updateMatrixWorld(true);
+  const bb=new T.Box3().setFromObject(model);
+  if(!bb.isEmpty()){
+   const center=new T.Vector3(),dim=new T.Vector3();bb.getCenter(center);bb.getSize(dim);
+   if(dim.x>0&&dim.z>0)glbGeometryBounds[e.assetId]={x:center.x,z:center.z,w:dim.x,d:dim.z};
+  }
   const preview=model.clone(true);
   preview.userData.gameForgeSharedGLB=true;g.add(preview);
   preview.traverse(node=>{node.userData.entryId=e.id;});
   $('status').textContent='GLB exibido: '+(assetById(e.assetId)?.name||e.assetId)+'.';
+  updateDiagnostics();
  }).catch(error=>{$('status').textContent='GLB indisponivel: '+error.message;});
 }
 function sharedMesh(node){
@@ -161,6 +184,45 @@ function nodeOf(e){
 }
 function transform(g,e){g.position.set(e.x,0,e.z);g.rotation.y=e.yaw*Math.PI/180;g.scale.setScalar(e.scale);}
 function entry(){return stages[index]?.objects.find(e=>e.id===selected);}
+function clearGraphics(group){
+ while(group.children.length){
+  const obj=group.children[0];group.remove(obj);
+  obj.traverse(child=>{child.geometry?.dispose();child.material?.dispose();});
+ }
+}
+function updateDiagnostics(){
+ if(!colliderRoot||!routeRoot)return;
+ clearGraphics(colliderRoot);clearGraphics(routeRoot);
+ const data=NAV.collect(stages[index],glbGeometryBounds);
+ if($('show-colliders').checked){
+  for(const item of data.boxes){
+   const geometry=new T.BoxGeometry(Math.max(.06,item.w),.2,Math.max(.06,item.d));
+   const material=new T.MeshBasicMaterial({
+    color:item.id===selected?0xffd86b:0xff8877,
+    wireframe:true,depthTest:false,transparent:true,opacity:.9
+   });
+   const shape=new T.Mesh(geometry,material);shape.position.set(item.x,.14,item.z);shape.renderOrder=99;
+   colliderRoot.add(shape);
+  }
+ }
+ if(diagnosticsEnabled){
+  const size=Number($('world-size').value)||48;
+  const report=NAV.inspect(stages[index],{size,glbBounds:glbGeometryBounds});
+  if(report.path.length>=2){
+   const points=report.path.map(p=>new T.Vector3(p.x,.23,p.z));
+   const geometry=new T.BufferGeometry().setFromPoints(points);
+   const line=new T.Line(geometry,new T.LineBasicMaterial({color:0x5decc5,depthTest:false}));
+   line.renderOrder=100;routeRoot.add(line);
+  }
+  const category=report.status==='BLOCKED'?'BLOQUEADA':
+   report.status==='INCOMPLETE'?'INCOMPLETA':'PASSAGEM ENCONTRADA';
+  $('route-status').textContent=category+' · '+report.reason+'\n'+report.caveat+
+   (data.missing.length?' GLBs sem geometria: '+data.missing.length+'.':'');
+ }
+}
+$('show-colliders').addEventListener('change',updateDiagnostics);
+$('world-size').addEventListener('change',updateDiagnostics);
+$('route-check').addEventListener('click',()=>{diagnosticsEnabled=true;updateDiagnostics();});
 function sync(){
  const found=entry();
  gizmo.visible=!!found;
@@ -184,7 +246,7 @@ function sync(){
  const root=$('object-list');root.replaceChildren();
  for(const e of stages[index].objects){
   const b=document.createElement('button');b.type='button';b.textContent=e.name+' ('+e.kind+')';b.className=e.id===selected?'active':'';
-  b.onclick=()=>{selected=e.id;sync();};root.appendChild(b);
+  b.onclick=()=>{selected=e.id;sync();updateDiagnostics();};root.appendChild(b);
  }
  $('duplicate').disabled=!found;
  $('remove').disabled=!found;
@@ -200,6 +262,7 @@ function rebuild(){
  }
  stages[index].objects.forEach(e=>objectsRoot.add(nodeOf(e)));
  sync();
+ updateDiagnostics();
 }
 function remember(){
  history.push(JSON.stringify({stages,index,selected,seq}));
@@ -233,8 +296,9 @@ function refreshAssetList(){
     Number.isSafeInteger(a.bytes)&&a.bytes>=20&&a.bytes<=25*1024*1024&&
     (!a.sha256||/^[a-f0-9]{64}$/i.test(a.sha256)));
   if(assets.length!==doc.assets.length)throw Error('Metadados de GLB incompletos.');
-  if(doc.projectId!==projectId)assetCache.clear();
+  if(doc.projectId!==projectId){assetCache.clear();for(const k of Object.keys(glbGeometryBounds))delete glbGeometryBounds[k];}
   projectId=doc.projectId;availableAssets=assets;
+  if([48,72].includes(doc.worldSize))$('world-size').value=String(doc.worldSize);
   const prior=$('asset-id').value;
   $('asset-id').replaceChildren(new Option('Selecione um modelo',''),
     ...availableAssets.map(a=>new Option(a.name,a.id)));
@@ -311,7 +375,7 @@ renderer.domElement.addEventListener('pointerdown',event=>{
  raycaster.setFromCamera(pointer(event),camera);
  const intersections=raycaster.intersectObjects(objectsRoot.children,true);
  const id=intersections.find(hit=>hit.object.userData.entryId)?.object.userData.entryId;
- selected=id||null;sync();
+ selected=id||null;sync();updateDiagnostics();
  drag={id,atX:event.clientX,atY:event.clientY,theta,phi,lastX:null,lastZ:null,initialYaw:entry()?.yaw||0,initialScale:entry()?.scale||1};
  if(id){const p=groundPoint(event);if(p){drag.lastX=p.x;drag.lastZ=p.z;remember();}}
  renderer.domElement.setPointerCapture(event.pointerId);
@@ -323,7 +387,9 @@ renderer.domElement.addEventListener('pointermove',event=>{
   if(mode==='rotate'){
    let deg=drag.initialYaw+(event.clientX-drag.atX)*.65;
    deg=((deg+180)%360+360)%360-180;
-   e.yaw=Math.round(deg/5)*5;const node=objectsRoot.children.find(n=>n.userData.entryId===e.id);
+   const step=Number($('snap-angle').value)||0;
+   e.yaw=step?Math.round(deg/step)*step:Number(deg.toFixed(2));
+   const node=objectsRoot.children.find(n=>n.userData.entryId===e.id);
    if(node)transform(node,e);$('yaw').value=e.yaw;gizmo.rotation.y=e.yaw*Math.PI/180;return;
   }
   if(mode==='scale'){
@@ -333,8 +399,10 @@ renderer.domElement.addEventListener('pointermove',event=>{
   }
   const p=groundPoint(event);if(!p)return;
   if(drag.lastX===null){drag.lastX=p.x;drag.lastZ=p.z;return;}
-  e.x=Math.round(limit(e.x+p.x-drag.lastX,-16,16)*4)/4;
-  e.z=Math.round(limit(e.z+p.z-drag.lastZ,-16,16)*4)/4;
+  const snap=Number($('snap-move').value)||0;
+  const tx=limit(e.x+p.x-drag.lastX,-16,16),tz=limit(e.z+p.z-drag.lastZ,-16,16);
+  e.x=snap?Math.round(tx/snap)*snap:Number(tx.toFixed(3));
+  e.z=snap?Math.round(tz/snap)*snap:Number(tz.toFixed(3));
   const node=objectsRoot.children.find(n=>n.userData.entryId===e.id);if(node)transform(node,e);
   drag.lastX=p.x;drag.lastZ=p.z;
   $('x').value=e.x;$('z').value=e.z;gizmo.position.set(e.x,0,e.z);
@@ -343,7 +411,7 @@ renderer.domElement.addEventListener('pointermove',event=>{
   phi=limit(drag.phi+(event.clientY-drag.atY)*.008,.18,1.48);
  }
 });
-function endDrag(){if(!drag)return;drag=null;sync();}
+function endDrag(){if(!drag)return;drag=null;sync();updateDiagnostics();}
 renderer.domElement.addEventListener('pointerup',endDrag);
 renderer.domElement.addEventListener('pointercancel',endDrag);
 renderer.domElement.addEventListener('wheel',ev=>{ev.preventDefault();dist=limit(dist*Math.exp(ev.deltaY*.001),8,70);},{passive:false});

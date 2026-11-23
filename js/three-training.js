@@ -48,10 +48,12 @@ const rules=[
    action:'Testar controles, orientação de tela, FPS e memória em aparelhos reais; não inferir qualidade por existência do HUD.'},
  {id:'checkpoints',title:'Checkpoints com progresso persistente',pattern:s=>
    /\b(checkpoints?|pontos? de salvamento|salvar progresso|salvamento por fase|continuar da ultima fase|respawn salvo)\b/.test(s),
-   status:()=> 'pendente',
-   contract:'Salvar economia/posição no protótipo urbano não implementa checkpoint genérico por fase',
-   test:'tests/three-world.test.js',
-   action:'Implementar checkpoints versionados por motor com restauração da fase, vida e inventário, e testar recarga.'},
+   // Contrato atual da main: somente transição entre fases; projeto com ID estável,
+   // no mínimo 2 fases e FPS sem loja. Não salva objetivos no meio da fase.
+   status:e=>['arena-3d','fps-3d','rpg-3d'].includes(e)?'parcial':'pendente',
+   contract:'GameForgeWorldRules.checkpointPayload/readCheckpoint: arena, FPS e RPG 3D com projectId valido; nao FPS com loja; salva somente apos a vitoria da fase anterior',
+   test:'tests/stage-events-checkpoints.test.js',
+   action:'Testar o checkpoint apos concluir uma fase e recarregar o jogo. Para meio de fase, plataforma 3D e navinha 3D sem rotas, ainda e necessario implementar contrato proprio.'},
  {id:'destruction',title:'Destruição física de cenário',pattern:s=>
    /\b(cenario destrutivel|paredes? destrutiveis|destruir paredes?|destruicao fisica|fisica de destruicao|quebrar paredes?|rigid.?body)\b/.test(s),
    status:()=> 'pendente',

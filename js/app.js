@@ -175,6 +175,9 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         state.spec=GameForgeScene3DLayout.apply(state.spec,sceneText,manifest);
       }catch(e){feedback('Cena 3D inválida: '+e.message,true);return null;}
     }
+    $('three-training-report').textContent=spec.dimension==='3d'&&spec.threeTraining
+      ?GameForgeThreeTraining.report(spec.threeTraining)
+      :'Este pedido não utiliza um motor 3D. O diagnóstico GF-TRAIN-19 é específico para Three.js.';
     const urbanOnly=spec.genre==='urban-action';
     $('download-urban-plan').classList.toggle('hidden',!urbanOnly);
     $('generate').disabled=(urbanOnly&&['planned','blocked'].includes(spec.engineAvailability?.status))||!!spec.designIR?.blocked?.length;

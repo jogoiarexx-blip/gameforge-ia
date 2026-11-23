@@ -254,10 +254,72 @@ function gameForgeWorldRules(){
   if(!checkpointKey(spec))return null;
   return readCheckpoint(JSON.stringify({version:1,projectId:spec.projectId,...progress}),spec);
  }
+ // GF-TRAIN-21: save intermediário de fase simples, independente de checkpoint
+ // entre fases. Não restaura quests NPC, eventos agendados ou economia de loja.
+ function midStageEligible(spec,stage){
+  if(!checkpointKey(spec)||!Number.isInteger(stage)||stage<0||stage>=spec.stages?.length)return false;
+  if(spec.stages.length<2)return false;
+  const c=spec.stageConfig?.[stage]||{};
+  return !c.npcQuest&&!c.sideQuest&&
+   (!Array.isArray(c.events)||!c.events.length)&&
+   (!Array.isArray(c.zoneEvents)||!c.zoneEvents.length)&&
+   (!Array.isArray(c.missionSteps)||!c.missionSteps.length)&&
+   (!Array.isArray(c.sideQuestSteps)||!c.sideQuestSteps.length);
+ }
+ function midStageKey(spec){
+  if(!checkpointKey(spec)||!Array.isArray(spec.stages)||spec.stages.length<2)return null;
+  return 'gameforge-midstage-v1:'+spec.genre+':'+spec.projectId;
+ }
+ function midStageFingerprint(spec){
+  const source=JSON.stringify([spec.projectId,spec.genre,spec.stages,
+   spec.stageConfig||[],spec.worldOptions||{},spec.tuning||{},spec.features||{}]);
+  let value=2166136261;
+  for(let i=0;i<source.length;i++){value^=source.charCodeAt(i);value=Math.imul(value,16777619)>>>0;}
+  return value.toString(36);
+ }
+ function readMidStage(raw,spec){
+  if(!midStageKey(spec)||typeof raw!=='string'||raw.length>15000)return null;
+  let v;try{v=JSON.parse(raw);}catch{return null;}
+  if(!v||typeof v!=='object'||Array.isArray(v)||v.version!==1||
+   v.projectId!==spec.projectId||v.fingerprint!==midStageFingerprint(spec)||
+   !midStageEligible(spec,v.stage))return null;
+  const bounded=(x,min,max)=>typeof x==='number'&&Number.isFinite(x)&&x>=min&&x<=max;
+  const integer=(x,min,max)=>Number.isSafeInteger(x)&&x>=min&&x<=max;
+  const size=clamp(Number(spec.worldOptions?.size)||48,32,88);
+  if(!bounded(v.health,1,100)||!bounded(v.score,0,1e9)||!bounded(v.ammo,0,999)||
+   !bounded(v.clock,0,1e7)||!bounded(v.stageClock,.1,1e7)||
+   !integer(v.rpgLevel,1,30)||!integer(v.rpgXP,0,2000)||!integer(v.rpgPotions,0,9)||
+   !v.player||!bounded(v.player.x,-size*.49,size*.49)||
+   !bounded(v.player.z,-size*.49,size*.49)||!bounded(v.player.yaw,-1000,1000)||
+   !Array.isArray(v.enemies)||v.enemies.length>32||
+   !Array.isArray(v.coinsTaken)||v.coinsTaken.length>32)return null;
+  const ids=new Set(),coinIds=new Set();
+  for(const e of v.enemies){
+   if(!e||!integer(e.id,0,64)||ids.has(e.id)||
+    !bounded(e.x,-size,size)||!bounded(e.z,-size,size)||!bounded(e.hp,0.01,500))return null;
+   ids.add(e.id);
+  }
+  for(const id of v.coinsTaken){
+   if(!integer(id,0,31)||coinIds.has(id))return null;coinIds.add(id);
+  }
+  return {version:1,projectId:v.projectId,fingerprint:v.fingerprint,stage:v.stage,
+   health:v.health,score:v.score,ammo:v.ammo,clock:v.clock,stageClock:v.stageClock,
+   rpgLevel:v.rpgLevel,rpgXP:v.rpgXP,rpgPotions:v.rpgPotions,
+   player:{x:v.player.x,z:v.player.z,yaw:v.player.yaw},
+   enemies:v.enemies.map(e=>({id:e.id,x:e.x,z:e.z,hp:e.hp})),
+   coinsTaken:[...v.coinsTaken]};
+ }
+ function midStagePayload(spec,progress){
+  if(!midStageKey(spec))return null;
+  try{return readMidStage(JSON.stringify({version:1,projectId:spec.projectId,
+   fingerprint:midStageFingerprint(spec),...progress}),spec);}
+  catch{return null;}
+ }
  return {clamp,rng,moveCircle,crowdDirection,platformRoute,raceProgress,trackRibbon,goalReady,missionReady,
   enemyProfile,dueStageEvents,waypoint,enteredZone,missionStepReady,dueZoneEvents,
   npcQuestContract,npcPatrolPosition,npcDailyPeriod,npcRoutineTarget,npcMissionEffect,
-  npcNear,npcReward,checkpointKey,readCheckpoint,checkpointPayload};
+  npcNear,npcReward,checkpointKey,readCheckpoint,checkpointPayload,
+  midStageKey,midStageEligible,midStageFingerprint,readMidStage,midStagePayload};
 }
 if(typeof module!=='undefined')module.exports=gameForgeWorldRules;
 if(typeof globalThis!=='undefined')globalThis.gameForgeWorldRules=gameForgeWorldRules;

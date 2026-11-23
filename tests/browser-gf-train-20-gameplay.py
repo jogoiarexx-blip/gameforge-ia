@@ -167,9 +167,17 @@ def run():
                 try:
                     before=boot(page,base,slug)
                     button=page.locator('[data-control="right"]').first
-                    button.dispatch_event('pointerdown',{'pointerId':27,'pointerType':'touch','isPrimary':True})
+                    box=button.bounding_box()
+                    assert box and box['width']>0 and box['height']>0,(slug,'mobile control not visible')
+                    x=box['x']+box['width']/2
+                    y=box['y']+box['height']/2
+                    # CDP gera um touchStart/touchEnd real no Chromium, com pointerId ativo.
+                    # Evita eventos sintéticos que fazem setPointerCapture lançar NotFoundError.
+                    cdp=page.context.new_cdp_session(page)
+                    cdp.send('Input.dispatchTouchEvent',{'type':'touchStart',
+                        'touchPoints':[{'x':x,'y':y,'id':27,'radiusX':2,'radiusY':2}]})
                     page.wait_for_timeout(470)
-                    button.dispatch_event('pointerup',{'pointerId':27,'pointerType':'touch','isPrimary':True})
+                    cdp.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
                     after=tele(page)
                     assert after['state']=='play'
                     assert abs(after['player']['x']-before['player']['x'])>.3,(slug,'touch not moving',before,after)

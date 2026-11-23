@@ -6,6 +6,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const Parser=require('../js/parser.js');
 const Rules=require('../js/world-rules.js')();
+const Coach=require('../js/three-training.js');
 
 function spec(genre,extras={}){
  return {title:'Teste de Regresso',dimension:'3d',genre,projectId:'gf-01234567-89abcdef',
@@ -48,4 +49,16 @@ test('GF-TRAIN-20: corpus de pedidos vira GAME_SPEC com parâmetros observáveis
   {genre:'auto',dimension:'auto'});
  assert.equal(shooter.genre,'shooter');assert.equal(shooter.dimension,'3d');
  assert.deepEqual(shooter.stageConfig.map(c=>c.boss),['no','no','yes']);
+});
+
+test('GF-TRAIN-20: treinador não confunde checkpoint parcial com ausência total',()=>{
+ for(const genre of ['arena','fps','rpg']){
+  const r=Coach.inspect({genre,dimension:'3d'},'','Quero checkpoints por fase.');
+  assert.equal(r.items.find(x=>x.id==='checkpoints')?.status,'parcial');
+  assert.match(r.items.find(x=>x.id==='checkpoints').contract,/readCheckpoint/);
+ }
+ for(const genre of ['platform','shooter','racing','urban-action']){
+  const r=Coach.inspect({genre,dimension:'3d'},'','Quero checkpoints por fase.');
+  assert.equal(r.items.find(x=>x.id==='checkpoints')?.status,'pendente');
+ }
 });

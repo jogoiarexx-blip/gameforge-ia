@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameForge — Editor Visual de Cenários 3D</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,Arial,sans-serif;background:#0b1220;color:#edf5ff}
+*{box-sizing:border-box}body{margin:0}header{padding:14px 18px;background:#121d30;border-bottom:1px solid #31415a;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-size:18px;margin:0}small,.hint{color:#b1c4d8}main{display:grid;grid-template-columns:minmax(250px,300px) minmax(300px,1fr);min-height:calc(100vh - 60px)}
+aside{padding:14px;overflow:auto;max-height:calc(100vh - 60px);background:#101b2d;border-right:1px solid #33445a}
+fieldset{border:1px solid #31465f;border-radius:10px;margin:0 0 14px;padding:12px}
+legend{padding:0 5px;font-weight:700}label{display:block;font-size:13px;color:#d2dfed;margin:8px 0 4px}
+input,select,textarea,button{font:inherit}input,select,textarea{width:100%;padding:8px;border-radius:7px;background:#192b42;color:#fff;border:1px solid #445772}
+input[type="checkbox"]{width:auto}input[type="color"]{height:40px;padding:2px}
+button{background:#284b6e;border:1px solid #4b7496;color:#fff;border-radius:7px;padding:8px 10px;cursor:pointer}
+button:hover{background:#36638c}button:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:7px;flex-wrap:wrap}.row>*{flex:1}.row label{min-width:85px}
+#viewport{position:relative;min-height:520px;background:linear-gradient(#26394b,#0b141f);overflow:hidden}
+#viewport canvas{width:100%;height:100%;display:block;touch-action:none}
+#overlay{position:absolute;top:12px;left:12px;background:#0b1424d9;border:1px solid #466080;border-radius:8px;padding:8px 10px;color:#dce6f1;pointer-events:none;font-size:12px;max-width:360px}
+#status{display:block;margin-top:8px;min-height:34px;white-space:pre-wrap;color:#abd7ea;font-size:12px}
+#output{height:110px;font-family:monospace;font-size:11px;resize:vertical}
+#object-list{max-height:130px;overflow:auto;margin:7px 0}
+#object-list button{width:100%;text-align:left;margin:2px 0}
+#object-list button.active{background:#376d5c;border-color:#83c4a8}
+@media(max-width:800px){main{grid-template-columns:1fr}aside{max-height:none;order:2}#viewport{min-height:54vh;height:54vh;order:1}}
+</style></head><body>
+<header><h1>◆ GameForge Studio · Editor de Cena 3D</h1>
+<small>Three.js offline · objetos por fase · sem envio para servidores</small>
+<a href="../index.html" style="color:#9ee4cc;margin-left:auto">Voltar ao Studio</a>
+</header>
+<main>
+<aside>
+<fieldset><legend>Fase</legend>
+<label for="stage">Fase selecionada</label><select id="stage"></select>
+<div class="row" style="margin-top:8px"><button id="stage-add">+ Fase</button><button id="stage-remove">− Última fase</button></div>
+<small>Máximo: 30 fases. No jogo, só as fases existentes no GDD serão aplicadas.</small>
+</fieldset>
+<fieldset><legend>Objetos</legend>
+<label for="kind">Adicionar objeto</label>
+<div class="row"><select id="kind">
+<option value="crate">Caixa</option><option value="pillar">Pilar</option><option value="wall">Parede</option>
+<option value="tree">Árvore</option><option value="lamp">Luminária (luz)</option>
+</select><button id="add">Adicionar</button></div>
+<div id="object-list" aria-label="Hierarquia de objetos"></div>
+<div class="row"><button id="duplicate">Duplicar</button><button id="remove">Excluir</button></div>
+<small>Até 24 objetos e 2 luminárias por fase.</small>
+</fieldset>
+<fieldset><legend>Transformação</legend>
+<label for="name">Nome</label><input id="name" maxlength="40">
+<div class="row"><label>X<input id="x" type="number" min="-16" max="16" step=".25"></label><label>Z<input id="z" type="number" min="-16" max="16" step=".25"></label></div>
+<div class="row"><label>Rotação (°)<input id="yaw" type="number" min="-180" max="180" step="15"></label><label>Escala<input id="scale" type="number" min=".4" max="3" step=".1"></label></div>
+<label for="color">Cor</label><input id="color" type="color" value="#6699bb">
+<label><input id="collidable" type="checkbox" checked> Bloqueia movimento (colisão aproximada)</label>
+<div class="row"><button id="undo">Desfazer</button><button id="redo">Refazer</button></div>
+</fieldset>
+<fieldset><legend>Salvar e transferir</legend>
+<div class="row"><button id="send">Enviar ao Studio</button><button id="download">Baixar JSON</button></div>
+<div class="row" style="margin-top:8px"><button id="open">Abrir arquivo JSON</button><button id="paste">Importar texto abaixo</button></div>
+<input type="file" id="file" accept=".json,application/json" hidden>
+<label for="output">SCENE3D_LAYOUT.json</label><textarea id="output" spellcheck="false"></textarea>
+<output id="status" role="status" aria-live="polite">Escolha um objeto e arraste-o pelo chão.</output>
+</fieldset>
+</aside>
+<div id="viewport"><div id="overlay">Arraste um objeto para mover · Arraste o fundo para orbitar · Roda do mouse para zoom · Delete para excluir</div></div>
+</main>
+<script src="../vendor/three-source.js"></script>
+<script src="../js/scene3d-layout.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id),API=window.GameForgeScene3DLayout;
+const limit=(x,min,max)=>Math.max(min,Math.min(max,x));
+let stages=[{objects:[]}],index=0,selected=null,seq=1,history=[],future=[],drag=null;
+let T,scene,camera,renderer,raycaster,ground,objectsRoot;
+let theta=.65,phi=1.02,dist=32;
+try{
+  // Executa somente o bundle oficial Three.js versionado pelo GameForge, nunca JSON/importacoes.
+  T=new Function(window.GameForgeThreeSource+';return THREE;')();
+  renderer=new T.WebGLRenderer({antialias:true,powerPreference:'low-power'});
+  renderer.setPixelRatio(Math.min(1.5,window.devicePixelRatio||1));
+  $('viewport').appendChild(renderer.domElement);
+  scene=new T.Scene();scene.background=new T.Color(0x192637);
+  camera=new T.PerspectiveCamera(52,1,.1,250);
+  scene.add(new T.HemisphereLight(0xddeeff,0x465363,2.2));
+  const sun=new T.DirectionalLight(0xffeed1,2.6);sun.position.set(-12,24,14);scene.add(sun);
+  ground=new T.Mesh(new T.PlaneGeometry(46,46),new T.MeshStandardMaterial({color:0x395248,roughness:1}));
+  ground.rotation.x=-Math.PI/2;ground.position.y=-.03;scene.add(ground);
+  scene.add(new T.GridHelper(36,36,0x86b5b4,0x658185));
+  objectsRoot=new T.Group();scene.add(objectsRoot);raycaster=new T.Raycaster();
+}catch(err){$('status').textContent='WebGL/Three.js indisponivel: '+err.message;return;}
+const geom={
+ crate:()=>new T.BoxGeometry(1.4,1.4,1.4),
+ pillar:()=>new T.CylinderGeometry(.5,.6,3,8),
+ wall:()=>new T.BoxGeometry(3,2,.6)
+};
+function nodeOf(e){
+ const g=new T.Group(),mat=()=>new T.MeshStandardMaterial({color:e.color,roughness:.75,metalness:.02});
+ const add=(shape,x,y,z)=>{const mesh=new T.Mesh(shape,mat());mesh.position.set(x,y,z);g.add(mesh);};
+ if(e.kind==='crate')add(geom.crate(),0,.7,0);
+ if(e.kind==='pillar')add(geom.pillar(),0,1.5,0);
+ if(e.kind==='wall')add(geom.wall(),0,1,0);
+ if(e.kind==='tree'){add(new T.CylinderGeometry(.2,.28,2.2,6),0,1.1,0);
+  add(new T.ConeGeometry(1.25,2.7,6),0,3.1,0);}
+ if(e.kind==='lamp'){add(new T.CylinderGeometry(.1,.15,3,8),0,1.5,0);
+  add(new T.SphereGeometry(.35,8,6),0,3.2,0);
+  const light=new T.PointLight(e.color,7,9,2);light.position.y=3.2;g.add(light);}
+ g.userData.entryId=e.id;
+ g.traverse(o=>{o.userData.entryId=e.id;});
+ transform(g,e);return g;
+}
+function transform(g,e){g.position.set(e.x,0,e.z);g.rotation.y=e.yaw*Math.PI/180;g.scale.setScalar(e.scale);}
+function entry(){return stages[index]?.objects.find(e=>e.id===selected);}
+function sync(){
+ const found=entry();
+ for(const id of ['name','x','z','yaw','scale','color','collidable'])$(id).disabled=!found;
+ for(const id of ['duplicate','remove'])$(id).disabled=!found;
+ if(found){
+  for(const id of ['name','x','z','yaw','scale','color'])$(id).value=found[id];
+  $('collidable').checked=found.collidable;$('collidable').disabled=found.kind==='lamp';
+ }
+ const root=$('object-list');root.replaceChildren();
+ for(const e of stages[index].objects){
+  const b=document.createElement('button');b.type='button';b.textContent=e.name+' ('+e.kind+')';b.className=e.id===selected?'active':'';
+  b.onclick=()=>{selected=e.id;sync();};root.appendChild(b);
+ }
+ $('duplicate').disabled=!found;
+ $('remove').disabled=!found;
+ $('stage-remove').disabled=stages.length<=1;
+ $('stage-add').disabled=stages.length>=30;
+ $('undo').disabled=history.length===0;$('redo').disabled=future.length===0;
+ $('output').value=JSON.stringify(API.normalize({version:1,stages}),null,2);
+}
+function rebuild(){
+ while(objectsRoot.children.length){
+  const o=objectsRoot.children[0];objectsRoot.remove(o);
+  o.traverse(x=>{x.geometry?.dispose();x.material?.dispose();});
+ }
+ stages[index].objects.forEach(e=>objectsRoot.add(nodeOf(e)));
+ sync();
+}
+function remember(){
+ history.push(JSON.stringify({stages,index,selected,seq}));
+ if(history.length>30)history.shift();future=[];
+}
+function restore(raw){
+ const p=JSON.parse(raw);stages=API.normalize({version:1,stages:p.stages}).stages;
+ index=limit(p.index,0,stages.length-1);selected=p.selected||null;seq=p.seq||1;
+ refreshStages();rebuild();
+}
+function refreshStages(){
+ $('stage').replaceChildren(...stages.map((_,i)=>new Option('Fase '+(i+1),String(i))));
+ $('stage').value=String(index);
+}
+function updateCurrent(change){
+ const e=entry();if(!e)return;
+ remember();Object.assign(e,change);
+ try{API.normalize({version:1,stages});rebuild();$('status').textContent='Alteração aplicada à fase '+(index+1)+'.';}
+ catch(error){restore(history.pop());$('status').textContent=error.message;}
+}
+function nextId(){
+ let id;do{id='obj'+seq++;}while(stages[index].objects.some(e=>e.id===id));return id;
+}
+$('add').onclick=()=>{
+ const kind=$('kind').value;
+ if(stages[index].objects.length>=API.MAX_OBJECTS)return $('status').textContent='Limite de objetos por fase.';
+ if(kind==='lamp'&&stages[index].objects.filter(e=>e.kind==='lamp').length>=2)return $('status').textContent='Limite de duas luzes por fase.';
+ remember();const n=stages[index].objects.length;
+ const e={id:nextId(),kind,name:({crate:'Caixa',pillar:'Pilar',wall:'Parede',tree:'Arvore',lamp:'Luminaria'})[kind]+' '+(n+1),x:limit(n-2,-16,16),z:-2,yaw:0,scale:1,color:kind==='tree'?'#4eaa71':'#779bc5',collidable:kind!=='lamp'};
+ stages[index].objects.push(e);selected=e.id;rebuild();
+};
+$('remove').onclick=()=>{if(!entry())return;remember();stages[index].objects=stages[index].objects.filter(e=>e.id!==selected);selected=null;rebuild();};
+$('duplicate').onclick=()=>{const e=entry();if(!e||stages[index].objects.length>=API.MAX_OBJECTS)return;
+ if(e.kind==='lamp'&&stages[index].objects.filter(x=>x.kind==='lamp').length>=2)return $('status').textContent='Máximo de 2 luzes.';
+ remember();const copy={...e,id:nextId(),name:(e.name+' copia').slice(0,40),x:limit(e.x+2,-16,16),z:limit(e.z+2,-16,16)};stages[index].objects.push(copy);selected=copy.id;rebuild();};
+for(const id of ['name','x','z','yaw','scale','color','collidable'])$(id).addEventListener('change',()=>{
+ const e=entry();if(!e)return;
+ const v=id==='collidable'?$('collidable').checked:['x','z','yaw','scale'].includes(id)?Number($(id).value):$(id).value;
+ updateCurrent({[id]:v});
+});
+$('stage').onchange=()=>{index=Number($('stage').value);selected=null;rebuild();};
+$('stage-add').onclick=()=>{if(stages.length>=30)return;remember();stages.push({objects:[]});index=stages.length-1;selected=null;refreshStages();rebuild();};
+$('stage-remove').onclick=()=>{if(stages.length===1)return;remember();stages.pop();index=Math.min(index,stages.length-1);selected=null;refreshStages();rebuild();};
+$('undo').onclick=()=>{if(!history.length)return;future.push(JSON.stringify({stages,index,selected,seq}));restore(history.pop());};
+$('redo').onclick=()=>{if(!future.length)return;history.push(JSON.stringify({stages,index,selected,seq}));restore(future.pop());};
+function getRaw(){return JSON.stringify(API.normalize({version:1,stages}),null,2);}
+$('send').onclick=()=>{
+ try{
+  const raw=getRaw();localStorage.setItem('gameforge-scene3d-transfer-v1',raw);
+  $('status').textContent='Cena enviada ao armazenamento local. Volte ao Studio e clique em Receber cena do editor.';
+ }catch(e){$('status').textContent='Erro no envio: '+e.message;}
+};
+$('download').onclick=()=>{
+ const blob=new Blob([getRaw()],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='SCENE3D_LAYOUT.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+function importRaw(raw){
+ const parsed=API.normalize(raw);remember();stages=parsed.stages;index=0;selected=null;
+ seq=1;for(const stage of stages)for(const e of stage.objects){const n=Number(e.id.replace(/^obj/,''));if(Number.isInteger(n))seq=Math.max(seq,n+1);}
+ refreshStages();rebuild();$('status').textContent='Cena importada: '+stages.length+' fase(s).';
+}
+$('paste').onclick=()=>{try{importRaw($('output').value);}catch(e){$('status').textContent='JSON recusado: '+e.message;}};
+$('open').onclick=()=>$('file').click();
+$('file').onchange=async ev=>{const f=ev.target.files?.[0];ev.target.value='';if(!f)return;
+ try{if(f.size>API.MAX_BYTES)throw Error('Arquivo maior que 90 KB.');importRaw(await f.text());}
+ catch(e){$('status').textContent='Arquivo rejeitado: '+e.message;}
+};
+const pointer=(event)=>{
+ const rect=renderer.domElement.getBoundingClientRect();
+ return new T.Vector2(((event.clientX-rect.left)/rect.width)*2-1,-((event.clientY-rect.top)/rect.height)*2+1);
+};
+const plane=new T.Plane(new T.Vector3(0,1,0),0);
+function groundPoint(ev){
+ raycaster.setFromCamera(pointer(ev),camera);
+ const point=new T.Vector3();
+ return raycaster.ray.intersectPlane(plane,point)?point:null;
+}
+renderer.domElement.addEventListener('pointerdown',event=>{
+ if(event.button!==0)return;
+ raycaster.setFromCamera(pointer(event),camera);
+ const intersections=raycaster.intersectObjects(objectsRoot.children,true);
+ const id=intersections.find(hit=>hit.object.userData.entryId)?.object.userData.entryId;
+ selected=id||null;sync();
+ drag={id,atX:event.clientX,atY:event.clientY,theta,phi,lastX:null,lastZ:null};
+ if(id){const p=groundPoint(event);if(p){drag.lastX=p.x;drag.lastZ=p.z;remember();}}
+ renderer.domElement.setPointerCapture(event.pointerId);
+});
+renderer.domElement.addEventListener('pointermove',event=>{
+ if(!drag)return;
+ if(drag.id){
+  const e=entry(),p=groundPoint(event);if(!e||!p)return;
+  if(drag.lastX===null){drag.lastX=p.x;drag.lastZ=p.z;return;}
+  e.x=Math.round(limit(e.x+p.x-drag.lastX,-16,16)*4)/4;
+  e.z=Math.round(limit(e.z+p.z-drag.lastZ,-16,16)*4)/4;
+  const node=objectsRoot.children.find(n=>n.userData.entryId===e.id);if(node)transform(node,e);
+  drag.lastX=p.x;drag.lastZ=p.z;
+  $('x').value=e.x;$('z').value=e.z;
+ }else{
+  theta=drag.theta-(event.clientX-drag.atX)*.008;
+  phi=limit(drag.phi+(event.clientY-drag.atY)*.008,.18,1.48);
+ }
+});
+function endDrag(){if(!drag)return;drag=null;sync();}
+renderer.domElement.addEventListener('pointerup',endDrag);
+renderer.domElement.addEventListener('pointercancel',endDrag);
+renderer.domElement.addEventListener('wheel',ev=>{ev.preventDefault();dist=limit(dist*Math.exp(ev.deltaY*.001),8,70);},{passive:false});
+document.addEventListener('keydown',ev=>{
+ if(/^(input|textarea|select)$/i.test(document.activeElement?.tagName||''))return;
+ if((ev.key==='Delete'||ev.key==='Backspace')&&entry())$('remove').click();
+ if((ev.ctrlKey||ev.metaKey)&&ev.key.toLowerCase()==='z'){ev.preventDefault();$('undo').click();}
+});
+function resize(){
+ const host=$('viewport'),w=host.clientWidth,h=host.clientHeight||500;
+ renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+function animate(){
+ requestAnimationFrame(animate);
+ camera.position.set(Math.sin(theta)*Math.sin(phi)*dist,Math.cos(phi)*dist,Math.cos(theta)*Math.sin(phi)*dist);
+ camera.lookAt(0,0,0);renderer.render(scene,camera);
+}
+window.addEventListener('resize',resize);refreshStages();rebuild();resize();animate();
+})();
+</script>
+</body></html>

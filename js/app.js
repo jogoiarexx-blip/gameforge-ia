@@ -1500,9 +1500,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       if(next===state.files['game.js'])throw Error('A cena já foi aplicada.');
       // Antes de alterar o projeto, recupere os GLBs originais do IndexedDB.
       // O gerador exige os binarios ao embutir modelos na pagina HTML.
-      const binaries=await assetBinaryFiles();
-      const nextFiles={...state.files,...binaries,'game.js':next};
-      const nextHTML=GameForgeGenerator.shell(updated.title,state.files['style.css'],next,false,nextFiles);
+      await assetBinaryFiles(); // valida existencia, tamanho e SHA-256 antes de alterar o jogo
+      // O backup guarda apenas o HTML leve; preview/ZIP materializam os GLBs conforme necessario.
+      const nextHTML=GameForgeGenerator.shell(updated.title,state.files['style.css'],next,false,
+        {'engine-3d.js':state.files['engine-3d.js']});
       pushHistory('GF-OPEN-02b: atualizar cena 3D e GLBs');
       state.files['game.js']=next;
       state.files['SCENE3D_LAYOUT.json']=JSON.stringify(GameForgeScene3DLayout.extract(updated),null,2);

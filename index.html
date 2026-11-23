@@ -89,9 +89,10 @@ Derrote o chefe.
         </section></details>
         <details class="studio-disclosure scene3d-disclosure"><summary><span>Cenários 3D · Editor visual (GF-OPEN-02)</span><span class="disclosure-marker" aria-hidden="true">+</span></summary>
 <section class="project-backups" aria-label="Editor de cenas 3D">
-<strong>Editor visual de objetos e luzes 3D</strong>
+<strong>Editor visual de objetos, modelos GLB e luzes 3D</strong>
 <p class="hint">Para Arena, FPS e RPG 3D: coloque caixas, paredes, pilares, árvores e luminárias por fase. Arraste com o mouse, escolha rotação, escala e colisão. GLBs personalizados continuam na biblioteca de modelos. Até 24 objetos e duas luzes por fase.</p>
-<a class="subtle-link" href="./tools/scene3d-editor.html" target="_blank" rel="noopener noreferrer">Abrir editor de cena 3D ↗</a>
+<a id="scene3d-open" class="subtle-link" href="./tools/scene3d-editor.html" target="_blank" rel="noopener noreferrer">Abrir editor de cena 3D ↗</a>
+<p class="hint">Modelos GLB já importados como Cenário podem ser selecionados diretamente no editor. Os arquivos permanecem no IndexedDB, sem duplicação em localStorage.</p>
 <label for="scene3d-json">Layout de cena (JSON)</label>
 <textarea id="scene3d-json" rows="4" spellcheck="false" placeholder='Use Enviar ao Studio no editor visual e clique em Receber'></textarea>
 <div class="row"><button type="button" id="scene3d-receive" class="small outline">Receber cena do editor</button><button type="button" id="scene3d-apply" class="small outline">Aplicar ao jogo gerado</button></div>

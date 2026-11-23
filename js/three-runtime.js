@@ -514,8 +514,9 @@ function gameForgeThreeBoot(){
   // GF-OPEN-02: objetos decorativos e colisoes configurados no editor visual.
   if(['arena','fps','rpg'].includes(genre)&&Array.isArray(stageRules.sceneObjects)){
    let lights=0;
+   const assetById=new Map(importedSceneModels.map(asset=>[asset.id,asset]));
    for(const entry of stageRules.sceneObjects.slice(0,24)){
-    if(!entry||!['crate','pillar','wall','tree','lamp'].includes(entry.kind))continue;
+    if(!entry||!['crate','pillar','wall','tree','lamp','glb'].includes(entry.kind))continue;
     const x=R.clamp(Number(entry.x)||0,-size*.38,size*.38);
     const z=R.clamp(Number(entry.z)||0,-size*.38,size*.38);
     const scale=R.clamp(Number(entry.scale)||1,.4,3);
@@ -524,6 +525,26 @@ function gameForgeThreeBoot(){
       parseInt(entry.color.slice(1),16):0x779bc5;
     const group=new T.Group();group.userData.gameForgeScene3D=String(entry.id||'').slice(0,32);group.position.set(x,0,z);group.rotation.y=angle;
     group.scale.setScalar(scale);world.add(group);
+    if(entry.kind==='glb'){
+     const source=assetById.get(entry.assetId);
+     if(!source||source.placement?.role!=='scene')continue;
+     group.userData.gameForgeImported=true;
+     group.userData.gameForgeAssetId=entry.assetId;
+     group.add(source.model.clone(true));
+     if(entry.collidable){
+      group.updateMatrixWorld(true);
+      const bounds=new T.Box3().setFromObject(group);
+      const center=new T.Vector3(),dims=new T.Vector3();
+      if(!bounds.isEmpty()){
+       bounds.getCenter(center);bounds.getSize(dims);
+       if(Number.isFinite(center.x)&&Number.isFinite(center.z)&&
+          Number.isFinite(dims.x)&&Number.isFinite(dims.z)&&dims.x>0.05&&dims.z>0.05){
+        solids.push({x:center.x,z:center.z,w:Math.min(dims.x,32),d:Math.min(dims.z,32)});
+       }
+      }
+     }
+     continue;
+    }
     const mat=material(tint);
     const addBox=(w,h,d,cy)=>box(w,h,d,mat,group,0,cy,0);
     const addMesh=(g,cy)=>mesh(g,mat,group,0,cy,0);
@@ -546,7 +567,11 @@ function gameForgeThreeBoot(){
     }
    }
   }
+  const stagedGLBIds=new Set(stageConfig.flatMap(config=>
+   Array.isArray(config?.sceneObjects)?config.sceneObjects.filter(e=>e?.kind==='glb').map(e=>e.assetId):[]));
   for(const entry of importedSceneModels){
+   if(stagedGLBIds.has(entry.id))continue; // GLBs posicionados no editor nao aparecem duplicados.
+
    const model=entry.model.clone(true),anchor=new T.Group(),p=entry.placement;
    const coordinate=(v,def)=>Number.isFinite(Number(v))?R.clamp(Number(v),-size*.4,size*.4):def;
    anchor.position.set(coordinate(p.x,5),0,coordinate(p.z,5));

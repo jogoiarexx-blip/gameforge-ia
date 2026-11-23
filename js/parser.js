@@ -10,6 +10,8 @@
   const urbanDesign=root.GameForgeUrbanDesign||(typeof require==='function'?require('./urban-design'):null);
   const designIR=root.GameForgeDesignIR||(typeof require==='function'?require('./design-ir'):null);
   const missionSemantics=root.GameForgeMissionSemantics||(typeof require==='function'?require('./mission-semantics'):null);
+  const threeTraining=root.GameForgeThreeTraining||(typeof require==='function'?require('./three-training'):null);
+  function training3D(spec,gdd,command){if(spec?.dimension==='3d'&&threeTraining?.inspect)spec.threeTraining=threeTraining.inspect(spec,gdd,command);return spec;}
   // Classificação semântica determinística. Sinais de jogabilidade são mais fortes
   // do que palavras ocasionais em capítulos longos de um GDD.
   function detectGenreInfo(text) {
@@ -296,7 +298,7 @@
       compiled.detected.push('Câmera: terceira pessoa',
         urbanMissions.length?'Motor urbano 3D: '+urbanMissions.length+' missão(ões) por ações e dependências':'Motor urbano 3D: vertical slice URB-01 (1 bairro)');
       applyGraphics(compiled,source,extra,options);
-      return designIR?designIR.enrich(compiled,source,extra):compiled;
+      return training3D(designIR?designIR.enrich(compiled,source,extra):compiled,source,extra);
     }
     const interpreted=intentCompiler?intentCompiler.compile(compiled,source,extra,options):compiled;
     interpreted.engineMode=engineMode;
@@ -361,7 +363,7 @@
       interpreted.detected.push('Simulação: '+sim.config.label+' · '+sim.config.slots+' espaços · meta '+sim.config.target);
     }
     applyGraphics(interpreted,source,extra,options);
-    return designIR?designIR.enrich(interpreted,source,extra):interpreted;
+    return training3D(designIR?designIR.enrich(interpreted,source,extra):interpreted,source,extra);
   }
   function applyGraphics(spec,source,extra,options){
     if(repoKnowledge?.learningPlan)spec.learningPlan=repoKnowledge.learningPlan(source+'\n'+extra);

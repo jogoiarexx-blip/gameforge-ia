@@ -8,7 +8,8 @@
     "bench:arena": "node tools/bench-arena-spatial.cjs",
     "verify:exports": "node tools/verify-exports.cjs",
     "optimize:glb": "node tools/optimize-glb.cjs",
-    "verify:glb-optimizer": "node tools/smoke-glb-optimizer.cjs"
+    "verify:glb-optimizer": "node tools/smoke-glb-optimizer.cjs",
+    "train:threejs": "node tools/evaluate-three-training.cjs"
   },
   "engines": {
     "node": ">=18"

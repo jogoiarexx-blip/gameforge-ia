@@ -162,6 +162,11 @@
       ...(spec.actionModel?{'MODELO_ACOES.json':JSON.stringify(spec.actionModel,null,2),
         'PLANO_ACOES.md':(root.GameForgeMissionSemantics||(typeof require==='function'?require('./mission-semantics'):null))?.report(spec.actionModel)||''}:{}),
       'RELATORIO_GERACAO.md':generationReport(spec),
+      ...(three&&spec.threeTraining?.version===19?{
+        'TREINAMENTO_3D_GF19.json':JSON.stringify(spec.threeTraining,null,2),
+        'DIAGNOSTICO_3D_GF19.md':(root.GameForgeThreeTraining||
+          (typeof require==='function'?require('./three-training'):null)).report(spec.threeTraining)
+      }:{}),
       ...(spec.learningPlan?{'PLANO_APRENDIZADO.json':JSON.stringify(spec.learningPlan,null,2),
         'FONTES_ESTUDADAS.md':(root.GameForgeRepoKnowledge||(typeof require==='function'?require('./repository-knowledge'):null)).learningReport(spec.learningPlan)}:{}),
       'INTERPRETACAO_VISUAL.json':JSON.stringify(spec.renderInterpretation||{version:1,origins:{}},null,2),

@@ -1,0 +1,464 @@
+{
+  "version": 19,
+  "title": "GF-TRAIN-19 — 50 pedidos 3D multigenero PT-BR",
+  "note": "Corpus rotulado para regressao e diagnostico de limitacoes reais; nao ajusta pesos de IA.",
+  "cases": [
+    {
+      "id": "3d-001",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Quero uma arena 3D com modelos GLB posicionados no cenário.",
+      "expect": {
+        "scene-glb": "manual"
+      }
+    },
+    {
+      "id": "3d-002",
+      "genre": "fps",
+      "dimension": "3d",
+      "command": "FPS 3D: colocar modelos GLB no mapa da primeira fase.",
+      "expect": {
+        "scene-glb": "manual"
+      }
+    },
+    {
+      "id": "3d-003",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "RPG 3D, inserir um GLB nas cenas do editor.",
+      "expect": {
+        "scene-glb": "manual"
+      }
+    },
+    {
+      "id": "3d-004",
+      "genre": "shooter",
+      "dimension": "3d",
+      "command": "Navinha 3D com GLB no cenário de todas as fases.",
+      "expect": {
+        "scene-glb": "pendente"
+      }
+    },
+    {
+      "id": "3d-005",
+      "genre": "racing",
+      "dimension": "3d",
+      "command": "Corrida 3D e quero adicionar GLB nas fases.",
+      "expect": {
+        "scene-glb": "pendente"
+      }
+    },
+    {
+      "id": "3d-006",
+      "genre": "platform",
+      "dimension": "3d",
+      "command": "Plataforma 3D: posicionar modelos GLB no mapa.",
+      "expect": {
+        "scene-glb": "pendente"
+      }
+    },
+    {
+      "id": "3d-007",
+      "genre": "urban-action",
+      "dimension": "3d",
+      "command": "Ação urbana 3D: quero colocar GLBs no editor de cenas por fase.",
+      "expect": {
+        "scene-glb": "pendente"
+      }
+    },
+    {
+      "id": "3d-008",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena 3D, usar personagem GLB animado com andar e correr.",
+      "expect": {
+        "glb-animation": "pendente"
+      }
+    },
+    {
+      "id": "3d-009",
+      "genre": "fps",
+      "dimension": "3d",
+      "command": "FPS 3D: importar modelo GLB com rig e clipes de ataque.",
+      "expect": {
+        "glb-animation": "pendente"
+      }
+    },
+    {
+      "id": "3d-010",
+      "genre": "urban-action",
+      "dimension": "3d",
+      "command": "Ação urbana 3D com modelo GLB animado e rig.",
+      "expect": {
+        "glb-animation": "parcial"
+      }
+    },
+    {
+      "id": "3d-011",
+      "genre": "shooter",
+      "dimension": "3d",
+      "command": "Navinha 3D: preciso do GLB animado com esqueleto.",
+      "expect": {
+        "glb-animation": "pendente"
+      }
+    },
+    {
+      "id": "3d-012",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "RPG 3D: boneco glb com animações de correr e atacar.",
+      "expect": {
+        "glb-animation": "pendente"
+      }
+    },
+    {
+      "id": "3d-013",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena 3D: colisão dos objetos e paredes do cenário.",
+      "expect": {
+        "collision": "manual"
+      }
+    },
+    {
+      "id": "3d-014",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "RPG 3D: colisão dos modelos GLB da fase.",
+      "expect": {
+        "collision": "manual",
+        "scene-glb": "manual"
+      }
+    },
+    {
+      "id": "3d-015",
+      "genre": "racing",
+      "dimension": "3d",
+      "command": "Corrida 3D: colisões com objetos e paredes.",
+      "expect": {
+        "collision": "pendente"
+      }
+    },
+    {
+      "id": "3d-016",
+      "genre": "fps",
+      "dimension": "3d",
+      "command": "FPS 3D: bloquear passagem e colisão com paredes.",
+      "expect": {
+        "collision": "manual"
+      }
+    },
+    {
+      "id": "3d-017",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena 3D: verificar caminho bloqueado na fase.",
+      "expect": {
+        "route-check": "manual"
+      }
+    },
+    {
+      "id": "3d-018",
+      "genre": "fps",
+      "dimension": "3d",
+      "command": "FPS 3D: validar passagem até a saída da fase.",
+      "expect": {
+        "route-check": "manual"
+      }
+    },
+    {
+      "id": "3d-019",
+      "genre": "racing",
+      "dimension": "3d",
+      "command": "Corrida 3D: verificar se a rota do carro está livre.",
+      "expect": {
+        "route-check": "pendente"
+      }
+    },
+    {
+      "id": "3d-020",
+      "genre": "shooter",
+      "dimension": "3d",
+      "command": "Navinha 3D: quero verificar os caminhos até o portal.",
+      "expect": {
+        "route-check": "pendente"
+      }
+    },
+    {
+      "id": "3d-021",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena 3D com três caminhos alternativos.",
+      "expect": {
+        "alternate-paths": "pendente"
+      }
+    },
+    {
+      "id": "3d-022",
+      "genre": "shooter",
+      "dimension": "3d",
+      "command": "Nave 3D: 3 caminhos secretos e bifurcações.",
+      "expect": {
+        "alternate-paths": "pendente"
+      }
+    },
+    {
+      "id": "3d-023",
+      "genre": "urban-action",
+      "dimension": "3d",
+      "command": "Ação urbana 3D com rotas alternativas por missão.",
+      "expect": {
+        "alternate-paths": "pendente"
+      }
+    },
+    {
+      "id": "3d-024",
+      "genre": "platform",
+      "dimension": "3d",
+      "command": "Plataforma 3D: 3 caminhos por fase, recompensas diferentes.",
+      "expect": {
+        "alternate-paths": "pendente"
+      }
+    },
+    {
+      "id": "3d-025",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena 3D para celular com controles de toque.",
+      "expect": {
+        "mobile-controls": "parcial"
+      }
+    },
+    {
+      "id": "3d-026",
+      "genre": "fps",
+      "dimension": "3d",
+      "command": "FPS 3D que rode no Android com botões touch.",
+      "expect": {
+        "mobile-controls": "parcial"
+      }
+    },
+    {
+      "id": "3d-027",
+      "genre": "racing",
+      "dimension": "3d",
+      "command": "Corrida 3D com controles mobile.",
+      "expect": {
+        "mobile-controls": "parcial"
+      }
+    },
+    {
+      "id": "3d-028",
+      "genre": "shooter",
+      "dimension": "3d",
+      "command": "Nave 3D para celular e touch.",
+      "expect": {
+        "mobile-controls": "parcial"
+      }
+    },
+    {
+      "id": "3d-029",
+      "genre": "platform",
+      "dimension": "3d",
+      "command": "Plataforma 3D com controles na tela.",
+      "expect": {
+        "mobile-controls": "parcial"
+      }
+    },
+    {
+      "id": "3d-030",
+      "genre": "urban-action",
+      "dimension": "3d",
+      "command": "Ação urbana 3D com suporte mobile.",
+      "expect": {
+        "mobile-controls": "parcial"
+      }
+    },
+    {
+      "id": "3d-031",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "RPG 3D com checkpoints e progresso persistente.",
+      "expect": {
+        "checkpoints": "pendente"
+      }
+    },
+    {
+      "id": "3d-032",
+      "genre": "urban-action",
+      "dimension": "3d",
+      "command": "Ação urbana 3D com checkpoint em cada missão.",
+      "expect": {
+        "checkpoints": "pendente"
+      }
+    },
+    {
+      "id": "3d-033",
+      "genre": "shooter",
+      "dimension": "3d",
+      "command": "Nave 3D deve continuar da última fase com checkpoint.",
+      "expect": {
+        "checkpoints": "pendente"
+      }
+    },
+    {
+      "id": "3d-034",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena 3D com pontos de salvamento por fase.",
+      "expect": {
+        "checkpoints": "pendente"
+      }
+    },
+    {
+      "id": "3d-035",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena 3D com paredes destrutíveis.",
+      "expect": {
+        "destruction": "pendente"
+      }
+    },
+    {
+      "id": "3d-036",
+      "genre": "racing",
+      "dimension": "3d",
+      "command": "Corrida 3D com destruir paredes e rigid body.",
+      "expect": {
+        "destruction": "pendente"
+      }
+    },
+    {
+      "id": "3d-037",
+      "genre": "urban-action",
+      "dimension": "3d",
+      "command": "Ação urbana 3D com cenário destrutível.",
+      "expect": {
+        "destruction": "pendente"
+      }
+    },
+    {
+      "id": "3d-038",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "RPG 3D com física de destruição das paredes.",
+      "expect": {
+        "destruction": "pendente"
+      }
+    },
+    {
+      "id": "3d-039",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena 3D, converter foto em GLB para criar o chefe.",
+      "expect": {
+        "photo-to-glb": "pendente"
+      }
+    },
+    {
+      "id": "3d-040",
+      "genre": "shooter",
+      "dimension": "3d",
+      "command": "Navinha 3D: recriar modelo 3D a partir da foto.",
+      "expect": {
+        "photo-to-glb": "pendente"
+      }
+    },
+    {
+      "id": "3d-041",
+      "genre": "urban-action",
+      "dimension": "3d",
+      "command": "Ação urbana 3D: quero criar modelo GLB de imagem.",
+      "expect": {
+        "photo-to-glb": "pendente"
+      }
+    },
+    {
+      "id": "3d-042",
+      "genre": "racing",
+      "dimension": "3d",
+      "command": "Corrida 3D, converter fotografia em GLB.",
+      "expect": {
+        "photo-to-glb": "pendente"
+      }
+    },
+    {
+      "id": "3d-043",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena 3D sem checkpoints e sem salvar progresso.",
+      "expect": {}
+    },
+    {
+      "id": "3d-044",
+      "genre": "fps",
+      "dimension": "3d",
+      "command": "FPS 3D. Não quero criar modelos GLB de fotos.",
+      "expect": {}
+    },
+    {
+      "id": "3d-045",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena 3D. Colocar GLB no cenário. Adicionar controles no celular. Também salvar checkpoints.",
+      "expect": {
+        "scene-glb": "manual",
+        "mobile-controls": "parcial",
+        "checkpoints": "pendente"
+      }
+    },
+    {
+      "id": "3d-046",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "RPG 3D. Inserir GLB na fase. Verificar caminho bloqueado.",
+      "expect": {
+        "scene-glb": "manual",
+        "route-check": "manual"
+      }
+    },
+    {
+      "id": "3d-047",
+      "genre": "fps",
+      "dimension": "3d",
+      "command": "FPS 3D. GLB animado com rig. Colisão dos modelos GLB no cenário.",
+      "expect": {
+        "scene-glb": "manual",
+        "glb-animation": "pendente",
+        "collision": "manual"
+      }
+    },
+    {
+      "id": "3d-048",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena 3D. Quero rotas alternativas e caminho bloqueado.",
+      "expect": {
+        "alternate-paths": "pendente",
+        "route-check": "manual"
+      }
+    },
+    {
+      "id": "3d-049",
+      "genre": "racing",
+      "dimension": "3d",
+      "command": "Corrida 3D. Controles no celular, checkpoints e paredes destrutíveis.",
+      "expect": {
+        "mobile-controls": "parcial",
+        "checkpoints": "pendente",
+        "destruction": "pendente"
+      }
+    },
+    {
+      "id": "3d-050",
+      "genre": "urban-action",
+      "dimension": "3d",
+      "command": "Ação urbana 3D. Modelos GLB animados, controles touch e checkpoint.",
+      "expect": {
+        "glb-animation": "parcial",
+        "mobile-controls": "parcial",
+        "checkpoints": "pendente"
+      }
+    }
+  ]
+}

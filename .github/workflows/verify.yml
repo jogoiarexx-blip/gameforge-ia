@@ -25,6 +25,8 @@ jobs:
           for f in js/*.js; do node --check "$f"; done
       - name: Testes automatizados
         run: npm test
+      - name: GF-TRAIN-19 — avaliar 50 briefs Three.js multigenero
+        run: npm run train:threejs
       - name: Bloquear exportacoes com codigo invalido
         run: npm run verify:exports
       - name: Benchmark informativo da arena
@@ -71,6 +73,8 @@ jobs:
         run: python tests/browser-gf-open-02b-glb.py
       - name: GF-OPEN-02c — colisoes e rotas no editor Chromium
         run: python tests/browser-gf-open-02c-navigation.py
+      - name: GF-TRAIN-19 — diagnostico Three.js em Chromium
+        run: python tests/browser-gf-train-19.py
       - name: Salvar capturas do navegador para auditoria
         if: always()
         uses: actions/upload-artifact@v4

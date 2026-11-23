@@ -65,6 +65,8 @@ jobs:
         run: python tests/browser-export-matrix.py
       - name: GF-005 — Continuar projeto, restaurar GLB e validar perda de armazenamento
         run: python tests/browser-project-continuity-gf005.py
+      - name: GF-OPEN-02 — editor WebGL, cena exportada e persistencia
+        run: python tests/browser-gf-open-02-scene3d.py
       - name: Salvar capturas do navegador para auditoria
         if: always()
         uses: actions/upload-artifact@v4

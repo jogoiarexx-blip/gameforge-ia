@@ -1498,11 +1498,16 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       if(!re.test(state.files['game.js']))throw Error('Formato do GAME_SPEC não reconhecido. Não alterado.');
       const next=state.files['game.js'].replace(re,'const GAME_SPEC = '+JSON.stringify(updated)+';');
       if(next===state.files['game.js'])throw Error('A cena já foi aplicada.');
-      pushHistory('GF-OPEN-02: atualizar cena 3D');
+      // Antes de alterar o projeto, recupere os GLBs originais do IndexedDB.
+      // O gerador exige os binarios ao embutir modelos na pagina HTML.
+      const binaries=await assetBinaryFiles();
+      const nextFiles={...state.files,...binaries,'game.js':next};
+      const nextHTML=GameForgeGenerator.shell(updated.title,state.files['style.css'],next,false,nextFiles);
+      pushHistory('GF-OPEN-02b: atualizar cena 3D e GLBs');
       state.files['game.js']=next;
       state.files['SCENE3D_LAYOUT.json']=JSON.stringify(GameForgeScene3DLayout.extract(updated),null,2);
       state.spec=updated;
-      state.files['index.html']=GameForgeGenerator.shell(updated.title,state.files['style.css'],next,false,state.files);
+      state.files['index.html']=nextHTML;
       qaState.last=null;qaState.baseline=null;refreshEvidence();
       listFiles();selectFile('game.js');saveState();
       const playable=await runPreview();

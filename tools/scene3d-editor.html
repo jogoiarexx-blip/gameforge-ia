@@ -38,13 +38,18 @@ button:hover{background:#36638c}button:disabled{opacity:.4;cursor:not-allowed}
 <label for="kind">Adicionar objeto</label>
 <div class="row"><select id="kind">
 <option value="crate">Caixa</option><option value="pillar">Pilar</option><option value="wall">Parede</option>
-<option value="tree">Árvore</option><option value="lamp">Luminária (luz)</option>
+<option value="tree">Árvore</option><option value="lamp">Luminária (luz)</option><option value="glb">Modelo GLB da biblioteca</option>
 </select><button id="add">Adicionar</button></div>
+<label for="asset-id">Modelo GLB disponível</label>
+<div class="row"><select id="asset-id"><option value="">Sincronize no Studio</option></select><button id="assets-refresh" type="button">Atualizar</button></div>
+<small>Importe GLBs no Studio como Cenário, abra este editor pelo botão do Studio ou clique em Atualizar.</small>
 <div id="object-list" aria-label="Hierarquia de objetos"></div>
 <div class="row"><button id="duplicate">Duplicar</button><button id="remove">Excluir</button></div>
 <small>Até 24 objetos e 2 luminárias por fase.</small>
 </fieldset>
 <fieldset><legend>Transformação</legend>
+<div class="row" aria-label="Modo de transformação"><button type="button" id="mode-move">Mover (W)</button><button type="button" id="mode-rotate">Girar (E)</button><button type="button" id="mode-scale">Escala (R)</button></div>
+<small>Selecione o objeto e arraste no cenário para o modo ativo; valores numéricos fazem ajustes precisos.</small>
 <label for="name">Nome</label><input id="name" maxlength="40">
 <div class="row"><label>X<input id="x" type="number" min="-16" max="16" step=".25"></label><label>Z<input id="z" type="number" min="-16" max="16" step=".25"></label></div>
 <div class="row"><label>Rotação (°)<input id="yaw" type="number" min="-180" max="180" step="15"></label><label>Escala<input id="scale" type="number" min=".4" max="3" step=".1"></label></div>
@@ -60,17 +65,21 @@ button:hover{background:#36638c}button:disabled{opacity:.4;cursor:not-allowed}
 <output id="status" role="status" aria-live="polite">Escolha um objeto e arraste-o pelo chão.</output>
 </fieldset>
 </aside>
-<div id="viewport"><div id="overlay">Arraste um objeto para mover · Arraste o fundo para orbitar · Roda do mouse para zoom · Delete para excluir</div></div>
+<div id="viewport"><div id="overlay">W: mover · E: girar · R: escala · Arraste objeto ou fundo · Roda: zoom · Delete: excluir</div></div>
 </main>
 <script src="../vendor/three-source.js"></script>
 <script src="../js/scene3d-layout.js"></script>
+<script src="../js/asset-library.js"></script>
+<script src="../js/glb-runtime.js"></script>
 <script>
 (function(){
 'use strict';
 const $=id=>document.getElementById(id),API=window.GameForgeScene3DLayout;
 const limit=(x,min,max)=>Math.max(min,Math.min(max,x));
 let stages=[{objects:[]}],index=0,selected=null,seq=1,history=[],future=[],drag=null;
-let T,scene,camera,renderer,raycaster,ground,objectsRoot;
+let mode='move',projectId='',availableAssets=[],assetCache=new Map();
+const assetById=id=>availableAssets.find(a=>a.id===id);
+let T,scene,camera,renderer,raycaster,ground,objectsRoot,gizmo;
 let theta=.65,phi=1.02,dist=32;
 try{
   // Executa somente o bundle oficial Three.js versionado pelo GameForge, nunca JSON/importacoes.
@@ -86,12 +95,52 @@ try{
   ground.rotation.x=-Math.PI/2;ground.position.y=-.03;scene.add(ground);
   scene.add(new T.GridHelper(36,36,0x86b5b4,0x658185));
   objectsRoot=new T.Group();scene.add(objectsRoot);raycaster=new T.Raycaster();
+  gizmo=new T.Group();scene.add(gizmo);
+  const axis=(color,rotate,py)=>{
+   const m=new T.Mesh(new T.BoxGeometry(.08,.08,2.5),new T.MeshBasicMaterial({color,depthTest:false}));
+   m.rotation.y=rotate;m.position.y=py;m.renderOrder=50;gizmo.add(m);
+  };
+  axis(0xff6666,Math.PI/2,.12);axis(0x62aaff,0,.12);
+  const ring=new T.Mesh(new T.RingGeometry(1.35,1.42,48),new T.MeshBasicMaterial({
+   color:0xffd977,side:T.DoubleSide,depthTest:false,transparent:true,opacity:.8}));
+  ring.rotation.x=-Math.PI/2;ring.position.y=.1;ring.renderOrder=51;ring.userData.rotateRing=true;gizmo.add(ring);
+  gizmo.visible=false;
 }catch(err){$('status').textContent='WebGL/Three.js indisponivel: '+err.message;return;}
 const geom={
  crate:()=>new T.BoxGeometry(1.4,1.4,1.4),
  pillar:()=>new T.CylinderGeometry(.5,.6,3,8),
  wall:()=>new T.BoxGeometry(3,2,.6)
 };
+async function loadAssetModel(id){
+ const meta=assetById(id);
+ if(!meta||!projectId)throw Error('GLB '+id+' nao encontrado. Volte ao Studio e sincronize a biblioteca.');
+ const key=projectId+':'+id;
+ if(!assetCache.has(key)){
+  const request=(async()=>{
+   const data=await GameForgeAssetLibrary.get(projectId,id,meta.bytes,meta.sha256||undefined);
+   return GameForgeGLB.decode(T,data);
+  })();
+  assetCache.set(key,request);
+  request.catch(()=>assetCache.delete(key));
+ }
+ return assetCache.get(key);
+}
+function showGLB(g,e){
+ loadAssetModel(e.assetId).then(model=>{
+  if(!g.parent||!model)return;
+  for(const child of g.children.slice()){
+   g.remove(child);child.traverse(x=>{x.geometry?.dispose();x.material?.dispose();});
+  }
+  const preview=model.clone(true);
+  preview.userData.gameForgeSharedGLB=true;g.add(preview);
+  preview.traverse(node=>{node.userData.entryId=e.id;});
+  $('status').textContent='GLB exibido: '+(assetById(e.assetId)?.name||e.assetId)+'.';
+ }).catch(error=>{$('status').textContent='GLB indisponivel: '+error.message;});
+}
+function sharedMesh(node){
+ for(let cur=node;cur;cur=cur.parent)if(cur.userData?.gameForgeSharedGLB)return true;
+ return false;
+}
 function nodeOf(e){
  const g=new T.Group(),mat=()=>new T.MeshStandardMaterial({color:e.color,roughness:.75,metalness:.02});
  const add=(shape,x,y,z)=>{const mesh=new T.Mesh(shape,mat());mesh.position.set(x,y,z);g.add(mesh);};
@@ -100,22 +149,37 @@ function nodeOf(e){
  if(e.kind==='wall')add(geom.wall(),0,1,0);
  if(e.kind==='tree'){add(new T.CylinderGeometry(.2,.28,2.2,6),0,1.1,0);
   add(new T.ConeGeometry(1.25,2.7,6),0,3.1,0);}
+ if(e.kind==='glb'){
+  add(new T.BoxGeometry(1.4,1.4,1.4),0,.7,0); // Placeholder ate carregar o GLB pelo IndexedDB.
+ }
  if(e.kind==='lamp'){add(new T.CylinderGeometry(.1,.15,3,8),0,1.5,0);
   add(new T.SphereGeometry(.35,8,6),0,3.2,0);
   const light=new T.PointLight(e.color,7,9,2);light.position.y=3.2;g.add(light);}
  g.userData.entryId=e.id;
  g.traverse(o=>{o.userData.entryId=e.id;});
- transform(g,e);return g;
+ transform(g,e);if(e.kind==='glb')queueMicrotask(()=>showGLB(g,e));return g;
 }
 function transform(g,e){g.position.set(e.x,0,e.z);g.rotation.y=e.yaw*Math.PI/180;g.scale.setScalar(e.scale);}
 function entry(){return stages[index]?.objects.find(e=>e.id===selected);}
 function sync(){
  const found=entry();
+ gizmo.visible=!!found;
+ if(found){
+  gizmo.position.set(found.x,0,found.z);
+  gizmo.rotation.y=found.yaw*Math.PI/180;
+  gizmo.children.forEach(child=>{if(child.userData.rotateRing)child.visible=mode==='rotate';
+   else child.visible=mode!=='rotate';});
+  gizmo.scale.setScalar(Math.max(.8,Math.min(1.8,found.scale)));
+ }
+ for(const key of ['move','rotate','scale'])$('mode-'+key).style.borderColor=mode===key?'#7fe8c1':'#4b7496';
  for(const id of ['name','x','z','yaw','scale','color','collidable'])$(id).disabled=!found;
  for(const id of ['duplicate','remove'])$(id).disabled=!found;
  if(found){
   for(const id of ['name','x','z','yaw','scale','color'])$(id).value=found[id];
   $('collidable').checked=found.collidable;$('collidable').disabled=found.kind==='lamp';
+  $('color').disabled=found.kind==='glb';
+  if(found.kind==='glb')$('asset-id').value=assetById(found.assetId)?found.assetId:'';
+ 
  }
  const root=$('object-list');root.replaceChildren();
  for(const e of stages[index].objects){
@@ -132,7 +196,7 @@ function sync(){
 function rebuild(){
  while(objectsRoot.children.length){
   const o=objectsRoot.children[0];objectsRoot.remove(o);
-  o.traverse(x=>{x.geometry?.dispose();x.material?.dispose();});
+  o.traverse(x=>{if(sharedMesh(x))return;x.geometry?.dispose();x.material?.dispose();});
  }
  stages[index].objects.forEach(e=>objectsRoot.add(nodeOf(e)));
  sync();
@@ -156,6 +220,31 @@ function updateCurrent(change){
  try{API.normalize({version:1,stages});rebuild();$('status').textContent='Alteração aplicada à fase '+(index+1)+'.';}
  catch(error){restore(history.pop());$('status').textContent=error.message;}
 }
+function refreshAssetList(){
+ try{
+  const raw=localStorage.getItem('gameforge-scene3d-assets-v1');
+  if(!raw)throw Error('Abra o editor a partir do Studio para carregar GLBs do projeto.');
+  const doc=JSON.parse(raw);
+  if(doc.version!==1||!/^[a-z0-9][a-z0-9_-]{7,99}$/i.test(doc.projectId)||
+     !Array.isArray(doc.assets)||doc.assets.length>4)throw Error('Biblioteca de GLBs invalida.');
+  const assets=doc.assets.filter(a=>a&&a.role==='scene'&&
+    /^[a-z0-9][a-z0-9_-]{7,63}$/i.test(a.id)&&
+    typeof a.name==='string'&&a.name.toLowerCase().endsWith('.glb')&&
+    Number.isSafeInteger(a.bytes)&&a.bytes>=20&&a.bytes<=25*1024*1024&&
+    (!a.sha256||/^[a-f0-9]{64}$/i.test(a.sha256)));
+  if(assets.length!==doc.assets.length)throw Error('Metadados de GLB incompletos.');
+  if(doc.projectId!==projectId)assetCache.clear();
+  projectId=doc.projectId;availableAssets=assets;
+  const prior=$('asset-id').value;
+  $('asset-id').replaceChildren(new Option('Selecione um modelo',''),
+    ...availableAssets.map(a=>new Option(a.name,a.id)));
+  $('asset-id').value=availableAssets.some(a=>a.id===prior)?prior:availableAssets[0]?.id||'';
+  $('status').textContent=availableAssets.length+' GLB(s) de cenário disponíveis no editor.';
+  rebuild(); // Permite substituir os placeholders por GLBs que chegaram ao IndexedDB.
+ }catch(e){$('status').textContent='Biblioteca: '+e.message;}
+}
+$('assets-refresh').onclick=refreshAssetList;
+for(const key of ['move','rotate','scale'])$('mode-'+key).onclick=()=>{mode=key;sync();};
 function nextId(){
  let id;do{id='obj'+seq++;}while(stages[index].objects.some(e=>e.id===id));return id;
 }
@@ -163,8 +252,12 @@ $('add').onclick=()=>{
  const kind=$('kind').value;
  if(stages[index].objects.length>=API.MAX_OBJECTS)return $('status').textContent='Limite de objetos por fase.';
  if(kind==='lamp'&&stages[index].objects.filter(e=>e.kind==='lamp').length>=2)return $('status').textContent='Limite de duas luzes por fase.';
+ const chosen=kind==='glb'?assetById($('asset-id').value):null;
+ if(kind==='glb'&&!chosen)return $('status').textContent='Selecione um GLB de cenário da biblioteca antes de adicionar.';
  remember();const n=stages[index].objects.length;
- const e={id:nextId(),kind,name:({crate:'Caixa',pillar:'Pilar',wall:'Parede',tree:'Arvore',lamp:'Luminaria'})[kind]+' '+(n+1),x:limit(n-2,-16,16),z:-2,yaw:0,scale:1,color:kind==='tree'?'#4eaa71':'#779bc5',collidable:kind!=='lamp'};
+ const e={id:nextId(),kind,name:(chosen?.name?.replace(/\.glb$/i,'').slice(0,28)||({crate:'Caixa',pillar:'Pilar',wall:'Parede',tree:'Arvore',lamp:'Luminaria'})[kind])+' '+(n+1),
+  x:limit(n-2,-16,16),z:-2,yaw:0,scale:1,color:kind==='tree'?'#4eaa71':'#779bc5',
+  collidable:kind!=='lamp'&&kind!=='glb',...(kind==='glb'?{assetId:chosen.id}:{})};
  stages[index].objects.push(e);selected=e.id;rebuild();
 };
 $('remove').onclick=()=>{if(!entry())return;remember();stages[index].objects=stages[index].objects.filter(e=>e.id!==selected);selected=null;rebuild();};
@@ -219,20 +312,32 @@ renderer.domElement.addEventListener('pointerdown',event=>{
  const intersections=raycaster.intersectObjects(objectsRoot.children,true);
  const id=intersections.find(hit=>hit.object.userData.entryId)?.object.userData.entryId;
  selected=id||null;sync();
- drag={id,atX:event.clientX,atY:event.clientY,theta,phi,lastX:null,lastZ:null};
+ drag={id,atX:event.clientX,atY:event.clientY,theta,phi,lastX:null,lastZ:null,initialYaw:entry()?.yaw||0,initialScale:entry()?.scale||1};
  if(id){const p=groundPoint(event);if(p){drag.lastX=p.x;drag.lastZ=p.z;remember();}}
  renderer.domElement.setPointerCapture(event.pointerId);
 });
 renderer.domElement.addEventListener('pointermove',event=>{
  if(!drag)return;
  if(drag.id){
-  const e=entry(),p=groundPoint(event);if(!e||!p)return;
+  const e=entry();if(!e)return;
+  if(mode==='rotate'){
+   let deg=drag.initialYaw+(event.clientX-drag.atX)*.65;
+   deg=((deg+180)%360+360)%360-180;
+   e.yaw=Math.round(deg/5)*5;const node=objectsRoot.children.find(n=>n.userData.entryId===e.id);
+   if(node)transform(node,e);$('yaw').value=e.yaw;gizmo.rotation.y=e.yaw*Math.PI/180;return;
+  }
+  if(mode==='scale'){
+   e.scale=Math.round(limit(drag.initialScale+(event.clientX-drag.atX-event.clientY+drag.atY)*.01,.4,3)*20)/20;
+   const node=objectsRoot.children.find(n=>n.userData.entryId===e.id);
+   if(node)transform(node,e);$('scale').value=e.scale;gizmo.scale.setScalar(Math.max(.8,Math.min(1.8,e.scale)));return;
+  }
+  const p=groundPoint(event);if(!p)return;
   if(drag.lastX===null){drag.lastX=p.x;drag.lastZ=p.z;return;}
   e.x=Math.round(limit(e.x+p.x-drag.lastX,-16,16)*4)/4;
   e.z=Math.round(limit(e.z+p.z-drag.lastZ,-16,16)*4)/4;
   const node=objectsRoot.children.find(n=>n.userData.entryId===e.id);if(node)transform(node,e);
   drag.lastX=p.x;drag.lastZ=p.z;
-  $('x').value=e.x;$('z').value=e.z;
+  $('x').value=e.x;$('z').value=e.z;gizmo.position.set(e.x,0,e.z);
  }else{
   theta=drag.theta-(event.clientX-drag.atX)*.008;
   phi=limit(drag.phi+(event.clientY-drag.atY)*.008,.18,1.48);
@@ -246,6 +351,9 @@ document.addEventListener('keydown',ev=>{
  if(/^(input|textarea|select)$/i.test(document.activeElement?.tagName||''))return;
  if((ev.key==='Delete'||ev.key==='Backspace')&&entry())$('remove').click();
  if((ev.ctrlKey||ev.metaKey)&&ev.key.toLowerCase()==='z'){ev.preventDefault();$('undo').click();}
+ if(!ev.ctrlKey&&!ev.metaKey&&['w','e','r'].includes(ev.key.toLowerCase())){
+  mode={w:'move',e:'rotate',r:'scale'}[ev.key.toLowerCase()];sync();
+ }
 });
 function resize(){
  const host=$('viewport'),w=host.clientWidth,h=host.clientHeight||500;
@@ -256,7 +364,7 @@ function animate(){
  camera.position.set(Math.sin(theta)*Math.sin(phi)*dist,Math.cos(phi)*dist,Math.cos(theta)*Math.sin(phi)*dist);
  camera.lookAt(0,0,0);renderer.render(scene,camera);
 }
-window.addEventListener('resize',resize);refreshStages();rebuild();resize();animate();
+window.addEventListener('resize',resize);refreshStages();rebuild();refreshAssetList();resize();animate();
 })();
 </script>
 </body></html>

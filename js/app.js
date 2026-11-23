@@ -170,8 +170,9 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     const sceneText=$('scene3d-json')?.value.trim();
     if(sceneText){
       try{
-        spec=GameForgeScene3DLayout.apply(spec,sceneText);
-        state.spec=GameForgeScene3DLayout.apply(state.spec,sceneText);
+        const manifest=currentAssetManifest();
+        spec=GameForgeScene3DLayout.apply(spec,sceneText,manifest);
+        state.spec=GameForgeScene3DLayout.apply(state.spec,sceneText,manifest);
       }catch(e){feedback('Cena 3D inválida: '+e.message,true);return null;}
     }
     const urbanOnly=spec.genre==='urban-action';
@@ -1209,6 +1210,13 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('qa-accept').addEventListener('click',qaAccept);
   $('qa-reject').addEventListener('click',qaReject);
   /* V0.18: biblioteca local de ate 4 GLBs estaticos, ate 25 MB cada. */
+  function glbReferencedInScene(assetId){
+    const raw=$('scene3d-json').value.trim();
+    if(raw&&GameForgeScene3DLayout.references(raw).includes(assetId))return true;
+    const spec=GameForgeProject.activeSpec(state.files,null);
+    return Array.isArray(spec?.stageConfig)&&spec.stageConfig.some(stage=>
+      Array.isArray(stage?.sceneObjects)&&stage.sceneObjects.some(e=>e?.kind==='glb'&&e.assetId===assetId));
+  }
   function assetPlacement(){
     const value=(id,min,max,def)=>{
       const n=Number($(id).value);
@@ -1288,7 +1296,10 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(!id)return;
     try{
       if(id==='legacy')state.files['ASSET_CENARIO.json']=JSON.stringify(assetPlacement());
-      else state.files['ASSET_LIBRARY.json']=JSON.stringify(GameForgeAssetLibrary.update(currentAssetManifest(),id,{...assetPlacement(),role:$('scene-asset-role').value}));
+      else {
+        if($('scene-asset-role').value!=='scene'&&glbReferencedInScene(id))throw Error('Remova o GLB das fases do editor antes de trocar seu papel.');
+        state.files['ASSET_LIBRARY.json']=JSON.stringify(GameForgeAssetLibrary.update(currentAssetManifest(),id,{...assetPlacement(),role:$('scene-asset-role').value}));
+      }
       qaState.last=null;qaState.baseline=null;runPreview();saveState();
       $('scene-asset-status').textContent='Posicao/escala salvas no modelo selecionado.';
     }catch(err){feedback('Nao foi possivel alterar o modelo: '+err.message,true);}
@@ -1298,6 +1309,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     try{
       if(id==='legacy'){delete state.files['ASSET_CENARIO.b64'];delete state.files['ASSET_CENARIO.json'];}
       else{
+        if(glbReferencedInScene(id))throw Error('Este GLB está em uma cena 3D. Remova suas instâncias no editor e aplique a cena antes de excluir o asset.');
         await GameForgeAssetLibrary.erase(assetProjectId,id);
         state.files['ASSET_LIBRARY.json']=JSON.stringify(GameForgeAssetLibrary.remove(currentAssetManifest(),id));
       }
@@ -1453,11 +1465,22 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
   $('project-name').addEventListener('input',scheduleSave);
   $('rpg-layout-json').addEventListener('input',scheduleSave);
   $('scene3d-json').addEventListener('input',scheduleSave);
+  $('scene3d-open').addEventListener('click',event=>{
+    try{
+      const manifest=currentAssetManifest();
+      const context={version:1,projectId:assetProjectId,
+        assets:manifest.assets.filter(a=>a.role==='scene').map(a=>({
+          id:a.id,name:a.name,bytes:a.bytes,sha256:a.sha256||null,role:a.role
+        }))};
+      localStorage.setItem('gameforge-scene3d-assets-v1',JSON.stringify(context));
+    }catch(e){event.preventDefault();feedback('Não foi possível abrir o editor com modelos: '+e.message,true);}
+  });
   $('scene3d-receive').addEventListener('click',()=>{
     try{
       const raw=localStorage.getItem('gameforge-scene3d-transfer-v1');
       if(!raw)throw Error('Nenhuma cena enviada. Use Enviar ao Studio no editor visual.');
       const normalized=GameForgeScene3DLayout.normalize(raw);
+      GameForgeScene3DLayout.validateAssets(normalized,currentAssetManifest());
       $('scene3d-json').value=JSON.stringify(normalized,null,2);
       scheduleSave();feedback('Cena recebida: '+normalized.stages.length+' fase(s). Gere o jogo 3D ou clique em Aplicar ao jogo gerado.');
     }catch(e){feedback('Erro ao receber cena: '+e.message,true);}
@@ -1470,7 +1493,7 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       if(!raw)throw Error('Importe uma cena válida antes de aplicar.');
       const original=GameForgeProject.activeSpec(state.files,null);
       if(!original)throw Error('GAME_SPEC não encontrado no game.js.');
-      const updated=GameForgeScene3DLayout.apply(original,raw);
+      const updated=GameForgeScene3DLayout.apply(original,raw,currentAssetManifest());
       const re=/const GAME_SPEC = \{[^\n]*\};/;
       if(!re.test(state.files['game.js']))throw Error('Formato do GAME_SPEC não reconhecido. Não alterado.');
       const next=state.files['game.js'].replace(re,'const GAME_SPEC = '+JSON.stringify(updated)+';');

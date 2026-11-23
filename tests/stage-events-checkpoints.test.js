@@ -675,7 +675,8 @@ test('GF-TRAIN-21: fase simples salva progresso real, retoma na mesma posicao e 
  const t=resumed.telemetry();
  assert.equal(t.midStageRestored,true);
  assert.equal(t.stage,1,'deve continuar na fase 1, não pular para a fase 2');
- assert.ok(Math.abs(t.player.z/100-saved.player.z)<.05);
+ assert.ok(Math.abs(t.player.y/100-saved.player.z)<.05,
+  'Telemetria 3D usa player.y para o eixo Z do mundo, nao player.z (altura)');
  assert.ok(Math.abs(t.clock-saved.clock)<.1);
  assert.ok(Math.abs(t.enemies-saved.enemies.length)<1);
  resumed.restart();

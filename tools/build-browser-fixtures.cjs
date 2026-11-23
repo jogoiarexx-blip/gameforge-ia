@@ -114,6 +114,45 @@ for(const genre of ['platform','rpg']){
  const id='snes2d-'+genre,dir=path.join(output,id);fs.mkdirSync(dir);
  for(const [filename,contents] of Object.entries(files))fs.writeFileSync(path.join(dir,filename),contents);
 }
+// GF-TRAIN-20: gera três jogos executáveis adicionais a partir de pedidos PT-BR.
+// São dados de teste locais — não substituem a matriz de 16 motores do GF-002.
+const gameplay20=[
+ {slug:'train20-arena-survive',genre:'arena',dimension:'3d',
+  command:'Crie um jogo de arena 3D com três fases. Na fase 1, sobreviver por 5 segundos.',
+  expected:{mission:'survive',seconds:5}},
+ {slug:'train20-fps-store',genre:'fps',dimension:'3d',
+  command:'Crie FPS 3D com três fases e loja para comprar munição. Balas custam 30 créditos.',
+  expected:{storeEnabled:true,ammoPrice:30}},
+ {slug:'train20-shooter-boss',genre:'shooter',dimension:'3d',
+  command:'Crie um jogo de navinha 3D com 3 fases e chefe somente na última.',
+  expected:{bosses:['no','no','yes']}}
+];
+for(const item of gameplay20){
+ const spec=parser.parseGdd('',item.command,{genre:'auto',dimension:'auto'});
+ if(spec.genre!==item.genre||spec.dimension!==item.dimension)
+  throw Error('GF-TRAIN-20: motor incorreto para '+item.slug+': '+spec.genre+'/'+spec.dimension);
+ if(item.expected.mission&&
+   (spec.stageConfig[0]?.mission!==item.expected.mission||
+    spec.stageConfig[0]?.seconds!==item.expected.seconds))
+  throw Error('GF-TRAIN-20: sobrevivência não executável em '+item.slug);
+ if(item.expected.storeEnabled&&
+   (!spec.combatEconomy?.enabled||spec.combatEconomy.prices.ammo!==item.expected.ammoPrice))
+  throw Error('GF-TRAIN-20: economia não executável em '+item.slug);
+ if(item.expected.bosses&&JSON.stringify(spec.stageConfig.map(x=>x.boss))!==JSON.stringify(item.expected.bosses))
+  throw Error('GF-TRAIN-20: chefes por fase não estão configurados corretamente.');
+ const files=generator.generate(spec,'');
+ validateFiles(files,item.dimension,item.genre);
+ const directory=path.join(output,item.slug);fs.mkdirSync(directory);
+ for(const [filename,contents] of Object.entries(files)){
+  if(filename.includes('/')||filename.includes('\\')||filename.includes('..'))throw Error('Caminho inseguro no fixture.');
+  fs.writeFileSync(path.join(directory,filename),contents);
+ }
+ const zip=zipper.zipFiles(files);
+ fs.writeFileSync(path.join(output,item.slug+'.zip'),new Uint8Array(await zip.arrayBuffer()));
+ item.files=Object.keys(files);
+ item.projectId=spec.projectId||null;
+}
+fs.writeFileSync(path.join(output,'gameplay-train20.json'),JSON.stringify(gameplay20,null,2));
 fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

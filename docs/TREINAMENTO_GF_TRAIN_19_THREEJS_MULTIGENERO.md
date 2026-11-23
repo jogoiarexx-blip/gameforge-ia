@@ -18,6 +18,7 @@
 
 - **Manual:** para os motores Arena/FPS/RPG 3D há editor de cenas e importação de GLBs estáticos, AABB e verificador de rotas. Isso **não coloca objetos no jogo só por escrever um pedido**: é necessário importar o GLB, posicionar por fase e aplicar o layout.
 - **Parcial:** controles touch têm implementação básica, mas desempenho, ergonomia e compatibilidade com celulares reais não foram certificados. O motor urbano tem controlador de clipes GLB, sem garantia de rig ou retargeting universal.
+- **Checkpoint entre fases (GF-TRAIN-20):** Arena, FPS e RPG 3D possuem checkpoint versionado quando existe `projectId` válido, pelo menos duas fases e nenhuma loja FPS ativada. Esse suporte é **parcial**, pois não salva objetivos no meio da fase e não se estende automaticamente à plataforma ou à navinha 3D.
 - **Pendente:** caminhos físicos alternativos, checkpoints persistentes universais, destruição física, geração de GLB a partir de foto e animações de personagens em motores não suportados não devem ser marcados como entregues.
 
 ## Reproduzir o treinamento

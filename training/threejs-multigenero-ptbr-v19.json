@@ -280,7 +280,7 @@
       "dimension": "3d",
       "command": "RPG 3D com checkpoints e progresso persistente.",
       "expect": {
-        "checkpoints": "pendente"
+        "checkpoints": "parcial"
       }
     },
     {
@@ -307,7 +307,7 @@
       "dimension": "3d",
       "command": "Arena 3D com pontos de salvamento por fase.",
       "expect": {
-        "checkpoints": "pendente"
+        "checkpoints": "parcial"
       }
     },
     {
@@ -404,7 +404,7 @@
       "expect": {
         "scene-glb": "manual",
         "mobile-controls": "parcial",
-        "checkpoints": "pendente"
+        "checkpoints": "parcial"
       }
     },
     {

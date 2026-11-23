@@ -36,6 +36,7 @@ function gameForgeThreeBoot(){
  let random=R.rng(opts.seed),raceRx=0,raceRz=0,lapTarget=2,frameCost=0,perfSamples=0;
  let rpgLevel=1,rpgXP=0,rpgPotions=2,rpgHealHeld=false;
  let firedEvents=new Set(),nextEnemyId=0,checkpointStored=null;
+ let lastMidSaveAt=-100,midStageRestored=false;
  let missionStepIndex=0,missionStepStartedAt=0,missionGuides=[];
  let npcSideStepIndex=0,npcSideStartedAt=0,campaignEffect=null;
  let npcActor=null,npcMarker=null,npcStatus='none',npcTalkButton=null;
@@ -58,10 +59,54 @@ function gameForgeThreeBoot(){
  function activeMissionStep(){return missionPlan()[missionStepIndex]||null;}
  function activeSideStep(){return sideQuestPlan()[npcSideStepIndex]||null;}
  const checkpointStorageKey=R.checkpointKey(spec);
+ const midStageStorageKey=R.midStageKey?.(spec)||null;
  function loadCheckpoint(){
   if(!checkpointStorageKey)return null;
   try{return R.readCheckpoint(window.localStorage?.getItem(checkpointStorageKey),spec);}
   catch{return null;}
+ }
+ function loadMidStage(){
+  if(!midStageStorageKey)return null;
+  try{return R.readMidStage(window.localStorage?.getItem(midStageStorageKey),spec);}
+  catch{return null;}
+ }
+ function clearMidStage(){
+  if(!midStageStorageKey)return;
+  try{window.localStorage?.removeItem(midStageStorageKey);}catch{}
+ }
+ function saveMidStage(){
+  if(!midStageStorageKey||!R.midStageEligible(spec,stage)||
+   state!=='play'||health<=0||transition>0||stageClock<1)return false;
+  const snap=R.midStagePayload(spec,{stage,health,score,ammo,clock,stageClock,
+   rpgLevel,rpgXP,rpgPotions,player:{x:player.x,z:player.z,yaw:player.yaw},
+   enemies:enemies.map(e=>({id:e.id,x:e.x,z:e.z,hp:e.hp})),
+   coinsTaken:coins.flatMap((c,i)=>c.taken?[i]:[])});
+  if(!snap)return false;
+  try{window.localStorage?.setItem(midStageStorageKey,JSON.stringify(snap));
+   lastMidSaveAt=stageClock;return true;}
+  catch{return false;}
+ }
+ function restoreMidStage(saved){
+  if(!saved||!R.midStageEligible(spec,stage)||saved.stage!==stage)return false;
+  const byId=new Map(enemies.map(e=>[e.id,e])),keep=new Set(saved.enemies.map(e=>e.id));
+  if(saved.enemies.some(e=>!byId.has(e.id))||
+   saved.coinsTaken.some(i=>i>=coins.length))return false;
+  // Evita restaurar o jogador dentro de colisão de um cenário alterado.
+  const blocked=solids.some(o=>Math.abs(saved.player.x-o.x)<o.w/2+.4&&
+   Math.abs(saved.player.z-o.z)<o.d/2+.4);
+  if(blocked)return false;
+  for(const e of enemies){
+   if(!keep.has(e.id)){world.remove(e.mesh);continue;}
+   const source=saved.enemies.find(x=>x.id===e.id);
+   e.x=source.x;e.z=source.z;e.hp=source.hp;e.mesh.position.set(e.x,0,e.z);
+  }
+  enemies=enemies.filter(e=>keep.has(e.id));
+  for(const id of saved.coinsTaken){coins[id].taken=true;coins[id].mesh.visible=false;}
+  collected=saved.coinsTaken.length;
+  player.x=saved.player.x;player.z=saved.player.z;player.yaw=saved.player.yaw;
+  stageClock=saved.stageClock;lastMidSaveAt=stageClock;
+  hero.position.set(player.x,player.y,player.z);hero.rotation.y=player.yaw;
+  updateCamera(1);updateHUD();return true;
  }
  function saveCheckpoint(){
   if(!checkpointStorageKey)return;
@@ -74,7 +119,7 @@ function gameForgeThreeBoot(){
  function clearCheckpoint(){
   if(!checkpointStorageKey)return;
   try{window.localStorage?.removeItem(checkpointStorageKey);}catch{}
-  checkpointStored=null;
+  clearMidStage();checkpointStored=null;
  }
  checkpointStored=loadCheckpoint();
  const keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
@@ -437,7 +482,7 @@ function gameForgeThreeBoot(){
   const sun=new T.DirectionalLight(0xffeccb,2.6);sun.position.set(-14,26,16);sun.castShadow=renderer.shadowMap.enabled;sun.shadow.mapSize.set(opts.quality==='high'?2048:1024,opts.quality==='high'?2048:1024);sun.shadow.camera.left=-30;sun.shadow.camera.right=30;sun.shadow.camera.top=30;sun.shadow.camera.bottom=-30;sun.shadow.camera.far=90;sun.shadow.normalBias=.05;scene.add(sun);scene.add(sun.target);
   mats={ground:material(palette.ground),road:material(palette.road),leaf:material(palette.grass),leafLight:material(palette.grass+0x081008),wood:material(palette.wood),stone:material(palette.stone),trim:material(0x2e4950),crystal:material(palette.accent,palette.accent),portal:material(0x8b5867,0x5e354a),gold:material(0xf8cf77,0x755521)};
   bulletGeometry=geometry(new T.SphereGeometry(.12,6,4));
-  random=R.rng((Number(opts.seed)||12345)+stage*907);collected=0;stageClock=0;invulnerable=0;fireDelay=0;reloadDelay=0;transition=0;jumpHeld=false;checkpoint=0;
+  random=R.rng((Number(opts.seed)||12345)+stage*907);collected=0;stageClock=0;invulnerable=0;fireDelay=0;reloadDelay=0;transition=0;jumpHeld=false;checkpoint=0;lastMidSaveAt=-100;
   firedEvents=new Set();nextEnemyId=0;missionStepIndex=0;missionStepStartedAt=0;missionGuides=[];
   npcSideStepIndex=0;npcSideStartedAt=0;
   npcStatus=npcAt()?'idle':'none';npcActor=null;npcMarker=null;npcPosition=null;npcSelectedChoice=null;
@@ -587,16 +632,34 @@ function gameForgeThreeBoot(){
   if(shopOpen)closeShop();
   if(storeEnabled)combatStore=gameForgeCombatEconomyFactory().create(spec.combatEconomy);
   if(!continueSaved)clearCheckpoint();
-  const saved=continueSaved?loadCheckpoint():null;
+  const campaignSaved=continueSaved?loadCheckpoint():null;
+  const midSaved=continueSaved?loadMidStage():null;
+  const mid=midSaved&&(!campaignSaved||midSaved.stage>=campaignSaved.stage)?midSaved:null;
+  const saved=mid||campaignSaved;
+  midStageRestored=false;
   stage=saved?.stage??0;health=saved?.health??100;score=saved?.score??0;
   ammo=saved?.ammo??(storeEnabled?20:80);rpgLevel=saved?.rpgLevel??1;
   rpgXP=saved?.rpgXP??0;rpgPotions=saved?.rpgPotions??2;
-  rpgHealHeld=false;clock=saved?.clock??0;campaignEffect=saved?.campaignEffect||null;
+  rpgHealHeld=false;clock=saved?.clock??0;
+  campaignEffect=campaignSaved?.stage===stage?campaignSaved.campaignEffect||null:null;
   simulationAccumulator=0;simulationSteps=0;
   state='play';paused=false;keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);
   pointerDown=false;buildStage();$('overlay').classList.add('hidden');
+  if(mid){
+   if(restoreMidStage(mid))midStageRestored=true;
+   else{
+    clearMidStage();
+    // Save intermediário inválido para a geometria atual: volta ao checkpoint seguro.
+    stage=campaignSaved?.stage??0;health=campaignSaved?.health??100;
+    score=campaignSaved?.score??0;ammo=campaignSaved?.ammo??(storeEnabled?20:80);
+    rpgLevel=campaignSaved?.rpgLevel??1;rpgXP=campaignSaved?.rpgXP??0;
+    rpgPotions=campaignSaved?.rpgPotions??2;clock=campaignSaved?.clock??0;
+    campaignEffect=campaignSaved?.campaignEffect||null;buildStage();
+   }
+  }
   $('pause').textContent='Pausar';canvas.focus();
-  if(saved)notice('Checkpoint restaurado: fase '+(stage+1),3);
+  if(midStageRestored)notice('Progresso da fase '+(stage+1)+' restaurado',3);
+  else if(saved)notice('Checkpoint restaurado: fase '+(stage+1),3);
  }
  function overlay(title,text,button){$('overlay-title').textContent=title;$('overlay-sub').textContent=text;$('start').textContent=button;$('overlay').classList.remove('hidden');}
  function damage(amount){if(invulnerable>0||state!=='play')return;health=Math.max(0,health-amount);invulnerable=.9;notice('Dano recebido · '+health+' de vida',1.2);if(health<=0){state='defeat';overlay('Fim de jogo','Pontuação: '+score+' · Reinicie a jornada.','Tentar novamente');}}
@@ -608,6 +671,7 @@ function gameForgeThreeBoot(){
   }else{
    const npc=npcAt();
    const effect=npcStatus==='completed'?R.npcMissionEffect(npc,npcSelectedChoice,stage):null;
+   clearMidStage();
    stage++;campaignEffect=effect;
    health=Math.min(100,health+25+(effect?.kind==='aid'?20:0));
    if(!storeEnabled)ammo=Math.min(999,Math.max(80,ammo+40)+(effect?.kind==='aid'?20:0));
@@ -616,7 +680,9 @@ function gameForgeThreeBoot(){
     'Emboscada! +2 inimigos nesta fase.',4);
   }
  }
- function togglePause(){if(shopOpen){closeShop();return;}if(state!=='play')return;paused=!paused;simulationAccumulator=0;keys.clear();pointerDown=false;Object.keys(touch).forEach(k=>touch[k]=false);$('pause').textContent=paused?'Continuar':'Pausar';if(paused)overlay('Jogo pausado','Sua jornada continua daqui.','Continuar');else{$('overlay').classList.add('hidden');canvas.focus();}}
+ function togglePause(){if(shopOpen){closeShop();return;}if(state!=='play')return;
+ if(!paused)saveMidStage();
+ paused=!paused;simulationAccumulator=0;keys.clear();pointerDown=false;Object.keys(touch).forEach(k=>touch[k]=false);$('pause').textContent=paused?'Continuar':'Pausar';if(paused)overlay('Jogo pausado','Sua jornada continua daqui.','Continuar');else{$('overlay').classList.add('hidden');canvas.focus();}}
  function axes(){return {x:(down('d','ArrowRight','right')?1:0)-(down('a','ArrowLeft','left')?1:0),z:(down('s','ArrowDown','down')?1:0)-(down('w','ArrowUp','up')?1:0)};}
  function move(dx,dz){const p=R.moveCircle(player,dx,dz,.4,solids,size);player.x=p.x;player.z=p.z;}
  function startReload(){
@@ -759,6 +825,7 @@ function gameForgeThreeBoot(){
    for(const c of coins)if(!c.taken){c.mesh.rotation.y+=dt*1.6;c.mesh.position.y=c.y+Math.sin(clock*3+c.x)*.1;}
    if(goal)goal.portal.scale.x=1+Math.sin(clock*2)*.035;
    updateCamera(dt);updateHUD();
+   if(stageClock-lastMidSaveAt>=4)saveMidStage();
  }
  function frame(now){
    requestAnimationFrame(frame);
@@ -792,6 +859,7 @@ function gameForgeThreeBoot(){
     sideQuest:!!npcAt().sideQuest,
     choice:npcSelectedChoice,choices:npcAt().choices?.map(c=>({id:c.id,label:c.label}))||[]}:null,
    checkpointAvailable:!!loadCheckpoint(),checkpointStage:loadCheckpoint()?.stage??null,
+   midStageAvailable:!!loadMidStage(),midStageRestored,
    clock,health,score,ammo,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
  };
  $('control-help').textContent=genre==='fps'?(combatStore?'WASD: mover · Espaço: atirar · R: recarregar · B: loja de armas/vida':'WASD / setas: mover · Q/E ou arrastar: mirar · Espaço/clique: atirar'):genre==='racing'?'W / ↑ acelerar · S / ↓ frear · A/D virar · Espaço turbo':genre==='platform'?'A/D ou ←/→: mover · W/↑/Espaço: saltar · Q/S: profundidade':genre==='rpg'?'WASD: explorar · Espaço: magia · H: poção · P: pausa':'WASD / setas: mover · Espaço/clique: ataque · P: pausa';
@@ -905,7 +973,11 @@ function gameForgeThreeBoot(){
  canvas.addEventListener('pointerup',()=>{pointerDown=false;dragX=null;});canvas.addEventListener('pointercancel',release);canvas.addEventListener('contextmenu',e=>e.preventDefault());
  document.querySelectorAll('[data-control]').forEach(button=>{const name=button.dataset.control;button.addEventListener('pointerdown',e=>{e.preventDefault();touch[name]=true;button.setPointerCapture&&button.setPointerCapture(e.pointerId);});for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,()=>touch[name]=false);});
  addEventListener('resize',resize);buildStage();state='menu';
- if(checkpointStored){
+ const intermediateStored=loadMidStage();
+ if(intermediateStored&&(!checkpointStored||intermediateStored.stage>=checkpointStored.stage)){
+  $('start').textContent='Continuar fase '+(intermediateStored.stage+1);
+  $('overlay-sub').textContent+=' · Há progresso salvo durante a fase. Continuar restaura posição, cristais e inimigos restantes.';
+ }else if(checkpointStored){
   $('start').textContent='Continuar da fase '+(checkpointStored.stage+1);
   $('overlay-sub').textContent+=' · Há um checkpoint salvo. Continuar retoma a campanha; Reiniciar começa do zero.';
  }

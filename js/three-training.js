@@ -59,14 +59,31 @@ const rules=[
    test:'tests/three-world.test.js',
    action:'Projetar corpos rígidos, fragmentos, limites de física e fallback mobile; implementar testes de colisão.'},
  {id:'photo-to-glb',title:'Reconstruir modelo 3D a partir de fotografia',pattern:s=>
-   /\b(foto|fotografia|imagem)\b.{0,38}\b(glb|modelo 3d|recriar|converter)\b/.test(s)||
+   /\b(fotos?|fotografias?|imagens?)\b.{0,38}\b(glb|modelo 3d|recriar|converter)\b/.test(s)||
    /\b(criar|recriar|converter)\b.{0,38}\b(glb|modelo 3d)\b.{0,30}\b(foto|fotografia|imagem)\b/.test(s),
    status:()=> 'pendente',
    contract:'O GameForge importa GLBs existentes, mas não faz fotogrametria nem reconstrução a partir de imagens',
    test:'tests/glb-readiness.test.js',
    action:'Necessita pipeline próprio de reconstrução; não confundir importação/inspeção GLB com geração 3D.'}
 ];
-const skipped=/\b(sem|nao quero|nao usar|nao precisa|dispensar|evitar|remover|excluir|fora de escopo|nao implementar|desativar)\b/;
+const negatedTargets=Object.freeze({
+ 'scene-glb':'(?:personagens?\\s+|modelos?\\s+)?(?:glbs?|gltfs?|modelos?\\s+3d)',
+ 'glb-animation':'(?:(?:personagens?|modelos?)\\s+)?(?:glbs?|gltfs?|modelos?\\s+3d|animacoes?\\s+glb)',
+ collision:'(?:colisoes?|colidir|bloquear\\s+passagem)',
+ 'route-check':'(?:validar|verificar|checar|testar)\\s+(?:rotas?|passagem|caminhos?)|(?:rotas?|caminhos?)\\s+bloquead[oa]s?',
+ 'alternate-paths':'(?:tres\\s+caminhos|3\\s+caminhos|rotas?\\s+alternativas?|caminhos?\\s+(?:alternativos?|secretos?)|bifurcacoes?)',
+ 'mobile-controls':'(?:controles?\\s+(?:mobile|touch|virtuais?|na\\s+tela)|mobile|touch|celular|android|ios)',
+ checkpoints:'(?:checkpoints?|pontos?\\s+de\\s+salvamento|salvar\\s+progresso|respawn\\s+salvo)',
+ destruction:'(?:destruicao|destruir|destrutiv[ao]s?|fisica\\s+de\\s+destruicao|rigid.?body)',
+ 'photo-to-glb':'(?:criar|recriar|converter|foto|fotografia|imagem)'
+});
+function denied(rule,text){
+ const topic=negatedTargets[rule.id];
+ if(!topic)return false;
+ const prefix='\\b(?:sem|nao\\s+quero|nao\\s+usar|nao\\s+precisa|dispensar|evitar|remover|excluir|nao\\s+implementar|desativar)\\s+';
+ const filler='(?:(?:o|a|os|as|um|uma|meus|minhas|modelos?|personagens?)\\s+){0,2}';
+ return new RegExp(prefix+filler+'(?:'+topic+')\\b').test(text);
+}
 function passages(gdd,command){
  const result=[];
  for(const [source,content] of [['GDD',gdd],['Comando',command]]){
@@ -91,7 +108,7 @@ function inspect(spec,gdd='',command=''){
   for(const fragment of fragments){
    if(!rule.pattern(fragment.text))continue;
    // Negação no mesmo fragmento se aplica ao requisito; não criar implementação imaginária.
-   matched=skipped.test(fragment.text)?null:fragment;
+   matched=denied(rule,fragment.text)?null:fragment;
   }
   if(!matched)continue;
   const status=rule.status(engine);result.counts[status]++;

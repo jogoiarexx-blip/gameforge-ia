@@ -45,6 +45,7 @@ def run():
                 page.keyboard.down('w')
                 page.wait_for_timeout(3100)
                 page.keyboard.up('w')
+                page.locator('#pause').click() # salvar posicao atual antes de destruir a pagina
                 page.wait_for_function("window.__gameforgeTelemetry().midStageAvailable===true",timeout=10000)
                 saved=page.evaluate("window.__gameforgeTelemetry()")
                 assert saved['stage']==1

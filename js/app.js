@@ -1237,6 +1237,8 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     if(projectOperations||qaState.candidate){feedback('Conclua a operacao atual antes de importar novos arquivos.',true);input.value='';return;}
     projectOperations++;
     let imported=0,lastId='';
+    const auditMessages=[];
+    $('scene-asset-audit').textContent='Analisando arquivos GLB localmente...';
     try{
       if(!state.files['engine-3d.js'])throw Error('Gere primeiro um jogo 3D no modo Sem IA.');
       for(const file of files){
@@ -1249,6 +1251,9 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
         const report=await GameForgeModelInspector.readFile(file);
         if(report.meshes<1)throw Error('GLB sem malhas: '+file.name);
         const data=GameForgeAssetLibrary.validateGLB(new Uint8Array(await file.arrayBuffer()));
+        const readiness=GameForgeGLBReadiness.analyze(GameForgeModelInspector.readGlb(data.buffer),{bytes:data.length,role:$('scene-asset-role').value});
+        auditMessages.push(file.name+'\n'+GameForgeGLBReadiness.format(readiness));
+        if(readiness.blockers.length)throw Error('GLB incompatível: '+readiness.blockers.join(' '));
         GameForgeGLB.decode(null,data); // valida geometria, hierarquia e texturas antes de salvar
         const id=GameForgeAssetLibrary.newId();
         const item={id,name:file.name,bytes:data.length,sha256:await GameForgeAssetLibrary.sha256(data),role:$('scene-asset-role').value,placement:assetPlacement()};
@@ -1259,12 +1264,14 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
       }
       qaState.last=null;qaState.baseline=null;
       restoreSceneAssetControls(lastId);listFiles();saveState();
+      $('scene-asset-audit').textContent=auditMessages.join('\n\n');
       const previewOk=await runPreview();
       feedback(imported+' modelo(s) GLB salvo(s) na biblioteca. '+(previewOk?'A prévia foi preparada. ':'A prévia não carregou; revise os avisos. ')+'Exporte ZIP para backup completo.',!previewOk);
     }catch(err){
       restoreSceneAssetControls(lastId);listFiles();
       if(imported){saveState();await runPreview();}
       $('scene-asset-status').textContent='Importacao: '+imported+' concluido(s). '+err.message;
+      $('scene-asset-audit').textContent=auditMessages.length?auditMessages.join('\n\n'):'Preflight nao concluido: '+err.message;
       feedback(err.message,true);
     }finally{projectOperations--;input.value='';}
   });

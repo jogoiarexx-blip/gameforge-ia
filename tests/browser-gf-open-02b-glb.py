@@ -42,6 +42,7 @@ def run():
                 studio.locator('#game-style').select_option('arena')
                 studio.locator('#generate').click()
                 studio.wait_for_function("document.querySelector('#preview').hasAttribute('srcdoc')",timeout=30000)
+                studio.locator('.model-disclosure').first.locator('summary').click()
                 studio.locator('#scene-asset-role').select_option('scene')
                 studio.locator('#scene-asset-file').set_input_files({
                     'name':'modelo-de-teste.glb','mimeType':'model/gltf-binary','buffer':minimal_glb()})

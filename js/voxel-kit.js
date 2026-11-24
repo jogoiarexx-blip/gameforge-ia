@@ -106,7 +106,7 @@ function craft({recipes,recipeIndex,station,inventory,nearStation=true,maxStack=
  if(!Array.isArray(recipes)||!int(recipeIndex)||recipeIndex<0||recipeIndex>=recipes.length||
   !validInventory(inventory)||!int(maxStack)||maxStack<1||maxStack>999)return {ok:false,reason:'invalid'};
  const recipe=recipes[recipeIndex];
- if(!recipe||recipe.station!==station||(!nearStation&&station!=='bag')||
+ if(!recipe||recipe.station!==station||(!nearStation&&station!=='bag'&&station!==0)||
    !int(recipe.output?.id)||!int(recipe.output?.qty)||recipe.output.qty<=0||
    recipe.output.qty>maxStack||!Array.isArray(recipe.requires)||!recipe.requires.length)
   return {ok:false,reason:'station-or-recipe'};

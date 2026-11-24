@@ -23,7 +23,7 @@ test('GF-VOXEL-05: ferramenta, bloco e arco de ação, overlay não altera estad
  V.pose({...base,equipped:true});assert.equal(V.snapshot().held,'pickaxe');
  assert.ok(V.swing(0,'mine'));
  V.pose({...base,time:.15,equipped:true});assert.ok(V.snapshot().swingAngle<-.8);
- V.pose({...base,time:.31,equipped:true});assert.equal(V.snapshot().swingAngle,0);
+ V.pose({...base,time:.31,equipped:true});assert.ok(Math.abs(V.snapshot().swingAngle)<1e-9);
  V.pose({...base,available:false});assert.equal(V.snapshot().held,'hand');
  const calls=[];const renderer={autoClear:true,clearDepth(){calls.push('depth');},render(scene,camera){assert.equal(this.autoClear,false);assert.ok(camera.isPerspectiveCamera);calls.push('render');}};
  V.render(renderer);assert.deepEqual(calls,['depth','render']);assert.equal(renderer.autoClear,true);

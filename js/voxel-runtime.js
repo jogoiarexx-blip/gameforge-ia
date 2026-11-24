@@ -13,7 +13,8 @@ function gameForgeVoxelBoot(){
  const material=new T.MeshBasicMaterial({vertexColors:true});
  const meshes=new Map();let world,player,velocity=0,grounded=false,mined=0,placed=0,selected=2;
  let bag=E.initial(),equipped=false,station=0,life=S.initial();
- const creatures=new Map(),animalGeometry=new T.BoxGeometry(.85,1.1,.75),animalMaterials={sheep:new T.MeshBasicMaterial({color:0xece6cc}),shade:new T.MeshBasicMaterial({color:0x9f435c})},daySky=new T.Color(0x90b7d1),nightSky=new T.Color(0x172943);
+ const visuals=gameForgeVoxelActorsFactory(T),daySky=new T.Color(0x90b7d1),nightSky=new T.Color(0x172943);
+ let worldTriangles=0,visualX=0,visualZ=0;
  let state='menu',paused=false,last=0,accumulator=0,clock=0,frames=0,saveAt=0,savedStatus='Ainda não salvo',notice='',noticeUntil=0;
  const dir=()=>[Math.sin(player.yaw)*Math.cos(player.pitch),Math.sin(player.pitch),-Math.cos(player.yaw)*Math.cos(player.pitch)];
  const key=W.saveKey(cfg);
@@ -30,7 +31,7 @@ function gameForgeVoxelBoot(){
  }
  function resize(){const width=Math.max(1,canvas.clientWidth),height=Math.max(1,canvas.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,innerWidth<700?1:1.35));
-  renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();
+  renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();visuals.resize(camera.aspect);
  }
  function initialize(saved){
   world=saved?.world||W.create(cfg.seed,[],{forest});
@@ -38,6 +39,7 @@ function gameForgeVoxelBoot(){
   if(!player)throw Error('Sem ponto seguro de nascimento.');
   mined=saved?.mined||0;placed=saved?.placed||0;
   bag=resources?(saved?.bag||E.initial()):[];equipped=resources&&!!saved?.equipped;selected=saved?.selected||2;station=0;
+  visuals.reset(scene);visualX=player.x;visualZ=player.z;
   life=saved?.survival||S.initial();if(survival){if(!saved)bag=E.change(bag,11,3);S.populate(life,world,player);syncCreatures();}
   velocity=0;grounded=false;clock=0;saveAt=0;accumulator=0;
   for(const id of world.chunkKeys())rebuild(id);
@@ -56,8 +58,7 @@ function gameForgeVoxelBoot(){
  }
  function syncCreatures(){
   if(!survival)return;
-  for(const [id,m] of creatures)if(!life.animals.some(a=>a.id===id)){scene.remove(m);creatures.delete(id);}
-  for(const a of life.animals){let m=creatures.get(a.id);if(!m){m=new T.Mesh(animalGeometry,animalMaterials[a.kind]);scene.add(m);creatures.set(a.id,m);}m.position.set(a.x,a.y+.55,a.z);}
+  visuals.sync(scene,life.animals,life.time,player);
   const dark=S.night(life);scene.background.copy(dark?nightSky:daySky);scene.fog.color.copy(scene.background);material.color.setScalar(dark?.53:1);
  }
  function eat(){if(!survival||state!=='play'||paused)return;const next=S.eat(life,bag);if(!next){say('Sem alimento ou fome já satisfeita.');return;}bag=next;say('Alimentado');refreshBag();save();updateHUD();}
@@ -66,7 +67,7 @@ function gameForgeVoxelBoot(){
  function act(kind){
   if(state!=='play'||paused)return false;
   const hit=target();
-  if(survival&&kind==='mine'){const a=S.target(life,[player.x,player.y+1.58,player.z],dir());if(a&&(!hit||a.distance<hit.distance)){const r=S.hit(life,a.id,bag,equipped);if(!r.ok)return false;bag=r.bag;syncCreatures();refreshBag();save();say('Criatura atingida');return true;}}
+  if(survival&&kind==='mine'){const a=S.target(life,[player.x,player.y+1.58,player.z],dir());if(a&&(!hit||a.distance<hit.distance)){const r=S.hit(life,a.id,bag,equipped);if(!r.ok)return false;bag=r.bag;visuals.swing(clock,'attack');syncCreatures();refreshBag();save();say('Criatura atingida');return true;}}
   if(!hit){say('Aproxime-se de um bloco.');return false;}
   let dirty;
   if(resources){
@@ -76,6 +77,7 @@ function gameForgeVoxelBoot(){
   }else dirty=kind==='mine'?world.mine(hit):world.place(hit,selected,player);
   if(!dirty){say('Ação inválida: alcance, limite de edições ou colisão.');return false;}
   if(kind==='mine')mined++;else placed++;
+  visuals.swing(clock,kind==='mine'?'mine':'place');
   for(const id of dirty)rebuild(id);
   say(kind==='mine'?(hit.id===8||hit.id===9?'Madeira/folhas removidas':'Bloco removido'):selected===10?'Muda plantada: cresce em 20 s de jogo ativo.':'Bloco colocado');save();refreshBag();updateHUD();return true;
  }
@@ -232,7 +234,11 @@ function gameForgeVoxelBoot(){
    accumulator+=dt;let count=0;
    while(accumulator>=1/60&&count++<6){step(1/60);accumulator-=1/60;}
   }
-  syncCreatures();updateCamera();renderer.render(scene,camera);frames++;updateHUD();requestAnimationFrame(frame);
+  syncCreatures();updateCamera();renderer.render(scene,camera);worldTriangles=renderer.info.render.triangles;
+  const moving=Math.hypot(player.x-visualX,player.z-visualZ)>.0001;
+  visualX=player.x;visualZ=player.z;
+  visuals.pose({time:clock,active:state==='play',equipped,selected,available:!resources||E.count(bag,selected)>0,moving});
+  visuals.render(renderer);frames++;updateHUD();requestAnimationFrame(frame);
  }
  const stored=getSaved();
  initialize(stored);$('overlay-title').textContent=cfg.title;$('overlay-sub').textContent=resources?'Coleta e fabricação · inventário limitado · construa a bancada e o forno. Requer WebGL.':'Mundo criativo de 64 × 64 blocos · terreno por seed · explore, mine e construa. Requer WebGL.';
@@ -240,7 +246,7 @@ function gameForgeVoxelBoot(){
  if(survival)$('control-help').textContent+=' · C comer · E atacar criatura · sobreviva à noite';
  if(forest)$('control-help').textContent+=' · 8 madeira · 0 muda · corte árvore com E';
  if(stored)$('start').textContent='Continuar mundo';
- window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.edits().length,selected,mode:resources?'resources':'creative',forest,survival:survival?JSON.parse(JSON.stringify(life)):null,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,chunks:meshes.size,target:target(),triangles:renderer.info.render.triangles});
+ window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.edits().length,selected,mode:resources?'resources':'creative',forest,survival:survival?JSON.parse(JSON.stringify(life)):null,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,chunks:meshes.size,target:target(),triangles:worldTriangles,visuals:visuals.snapshot()});
  requestAnimationFrame(frame);
 }
 if(typeof globalThis!=='undefined')globalThis.gameForgeVoxelBoot=gameForgeVoxelBoot;

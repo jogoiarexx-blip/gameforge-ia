@@ -12,7 +12,7 @@ function gameForgeVoxelLandscapeFactory(K){
   const key=seed+','+sx+','+sz;if(villages.has(key))return villages.get(key);
   const x=sx*48+24,z=sz*48+24,h=K.heightAt(seed,x,z);
   const valid=Math.abs(x-riverCenter(seed,z))>20&&Math.hypot(x,z)>22;
-  const v=valid?{x,z,h}:null;villages.set(key,v);return v;
+  const v=valid?{x,z,h}:null;villages.set(key,v);if(villages.size>512)villages.delete(villages.keys().next().value);return v;
  }
  function column(seed,x,z,details=false){
   const region=noise(seed^73481,x,z,48),detail=noise(seed^1833,x,z,12);

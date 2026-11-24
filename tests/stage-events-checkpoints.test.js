@@ -768,7 +768,7 @@ test('GF-TRAIN-26: atos contíguos e finais dependem de decisões válidas',()=>
    {id:'choice-1',label:'Aliados',steps,reward:{score:100,health:0,ammo:0},effect:'aid'},
    {id:'choice-2',label:'Rivais',steps,reward:{score:200,health:0,ammo:0},effect:'threat'}]};
  const spec={genre:'arena',dimension:'3d',projectId:'gf-01234567-abcdef01',stages:['Vila','Torre'],
-  stageConfig:[{npcQuest:npc},{}],campaign:{version:1,acts:[{title:'Ato 1',start:0,end:0},{title:'Ato 2',start:1,end:1}],alternateEndings:true}};
+  stageConfig:[{npcQuest:npc},{}],campaignNarrative:{version:1,acts:[{title:'Ato 1',start:0,end:0},{title:'Ato 2',start:1,end:1}],alternateEndings:true}};
  assert.ok(R.campaignPlan(spec));assert.equal(R.campaignHistory(spec,[{stage:0,choice:null}],1),null);
  assert.equal(R.campaignCommit(spec,[],1,null),null);
  for(const [choice,id] of [['choice-1','alliance'],['choice-2','conflict']]){
@@ -781,7 +781,7 @@ test('GF-TRAIN-26: atos contíguos e finais dependem de decisões válidas',()=>
   assert.equal(R.readCheckpoint(JSON.stringify({...saved,history:[]}),spec),null);
   assert.equal(R.readCheckpoint(JSON.stringify({...saved,campaignFingerprint:'wrong'}),spec),null);
  }
- assert.equal(R.campaignPlan({...spec,campaign:{...spec.campaign,acts:[{title:'Ato',start:1,end:1}]}}),null);
+ assert.equal(R.campaignPlan({...spec,campaign:{...spec.campaignNarrative,acts:[{title:'Ato',start:1,end:1}]}}),null);
 });
 test('GF-TRAIN-26: campanha em execução restaura decisão e apresenta epílogo correto',()=>{
  const steps=[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},{id:'step-2',kind:'survive',seconds:5,label:'Resistir'}];
@@ -791,7 +791,7 @@ test('GF-TRAIN-26: campanha em execução restaura decisão e apresenta epílogo
    {id:'choice-2',label:'Rivais',steps,reward:{score:200,health:0,ammo:0},effect:'threat'}]};
  const spec={genre:'arena',dimension:'3d',projectId:'gf-01234567-abcdef01',stages:['Vila','Torre'],
   stageConfig:[{enemies:1,boss:'no',npcQuest:npc},{mission:'survive',seconds:5,enemies:1,boss:'no'}],
-  campaign:{version:1,acts:[{title:'Ato 1',start:0,end:0},{title:'Ato 2',start:1,end:1}],alternateEndings:true},
+  campaignNarrative:{version:1,acts:[{title:'Ato 1',start:0,end:0},{title:'Ato 2',start:1,end:1}],alternateEndings:true},
   features:{bosses:false},worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
  const storage=new Map(),a=boot(spec,storage);a.start();a.tick(2);
  a.key('keydown','e');a.key('keydown','1');a.tick(320);
@@ -809,7 +809,7 @@ test('GF-TRAIN-26: campanha em execução restaura decisão e apresenta epílogo
 test('GF-TRAIN-26: GDD opt-in compila atos válidos e rejeita intervalos sobrepostos',()=>{
  const gdd='# Jornada\n## Fase 1 — Vila\n## Fase 2 — Torre\nAtos de campanha: 1-1 | 2-2\nFinais alternativos: sim';
  const spec=Parser.parseGdd(gdd,'',{genre:'arena',dimension:'3d'});
- assert.equal(spec.campaign.acts.length,2);assert.equal(spec.campaign.alternateEndings,true);
+ assert.equal(spec.campaignNarrative.acts.length,2);assert.equal(spec.campaignNarrative.alternateEndings,true);
  const bad=Parser.parseGdd(gdd.replace('1-1 | 2-2','1-2 | 2-2'),'',{genre:'arena',dimension:'3d'});
- assert.equal(bad.campaign,undefined);
+ assert.equal(bad.campaignNarrative,undefined);
 });

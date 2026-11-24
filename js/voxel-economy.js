@@ -1,21 +1,22 @@
 /* GF-VOXEL-02: inventory and station recipes for the optional resource mode. */
 function gameForgeVoxelEconomyFactory(K){
  'use strict';
- const NAMES=['','Grama','Terra','Pedra','Bancada de pedra','Forno','Tijolo','Picareta','Madeira','Folhas','Muda','Alimento'];
+ const NAMES=['','Grama','Terra','Pedra','Bancada de pedra','Forno','Tijolo','Picareta','Madeira','Folhas','Muda','Alimento','Baú'];
  const RECIPES=[
   {station:0,output:{id:4,qty:1},requires:[{id:3,qty:4}]},
   {station:4,output:{id:5,qty:1},requires:[{id:3,qty:5}]},
   {station:4,output:{id:7,qty:1},requires:[{id:3,qty:2}]},
-  {station:5,output:{id:6,qty:2},requires:[{id:2,qty:2}]}
+  {station:5,output:{id:6,qty:2},requires:[{id:2,qty:2}]},
+  {station:0,output:{id:12,qty:1},requires:[{id:3,qty:3}]}
  ];
  const SLOTS=12,STACK=99;
  const initial=()=>[{id:2,qty:4},{id:3,qty:12},...Array(SLOTS-2).fill(null)];
  const valid=bag=>Array.isArray(bag)&&bag.length===SLOTS&&bag.every(v=>v===null||
-  v&&Number.isInteger(v.id)&&[1,2,3,4,5,6,7,8,10,11].includes(v.id)&&Number.isInteger(v.qty)&&v.qty>=1&&v.qty<=STACK);
+  v&&Number.isInteger(v.id)&&[1,2,3,4,5,6,7,8,10,11,12].includes(v.id)&&Number.isInteger(v.qty)&&v.qty>=1&&v.qty<=STACK);
  const copy=bag=>bag.map(s=>s?{id:s.id,qty:s.qty}:null);
  const count=(bag,id)=>bag.reduce((n,s)=>n+(s?.id===id?s.qty:0),0);
  function change(bag,id,amount){
-  if(!valid(bag)||!Number.isInteger(id)||![1,2,3,4,5,6,7,8,10,11].includes(id)||!Number.isInteger(amount)||!amount||Math.abs(amount)>STACK)return null;
+  if(!valid(bag)||!Number.isInteger(id)||![1,2,3,4,5,6,7,8,10,11,12].includes(id)||!Number.isInteger(amount)||!amount||Math.abs(amount)>STACK)return null;
   const next=copy(bag);let left=Math.abs(amount);
   if(amount<0){
    if(count(next,id)<left)return null;

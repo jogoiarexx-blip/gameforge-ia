@@ -178,6 +178,9 @@ ${$('gdd').value.slice(task.start,task.end).slice(0,1400)}${task.notes?'\n\nNota
     $('three-training-report').textContent=spec.dimension==='3d'&&spec.threeTraining
       ?GameForgeThreeTraining.report(spec.threeTraining)
       :'Este pedido não utiliza um motor 3D. O diagnóstico GF-TRAIN-19 é específico para Three.js.';
+    $('voxel-training-report').textContent=spec.voxelTraining?.applicable
+      ?GameForgeVoxelTraining.report(spec.voxelTraining)
+      :'Nenhum pedido de jogo voxel foi identificado neste GDD. Recursos de chunks/crafting exigem motor próprio.';
     const urbanOnly=spec.genre==='urban-action';
     $('download-urban-plan').classList.toggle('hidden',!urbanOnly);
     $('generate').disabled=(urbanOnly&&['planned','blocked'].includes(spec.engineAvailability?.status))||!!spec.designIR?.blocked?.length;

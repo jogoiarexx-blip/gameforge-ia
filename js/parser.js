@@ -11,7 +11,16 @@
   const designIR=root.GameForgeDesignIR||(typeof require==='function'?require('./design-ir'):null);
   const missionSemantics=root.GameForgeMissionSemantics||(typeof require==='function'?require('./mission-semantics'):null);
   const threeTraining=root.GameForgeThreeTraining||(typeof require==='function'?require('./three-training'):null);
-  function training3D(spec,gdd,command){if(spec?.dimension==='3d'&&threeTraining?.inspect)spec.threeTraining=threeTraining.inspect(spec,gdd,command);return spec;}
+  const voxelTraining=root.GameForgeVoxelTraining||(typeof require==='function'?require('./voxel-training'):null);
+  function training3D(spec,gdd,command){
+    if(spec?.dimension==='3d'&&threeTraining?.inspect)spec.threeTraining=threeTraining.inspect(spec,gdd,command);
+    if(voxelTraining?.isVoxel?.(gdd,command)) {
+      spec.voxelTraining=voxelTraining.inspect(spec,gdd,command);
+      const message='Pedido voxel detectado: kit de regras disponível, mas sem motor voxel completo para exportar. Veja DIAGNOSTICO_VOXEL_GF22.md.';
+      if(Array.isArray(spec.limitations)&&!spec.limitations.includes(message))spec.limitations.push(message);
+    }
+    return spec;
+  }
   // Classificação semântica determinística. Sinais de jogabilidade são mais fortes
   // do que palavras ocasionais em capítulos longos de um GDD.
   function detectGenreInfo(text) {

@@ -167,6 +167,11 @@
         'DIAGNOSTICO_3D_GF19.md':(root.GameForgeThreeTraining||
           (typeof require==='function'?require('./three-training'):null)).report(spec.threeTraining)
       }:{}),
+      ...(spec.voxelTraining?.version===22&&spec.voxelTraining.applicable?{
+        'TREINAMENTO_VOXEL_GF22.json':JSON.stringify(spec.voxelTraining,null,2),
+        'DIAGNOSTICO_VOXEL_GF22.md':(root.GameForgeVoxelTraining||
+          (typeof require==='function'?require('./voxel-training'):null)).report(spec.voxelTraining)
+      }:{}),
       ...(spec.learningPlan?{'PLANO_APRENDIZADO.json':JSON.stringify(spec.learningPlan,null,2),
         'FONTES_ESTUDADAS.md':(root.GameForgeRepoKnowledge||(typeof require==='function'?require('./repository-knowledge'):null)).learningReport(spec.learningPlan)}:{}),
       'INTERPRETACAO_VISUAL.json':JSON.stringify(spec.renderInterpretation||{version:1,origins:{}},null,2),

@@ -1,0 +1,494 @@
+{
+  "version": 22,
+  "sourceRepo": "jogoiarexx-blip/Prismal-voxel",
+  "title": "47 briefs voxel baseados em mecanismos reais Prismal Voxel (PT-BR)",
+  "note": "Conjunto curado de requisitos e limitações; não altera pesos de IA; status não significa funcionalidade já integrada a um jogo exportado.",
+  "cases": [
+    {
+      "id": "pv-001",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Quero um jogo voxel com terreno procedural por seed.",
+      "expect": {
+        "voxel-terrain": "prototipo"
+      }
+    },
+    {
+      "id": "pv-002",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Mundo voxel estilo Minecraft com chunks para explorar.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "chunk-stream": "prototipo"
+      }
+    },
+    {
+      "id": "pv-003",
+      "genre": "platform",
+      "dimension": "3d",
+      "command": "Criar plataforma voxel e quebrar blocos com picareta.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mining-building": "pendente"
+      }
+    },
+    {
+      "id": "pv-004",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Jogo voxel: fazer bancada e fabricar ferramentas.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "craft-stations": "prototipo"
+      }
+    },
+    {
+      "id": "pv-005",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Quero um jogo voxel com forno para fundir minério.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "craft-stations": "prototipo"
+      }
+    },
+    {
+      "id": "pv-006",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena voxel com receitas exclusivas de cada bancada.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "craft-stations": "prototipo"
+      }
+    },
+    {
+      "id": "pv-007",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "No mundo voxel derrubar árvore inteira e coletar muda.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "tree-replant": "pendente"
+      }
+    },
+    {
+      "id": "pv-008",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel com replantar árvores a partir de mudas.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "tree-replant": "pendente"
+      }
+    },
+    {
+      "id": "pv-009",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Jogo voxel com bússola e waypoint para voltar pra casa.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "waypoint": "prototipo"
+      }
+    },
+    {
+      "id": "pv-010",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Minecraft com navegação por objetivo no mapa.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "waypoint": "prototipo"
+      }
+    },
+    {
+      "id": "pv-011",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Jogo voxel com streaming de chunks leve e sem travar ao andar.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "chunk-stream": "prototipo"
+      }
+    },
+    {
+      "id": "pv-012",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel onde workers nunca instalam malhas antigas.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "chunk-stream": "prototipo"
+      }
+    },
+    {
+      "id": "pv-013",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Jogo voxel com salvar mundo e autosave.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "world-save": "pendente"
+      }
+    },
+    {
+      "id": "pv-014",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Minecraft com recuperação de mundo sem perder progresso.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "world-save": "pendente"
+      }
+    },
+    {
+      "id": "pv-015",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Minecraft com coop P2P para dois amigos.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "coop-p2p": "pendente"
+      }
+    },
+    {
+      "id": "pv-016",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Jogo voxel com chat de jogo e multiplayer.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "coop-p2p": "pendente"
+      }
+    },
+    {
+      "id": "pv-017",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel otimizado para celulares com controles touch.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mobile": "parcial"
+      }
+    },
+    {
+      "id": "pv-018",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel para Android leve e sem FPS baixo.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mobile": "parcial",
+        "fps-metrics": "prototipo"
+      }
+    },
+    {
+      "id": "pv-019",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel com painel F3 medindo FPS, p95 e 1% low.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "fps-metrics": "prototipo"
+      }
+    },
+    {
+      "id": "pv-020",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Jogo voxel com benchmark de desempenho.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "fps-metrics": "prototipo"
+      }
+    },
+    {
+      "id": "pv-021",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Minecraft para construir casas de blocos.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mining-building": "pendente"
+      }
+    },
+    {
+      "id": "pv-022",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel com mineração e colocar blocos à vontade.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mining-building": "pendente"
+      }
+    },
+    {
+      "id": "pv-023",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Jogo voxel com mundo infinito, salvar mundo e celular.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "chunk-stream": "prototipo",
+        "world-save": "pendente",
+        "mobile": "parcial"
+      }
+    },
+    {
+      "id": "pv-024",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel com bancada, forno e filtro de receitas.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "craft-stations": "prototipo"
+      }
+    },
+    {
+      "id": "pv-025",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel: árvore destrói troncos, dropa muda e permite replantar.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "tree-replant": "pendente"
+      }
+    },
+    {
+      "id": "pv-026",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Minecraft: bússola, salvar mundo, crafting e mundo infinito.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "waypoint": "prototipo",
+        "world-save": "pendente",
+        "craft-stations": "prototipo",
+        "chunk-stream": "prototipo"
+      }
+    },
+    {
+      "id": "pv-027",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel com P2P, baús compartilhados, salvamento de mundo.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "coop-p2p": "pendente",
+        "world-save": "pendente"
+      }
+    },
+    {
+      "id": "pv-028",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Minecraft com controle touch, painel para medir FPS e mundos salvos.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mobile": "parcial",
+        "fps-metrics": "prototipo",
+        "world-save": "pendente"
+      }
+    },
+    {
+      "id": "pv-029",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Minecraft com chunks, mineração e construção livre.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "chunk-stream": "prototipo",
+        "mining-building": "pendente"
+      }
+    },
+    {
+      "id": "pv-030",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel com mochila, bancada e forno para fabricar itens.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "craft-stations": "prototipo"
+      }
+    },
+    {
+      "id": "pv-031",
+      "genre": "fps",
+      "dimension": "3d",
+      "command": "FPS voxel com destruição de blocos e navegação.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mining-building": "pendente",
+        "waypoint": "prototipo"
+      }
+    },
+    {
+      "id": "pv-032",
+      "genre": "arena",
+      "dimension": "3d",
+      "command": "Arena voxel com construções e árvores.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mining-building": "pendente",
+        "tree-replant": "pendente"
+      }
+    },
+    {
+      "id": "pv-033",
+      "genre": "platform",
+      "dimension": "3d",
+      "command": "Plataforma voxel para celular.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mobile": "parcial"
+      }
+    },
+    {
+      "id": "pv-034",
+      "genre": "racing",
+      "dimension": "3d",
+      "command": "Corrida voxel com bússola para navegar no mapa.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "waypoint": "prototipo"
+      }
+    },
+    {
+      "id": "pv-035",
+      "genre": "shooter",
+      "dimension": "3d",
+      "command": "Navinha voxel com benchmark de FPS.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "fps-metrics": "prototipo"
+      }
+    },
+    {
+      "id": "pv-036",
+      "genre": "urban-action",
+      "dimension": "3d",
+      "command": "Cidade voxel com construção e salvamento.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mining-building": "pendente",
+        "world-save": "pendente"
+      }
+    },
+    {
+      "id": "pv-037",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Minecraft sem multiplayer e com forno.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "craft-stations": "prototipo"
+      }
+    },
+    {
+      "id": "pv-038",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel com chunks mas sem P2P.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "chunk-stream": "prototipo"
+      }
+    },
+    {
+      "id": "pv-039",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Jogo voxel com bússola mas sem salvar mundo.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "waypoint": "prototipo"
+      }
+    },
+    {
+      "id": "pv-040",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Minecraft sem crafting, apenas mineração.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mining-building": "pendente"
+      }
+    },
+    {
+      "id": "pv-041",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel sem árvore mas com forno para receitas.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "craft-stations": "prototipo"
+      }
+    },
+    {
+      "id": "pv-042",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Voxel leve para celular, sem multiplayer nem chat.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "mobile": "parcial"
+      }
+    },
+    {
+      "id": "pv-043",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Jogo voxel com mapa e missão de achar minha casa.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "waypoint": "prototipo"
+      }
+    },
+    {
+      "id": "pv-044",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Prismal Voxel com recuperação de mundo e perfil do convidado P2P.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "world-save": "pendente",
+        "coop-p2p": "pendente"
+      }
+    },
+    {
+      "id": "pv-045",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Prismal Voxel com chunks e bancadas de crafting.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "chunk-stream": "prototipo",
+        "craft-stations": "prototipo"
+      }
+    },
+    {
+      "id": "pv-046",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Minecraft com floresta replantável, chunks e medidor FPS.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "chunk-stream": "prototipo",
+        "fps-metrics": "prototipo"
+      }
+    },
+    {
+      "id": "pv-047",
+      "genre": "rpg",
+      "dimension": "3d",
+      "command": "Mundo de blocos em 3D com navegação e criação de casas.",
+      "expect": {
+        "voxel-terrain": "prototipo",
+        "waypoint": "prototipo",
+        "mining-building": "pendente"
+      }
+    }
+  ]
+}

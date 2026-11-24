@@ -28,7 +28,7 @@ function gameForgeVoxelSurvivalFactory(K,E){
     (a.kind==='sheep'?a.id<4:a.id>=4)&&[a.x,a.y,a.z].every(finite)&&Number.isInteger(a.hp)&&a.hp>0&&a.hp<=(a.kind==='sheep'?2:3)&&
     Math.abs(a.x)<32&&Math.abs(a.z)<32&&a.y>=1&&a.y<159)&&(!world||s.animals.every(a=>!world.collides(a.x,a.y,a.z)));
  }
- function tick(s,dt,world,player,moving=false){
+ function tick(s,dt,world,player,moving=false,defense=0){
   if(!finite(dt)||dt<=0||dt>.25||s.health<=0)return;
   const wasNight=night(s),oldDay=Math.floor(s.time/PERIOD);
   s.time+=dt;s.attack=Math.max(0,s.attack-dt);
@@ -54,7 +54,7 @@ function gameForgeVoxelSurvivalFactory(K,E){
    }
    const dx=player.x-a.x,dz=player.z-a.z,d=Math.hypot(dx,dz);
    if(a.kind==='shade'&&d<1.2&&Math.abs(player.y-a.y)<1.6){
-    s.health=Math.max(0,s.health-dt*9);continue;
+    s.health=Math.max(0,s.health-dt*9*(1-clamp(defense,0,.8)));continue;
    }
    const angle=a.kind==='shade'?Math.atan2(dz,dx):a.id*2+s.time*.4;
    const speed=a.kind==='shade'?1.45:.45;
@@ -81,7 +81,7 @@ function gameForgeVoxelSurvivalFactory(K,E){
  function hit(s,id,bag,equipped,damageOverride=null){
   if(s.health<=0||s.attack>0)return {ok:false,reason:'cooldown'};
   const a=s.animals.find(a=>a.id===id);if(!a)return {ok:false,reason:'invalid'};
-  const damage=Number.isInteger(damageOverride)&&damageOverride>=1&&damageOverride<=3?damageOverride:equipped?2:1;
+  const damage=Number.isInteger(damageOverride)&&damageOverride>=1&&damageOverride<=4?damageOverride:equipped?2:1;
   let next=bag;
   if(a.hp<=damage&&a.kind==='sheep'){next=E.change(bag,11,2);if(!next)return {ok:false,reason:'inventory-full'};}
   s.attack=.5;a.hp-=damage;

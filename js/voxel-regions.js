@@ -12,11 +12,11 @@ function gameForgeVoxelRegionFactory(){
   return {manifest:{...meta,hasTrees:trees!==undefined,regions:[...parts.keys()].sort()},parts:[...parts.values()]};
  }
  function join(manifest,parts){
-  if(!manifest||!Array.isArray(manifest.regions)||manifest.regions.length>LIMIT||new Set(manifest.regions).size!==manifest.regions.length||!Array.isArray(parts)||parts.length!==manifest.regions.length)throw Error('Manifesto regional incompleto');
+  if(!manifest||!Number.isSafeInteger(manifest.regionRevision)||manifest.regionRevision<0||!Array.isArray(manifest.regions)||manifest.regions.length>LIMIT||new Set(manifest.regions).size!==manifest.regions.length||!Array.isArray(parts)||parts.length!==manifest.regions.length)throw Error('Manifesto regional incompleto');
   const {regions,hasTrees,...record}=manifest,byId=new Map(parts.map(p=>[p.id,p]));record.edits=[];if(hasTrees)record.trees=[];
   for(const id of regions){const p=byId.get(id);if(!p||!Array.isArray(p.edits)||!Array.isArray(p.trees)||(!hasTrees&&p.trees.length))throw Error('Região ausente');
    for(const e of p.edits){if(!Array.isArray(e)||e.length!==4||!e.every(Number.isSafeInteger)||region(e[0],e[2])!==id)throw Error('Edição fora de região');record.edits.push(e);}
-   for(const t of p.trees){if(!t||region(t.x,t.z)!==id)throw Error('Árvore fora de região');record.trees.push(t);}
+   for(const t of p.trees){if(!t||!Number.isSafeInteger(t.x)||!Number.isSafeInteger(t.z)||region(t.x,t.z)!==id)throw Error('Árvore fora de região');record.trees.push(t);}
   }
   if(record.edits.length>16384||(record.trees?.length||0)>4096)throw Error('Limite regional excedido');
   return record;

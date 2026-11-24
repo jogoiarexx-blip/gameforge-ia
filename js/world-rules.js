@@ -3,6 +3,49 @@ function gameForgeWorldRules(){
  'use strict';
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  function rng(seed){let s=seed>>>0;return()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/4294967296;};}
+ // GF-TRAIN-24: segmento contra AABB com margem, sem depender de WebGL.
+ function cameraClip(eye,target,solids=[],radius=.24){
+  let fraction=1;
+  for(const o of solids){
+   if(![o?.x,o?.z,o?.w,o?.d].every(Number.isFinite)||o.w<=0||o.d<=0)continue;
+   const lowY=Number.isFinite(o.minY)?o.minY:0,highY=Number.isFinite(o.h)?o.h:4.7;
+   const box=[[o.x-o.w/2-radius,o.x+o.w/2+radius],[lowY-radius,highY+radius],[o.z-o.d/2-radius,o.z+o.d/2+radius]];
+   let enter=0,exit=1,hit=true;
+   for(const [i,k] of ['x','y','z'].entries()){
+    const d=target[k]-eye[k], [lo,hi]=box[i];
+    if(Math.abs(d)<1e-9){if(eye[k]<lo||eye[k]>hi){hit=false;break;}continue;}
+    const a=(lo-eye[k])/d,b=(hi-eye[k])/d;
+    enter=Math.max(enter,Math.min(a,b));exit=Math.min(exit,Math.max(a,b));
+    if(enter>exit){hit=false;break;}
+   }
+   if(hit&&exit>=0&&enter<=1)fraction=Math.min(fraction,Math.max(0,enter-.01));
+  }
+  return {x:eye.x+(target.x-eye.x)*fraction,y:eye.y+(target.y-eye.y)*fraction,
+   z:eye.z+(target.z-eye.z)*fraction,occluded:fraction<1};
+ }
+ function cameraBlend(eye,wanted,current,solids,dt,snap=false){
+  const safe=cameraClip(eye,wanted,solids);
+  const alpha=snap?1:1-Math.exp(-7*clamp(Number(dt)||0,0,.1));
+  const candidate=safe.occluded?safe:{x:current.x+(safe.x-current.x)*alpha,
+   y:current.y+(safe.y-current.y)*alpha,z:current.z+(safe.z-current.z)*alpha};
+  const final=cameraClip(eye,candidate,solids);
+  return {...final,occluded:safe.occluded||final.occluded};
+ }
+ function cameraTargets(genre,p,mode=0,zoom=1){
+  const x=p.x,y=p.y||0,z=p.z,yaw=p.yaw||0,sin=Math.sin(yaw),cos=Math.cos(yaw);
+  const scale=clamp(Number(zoom)||1,.7,1.35),speed=clamp(Math.abs(p.speed||0),0,25);
+  if(genre==='racing'){
+   const distance=(mode===1?5:8+speed*.10)*scale;
+   return {eye:{x,y:y+1,z},wanted:{x:x-sin*distance,y:y+(mode===1?3.6:7)*scale,z:z-cos*distance},
+    focus:{x:x+sin*4,y:y+1,z:z+cos*4},fov:52+speed*.48};
+  }
+  if(mode===1){
+   return {eye:{x,y:y+1.5,z},wanted:{x:x-sin*5*scale+cos*1.35,y:y+3.2*scale,z:z-cos*5*scale-sin*1.35},
+    focus:{x:x+sin*2,y:y+1.25,z:z+cos*2},fov:62};
+  }
+  return {eye:{x,y:y+1.5,z},wanted:{x,y:y+15*scale,z:z+13*scale},
+   focus:{x,y:y+.7,z:z-1.8},fov:52};
+ }
  function moveCircle(p,dx,dz,r,solids,size){
   let x=p.x,z=p.z;const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/Math.max(.2,r*.7)));
   const blocked=(a,b)=>solids.some(o=>{const nx=clamp(a,o.x-o.w/2,o.x+o.w/2),nz=clamp(b,o.z-o.d/2,o.z+o.d/2);return (a-nx)**2+(b-nz)**2<r*r-1e-8;});
@@ -359,7 +402,7 @@ function gameForgeWorldRules(){
    fingerprint:midStageFingerprint(spec),...progress}),spec);}
   catch{return null;}
  }
- return {clamp,rng,moveCircle,crowdDirection,platformRoute,raceProgress,trackRibbon,goalReady,missionReady,
+ return {clamp,rng,cameraClip,cameraBlend,cameraTargets,moveCircle,crowdDirection,platformRoute,raceProgress,trackRibbon,goalReady,missionReady,
   enemyProfile,dueStageEvents,waypoint,enteredZone,missionStepReady,dueZoneEvents,
   npcQuestContract,npcPatrolPosition,npcDailyPeriod,npcRoutineTarget,npcMissionEffect,
   npcNear,npcReward,checkpointKey,readCheckpoint,checkpointPayload,

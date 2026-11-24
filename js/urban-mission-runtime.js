@@ -364,7 +364,7 @@ function gameForgeUrbanMissionBoot(){
   if(!paused&&fallenGuards.length)updateFallen(Math.min(.05,delta));
   const eye={x:sim.position.x,y:1.45,z:sim.position.z};
   const desired=R.cameraPosition(eye,{x:sim.position.x+2.6,y:4.6,z:sim.position.z+6.5},blockers);
-  camera.position.lerp(new T.Vector3(desired.x,desired.y,desired.z),.16);
+  camera.position.lerp(new T.Vector3(desired.x,desired.y,desired.z),desired.occluded?1:1-Math.exp(-10*Math.min(.1,delta)));
   const safe=R.cameraPosition(eye,camera.position,blockers);
   camera.position.set(safe.x,safe.y,safe.z);
   cameraOccluded=desired.occluded||safe.occluded;

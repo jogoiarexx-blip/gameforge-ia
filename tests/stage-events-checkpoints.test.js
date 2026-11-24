@@ -760,3 +760,15 @@ test('GF-TRAIN-22: NPC completo, escolhas, cura e reforços não repetem após r
  }
  assert.equal(R.readMidStage(JSON.stringify({...done,script:undefined}),spec),null);
 });
+
+test('GF-TRAIN-24: câmera e zoom mudam no runtime sem mudar posição do jogador',()=>{
+ const spec={genre:'arena',dimension:'3d',stages:['Campo'],stageConfig:[{enemies:1,boss:'no'}],
+  features:{bosses:false},worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const game=boot(spec);game.start();game.tick(2);
+ const before=game.telemetry();assert.equal(before.cameraRig.mode,0);
+ game.key('keydown','c');game.tick(30);
+ const shoulder=game.telemetry();assert.equal(shoulder.cameraRig.mode,1);
+ assert.ok(shoulder.cameraRig.fov>before.cameraRig.fov);
+ assert.equal(shoulder.player.x,before.player.x);assert.equal(shoulder.player.y,before.player.y);
+ game.key('keydown','z');game.tick(2);assert.equal(game.telemetry().cameraRig.zoom,.7);
+});

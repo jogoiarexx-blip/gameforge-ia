@@ -212,3 +212,24 @@ test('FPS 3D mostra recuo da arma e volta à posição original após disparo',(
  assert.ok(Math.abs(weapon.position.z)<.0001,'arma não retornou ao repouso');
  assert.ok(Math.abs(weapon.rotation.x)<.0001,'arma continuou inclinada');
 });
+
+test('GF-TRAIN-24: câmera encurta antes da parede e não atravessa pelo caminho interpolado',()=>{
+ const R=factory(),eye={x:0,y:1.5,z:0},want={x:0,y:3,z:8};
+ const wall=[{x:0,z:3,w:4,d:.3,h:4}];
+ const hit=R.cameraBlend(eye,want,want,wall,1/60);
+ assert.equal(hit.occluded,true);assert.ok(hit.z<2.61);
+ const released=R.cameraBlend(eye,want,hit,[],1/60);
+ assert.ok(released.z>hit.z&&released.z<want.z);
+ assert.equal(R.cameraClip(eye,want,[{...wall[0],h:.2}]).occluded,false);
+ const snap=R.cameraBlend(eye,want,hit,[],1,true);assert.equal(snap.z,8);
+});
+test('GF-TRAIN-24: suavização independe da frequência de quadros e corrida usa FOV por velocidade',()=>{
+ const R=factory(),eye={x:0,y:1,z:0},want={x:0,y:3,z:8},start={...eye};
+ function run(hz){let p=start;for(let i=0;i<hz;i++)p=R.cameraBlend(eye,want,p,[],1/hz);return p;}
+ assert.ok(Math.abs(run(30).z-run(120).z)<1e-9);
+ const p={x:0,y:0,z:0,yaw:Math.PI/2,speed:0};
+ const slow=R.cameraTargets('racing',p),fast=R.cameraTargets('racing',{...p,speed:20});
+ assert.ok(fast.fov>slow.fov);assert.ok(fast.wanted.x<slow.wanted.x);
+ assert.ok(R.cameraTargets('racing',p,1).wanted.y<slow.wanted.y);
+ assert.ok(R.cameraTargets('arena',p,1).wanted.y<R.cameraTargets('arena',p).wanted.y);
+});

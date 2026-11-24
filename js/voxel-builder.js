@@ -10,7 +10,8 @@ function generate(input){
  const economy=root.gameForgeVoxelEconomyFactory||(typeof require==='function'?require('./voxel-economy.js'):null);
  if(typeof economy!=='function')throw Error('Módulo de fabricação ausente.');
  const mode=input?.mode==='resources'?'resources':'creative';
- const forest=mode==='resources'&&input?.forest===true;
+ const tools=mode==='resources'&&input?.tools===true;
+ const forest=mode==='resources'&&(input?.forest===true||tools);
  const survival=mode==='resources'&&input?.survival===true;
  const survivalFactory=root.gameForgeVoxelSurvivalFactory||(typeof require==='function'?require('./voxel-survival.js'):null);
  if(typeof survivalFactory!=='function')throw Error('Módulo de sobrevivência ausente.');
@@ -19,9 +20,11 @@ function generate(input){
  const storage=mode==='resources'&&input?.storage===true;
  const storageFactory=root.gameForgeVoxelStorageFactory||(typeof require==='function'?require('./voxel-storage.js'):null);
  if(typeof storageFactory!=='function')throw Error('Módulo de armazenamento ausente.');
- const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival,storage},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
+ const toolsFactory=root.gameForgeVoxelToolsFactory||(typeof require==='function'?require('./voxel-tools.js'):null);
+ if(typeof toolsFactory!=='function')throw Error('Módulo de ferramentas ausente.');
+ const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival,storage,tools},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
  const source='/* GF-VOXEL-01 */\nconst GAME_SPEC = '+JSON.stringify(spec).replace(/<\//g,'<\\/')+';\n'+
-  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n'+actorFactory.toString()+'\n'+storageFactory.toString()+'\n('+boot.toString()+')();\n';
+  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n'+actorFactory.toString()+'\n'+storageFactory.toString()+'\n'+toolsFactory.toString()+'\n('+boot.toString()+')();\n';
  const css=root.GameForgeGenerator.BASE_CSS+'\n@media(max-width:700px){.touch{gap:4px;flex-wrap:wrap}.touch button{min-height:40px}.head .stats{gap:6px}}';
  const files={'game.js':source,'style.css':css,'engine-3d.js':root.GameForgeThreeSource,
   'THREE-LICENSE.txt':root.GameForgeThreeLicense,
@@ -31,6 +34,7 @@ function generate(input){
  if(survival)files['LEIA-VOXEL.md']+='\nGF-VOXEL-04: sobrevivência opcional. Ciclo ativo de 120 segundos (80 dia, 40 noite), fome, vida, três alimentos iniciais, criaturas passivas e inimigos noturnos simples. C come, E ataca criatura ao alcance e na mira; picareta aumenta dano. Renasce preservando mundo e inventário. Save separado inclui tempo, fome, vida e criaturas. Sem dano de queda, animações complexas ou P2P.\n';
  files['LEIA-VOXEL.md']+='\nGF-VOXEL-05: criaturas articuladas procedurais, mãos, blocos e picareta visíveis, animação de caminhada e ação. Malhas reutilizam uma geometria de cubo, sem assets externos. Sem mudanças no formato do save.\n';
  if(storage)files['LEIA-VOXEL.md']+='\nGF-VOXEL-06: armazenamento opcional. Faça um baú na mochila com 3 pedras, selecione com 9 e coloque com Q. Mire no baú a até 3 blocos e pressione B para abrir; guarde ou retire itens unitários. Esvazie antes de minerar. G solta um bloco selecionado; coleta automática a até 1,4 bloco após 1,5 s de jogo ativo. Save local separado preserva baús e drops. Drops estáticos com animação visual; sem gravidade ou despawn.\n';
+ if(tools)files['LEIA-VOXEL.md']+='\nGF-VOXEL-07: ferramentas duráveis (ativa também floresta). Fabrique picareta de madeira na mochila (2 madeiras), pedra na bancada (2 pedras), ferro na bancada (2 lingotes). Minério gerado abaixo da terra exige pedra ou ferro; forno transforma 1 minério + 1 madeira em 1 lingote. F alterna ferramentas, R repara ferramenta equipada perto da bancada com 1 material correspondente. Madeira/pedra/ferro têm 24/64/160 usos, intervalo de mineração 0,70/0,38/0,18 s. Desgaste ao minerar pedra/minério ou atacar criatura. Uma ferramenta por nível; ferramentas duráveis não entram em baús. Save próprio, preserva desgaste.\n';
  files['index.html']=root.GameForgeGenerator.shell(title,css,source,false,files);
  return files;
 }

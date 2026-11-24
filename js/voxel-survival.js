@@ -5,8 +5,8 @@ function gameForgeVoxelSurvivalFactory(K,E){
  const finite=Number.isFinite,clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
  const initial=()=>({time:0,health:100,hunger:100,attack:0,respawns:0,animals:[],spawned:false});
  const night=s=>s.time%PERIOD>=DAY;
- function ground(world,x,z,nearY){
-  for(let y=Math.min(158,Math.floor(nearY)+1);y>=Math.max(1,Math.floor(nearY)-2);y--)
+ function ground(world,x,z,nearY,up=1,down=2){
+  for(let y=Math.min(158,Math.floor(nearY)+up);y>=Math.max(1,Math.floor(nearY)-down);y--)
    if(world.get(Math.floor(x),y-1,Math.floor(z))&&!world.collides(x,y,z))return y;
   return null;
  }
@@ -15,7 +15,7 @@ function gameForgeVoxelSurvivalFactory(K,E){
   s.spawned=true;
   for(let i=0;i<4;i++){
    const x=player.x+Math.sin(i*Math.PI/2+.7)*4,z=player.z+Math.cos(i*Math.PI/2+.7)*4;
-   const y=ground(world,x,z,player.y);
+   const y=ground(world,x,z,player.y,5,5);
    if(y!==null)s.animals.push({id:i,kind:'sheep',x,y,z,hp:2});
   }
  }
@@ -38,10 +38,14 @@ function gameForgeVoxelSurvivalFactory(K,E){
   if(!night(s))s.animals=s.animals.filter(a=>a.kind!=='shade');
   if(Math.floor(s.time/PERIOD)>oldDay){s.spawned=false; s.animals=s.animals.filter(a=>a.kind!=='sheep');populate(s,world,player);}
   if(!wasNight&&night(s)){
-   for(let i=0;i<3;i++){
-    const angle=K.hash(world.seed,Math.floor(s.time),i)*Math.PI*2;
-    const x=player.x+Math.cos(angle)*6,z=player.z+Math.sin(angle)*6,y=ground(world,x,z,player.y);
-    if(y!==null)s.animals.push({id:4+i,kind:'shade',x,y,z,hp:3});
+   let count=0;
+   const offset=K.hash(world.seed,Math.floor(s.time),0)*Math.PI*2;
+   for(let i=0;i<16&&count<3;i++){
+    const angle=offset+i*Math.PI/8;
+    const x=player.x+Math.cos(angle)*5,z=player.z+Math.sin(angle)*5,y=ground(world,x,z,player.y,5,5);
+    if(y!==null&&!s.animals.some(a=>Math.hypot(x-a.x,z-a.z)<1.6)){
+     s.animals.push({id:4+count,kind:'shade',x,y,z,hp:3});count++;
+    }
    }
   }
   for(const a of s.animals){

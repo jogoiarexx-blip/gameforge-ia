@@ -48,7 +48,7 @@ function gameForgeVoxelStorageFactory(E){
   target.bag=deposit?b:a;return deposit?a:b;
  }
  function drop(s,bag,p,id,qty){
-  if(s.drops.length>=MAX_DROPS||s.nextId>=1e9||![p.x,p.y,p.z].every(Number.isFinite)||p.x< -32||p.x>=32||p.z< -32||p.z>=32||p.y<1||p.y>=159)return null;
+  if(!Number.isInteger(qty)||qty<1||qty>99||s.drops.length>=MAX_DROPS||s.nextId>=1e9||![p.x,p.y,p.z].every(Number.isFinite)||p.x< -32||p.x>=32||p.z< -32||p.z>=32||p.y<1||p.y>=159)return null;
   const next=E.change(bag,id,-qty);if(!next)return null;
   s.drops.push({uid:s.nextId++,id,qty,x:p.x,y:p.y+.35,z:p.z,delay:1.5});
   return next;

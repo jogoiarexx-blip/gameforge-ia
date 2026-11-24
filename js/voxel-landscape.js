@@ -14,7 +14,7 @@ function gameForgeVoxelLandscapeFactory(K){
   const valid=Math.abs(x-riverCenter(seed,z))>20&&Math.hypot(x,z)>22;
   const v=valid?{x,z,h}:null;villages.set(key,v);if(villages.size>512)villages.delete(villages.keys().next().value);return v;
  }
- function column(seed,x,z,details=false){
+ function column(seed,x,z,details=false,biomes=false){
   const region=noise(seed^73481,x,z,48),detail=noise(seed^1833,x,z,12);
   const channel=Math.abs(x-riverCenter(seed,z));
   const river=channel<3.5&&Math.hypot(x,z)>10;
@@ -28,13 +28,20 @@ function gameForgeVoxelLandscapeFactory(K){
   const ruins=Math.hypot(x,z)>18&&!river&&!bank&&K.hash(seed^9271,gx,gz)>.56&&Math.abs(rx)<=3&&Math.abs(rz)<=3;
   const wall=ruins&&(Math.abs(rx)===3||Math.abs(rz)===3)&&!(rz===3&&Math.abs(rx)<=1);
   const c={h,biome,river,wall:wall?1+Math.floor(K.hash(seed^914,x,z)*2):0};
+  if(biomes&&!river&&!bank&&Math.hypot(x,z)>12){
+   const heat=noise(seed^982731,x,z,96),wet=noise(seed^61571,x,z,64);
+   if(heat<.36){c.biome='snow';c.surface=31;}
+   else if(heat>.64&&wet<.62){c.biome='desert';c.surface=29;c.wall=0;if(K.hash(seed^814,x,z)>.982){c.cactus=2+Math.floor(K.hash(seed^317,x,z)*2);c.top=c.h+c.cactus;}}
+   else if(wet>.65){c.biome='swamp';c.surface=32;c.h=Math.min(c.h,53);c.wall=0;if(wet>.76){c.h=51;c.waterLevel=53;c.biome='lake';}}
+   if(c.biome==='snow')c.wall=0;
+  }
   if(!details)return c;
   const v=village(seed,Math.floor(x/48),Math.floor(z/48));
   if(v){
    const dx=x-v.x,dz=z-v.z;
    if(Math.abs(dx)<=13&&Math.abs(dz)<=10){
     // Two compact houses face a central stone road, with deterministic garden plots.
-    c.h=v.h;c.river=false;c.wall=0;c.site=true;c.biome='village';
+    c.h=v.h;c.river=false;c.wall=0;c.site=true;c.biome='village';delete c.waterLevel;delete c.cactus;delete c.top;delete c.surface;
     if(Math.abs(dz)<=1||Math.abs(dx)<=1)c.surface=3;
     for(const offset of [-7,7]){
      const a=dx-offset,b=dz-5;
@@ -58,6 +65,7 @@ function gameForgeVoxelLandscapeFactory(K){
   const h=c.h;
   if(y>h){
    if(c.bridge&&y===55)return 3;
+   if(c.cactus&&y<=h+c.cactus)return 33;
    if(c.house){
     const {a,b}=c.house,dy=y-h,edge=Math.abs(a)===3||Math.abs(b)===3;
     if(dy<=3&&edge){
@@ -68,10 +76,10 @@ function gameForgeVoxelLandscapeFactory(K){
     if(dy===4+Math.floor((3-Math.abs(a))/2))return 6;
     if(dy===4&&edge)return 6;
    }
-   if(c.wall&&y<=h+c.wall)return 6;if(c.river&&y<=54)return 28;return 0;
+   if(c.wall&&y<=h+c.wall)return 6;if((c.river&&y<=54)||(c.waterLevel&&y<=c.waterLevel))return 28;return 0;
   }
   if(y===h)return c.surface||(c.river||c.biome==='dry'?29:1);
-  if(y>=h-3)return 2;
+  if(y>=h-3)return c.surface===29&&c.biome==='desert'?29:c.surface===32?32:2;
   // Two coherent subterranean tunnel families; retain a solid foundation and roof.
   if(y>5&&y<h-5){
    const center=31+Math.sin(z*.065+seed%11)*5+Math.sin(x*.06)*3;

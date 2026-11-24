@@ -21,6 +21,7 @@
 <label style="display:flex;gap:8px;align-items:center"><input id="lighting" type="checkbox" style="width:auto"> Tochas e iluminação de cavernas (ativa floresta no modo coleta)</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="regional" type="checkbox" style="width:auto"> Salvamento regional IndexedDB (com cópia de emergência)</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="swimming" type="checkbox" style="width:auto"> Natação simples na água</label>
+<label style="display:flex;gap:8px;align-items:center"><input id="biomes" type="checkbox" style="width:auto"> Biomas expandidos: neve, deserto, pântano e lagos (ativa paisagem)</label>
 <label for="quality">Distância de renderização</label><select id="quality" style="width:100%;padding:10px;background:#233a51;color:white;border-radius:8px"><option value="low">Baixa</option><option value="medium" selected>Média</option><option value="high">Alta</option></select>
 <details style="margin-top:12px"><summary>Editor de texturas</summary>
 <canvas id="texture-atlas" width="128" height="64" style="width:100%;image-rendering:pixelated;display:block;border:1px solid #4c627c;margin-top:8px"></canvas>
@@ -68,12 +69,12 @@ function build(){
  try{
   const seed=$('seed').valueAsNumber;
   if(!Number.isSafeInteger(seed))throw Error('Informe uma seed inteira.');
-  files=GameForgeVoxelBuilder.generate({title:$('title').value,seed,mode:$('mode').value,forest:$('forest').checked,survival:$('survival').checked,storage:$('storage').checked,tools:$('tools').checked,advanced:$('advanced').checked,size:Number($('size').value),landscape:$('landscape').checked,details:$('details').checked,atmosphere:$('atmosphere').checked,lighting:$('lighting').checked,regional:$('regional').checked,swimming:$('swimming').checked,textures:$('textures').checked,quality:$('quality').value,atlas:atlasEditor.encoded()});
+  files=GameForgeVoxelBuilder.generate({title:$('title').value,seed,mode:$('mode').value,forest:$('forest').checked,survival:$('survival').checked,storage:$('storage').checked,tools:$('tools').checked,advanced:$('advanced').checked,size:Number($('size').value),landscape:$('landscape').checked,details:$('details').checked,atmosphere:$('atmosphere').checked,lighting:$('lighting').checked,regional:$('regional').checked,swimming:$('swimming').checked,biomes:$('biomes').checked,textures:$('textures').checked,quality:$('quality').value,atlas:atlasEditor.encoded()});
   $('preview').srcdoc=GameForgeGenerator.shell($('title').value,files['style.css'],files['game.js'],true,files);
   $('download').disabled=false;$('status').textContent='Prévia criada. Clique em Jogar agora dentro dela.';
  }catch(e){files=null;$('download').disabled=true;$('status').textContent=e.message;}
 }
-for(const id of ['seed','title','mode','forest','survival','storage','tools','advanced','size','landscape','details','textures','atmosphere','lighting','regional','swimming','quality'])$(id).addEventListener('input',invalidate);
+for(const id of ['seed','title','mode','forest','survival','storage','tools','advanced','size','landscape','details','textures','atmosphere','lighting','regional','swimming','biomes','quality'])$(id).addEventListener('input',invalidate);
 $('build').addEventListener('click',build);
 $('download').addEventListener('click',()=>{
  if(!files)return;

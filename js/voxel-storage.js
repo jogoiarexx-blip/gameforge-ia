@@ -5,7 +5,7 @@ function gameForgeVoxelStorageFactory(E){
  const empty=()=>Array(SLOTS).fill(null),initial=()=>({version:1,chests:[],drops:[],nextId:1});
  const key=c=>c.join(','),cell=(c,bound=512)=>Array.isArray(c)&&c.length===3&&c.every(Number.isSafeInteger)&&c[0]>=-bound&&c[0]<bound&&c[1]>=1&&c[1]<160&&c[2]>=-bound&&c[2]<bound;
  const distance=(p,x,y,z)=>Math.hypot(p.x-x,p.y+.85-y,p.z-z);
- const idAllowed=(id,cfg)=>([1,2,3,4,5,6,12].includes(id)||(!cfg.tools&&id===7)||(cfg.tools&&[15,16].includes(id))||(cfg.advanced&&[20,21,22].includes(id)))||(cfg.forest&&[8,10].includes(id))||(cfg.survival&&id===11)||(cfg.landscape&&id===29)||(cfg.lighting&&id===30);
+ const idAllowed=(id,cfg)=>([1,2,3,4,5,6,12].includes(id)||(!cfg.tools&&id===7)||(cfg.tools&&[15,16].includes(id))||(cfg.advanced&&[20,21,22].includes(id)))||(cfg.forest&&[8,10].includes(id))||(cfg.survival&&id===11)||(cfg.landscape&&id===29)||(cfg.lighting&&id===30)||(cfg.biomes&&[31,32,33].includes(id));
  const bagAllowed=(bag,cfg)=>E.valid(bag)&&bag.every(s=>!s||idAllowed(s.id,cfg));
  function valid(s,world,cfg){
   if(!s||s.version!==1||!Number.isSafeInteger(s.nextId)||s.nextId<1||s.nextId>1e9||

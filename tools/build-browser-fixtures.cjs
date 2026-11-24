@@ -153,6 +153,25 @@ for(const item of gameplay20){
  item.projectId=spec.projectId||null;
 }
 fs.writeFileSync(path.join(output,'gameplay-train20.json'),JSON.stringify(gameplay20,null,2));
+// GF-TRAIN-21: save no meio de uma fase 3D simples em ZIP real de navegador.
+const midstageInput='Crie um jogo arena 3D com 3 fases. Na fase 1 sobreviver por 50 segundos.';
+const midstageSpec=parser.parseGdd('',midstageInput,{dimension:'3d',genre:'arena'});
+if(!/^gf-[0-9a-f]{8}-[0-9a-f]{8}$/.test(String(midstageSpec.projectId||''))||
+   midstageSpec.stageConfig[0]?.mission!=='survive')
+ throw Error('GF-TRAIN-21: contrato do projeto e da fase nao pode ser exercitado.');
+const midstageFiles=generator.generate(midstageSpec,'');
+validateFiles(midstageFiles,'3d','arena');
+const midstageSlug='train21-midstage-arena',midstageDir=path.join(output,midstageSlug);
+fs.mkdirSync(midstageDir);
+for(const [filename,contents] of Object.entries(midstageFiles)){
+ if(filename.includes('/')||filename.includes('\\')||filename.includes('..'))throw Error('Caminho de export invalido.');
+ fs.writeFileSync(path.join(midstageDir,filename),contents);
+}
+const midstageZip=zipper.zipFiles(midstageFiles);
+fs.writeFileSync(path.join(output,midstageSlug+'.zip'),new Uint8Array(await midstageZip.arrayBuffer()));
+fs.writeFileSync(path.join(output,'train21-midstage.json'),
+ JSON.stringify({slug:midstageSlug,files:Object.keys(midstageFiles),
+  projectId:midstageSpec.projectId,stageCount:midstageSpec.stages.length},null,2));
 fs.writeFileSync(path.join(output,'graphics-matrix.json'),JSON.stringify(graphicsMatrix,null,2));
 fs.writeFileSync(path.join(output,'matrix.json'),JSON.stringify(matrix,null,2));
 process.stdout.write('GF-002: '+matrix.length+' jogos reais e ZIPs de exportação preparados para browser QA.\n');

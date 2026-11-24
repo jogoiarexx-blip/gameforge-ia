@@ -653,3 +653,75 @@ test('GF-011: apoio e emboscada persistem em checkpoint entre fases e não podem
  assert.equal(R.npcMissionEffect({...npc,choices:npc.choices.map(c=>({...c,effect:'invented'}))},
   'choice-1',0),null);
 });
+
+
+test('GF-TRAIN-21: fase simples salva progresso real, retoma na mesma posicao e Reiniciar limpa',()=>{
+ const spec={genre:'arena',dimension:'3d',title:'Campo com Save',projectId:'gf-01234567-abcdef01',
+  stages:['Pátio','Fortaleza'],stageConfig:[{mission:'survive',seconds:40,enemies:1,boss:'no'},{}],
+  features:{bosses:false},worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const store=new Map(),key=R.midStageKey(spec),a=boot(spec,store);
+ assert.ok(key&&key!==R.checkpointKey(spec));
+ assert.equal(a.telemetry().midStageAvailable,false);
+ a.start();a.key('keydown','w');a.tick(180);a.key('keyup','w');
+ a.elements.pause.click(); // pausa grava o estado atual, alem do autosave periodico
+ const saved=R.readMidStage(store.get(key),spec);
+ assert.ok(saved,'save real deve existir após 3 segundos de simulação');
+ assert.equal(saved.stage,0);assert.ok(saved.stageClock>=2.9);
+ assert.ok(saved.player.z<13.44,'jogador moveu na fase antes de salvar');
+ assert.ok(saved.enemies.length>0);
+ const resumed=boot(spec,store);
+ assert.match(resumed.elements.start.textContent,/Continuar fase 1/);
+ resumed.start();resumed.tick(1);
+ const t=resumed.telemetry();
+ assert.equal(t.midStageRestored,true);
+ assert.equal(t.stage,1,'deve continuar na fase 1, não pular para a fase 2');
+ assert.ok(Math.abs(t.player.y/100-saved.player.z)<.05,
+  'Telemetria 3D usa player.y para o eixo Z do mundo, nao player.z (altura)');
+ assert.ok(Math.abs(t.clock-saved.clock)<.1);
+ assert.ok(Math.abs(t.enemies-saved.enemies.length)<1);
+ resumed.restart();
+ assert.equal(store.has(key),false,'Reiniciar deve limpar save intermediário');
+ assert.equal(store.has(R.checkpointKey(spec)),false);
+});
+test('GF-TRAIN-21: validações de snapshot rejeitam fraude e estado incompativel',()=>{
+ const spec={genre:'fps',dimension:'3d',title:'Teste FPS',projectId:'gf-01234567-abcdef01',
+  stages:['Rua','Torre'],stageConfig:[{mission:'collect'},{}],
+  worldOptions:{size:48},features:{}};
+ const base={stage:0,health:80,score:140,ammo:20,clock:35,stageClock:19,
+  rpgLevel:1,rpgXP:0,rpgPotions:2,player:{x:2,z:1,yaw:0},
+  enemies:[{id:0,x:0,z:0,hp:2}],coinsTaken:[0,2]};
+ const valid=R.midStagePayload(spec,base);
+ assert.ok(valid);assert.equal(R.readMidStage(JSON.stringify(valid),spec).coinsTaken.length,2);
+ for(const changed of [
+  {...valid,stage:-1},{...valid,health:0},{...valid,player:{x:800,z:0,yaw:0}},
+  {...valid,enemies:[valid.enemies[0],valid.enemies[0]]},
+  {...valid,coinsTaken:[0,0]},{...valid,stageClock:-3},
+  {...valid,fingerprint:'wrong'}, {...valid,version:99}
+ ])assert.equal(R.readMidStage(JSON.stringify(changed),spec),null);
+ assert.equal(R.readMidStage(JSON.stringify(valid),{...spec,projectId:'gf-22222222-abcdef01'}),null);
+ assert.equal(R.readMidStage(JSON.stringify(valid),{...spec,stageConfig:[{mission:'eliminate'},{}]}),null);
+ assert.equal(R.midStagePayload({...spec,combatEconomy:{enabled:true}},base),null);
+});
+test('GF-TRAIN-21: missões NPC/eventos, rota de shooter e plataforma não recebem save indevido',()=>{
+ const base={genre:'rpg',dimension:'3d',projectId:'gf-01234567-abcdef01',stages:['A','B']};
+ for(const config of [
+  {npcQuest:{id:'npc'}},
+  {events:[{id:'heal',at:5,type:'heal'}]},
+  {zoneEvents:[{id:'entered',zone:'north'}]},
+  {missionSteps:[{id:'reach',kind:'reach'}]},
+  {sideQuestSteps:[{id:'one'}]}
+ ]){
+  const spec={...base,stageConfig:[config,{}]};
+  assert.equal(R.midStageEligible(spec,0),false);
+ }
+ for(const genre of ['shooter','platform','racing','urban-action']){
+  assert.equal(R.midStageKey({...base,genre}),null);
+ }
+ const spec={...base,stageConfig:[{mission:'survive',seconds:40,enemies:1,boss:'no'},{}],
+  worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const storage=new Map(),saved=boot(spec,storage);
+ saved.start();saved.tick(125);
+ const key=R.midStageKey(spec);assert.ok(storage.has(key));
+ const sameTitleDifferentProject={...spec,projectId:'gf-00000000-00000001'};
+ assert.notEqual(R.midStageKey(spec),R.midStageKey(sameTitleDifferentProject));
+});

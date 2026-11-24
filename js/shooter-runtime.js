@@ -14,11 +14,13 @@ function gameForgeShooterBoot() {
   const sq=(x,y)=>x*x+y*y;
   const hit=(a,b)=>sq(a.x-b.x,a.y-b.y)<(a.r+b.r)*(a.r+b.r);
   const tuning={difficulty:1,enemyMultiplier:1,bossMultiplier:1,playerSpeedMultiplier:1,fireRateMultiplier:1,particlesMultiplier:1,...(spec.tuning||{})};
-  const theme=spec.shooterOptions?.theme||'space';
+  const requested=spec.shooterOptions?.theme,theme=['dragon','neon','space'].includes(requested)?requested:'space';
+  const profile={dragon:{speed:255,special:'Sopro ancestral',resource:'Fôlego',regen:22,cost:45,patterns:['zigzag','swarm','escort']},space:{speed:345,special:'Míssil teleguiado',resource:'Mísseis',regen:12,cost:50,patterns:['line','v','escort','cross']},neon:{speed:410,special:'Dash elétrico',resource:'Carga',regen:30,cost:35,patterns:['cross','swarm','zigzag']}}[theme];
+  let energy=100,overheat=false,specialHeld=false,dash=0,dashX=0,dashY=0,combo=0,comboTime=0,specialUses=0;
   const T=({neon:{bg:'#060619',mid:'#101d43',accent:'#53f9fa',danger:'#ff56bc',far:'#384691'},dragon:{bg:'#071f32',mid:'#12474e',accent:'#ffc46e',danger:'#f27842',far:'#6faba4'},space:{bg:'#050c25',mid:'#182451',accent:'#6ce9ff',danger:'#ff709c',far:'#4f64ab'}})[theme]||{};
   const levels=(spec.stages?.length?spec.stages:['Fase 1','Fase 2','Fase 3']).slice(0,30);
   const configAt=i=>Array.isArray(spec.stageConfig)&&spec.stageConfig[i]&&typeof spec.stageConfig[i]==='object'?spec.stageConfig[i]:{};
-  const patterns=['line','v','zigzag','escort','cross','swarm'];
+  const patterns=profile.patterns;
   const waves=levels.map((name,i)=>({name,pattern:patterns[i%patterns.length],pattern2:patterns[(i+2)%patterns.length],
     amount:configAt(i).enemies>0?clamp(configAt(i).enemies,1,80):Math.max(3,Math.round((7+i*3)*tuning.enemyMultiplier*tuning.difficulty)),spawnEvery:clamp(.94-i*.075,.39,.94),bossHp:Math.round((24+i*14)*tuning.bossMultiplier*tuning.difficulty),bossName: spec.enemyNames?.[i] || (theme==='dragon'?'Guardião das nuvens':theme==='neon'?'Sentinela cibernética':'Comandante sideral'),
     scroll:110+i*22,enemySpeed:(82+i*12)*tuning.difficulty,accent:[T.accent,'#b5a4ff','#ffd57b','#84f5aa','#ff7da3'][i%5]}));
@@ -66,9 +68,9 @@ function gameForgeShooterBoot() {
   }
   function overlay(title,sub,action){$('overlay-title').textContent=title;$('overlay-sub').textContent=sub;$('start').textContent=action;$('overlay').classList.remove('hidden');shop();}
   function hideOverlay(){$('overlay').classList.add('hidden');store.style.display='none';canvas.focus();}
-  function cleanStage(){enemies=[];friendly=[];hostile=[];drops=[];particles=[];boss=null;waveSpawned=0;groupStep=0;bossSeen=false;stageKills=0;stageTime=0;spawnClock=.8;player.x=W/2;player.y=H-92;player.afterimages=[];invuln=1.4;fireClock=0;flash=0;shake=0;}
+  function cleanStage(){enemies=[];friendly=[];hostile=[];drops=[];particles=[];boss=null;waveSpawned=0;groupStep=0;bossSeen=false;stageKills=0;stageTime=0;spawnClock=.8;player.x=W/2;player.y=H-92;player.afterimages=[];invuln=1.4;fireClock=0;flash=0;shake=0;energy=100;overheat=false;specialHeld=false;dash=0;combo=0;comboTime=0;}
   function initStage(){cleanStage();simulationAccumulator=0;state='play';paused=false;hideOverlay();note(levels[stageIndex]);sound(350,.15,'triangle',.045);}
-  function newGame(){stageIndex=0;score=0;credits=0;health=100;lives=3;weapon=1;shield=0;speedLevel=0;time=0;simulationSteps=0;initStage();}
+  function newGame(){stageIndex=0;score=0;credits=0;health=100;lives=3;weapon=1;shield=0;speedLevel=0;time=0;simulationSteps=0;specialUses=0;initStage();}
   function progress(){
     const name=levels[stageIndex];
     if(stageIndex+1>=levels.length){state='victory';overlay('MISSÃO CONCLUÍDA',`Pontuação ${score} · ${credits} créditos · ${levels.length} fases vencidas`,'Nova missão');sound(820,.2);return;}
@@ -80,9 +82,9 @@ function gameForgeShooterBoot() {
   function loseLife(){
     if(invuln>0||state!=='play')return;
     if(shield>0){shield--;invuln=.8;flash=.15;sound(280,.13,'triangle');return;}
-    health-=34;invuln=1.3;shake=8;flash=.15;sound(120,.25,'sawtooth',.055);
+    health-=34;combo=0;comboTime=0;invuln=1.3;shake=8;flash=.15;sound(120,.25,'sawtooth',.055);
     blast(player.x,player.y,T.danger,20);
-    if(health<=0){lives--;health=100;if(lives<=0){state='defeat';overlay('FIM DE JOGO',`Pontuação ${score} · fases concluídas: ${stageIndex}`,'Tentar novamente');}else note('NAVE DANIFICADA · '+lives+' vidas');}
+    if(health<=0){lives--;health=100;if(lives<=0){state='defeat';overlay('FIM DE JOGO',`Pontuação ${score} · fases concluídas: ${stageIndex}`,'Tentar novamente');}else note((theme==='dragon'?'DRAGÃO FERIDO':'NAVE DANIFICADA')+' · '+lives+' vidas');}
   }
   function blast(x,y,color,count=13){
     const n=Math.min(Math.round(count*tuning.particlesMultiplier),LIMITS.particles-particles.length);
@@ -91,10 +93,28 @@ function gameForgeShooterBoot() {
   }
   function fire(){
     if(fireClock>0||friendly.length>LIMITS.playerBullets-7)return;
-    fireClock=(weapon>=3?.105:weapon===2?.155:.19)/tuning.fireRateMultiplier;
+    if(theme==='dragon'){
+      if(overheat||energy<6)return;energy-=6;if(energy<6)overheat=true;fireClock=.10/tuning.fireRateMultiplier;
+      for(let i=-1;i<=1;i++)friendly.push({x:player.x+i*8,y:player.y-21,vx:i*105,vy:-480,r:11+weapon*2,damage:.75+weapon*.25,ttl:.38+weapon*.04,kind:'flame',dead:false});
+      sound(350,.045,'sawtooth',.012);return;
+    }
+    fireClock=(theme==='neon'?.12:weapon>=3?.105:weapon===2?.155:.19)/tuning.fireRateMultiplier;
     const pattern=weapon>=3?[-.27,0,.27]:weapon===2?[-.12,.12]:[0];
     for(const angle of pattern){friendly.push({x:player.x+Math.sin(angle)*14,y:player.y-21,vx:Math.sin(angle)*155,vy:-700,r:weapon===3?6:5,damage:1,dead:false});}
     sound(theme==='dragon'?350:770,.045,theme==='dragon'?'sawtooth':'square',.012);
+  }
+  function special(vx,vy){
+    if(energy<profile.cost||dash>0||friendly.length>LIMITS.playerBullets-9)return;
+    energy-=profile.cost;specialUses++;
+    if(theme==='dragon'){
+      for(let i=-4;i<=4;i++)friendly.push({x:player.x,y:player.y-24,vx:i*90,vy:-520,r:17,damage:3,ttl:.65,kind:'flame',dead:false});
+    }else if(theme==='space'){
+      for(const side of [-1,1])friendly.push({x:player.x+side*16,y:player.y-20,vx:side*80,vy:-300,r:8,damage:6,ttl:2.5,kind:'missile',dead:false});
+    }else{
+      const [dx,dy]=norm(vx,vy||(!vx?-1:0));dashX=dx;dashY=dy;dash=.18;invuln=Math.max(invuln,.22);
+      for(let i=-2;i<=2;i++)friendly.push({x:player.x,y:player.y-20,vx:i*100,vy:-760,r:6,damage:2,dead:false});
+    }
+    note(profile.special);sound(theme==='dragon'?210:560,.16,'triangle',.035);
   }
   function spawnEnemy(pattern,offset,groupSize){
     if(enemies.length>=LIMITS.enemies)return;
@@ -106,7 +126,7 @@ function gameForgeShooterBoot() {
     if(pattern==='escort'){x=central+(offset-(n-1)/2)*100;y=-38-(offset%2)*40;}
     if(pattern==='cross')x=offset%2===0?85:W-85;
     if(pattern==='swarm')x=central+Math.sin(offset*2.1)*280;
-    const kind=idx%7===5?'sniper':idx%9===7?'tank':idx%4===0?'weaver':'scout';
+    const kind=theme==='dragon'?(idx%4===0?'tank':idx%3===0?'weaver':'scout'):theme==='neon'?(idx%3===0?'sniper':'weaver'):idx%7===5?'sniper':idx%9===7?'tank':idx%4===0?'weaver':'scout';
     enemies.push({id:++enemySerial,x,y,baseX:x,r:kind==='tank'?22:kind==='sniper'?18:16,hp:kind==='tank'?4:kind==='sniper'?3:2,
       max:kind==='tank'?4:kind==='sniper'?3:2,t:rand(0,2),shot:rand(.8,2.2),kind,pattern,speed:phase.enemySpeed*(kind==='tank'?.65:1),dead:false});
   }
@@ -150,7 +170,8 @@ function gameForgeShooterBoot() {
     if(!boss)return;
     boss.t+=dt;boss.shot-=dt;
     if(boss.entering){boss.y+=(110-boss.y)*Math.min(1,dt*1.8);if(boss.y>102)boss.entering=false;return;}
-    boss.x=W/2+Math.sin(boss.t*.75)*(230+stageIndex*5);
+    boss.x=W/2+Math.sin(boss.t*(theme==='neon'?1.15:theme==='dragon'?.48:.75))*(230+stageIndex*5);
+    boss.y=theme==='dragon'?110+Math.max(0,Math.sin(boss.t*.8))*100:theme==='neon'?110+Math.sin(boss.t*1.5)*28:110;
     const ratio=boss.hp/boss.max;
     boss.phase=ratio<.34?3:ratio<.67?2:1;
     if(boss.shot<=0){
@@ -158,7 +179,7 @@ function gameForgeShooterBoot() {
       const aimed=Math.atan2(player.y-boss.y,player.x-boss.x);
       const shots=boss.phase===1?5:boss.phase===2?7:11;
       for(let i=0;i<shots;i++){
-        const angle=boss.phase===1?aimed+(i-2)*.20: Math.PI/2 + (i-(shots-1)/2)*(.20+.03*boss.phase)+Math.sin(boss.t)*.12;
+        const angle=theme==='neon'?boss.t*.9+i*TAU/shots:theme==='dragon'?aimed+(i-(shots-1)/2)*.12:boss.phase===1?aimed+(i-2)*.20: Math.PI/2 + (i-(shots-1)/2)*(.20+.03*boss.phase)+Math.sin(boss.t)*.12;
         enemyShot(boss.x,boss.y+25,'boss',angle);
       }
       sound(200,.1,'triangle',.023);
@@ -171,7 +192,7 @@ function gameForgeShooterBoot() {
   }
   function killEnemy(e){
     if(e.dead)return;
-    e.dead=true;stageKills++;score+=e.kind==='tank'?160:100;credits+=e.kind==='tank'?25:10;
+    e.dead=true;stageKills++;if(theme==='neon'){combo=Math.min(10,combo+1);comboTime=2.5;energy=Math.min(100,energy+8);}score+=(e.kind==='tank'?160:100)*(theme==='neon'?Math.max(1,combo):1);credits+=e.kind==='tank'?25:10;
     blast(e.x,e.y,T.danger,quality==='low'?6:11);
     if(Math.random()<.21)pickup(e.x,e.y);
   }
@@ -180,17 +201,22 @@ function gameForgeShooterBoot() {
     time+=dt;stageTime+=dt;fireClock-=dt;invuln-=dt;flash=Math.max(0,flash-dt);shake=Math.max(0,shake-dt*19);
     const vx=(keys.has('ArrowRight')||keys.has('d')||touch.right?1:0)-(keys.has('ArrowLeft')||keys.has('a')||touch.left?1:0);
     const vy=(keys.has('ArrowDown')||keys.has('s')||touch.down?1:0)-(keys.has('ArrowUp')||keys.has('w')||touch.up?1:0);
-    const direction=norm(vx,vy),moving=!!(vx||vy),speed=(345+speedLevel*42)*tuning.playerSpeedMultiplier;
-    if(moving){player.x=clamp(player.x+direction[0]*speed*dt,36,W-36);player.y=clamp(player.y+direction[1]*speed*dt,185,H-32);}
+    const direction=norm(vx,vy),moving=!!(vx||vy),speed=(profile.speed+speedLevel*42)*tuning.playerSpeedMultiplier;
+    const firing=keys.has(' ')||keys.has('Enter')||touch.fire||mouse.down||spec.shooterOptions?.autofire;
+    energy=Math.min(100,energy+profile.regen*dt*(theme==='dragon'&&firing&&!overheat?.12:1));if(overheat&&energy>=35)overheat=false;
+    comboTime=Math.max(0,comboTime-dt);if(!comboTime)combo=0;
+    const specialPressed=keys.has('x')||touch.special;if(specialPressed&&!specialHeld)special(vx,vy);specialHeld=!!specialPressed;
+    if(dash>0){dash=Math.max(0,dash-dt);player.x=clamp(player.x+dashX*950*dt,36,W-36);player.y=clamp(player.y+dashY*950*dt,theme==='dragon'?105:185,H-32);}
+    else if(moving){player.x=clamp(player.x+direction[0]*speed*dt,36,W-36);player.y=clamp(player.y+direction[1]*speed*dt,theme==='dragon'?105:185,H-32);}
     player.afterimages.push({x:player.x,y:player.y,life:.22});
     if(player.afterimages.length>10)player.afterimages.shift();
     for(const a of player.afterimages)a.life-=dt;
     player.afterimages=player.afterimages.filter(a=>a.life>0);
-    if(keys.has(' ')||keys.has('Enter')||touch.fire||mouse.down||spec.shooterOptions?.autofire)fire();
+    if(firing)fire();
     spawnWave(dt);
     for(const e of enemies)updateEnemy(e,dt);
     updateBoss(dt);
-    for(const b of friendly){b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.y<-30||b.x<0||b.x>W)b.dead=true;}
+    for(const b of friendly){if(b.kind==='missile'){let target=null,dist=Infinity;for(const e of enemies){const d=sq(e.x-b.x,e.y-b.y);if(!e.dead&&d<dist){target=e;dist=d;}}if(boss&&!boss.entering)target=boss;if(target){const [dx,dy]=norm(target.x-b.x,target.y-b.y);b.vx+=(dx*430-b.vx)*Math.min(1,dt*7);b.vy+=(dy*430-b.vy)*Math.min(1,dt*7);}}if(b.ttl!==undefined){b.ttl-=dt;if(b.ttl<=0)b.dead=true;}b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.y<-30||b.y>H+30||b.x<0||b.x>W)b.dead=true;}
     for(const b of hostile){b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.y>H+30||b.y<-40||b.x<-40||b.x>W+40)b.dead=true;}
     for(const e of enemies){if(e.dead)continue;
       if(hit(player,e)){loseLife();e.dead=true;blast(e.x,e.y,T.danger,8);}
@@ -283,7 +309,7 @@ function gameForgeShooterBoot() {
   function render(){
     ctx.save();if(shake)ctx.translate(rand(-shake,shake),rand(-shake,shake));
     background();
-    V?.backdrop(ctx,W,H,time,'space');
+    V?.backdrop(ctx,W,H,time,theme);
     for(const a of player.afterimages){ctx.globalAlpha=a.life*.6;ship(a.x,a.y,.85);}
     ctx.globalAlpha=1;
     for(const d of drops){ctx.save();ctx.translate(d.x,d.y);ctx.rotate(time*2);ctx.shadowBlur=10;ctx.shadowColor=T.accent;
@@ -291,7 +317,7 @@ function gameForgeShooterBoot() {
       ctx.fillRect(-11,-11,22,22);ctx.shadowBlur=0;ctx.fillStyle='#142136';ctx.fillRect(-4,-6,8,12);ctx.restore();}
     for(const e of enemies)enemyDraw(e);
     bossDraw();
-    ctx.fillStyle='#fff8a1';for(const b of friendly){ctx.shadowColor=T.accent;ctx.shadowBlur=quality==='low'?0:10;ctx.fillRect(b.x-3,b.y-12,6,18);}ctx.shadowBlur=0;
+    for(const b of friendly){ctx.fillStyle=b.kind==='flame'?'#ff9c42':b.kind==='missile'?'#f4f8ff':theme==='neon'?'#53f9fa':'#fff8a1';ctx.shadowColor=T.accent;ctx.shadowBlur=quality==='low'?0:10;if(b.kind==='flame'){ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill();}else ctx.fillRect(b.x-3,b.y-12,6,18);}ctx.shadowBlur=0;
     for(const b of hostile){ctx.fillStyle=b.kind==='boss'?'#ff74dc':'#ff9e70';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill();}
     if(!V||V.profile.particles)for(const p of particles){ctx.globalAlpha=p.life/p.max;ctx.fillStyle=p.color;ctx.fillRect(p.x-p.r/2,p.y-p.r/2,p.r,p.r);}
     ctx.globalAlpha=1;
@@ -300,11 +326,11 @@ function gameForgeShooterBoot() {
     if(flash){ctx.fillStyle=`rgba(255,90,120,${flash*.95})`;ctx.fillRect(0,0,W,H);}
     ctx.restore();
     // HUD visual em Canvas, sem depender de imagens remotas.
-    ctx.fillStyle='#050b1caa';ctx.fillRect(18,18,194,73);ctx.fillStyle='#d6f4ff';ctx.font='bold 15px system-ui';ctx.fillText('VIDAS  '+ '♥ '.repeat(lives),30,40);
-    ctx.font='13px system-ui';ctx.fillText('ESCUDO  '+shield+'    CRÉDITOS  '+credits,30,61);ctx.fillText('ARMA '+weapon+'   MOTOR '+(speedLevel+1),30,78);
+    ctx.fillStyle='#050b1caa';ctx.fillRect(18,18,194,96);ctx.fillStyle='#d6f4ff';ctx.font='bold 15px system-ui';ctx.fillText('VIDAS  '+ '♥ '.repeat(lives),30,40);
+    ctx.font='13px system-ui';ctx.fillText('ESCUDO  '+shield+'    CRÉDITOS  '+credits,30,61);ctx.fillText('ARMA '+weapon+'   '+(theme==='dragon'?'ASAS':'MOTOR')+' '+(speedLevel+1),30,78);ctx.fillText(profile.resource+' '+Math.floor(energy)+'%'+(theme==='neon'?' · x'+Math.max(1,combo):overheat?' · exausto':''),30,98);
     if(paused&&state==='play'){ctx.fillStyle='#030a22bd';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 54px system-ui';ctx.textAlign='center';ctx.fillText('PAUSADO',W/2,H/2);ctx.textAlign='left';}
   }
-  window.__gameforgeTelemetry=()=>({state,paused,frames,clock:time,stage:stageIndex,genre:'shooter',player:{x:player.x,y:player.y,radius:player.r,screenX:player.x,screenY:player.y},enemies:enemies.length,enemySamples:enemies.slice(0,8).map(e=>({id:e.id,x:e.x,y:e.y})),bossAlive:!!boss,enemyBullets:hostile.length,playerBullets:friendly.length,bossHp:boss?.hp??null,spawned:waveSpawned,weapon,lives,credits,speedLevel,quality,simulationHz:60,simulationSteps});
+  window.__gameforgeTelemetry=()=>({state,paused,frames,clock:time,stage:stageIndex,genre:'shooter',theme,energy,overheat,dash,combo,specialUses,projectileTypes:[...new Set(friendly.map(b=>b.kind||'bolt'))],player:{x:player.x,y:player.y,radius:player.r,screenX:player.x,screenY:player.y},enemies:enemies.length,enemySamples:enemies.slice(0,8).map(e=>({id:e.id,x:e.x,y:e.y})),bossAlive:!!boss,enemyBullets:hostile.length,playerBullets:friendly.length,bossHp:boss?.hp??null,spawned:waveSpawned,weapon,lives,credits,speedLevel,quality,simulationHz:60,simulationSteps});
   function loop(ms){
     const rawDt=Math.max(0,(ms-last)/1000);last=ms;
     if((!V||V.profile.quality==='auto')&&rawDt>0&&rawDt<.25){fpsEstimate=fpsEstimate*.96+(.04/rawDt);qualitySamples+=rawDt;if(qualitySamples>3){qualitySamples=0;quality=fpsEstimate<38?'low':'high';}}
@@ -331,14 +357,15 @@ function gameForgeShooterBoot() {
   window.addEventListener('keyup',e=>{keys.delete(e.key.toLowerCase());keys.delete(e.key);});
   canvas.addEventListener('pointerdown',()=>{mouse.down=true;});
   window.addEventListener('pointerup',()=>{mouse.down=false;});
+  const touchBar=document.querySelector('.touch');if(touchBar){const specialButton=document.createElement('button');specialButton.type='button';specialButton.dataset.control='special';specialButton.textContent=profile.special;touchBar.appendChild(specialButton);}
   document.querySelectorAll('[data-control]').forEach(b=>{
     const k=b.dataset.control;
     b.addEventListener('pointerdown',e=>{e.preventDefault();touch[k]=true;try{b.setPointerCapture(e.pointerId);}catch(_){}});
     ['pointerup','pointercancel','lostpointercapture'].forEach(evt=>b.addEventListener(evt,()=>{touch[k]=false;}));
   });
   $('title').textContent=spec.title||'Novo jogo de nave';
-  $('control-help').textContent='WASD / Setas: pilotar · Espaço: atirar · Esc: pausa';
-  $('overlay-sub').textContent='Shoot’em up vertical · '+levels.length+' fases · ondas, melhorias e chefes';
+  $('control-help').textContent='WASD / Setas: mover · Espaço: atacar · X: '+profile.special+' · Esc: pausa';
+  $('overlay-sub').textContent=(theme==='dragon'?'Dragão: fôlego e fogo de curto alcance':theme==='neon'?'Neon: dash e combos':'Navinha: disparos e mísseis teleguiados')+' · '+levels.length+' fases';
   $('timer-pill').style.display='';
   requestAnimationFrame(loop);
 }

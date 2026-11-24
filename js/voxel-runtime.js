@@ -15,7 +15,7 @@ function gameForgeVoxelBoot(){
  const size=[64,128,256].includes(cfg.size)?cfg.size:64,landscape=cfg.landscape===true,textured=cfg.textures===true,streamed=size>64||landscape||textured;
  const M=gameForgeVoxelMesherFactory(),X=gameForgeVoxelTextureFactory(K);
  const material=textured?X.material(T,cfg.seed):new T.MeshBasicMaterial({vertexColors:true});
- const meshes=new Map(),versions=new Map(),queued=new Set();let wanted=new Set(),streamKey='',epoch=0,worker=null,inflight=null,workerMode='inactive',quality=['low','medium','high'].includes(cfg.quality)?cfg.quality:'medium';
+ const meshes=new Map(),versions=new Map(),queued=new Set();let wanted=new Set(),streamKey='',epoch=0,worker=null,inflight=null,workerMode='inactive',workerCompleted=0,quality=['low','medium','high'].includes(cfg.quality)?cfg.quality:'medium';
  let world,player,velocity=0,grounded=false,mined=0,placed=0,selected=2;
  let bag=E.initial(),equipped=false,station=0,life=S.initial(),stash=D.initial(),activeChest=null,gear=U.initial(),nextMineAt=0,forge=A.initial(),mining=A.mining(),mineRequest=false;
  const dropMeshes=new Map(),dropGeometry=new T.BoxGeometry(.24,.24,.24),dropMaterial=new T.MeshBasicMaterial({color:0xf5c65c});
@@ -72,7 +72,7 @@ function gameForgeVoxelBoot(){
    workerMode='worker';
    worker.onmessage=e=>{
     const j=e.data;inflight=null;
-    if(j.epoch===epoch&&wanted.has(j.id)&&j.rev===(versions.get(j.id)||0))applyMesh(j.id,j.data);
+    if(j.epoch===epoch&&wanted.has(j.id)&&j.rev===(versions.get(j.id)||0)){applyMesh(j.id,j.data);workerCompleted++;}
     else if(wanted.has(j.id)&&!meshes.has(j.id))queued.add(j.id);
    };
    worker.onerror=e=>{e.preventDefault();if(inflight&&wanted.has(inflight.id))queued.add(inflight.id);inflight=null;worker.terminate();worker=null;workerMode='fallback';};
@@ -103,7 +103,7 @@ function gameForgeVoxelBoot(){
   visuals.reset(scene);visualX=player.x;visualZ=player.z;
   life=saved?.survival||S.initial();if(survival){if(!saved)bag=E.change(bag,11,3);S.populate(life,world,player);syncCreatures();}
   velocity=0;grounded=false;clock=0;saveAt=0;accumulator=0;
-  epoch++;for(const id of meshes.keys())discard(id);versions.clear();queued.clear();wanted.clear();streamKey='';
+  epoch++;workerCompleted=0;for(const id of meshes.keys())discard(id);versions.clear();queued.clear();wanted.clear();streamKey='';
   if(streamed){initWorker();refreshStream();const center=K.chunkOf(player.x,player.z),id=K.key(center.cx,center.cz);queued.delete(id);buildNow(id);}
   else for(const id of world.chunkKeys())buildNow(id);
   resize();updateCamera();refreshBag();updateHUD();
@@ -391,7 +391,7 @@ function gameForgeVoxelBoot(){
  if(advanced)$('control-help').textContent+=' · E segurar para minerar · H armadura · J retirar forno';
  if(landscape)$('control-help').textContent+=' · 7 areia';
  if(stored)$('start').textContent='Continuar mundo';
- window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.editCount(),selected,mode:resources?'resources':'creative',forest,advanced:advanced?JSON.parse(JSON.stringify(forge)):null,mining:advanced?{...mining}:null,tools:tools?JSON.parse(JSON.stringify(gear)):null,storage:storage?JSON.parse(JSON.stringify(stash)):null,survival:survival?JSON.parse(JSON.stringify(life)):null,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,chunks:meshes.size,mapSize:size,textured,landscape,stream:{quality,radius:streamed?radius():null,wanted:wanted.size,queued:queued.size,worker:workerMode,faces:[...meshes.values()].reduce((n,m)=>n+m.userData.faces,0),exposed:[...meshes.values()].reduce((n,m)=>n+m.userData.exposed,0)},target:target(),triangles:worldTriangles,visuals:visuals.snapshot()});
+ window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.editCount(),selected,mode:resources?'resources':'creative',forest,advanced:advanced?JSON.parse(JSON.stringify(forge)):null,mining:advanced?{...mining}:null,tools:tools?JSON.parse(JSON.stringify(gear)):null,storage:storage?JSON.parse(JSON.stringify(stash)):null,survival:survival?JSON.parse(JSON.stringify(life)):null,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,chunks:meshes.size,mapSize:size,textured,landscape,stream:{quality,radius:streamed?radius():null,wanted:wanted.size,queued:queued.size,worker:workerMode,workerCompleted,center:K.chunkOf(player.x,player.z),keys:[...meshes.keys()],faces:[...meshes.values()].reduce((n,m)=>n+m.userData.faces,0),exposed:[...meshes.values()].reduce((n,m)=>n+m.userData.exposed,0)},target:target(),triangles:worldTriangles,visuals:visuals.snapshot()});
  requestAnimationFrame(frame);
 }
 if(typeof globalThis!=='undefined')globalThis.gameForgeVoxelBoot=gameForgeVoxelBoot;

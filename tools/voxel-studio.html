@@ -17,6 +17,7 @@
 <label style="display:flex;gap:8px;align-items:center"><input id="landscape" type="checkbox" style="width:auto"> Biomas, montanhas, rios e cavernas</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="textures" type="checkbox" style="width:auto"> Texturas procedurais pixeladas</label>
 <label for="quality">Distância de renderização</label><select id="quality" style="width:100%;padding:10px;background:#233a51;color:white;border-radius:8px"><option value="low">Baixa</option><option value="medium" selected>Média</option><option value="high">Alta</option></select>
+<details style="margin-top:12px"><summary>Prévia do atlas procedural</summary><canvas id="texture-atlas" width="128" height="64" style="width:100%;image-rendering:pixelated;display:block;border:1px solid #4c627c;margin-top:8px"></canvas><button type="button" id="atlas-download">Exportar atlas PNG</button><small>Texturas de 16 × 16 pixels geradas pela seed.</small></details>
 <button id="build">Criar prévia jogável</button><button id="download" disabled>Exportar jogo em ZIP</button>
 <p id="status" role="status">Escolha a seed e crie seu primeiro mundo.</p>
 <p><strong>Incluído:</strong> mundos finitos de 64, 128 ou 256 blocos por lado, três materiais, construção/mineração criativa, colisão, toque, bússola, save local no jogo exportado.</p>
@@ -41,6 +42,8 @@
 <script>
 'use strict';
 const $=id=>document.getElementById(id);let files=null;
+function drawAtlas(){const seed=$('seed').valueAsNumber;if(!Number.isSafeInteger(seed)||seed<0||seed>2147483647)return;const atlas=gameForgeVoxelTextureFactory(gameForgeVoxelKitFactory()).generate(seed);const ctx=$('texture-atlas').getContext('2d');const image=ctx.createImageData(atlas.width,atlas.height);image.data.set(atlas.data);ctx.putImageData(image,0,0);}
+$('seed').addEventListener('input',drawAtlas);$('atlas-download').addEventListener('click',()=>{drawAtlas();const a=document.createElement('a');a.href=$('texture-atlas').toDataURL('image/png');a.download='gameforge-atlas-'+$('seed').value+'.png';a.click();});drawAtlas();
 function build(){
  try{
   const seed=$('seed').valueAsNumber;

@@ -103,7 +103,7 @@ function gameForgeVoxelActorsFactory(T){
   finally{renderer.autoClear=old;}
  }
  function reset(scene){for(const v of actors.values())scene.remove(v.group);actors.clear();started=-100;action='none';actions=0;shown=false;}
- function snapshot(){return {actors:actors.size,parts:[...actors.values()].reduce((sum,v)=>{v.group.traverse(n=>{if(n.isMesh)sum++;});return sum;},0),held,actions,action,visible:shown,geometryCount:1,materialCount:materials.size};}
+ function snapshot(){return {actors:actors.size,parts:[...actors.values()].reduce((sum,v)=>{v.group.traverse(n=>{if(n.isMesh)sum++;});return sum;},0),held,actions,action,visible:shown,geometryCount:1,materialCount:materials.size,swingAngle:hand.rotation.x};}
  return {sync,swing,pose,resize,render,reset,snapshot};
 }
 if(typeof globalThis!=='undefined')globalThis.gameForgeVoxelActorsFactory=gameForgeVoxelActorsFactory;

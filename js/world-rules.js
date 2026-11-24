@@ -227,7 +227,7 @@ function gameForgeWorldRules(){
  }
  // GF-TRAIN-26: atos contíguos e histórico de decisões concluídas, não de diálogos.
  function campaignPlan(spec){
-  const c=spec?.campaign;
+  const c=spec?.campaignNarrative;
   if(!checkpointKey(spec)||!c||c.version!==1||!Array.isArray(spec.stages)||
    spec.stages.length<2||spec.stages.length>30||!Array.isArray(c.acts)||
    c.acts.length<1||c.acts.length>10||typeof c.alternateEndings!=='boolean')return null;

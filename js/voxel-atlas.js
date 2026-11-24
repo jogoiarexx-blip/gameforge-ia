@@ -2,7 +2,7 @@
 function gameForgeVoxelAtlasFactory(){
  'use strict';
  const WIDTH=128,HEIGHT=64,TILE=16,BYTES=WIDTH*HEIGHT*4;
- const LABELS={1:'Grama — topo',2:'Terra',3:'Pedra',4:'Bancada',5:'Forno',6:'Tijolo',8:'Tronco — lateral',9:'Folhas',10:'Muda',12:'Baú',15:'Minério de ferro',20:'Carvão',21:'Minério de cobre',24:'Grama — lateral',25:'Tronco — corte',26:'Água',27:'Areia'};
+ const LABELS={1:'Grama — topo',2:'Terra',3:'Pedra',4:'Bancada',5:'Forno',6:'Tijolo',8:'Tronco — lateral',9:'Folhas',10:'Muda',12:'Baú',15:'Minério de ferro',20:'Carvão',21:'Minério de cobre',24:'Grama — lateral',25:'Tronco — corte',26:'Água',27:'Areia',30:'Tocha'};
  const valid=a=>a instanceof Uint8Array&&a.length===BYTES;
  const validTile=t=>Number.isInteger(t)&&Object.prototype.hasOwnProperty.call(LABELS,t);
  const index=(t,x,y)=>((Math.floor(t/8)*TILE+y)*WIDTH+(t%8)*TILE+x)*4;

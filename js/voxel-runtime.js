@@ -5,7 +5,7 @@ function gameForgeVoxelBoot(){
  const E=gameForgeVoxelEconomyFactory(K),resources=cfg.mode==='resources',forest=resources&&cfg.forest===true,materials=resources?[1,2,3,4,5,6,...(forest?[8,10]:[]),...(cfg.storage?[12]:[])]:[1,2,3];
  const S=gameForgeVoxelSurvivalFactory(K,E),survival=resources&&cfg.survival===true;
  const D=gameForgeVoxelStorageFactory(E),storage=resources&&cfg.storage===true;
- const U=gameForgeVoxelToolsFactory(E),tools=resources&&cfg.tools===true;
+ const tools=resources&&cfg.tools===true,advanced=tools&&cfg.advanced===true,U=gameForgeVoxelToolsFactory(E,advanced),A=gameForgeVoxelAdvancedFactory(E,U);
  const $=id=>document.getElementById(id),canvas=$('game'),keys=new Set(),touch=new Set();
  let renderer;
  try{renderer=new T.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});}
@@ -14,7 +14,7 @@ function gameForgeVoxelBoot(){
  scene.background=new T.Color(0x90b7d1);scene.fog=new T.Fog(0x90b7d1,30,92);
  const material=new T.MeshBasicMaterial({vertexColors:true});
  const meshes=new Map();let world,player,velocity=0,grounded=false,mined=0,placed=0,selected=2;
- let bag=E.initial(),equipped=false,station=0,life=S.initial(),stash=D.initial(),activeChest=null,gear=U.initial(),nextMineAt=0;
+ let bag=E.initial(),equipped=false,station=0,life=S.initial(),stash=D.initial(),activeChest=null,gear=U.initial(),nextMineAt=0,forge=A.initial(),mining=A.mining(),mineRequest=false;
  const dropMeshes=new Map(),dropGeometry=new T.BoxGeometry(.24,.24,.24),dropMaterial=new T.MeshBasicMaterial({color:0xf5c65c});
  const visuals=gameForgeVoxelActorsFactory(T),daySky=new T.Color(0x90b7d1),nightSky=new T.Color(0x172943);
  let worldTriangles=0,visualX=0,visualZ=0;
@@ -22,7 +22,7 @@ function gameForgeVoxelBoot(){
  const dir=()=>[Math.sin(player.yaw)*Math.cos(player.pitch),Math.sin(player.pitch),-Math.cos(player.yaw)*Math.cos(player.pitch)];
  const key=W.saveKey(cfg);
  const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a)),clamp=(a,b,c)=>Math.max(b,Math.min(c,a));
- function getSaved(){try{return W.readSave(localStorage.getItem(key),cfg,E,S,D,U);}catch{return null;}}
+ function getSaved(){try{return W.readSave(localStorage.getItem(key),cfg,E,S,D,U,A);}catch{return null;}}
  function say(s){notice=s;noticeUntil=clock+3;$('message').textContent=s;}
  function rebuild(id){
   const [cx,cz]=id.split(',').map(Number),data=world.mesh(cx,cz);
@@ -37,12 +37,12 @@ function gameForgeVoxelBoot(){
   renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();visuals.resize(camera.aspect);
  }
  function initialize(saved){
-  world=saved?.world||W.create(cfg.seed,[],{forest,storage,tools});
+  world=saved?.world||W.create(cfg.seed,[],{forest,storage,tools,advanced});
   player=saved?.player||world.spawn();
   if(!player)throw Error('Sem ponto seguro de nascimento.');
   mined=saved?.mined||0;placed=saved?.placed||0;
   bag=resources?(saved?.bag||E.initial()):[];equipped=resources&&!!saved?.equipped;selected=saved?.selected||2;station=0;
-  gear=saved?.tools||U.initial();nextMineAt=0;
+  gear=saved?.tools||U.initial();forge=saved?.advanced||A.initial();mining=A.mining();mineRequest=false;nextMineAt=0;
   stash=saved?.storage||D.initial();activeChest=null;syncDrops();
   visuals.reset(scene);visualX=player.x;visualZ=player.z;
   life=saved?.survival||S.initial();if(survival){if(!saved)bag=E.change(bag,11,3);S.populate(life,world,player);syncCreatures();}
@@ -53,7 +53,7 @@ function gameForgeVoxelBoot(){
  function save(){
   if(state!=='play')return false;
   if(world.collides(player.x,player.y,player.z))return false;
-  const record={version:1,title:cfg.title,seed:cfg.seed,player:{...player},edits:world.edits(),mined,placed,...(survival?{survival:life}:{}),...(storage?{storage:stash}:{}),...(tools?{tools:gear}:{}),...(resources?{mode:'resources',bag,equipped,selected,...(forest?{forest:true,trees:world.forestState()}: {})}:{})};
+  const record={version:1,title:cfg.title,seed:cfg.seed,player:{...player},edits:world.edits(),mined,placed,...(survival?{survival:life}:{}),...(storage?{storage:stash}:{}),...(tools?{tools:gear}:{}),...(advanced?{advanced:forge}:{}),...(resources?{mode:'resources',bag,equipped,selected,...(forest?{forest:true,trees:world.forestState()}: {})}:{})};
   try{localStorage.setItem(key,JSON.stringify(record));savedStatus='Salvo neste navegador';saveAt=clock;return true;}
   catch{savedStatus='Armazenamento indisponível';saveAt=clock;return false;}
  }
@@ -82,7 +82,7 @@ function gameForgeVoxelBoot(){
  }
  function chestTransfer(id,dir){
   if(!activeChest||state!=='play'||paused)return;
-  if(tools&&U.isTool(id)){say('Ferramentas duráveis ficam na mochila.');return;}
+  if(tools&&(U.isTool(id)||(advanced&&id===23))){say('Ferramentas duráveis ficam na mochila.');return;}
   if(dir==='deposit'&&id===7&&equipped&&E.count(bag,7)===1){say('Guarde a picareta antes de depositar.');return;}
   const next=D.transfer(stash,world,player,bag,activeChest,id,1,dir);
   if(!next){say('Baú distante, sem item ou sem espaço.');return;}
@@ -95,6 +95,7 @@ function gameForgeVoxelBoot(){
   bag=next;say('Item no chão. Afaste-se antes de 1,5 s para deixá-lo lá.');syncDrops();save();refreshBag();
  }
  function target(){return world.ray([player.x,player.y+1.58,player.z],dir());}
+ function requestMine(){if(!advanced)return act('mine');if(state!=='play'||paused)return false;mineRequest=true;return true;}
  function act(kind){
   if(state!=='play'||paused)return false;
   const hit=target();
@@ -103,13 +104,14 @@ function gameForgeVoxelBoot(){
   let dirty;
   if(resources){
    if(tools&&kind==='mine'&&!U.canMine(gear,hit.id)){say(hit.id===15?'Minério exige picareta de pedra ou ferro.':'Equipe uma picareta.');return false;}
-   if(tools&&kind==='mine'&&clock<nextMineAt)return false;
+   if(tools&&!advanced&&kind==='mine'&&clock<nextMineAt)return false;
+   if(advanced&&kind==='mine'&&hit.id===5&&A.get(forge,hit.cell)){say('Retire o produto do forno antes de quebrá-lo.');return false;}
    const chestAction=storage&&((kind==='place'&&selected===D.CHEST)||(kind==='mine'&&hit.id===D.CHEST));
    const chestResult=chestAction?(kind==='place'?D.place(stash,world,player,bag,hit):D.mine(stash,world,bag,hit)):null;
    const result=chestAction?(chestResult?{ok:true,...chestResult}:{ok:false,reason:'chest'}):E.edit(world,player,bag,hit,kind,selected,equipped,tools?gear.active:null);
    if(!result.ok){say(({pickaxe:'Equipe uma picareta para minerar pedra.', 'inventory-full':'Inventário cheio.', 'missing-materials':'Você não possui este bloco.', 'world-edit':'Não é possível editar este bloco.','plant-site':'Plante sobre terra ou grama, com espaço livre.','chest':'Baú cheio, sem espaço ou ação inválida. Esvazie-o antes de minerar.'})[result.reason]||'Ação inválida.');return false;}
    bag=result.bag;dirty=result.dirty;
-   if(tools&&kind==='mine'){nextMineAt=clock+(U.DEFS[gear.active]?.delay||.8);if(gear.active&&[3,15].includes(hit.id))wearTool();}
+   if(tools&&kind==='mine'){nextMineAt=clock+(U.DEFS[gear.active]?.delay||.8);if(gear.active&&([3,15,20,21].includes(hit.id)||(advanced&&gear.active===17&&[8,9].includes(hit.id))||(advanced&&gear.active===18&&[1,2].includes(hit.id))))wearTool();}
   }else dirty=kind==='mine'?world.mine(hit):world.place(hit,selected,player);
   if(!dirty){say('Ação inválida: alcance, limite de edições ou colisão.');return false;}
   if(kind==='mine')mined++;else placed++;
@@ -119,12 +121,16 @@ function gameForgeVoxelBoot(){
  }
  function wearTool(){const r=U.wear(gear,bag);bag=r.bag;equipped=!!gear.active;if(r.broken)say('Picareta quebrou.');}
  function repairTool(){if(!tools||state!=='play'||paused)return;const r=U.repair(gear,bag,world,player);if(!r){say('Equipe ferramenta desgastada perto da bancada e tenha material de reparo.');return;}bag=r;save();refreshBag();updateHUD();say('Ferramenta reparada.');}
+ function armorToggle(){if(!advanced||state!=='play'||paused)return;if(!A.toggleArmor(forge,bag)){say('Fabrique uma armadura de ferro.');return;}save();refreshBag();say(forge.armor?'Armadura equipada':'Armadura guardada');}
+ function furnaceCollect(){if(!advanced||state!=='play'||paused)return;const next=A.collect(forge,bag,world,player);if(!next){say('Forno distante, ainda processando ou mochila cheia.');return;}bag=next;save();refreshBag();say('Produto retirado do forno.');}
  function updateHUD(){
+  if(advanced){progress.value=mining.duration?mining.elapsed/mining.duration:0;progress.style.display=mining.key?'block':'none';}
   $('health').textContent=survival?String(Math.ceil(life.health)):'100';$('score').textContent=String(mined+placed);
   $('ammo').textContent=E.NAMES[selected]+(resources?' × '+E.count(bag,selected):'');$('level').textContent=String(cfg.seed);
   $('timer').textContent=survival?('Dia '+(Math.floor(life.time/S.PERIOD)+1)+' · '+(S.night(life)?'Noite':'Dia')+' · Fome '+Math.ceil(life.hunger)+'%'):Math.floor(clock)+'s';
   $('mission').textContent=(survival?'Sobrevivência':resources?'Coleta e fabricação':'Criativo')+' · removidos '+mined+' · colocados '+placed+' · '+world.edits().length+'/'+W.LIMIT+' edições';
   if(clock>noticeUntil)$('message').textContent=paused?'Pausado · '+savedStatus:('Seed '+cfg.seed+' · '+savedStatus);
+  if(advanced){const j=A.get(forge,A.nearest(world,player));$('mission').textContent+=' · Defesa '+Math.round(A.defense(forge)*100)+'%'+(j?' · Forno '+(j.remaining>0?Math.ceil(j.remaining)+'s':'pronto'):'');}
   const marks=K.compassMarks(player.yaw,45).filter(m=>m.label);compass.textContent=marks.sort((a,b)=>a.left-b.left).map(m=>m.label).join('    ');
  }
  function moveAxis(axis,delta){
@@ -153,11 +159,20 @@ function gameForgeVoxelBoot(){
   if(!moveAxis('y',velocity*dt)){grounded=before<0;velocity=0;}else grounded=false;
   if(keys.has('Space')&&grounded)jump();
   if(forest){const dirty=world.grow(dt,player);if(dirty.length){for(const id of dirty)rebuild(id);say('Uma muda cresceu!');save();}}
-  if(survival){S.tick(life,dt,world,player,!!(f||s));if(life.health<=0)revive();}
+  if(advanced){
+   if(A.tick(forge,dt)){say('Processamento do forno concluído.');save();}
+   if(mineRequest||keys.has('KeyE')){
+    const hit=target(),animal=survival?S.target(life,[player.x,player.y+1.58,player.z],dir()):null;
+    if(animal&&(!hit||animal.distance<hit.distance)){act('mine');mineRequest=false;mining=A.mining();}
+    else if(!hit||!U.canMine(gear,hit.id)){mineRequest=false;mining=A.mining();}
+    else if(A.advance(mining,hit,gear.active,dt)){act('mine');mineRequest=false;mining=A.mining();}
+   }else mining=A.mining();
+  }
+  if(survival){S.tick(life,dt,world,player,!!(f||s),advanced?A.defense(forge):0);if(life.health<=0)revive();}
   if(storage){const r=D.collect(stash,bag,player,dt);if(r.collected){bag=r.bag;syncDrops();say('Coletado: '+r.collected+' item(ns).');refreshBag();save();}}
   if(clock-saveAt>=5)save();
  }
- function clearInput(){keys.clear();touch.clear();}
+ function clearInput(){keys.clear();touch.clear();mineRequest=false;mining=A.mining();}
  function togglePause(){
   if(state!=='play')return;
   if(!paused)save();paused=!paused;clearInput();accumulator=0;
@@ -168,8 +183,9 @@ function gameForgeVoxelBoot(){
  const compass=document.createElement('div');compass.id='voxel-compass';
  compass.style.cssText='position:absolute;top:9px;left:50%;transform:translateX(-50%);background:#142534c4;color:white;font-size:14px;padding:5px 12px;border-radius:6px;pointer-events:none;white-space:pre';
  canvas.parentNode.append(compass);
+ const progress=document.createElement('progress');progress.id='voxel-mining-progress';progress.max=1;progress.value=0;progress.style.cssText='position:absolute;top:56%;left:40%;width:20%;pointer-events:none;display:none';canvas.parentNode.append(progress);
  const cross=document.createElement('div');cross.textContent='+';cross.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;color:white;text-shadow:0 1px 2px black;font-size:25px';canvas.parentNode.append(cross);
- const mineButton=button(buttons,'Minerar',()=>act('mine'));mineButton.id='voxel-mine';
+ const mineButton=button(buttons,'Minerar',requestMine);mineButton.id='voxel-mine';
  const placeButton=button(buttons,'Construir',()=>act('place'));placeButton.id='voxel-place';
  const selectButton=button(buttons,'Material: Terra',()=>selectMaterial(materials[(materials.indexOf(selected)+1)%materials.length]));
  function selectMaterial(id){if(!materials.includes(id))return;selected=id;selectButton.textContent='Material: '+E.NAMES[selected];refreshBag();updateHUD();if(resources)save();}
@@ -183,13 +199,14 @@ function gameForgeVoxelBoot(){
  function refreshBag(){
   selectButton.textContent='Material: '+E.NAMES[selected];
   if(!resources)return;
-  bagText.textContent=([...(forest?[1,2,3,4,5,6,7,8,10]:[1,2,3,4,5,6,7]),...(survival?[11]:[]),...(storage?[12]:[]),...(tools?[13,14,15,16]:[])]).map(id=>E.NAMES[id]+': '+E.count(bag,id)).join(' · ')+(tools?(gear.active?' · '+U.DEFS[gear.active].name+' '+gear.wear[gear.active]+'/'+U.DEFS[gear.active].max:' · Sem ferramenta'):(equipped?' · Picareta equipada':''));
+  bagText.textContent=([...(forest?[1,2,3,4,5,6,7,8,10]:[1,2,3,4,5,6,7]),...(survival?[11]:[]),...(storage?[12]:[]),...(tools?[13,14,15,16]:[]),...(advanced?[17,18,19,20,21,22,23]:[])]).map(id=>E.NAMES[id]+': '+E.count(bag,id)).join(' · ')+(tools?(gear.active?' · '+U.DEFS[gear.active].name+' '+gear.wear[gear.active]+'/'+U.DEFS[gear.active].max:' · Sem ferramenta'):(equipped?' · Picareta equipada':''));
   if(!inventoryPanel.hidden){
    recipeList.replaceChildren();
    for(const {recipe,index} of K.recipesAtStation(E.RECIPES,station)){
     if(recipe.output.id===12&&!storage)continue;
     if(recipe.output.id>=13&&!tools)continue;
-    const label=recipe.output.qty+' × '+(tools&&U.isTool(recipe.output.id)?U.DEFS[recipe.output.id].name:E.NAMES[recipe.output.id])+' ('+recipe.requires.map(r=>r.qty+' '+E.NAMES[r.id]).join(' + ')+')';
+    if(recipe.output.id>=17&&!advanced)continue;
+    const label=advanced&&A.RECIPES[index]?'Processar '+E.NAMES[recipe.output.id]+' · '+A.RECIPES[index].duration+' s · madeira/carvão':recipe.output.qty+' × '+(tools&&U.isTool(recipe.output.id)?U.DEFS[recipe.output.id].name:E.NAMES[recipe.output.id])+' ('+recipe.requires.map(r=>r.qty+' '+E.NAMES[r.id]).join(' + ')+')';
     const b=button(recipeList,label,()=>craftRecipe(index));b.dataset.recipe=String(index);b.style.margin='4px';
    }
    if(station!==0){const p=document.createElement('p');p.textContent='É necessário estar a até 3 blocos da estação colocada.';recipeList.append(p);}
@@ -213,6 +230,9 @@ function gameForgeVoxelBoot(){
   if(!resources||state!=='play'||paused)return;
   if(!storage&&E.RECIPES[index]?.output.id===12)return;
   if(!tools&&E.RECIPES[index]?.output.id>=13)return;
+  if(!advanced&&E.RECIPES[index]?.output.id>=17)return;
+  if(advanced&&E.RECIPES[index]?.output.id===23&&E.count(bag,23)>0){say('Você já possui armadura.');return;}
+  if(advanced&&A.RECIPES[index]){if(station!==5)return;const next=A.start(forge,bag,world,player,index);if(!next){say('Forno distante/ocupado ou faltam insumos e combustível.');return;}bag=next;save();refreshBag();say('Processamento iniciado.');return;}
   const result=tools?U.craft(gear,bag,index,station,world,player):E.craft(bag,index,station,world,player);
   if(!result.ok){say(result.reason==='owned'?'Você já possui uma ferramenta deste nível.':result.reason==='missing-materials'?'Faltam materiais.':result.reason==='inventory-full'?'Inventário cheio.':'Aproxime-se da estação correta.');return;}
   bag=result.inventory;say('Fabricado: '+E.NAMES[E.RECIPES[index].output.id]);save();refreshBag();updateHUD();
@@ -223,7 +243,7 @@ function gameForgeVoxelBoot(){
  }
  function equip(){
   if(!resources||state!=='play'||paused)return;
-  if(tools){U.equip(gear,bag);equipped=!!gear.active;say(equipped?U.DEFS[gear.active].name+' equipada':'Ferramenta guardada');save();refreshBag();return;}
+  if(tools){mineRequest=false;mining=A.mining();U.equip(gear,bag);equipped=!!gear.active;say(equipped?U.DEFS[gear.active].name+' equipada':'Ferramenta guardada');save();refreshBag();return;}
   if(E.count(bag,7)<1){say('Fabrique a picareta na bancada primeiro.');return;}
   equipped=!equipped;say(equipped?'Picareta equipada':'Picareta guardada');save();refreshBag();
  }
@@ -235,10 +255,11 @@ function gameForgeVoxelBoot(){
   }
  }
  if(survival){const food=button(buttons,'Comer (C)',eat);food.id='voxel-eat';}
+ if(advanced){const armor=button(buttons,'Armadura (H)',armorToggle);armor.id='voxel-armor';const collect=button(buttons,'Retirar do forno (J)',furnaceCollect);collect.id='voxel-furnace-collect';}
  if(tools){const repair=button(buttons,'Reparar picareta (R)',repairTool);repair.id='voxel-repair';}
  if(storage){const open=button(buttons,'Baú (B)',chestOpen);open.id='voxel-chest';const drop=button(buttons,'Soltar item (G)',dropSelected);drop.id='voxel-drop';}
  const saveButton=button(buttons,'Salvar',()=>{save();updateHUD();});saveButton.id='voxel-save';
- const action=touchBar.querySelector('[data-control="fire"]');action.textContent='MINERAR';action.addEventListener('click',()=>act('mine'));
+ const action=touchBar.querySelector('[data-control="fire"]');action.textContent='MINERAR';action.addEventListener('click',requestMine);
  const rightButtons=document.createElement('div');rightButtons.style.cssText='display:flex;flex-wrap:wrap;gap:4px;max-width:180px';touchBar.append(rightButtons);
  button(rightButtons,'PÔR',()=>act('place'));button(rightButtons,'PULAR',jump);button(rightButtons,'BLOCO',()=>selectButton.click());
  touchBar.querySelectorAll('.pad [data-control]').forEach(b=>{
@@ -252,10 +273,10 @@ function gameForgeVoxelBoot(){
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
   keys.add(e.code);if(e.repeat)return;
   if(e.code==='KeyP')togglePause();
-  if(e.code==='KeyE')act('mine');if(e.code==='KeyQ')act('place');
+  if(e.code==='KeyE')requestMine();if(e.code==='KeyQ')act('place');
   if(/^Digit[1-6]$/.test(e.code))selectMaterial(Number(e.code.slice(-1)));
   if(forest&&e.code==='Digit8')selectMaterial(8);if(forest&&e.code==='Digit0')selectMaterial(10);
-  if(e.code==='KeyI')toggleInventory();if(e.code==='KeyF')equip();if(tools&&e.code==='KeyR')repairTool();if(e.code==='KeyC')eat();if(storage&&e.code==='KeyB')chestOpen();if(storage&&e.code==='KeyG')dropSelected();if(storage&&e.code==='Digit9')selectMaterial(12);
+  if(e.code==='KeyI')toggleInventory();if(e.code==='KeyF')equip();if(tools&&e.code==='KeyR')repairTool();if(advanced&&e.code==='KeyH')armorToggle();if(advanced&&e.code==='KeyJ')furnaceCollect();if(e.code==='KeyC')eat();if(storage&&e.code==='KeyB')chestOpen();if(storage&&e.code==='KeyG')dropSelected();if(storage&&e.code==='Digit9')selectMaterial(12);
  });
  document.addEventListener('keyup',e=>keys.delete(e.code));
  let drag=null;
@@ -273,7 +294,7 @@ function gameForgeVoxelBoot(){
  });
  canvas.addEventListener('pointerup',e=>{
   if(!drag||drag.id!==e.pointerId)return;
-  if(drag.dist<5&&drag.type==='mouse')act(drag.button===2?'place':'mine');drag=null;
+  if(drag.dist<5&&drag.type==='mouse'){if(drag.button===2)act('place');else requestMine();}drag=null;
  });
  canvas.addEventListener('pointercancel',()=>drag=null);
  window.addEventListener('blur',()=>{clearInput();drag=null;if(state==='play')save();});
@@ -308,8 +329,9 @@ function gameForgeVoxelBoot(){
  if(forest)$('control-help').textContent+=' · 8 madeira · 0 muda · corte árvore com E';
  if(storage)$('control-help').textContent+=' · 9 baú · B abrir baú · G soltar bloco';
  if(tools)$('control-help').textContent+=' · F alternar picaretas · R reparar na bancada';
+ if(advanced)$('control-help').textContent+=' · E segurar para minerar · H armadura · J retirar forno';
  if(stored)$('start').textContent='Continuar mundo';
- window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.edits().length,selected,mode:resources?'resources':'creative',forest,tools:tools?JSON.parse(JSON.stringify(gear)):null,storage:storage?JSON.parse(JSON.stringify(stash)):null,survival:survival?JSON.parse(JSON.stringify(life)):null,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,chunks:meshes.size,target:target(),triangles:worldTriangles,visuals:visuals.snapshot()});
+ window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.edits().length,selected,mode:resources?'resources':'creative',forest,advanced:advanced?JSON.parse(JSON.stringify(forge)):null,mining:advanced?{...mining}:null,tools:tools?JSON.parse(JSON.stringify(gear)):null,storage:storage?JSON.parse(JSON.stringify(stash)):null,survival:survival?JSON.parse(JSON.stringify(life)):null,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,chunks:meshes.size,target:target(),triangles:worldTriangles,visuals:visuals.snapshot()});
  requestAnimationFrame(frame);
 }
 if(typeof globalThis!=='undefined')globalThis.gameForgeVoxelBoot=gameForgeVoxelBoot;

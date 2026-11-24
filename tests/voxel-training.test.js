@@ -50,7 +50,7 @@ test('GF-TRAIN-22: negação recente remove requisito específico sem bloquear o
 test('GF-TRAIN-22: avisos distinguem prototipo de mecânica implementada',()=>{
  const p=Trainer.inspect({genre:'rpg'},'','Minecraft com P2P, mundos salvos e chunks.');
  const t=Trainer.report(p);
- assert.match(t,/sem motor voxel completo/i);
+ assert.match(t,/não foi criado um motor voxel completo/i);
  assert.match(t,/P2P.*experimental/);
  assert.match(t,/pendente/);
  assert.match(t,/Prismal Voxel/);

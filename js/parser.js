@@ -30,7 +30,7 @@
       acts.push({title:'Ato '+(acts.length+1),start:next,end:Number(m[2])-1});next=Number(m[2]);
     }
     if(next!==spec.stages.length)return;
-    spec.campaign={version:1,acts,alternateEndings};
+    spec.campaignNarrative={version:1,acts,alternateEndings};
     spec.detected?.push('Campanha: '+acts.length+' ato(s) · '+(alternateEndings?'finais por decisões NPC':'final padrão'));
     spec.implementation?.applied?.push({id:'campaign-acts-endings',description:'Atos contíguos, histórico de decisões concluídas, epílogo e estatísticas finais',where:'Arena/FPS/RPG 3D'});
   }

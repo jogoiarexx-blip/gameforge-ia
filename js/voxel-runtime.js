@@ -33,8 +33,9 @@ function gameForgeVoxelBoot(){
  const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a)),clamp=(a,b,c)=>Math.max(b,Math.min(c,a));
  function getSaved(){
   let local=null;try{local=JSON.parse(localStorage.getItem(key));}catch{}
-  const candidates=[local,regionalRecord].filter(Boolean).sort((a,b)=>(b.regionRevision||0)-(a.regionRevision||0));
-  for(const record of candidates){const saved=W.readSave(JSON.stringify(record),cfg,E,S,D,U,A);if(saved){regionRevision=Math.max(regionRevision,record.regionRevision||0);return saved;}}
+  const revisionOf=r=>Number.isSafeInteger(r?.regionRevision)&&r.regionRevision>=0?r.regionRevision:0;
+  const candidates=[local,regionalRecord].filter(Boolean).sort((a,b)=>revisionOf(b)-revisionOf(a));
+  for(const record of candidates){const saved=W.readSave(JSON.stringify(record),cfg,E,S,D,U,A);if(saved){regionRevision=Math.max(regionRevision,revisionOf(record));return saved;}}
   return null;
  }
  function say(s){notice=s;noticeUntil=clock+3;$('message').textContent=s;}

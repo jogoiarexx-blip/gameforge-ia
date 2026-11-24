@@ -39,7 +39,7 @@ def run():
                 game,url=server(dest)
                 try:
                     page.close()
-                    ctx=browser.new_context(viewport={'width':1200,'height':950'})
+                    ctx=browser.new_context(viewport={'width':1200,'height':950})
                     errors=[]
                     def watch(pg):
                         pg.on('pageerror',lambda e:errors.append(str(e)))

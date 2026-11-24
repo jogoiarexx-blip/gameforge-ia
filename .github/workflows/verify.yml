@@ -99,6 +99,8 @@ jobs:
         run: python tests/browser-gf-voxel-08.py
       - name: GF-VOXEL-09 — mundo grande, atlas, greedy e worker
         run: python tests/browser-gf-voxel-09.py
+      - name: GF-VOXEL-10 — editor de atlas PNG/WEBP e vegetação
+        run: python tests/browser-gf-voxel-10.py
       - name: Salvar capturas do navegador para auditoria
         if: always()
         uses: actions/upload-artifact@v4

@@ -107,6 +107,8 @@ jobs:
         run: python tests/browser-gf-voxel-12.py
       - name: GF-VOXEL-13 — mundo 4096 e recuperação regional
         run: python tests/browser-gf-voxel-13.py
+      - name: GF-VOXEL-14 — biomas e texturas naturais
+        run: python tests/browser-gf-voxel-14.py
       - name: Salvar capturas do navegador para auditoria
         if: always()
         uses: actions/upload-artifact@v4

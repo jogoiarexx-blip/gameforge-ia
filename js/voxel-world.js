@@ -202,7 +202,7 @@ function gameForgeVoxelWorldFactory(K){
    const resources=config.mode==='resources',forest=resources&&config.forest===true;
    if(forest?(s.forest!==true||!Array.isArray(s.trees)):(s.forest===true||s.edits.some(e=>e[3]===8)))return null;
    if(resources){
-    if(s.mode!=='resources'||!E?.valid(s.bag)||typeof s.equipped!=='boolean'||
+    if(s.mode!=='resources'||!E?.valid(s.bag)||(!forest&&s.bag.some(v=>v&&v.id>7))||typeof s.equipped!=='boolean'||
      (s.equipped&&E.count(s.bag,7)<1)||!int(s.selected)||s.selected<1||!(forest?[1,2,3,4,5,6,8,10]:[1,2,3,4,5,6]).includes(s.selected))return null;
    }else if(s.mode==='resources'||s.edits.some(e=>e[3]>3))return null;
    const world=create(config.seed,s.edits,{forest,...(forest?{trees:s.trees}:{})});

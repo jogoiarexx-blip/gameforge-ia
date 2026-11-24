@@ -11,7 +11,7 @@ function mount({seed,onChange}){
  const message=t=>$('atlas-status').textContent=t;
  function put(context,bytes,w,h){const img=context.createImageData(w,h);img.data.set(bytes);context.putImageData(img,0,0);}
  function render(){put(ctx,data,A.WIDTH,A.HEIGHT);put(tc,A.extract(data,selected()),A.TILE,A.TILE);$('atlas-undo').disabled=!history.length;}
- function checkpoint(){history.push({data:data.slice(),custom});if(history.length>20)history.shift();}
+ function checkpoint(){importVersion++;history.push({data:data.slice(),custom});if(history.length>20)history.shift();}
  function changed(){custom=true;$('textures').checked=true;render();onChange();message('Textura personalizada. Gere novamente a prévia para aplicar.');}
  function color(){const hex=$('atlas-color').value;return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16),255];}
  function point(e){const b=tile.getBoundingClientRect();return [Math.max(0,Math.min(15,Math.floor((e.clientX-b.left)*16/b.width))),Math.max(0,Math.min(15,Math.floor((e.clientY-b.top)*16/b.height)))];}
@@ -38,7 +38,6 @@ function mount({seed,onChange}){
    bitmap=await createImageBitmap(file);
    if(version!==importVersion)return;
    if(bitmap.width>2048||bitmap.height>2048||bitmap.width<1||bitmap.height<1)throw Error('Dimensões devem estar entre 1 e 2048 pixels.');
-   if(whole&&bitmap.width!==A.WIDTH&&bitmap.width/bitmap.height!==2)throw Error('O atlas inteiro deve ter proporção 2:1.');
    if(whole&&bitmap.width!==bitmap.height*2)throw Error('O atlas inteiro deve ter proporção 2:1.');
    const w=whole?A.WIDTH:A.TILE,h=whole?A.HEIGHT:A.TILE,cv=document.createElement('canvas');cv.width=w;cv.height=h;
    const c=cv.getContext('2d');c.imageSmoothingEnabled=false;c.drawImage(bitmap,0,0,w,h);

@@ -14,7 +14,7 @@ function gameForgeVoxelBoot(){
  scene.background=new T.Color(0x90b7d1);scene.fog=new T.Fog(0x90b7d1,30,92);
  const size=[64,128,256].includes(cfg.size)?cfg.size:64,landscape=cfg.landscape===true,textured=cfg.textures===true,streamed=size>64||landscape||textured;
  const M=gameForgeVoxelMesherFactory(),X=gameForgeVoxelTextureFactory(K);
- const material=textured?X.material(T,cfg.seed):new T.MeshBasicMaterial({vertexColors:true});
+ const material=textured?X.material(T,cfg.seed,cfg.atlas):new T.MeshBasicMaterial({vertexColors:true});
  const meshes=new Map(),versions=new Map(),queued=new Set();let wanted=new Set(),streamKey='',epoch=0,worker=null,inflight=null,workerMode='inactive',workerCompleted=0,quality=['low','medium','high'].includes(cfg.quality)?cfg.quality:'medium';
  let world,player,velocity=0,grounded=false,mined=0,placed=0,selected=2;
  let bag=E.initial(),equipped=false,station=0,life=S.initial(),stash=D.initial(),activeChest=null,gear=U.initial(),nextMineAt=0,forge=A.initial(),mining=A.mining(),mineRequest=false;

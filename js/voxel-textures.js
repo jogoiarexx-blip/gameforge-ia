@@ -21,22 +21,23 @@ function gameForgeVoxelTextureFactory(K){
   }
   return {data,width:W,height:H,tileSize:TILE,columns:COLS,rows:ROWS};
  }
- function material(T,seed,custom){
+ function material(T,seed,custom,animated=false){
   const a=generate(seed);if(custom){const F=typeof gameForgeVoxelAtlasFactory==='function'?gameForgeVoxelAtlasFactory:typeof require==='function'?require('./voxel-atlas.js'):null;a.data=F().decode(custom);}
   const map=new T.DataTexture(a.data,a.width,a.height,T.RGBAFormat);
   map.colorSpace=T.SRGBColorSpace;map.magFilter=T.NearestFilter;map.minFilter=T.NearestFilter;map.generateMipmaps=false;map.needsUpdate=true;
   const m=new T.MeshBasicMaterial({map,vertexColors:true});
+  const waterTime={value:0};m.userData.waterTime=waterTime;
   m.onBeforeCompile=shader=>{
    shader.vertexShader='attribute float voxelTile; varying float vVoxelTile;\n'+shader.vertexShader;
    shader.vertexShader=shader.vertexShader.replace('#include <uv_vertex>','#include <uv_vertex>\n vVoxelTile=voxelTile;');
-   shader.fragmentShader='varying float vVoxelTile;\n'+shader.fragmentShader;
+   shader.uniforms.gfWaterTime=waterTime;shader.fragmentShader='varying float vVoxelTile; uniform float gfWaterTime;\n'+shader.fragmentShader;
    shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',[
     'vec2 tileIndex=vec2(mod(vVoxelTile,8.0),floor(vVoxelTile/8.0));',
     'vec2 atlasUV=(tileIndex*16.0+vec2(0.5)+fract(vMapUv)*15.0)/vec2(128.0,64.0);',
-    'diffuseColor *= texture2D(map,atlasUV);'
+    'diffuseColor *= texture2D(map,atlasUV);',animated?'if(abs(vVoxelTile-26.0)<0.1) diffuseColor.rgb *= 0.91+0.09*sin(vMapUv.x*3.0+vMapUv.y*2.0+gfWaterTime*2.0);':''
    ].join('\n'));
   };
-  m.customProgramCacheKey=()=> 'gf-voxel-atlas-v1';
+  m.customProgramCacheKey=()=> 'gf-voxel-atlas-v1-'+animated;
   return m;
  }
  return {generate,tile,material};

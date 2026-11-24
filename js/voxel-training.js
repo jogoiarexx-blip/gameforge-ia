@@ -20,32 +20,32 @@ const patterns=Object.freeze([
  {id:'chunk-stream',title:'Streaming leve e proteção de jobs de chunk',regex:/\b(chunks?|streaming|carregamento de terreno|fronteiras? de blocos|fronteiras? de chunks?|workers?|mundo infinito|travar ao andar|mundo carregar)\b/,
   status:'prototipo',contract:'GameForgeVoxelKit.streamRequests, batchEdits, meshJobValid',
   test:'tests/voxel-kit.test.js',next:'Ligar workers de meshing, descarte de geometria GPU e revisão das bordas no runtime'},
- {id:'world-save',title:'Persistência durável e recuperação do mundo',regex:/\b(salvamento|salvar mundo|salvar progresso|persistencia|persistir|reconexao|restaurar mundo|recuperar mundo|perda de progresso|backup|autosave|save)\b/,
+ {id:'world-save',title:'Persistência durável e recuperação do mundo',regex:/\b(salvamento|salvar mundo|salvar progresso|persistencia|persistir|reconexao|restaurar mundo|recuperar mundo|recuperacao de mundo|mundos? salvos?|perda de progresso|backup|autosave|save)\b/,
   status:'pendente',contract:'GameForge tem save de campanhas; não há persistência voxel completa por blocos/chunks',
   test:'tests/voxel-training.test.js',next:'Versionar schema de mundo, atomicidade de saves e recuperação apenas de snapshot íntegro mais recente'},
  {id:'coop-p2p',title:'Cooperação P2P, convidados e baús compartilhados',regex:/\b(p2p|webrtc|multiplayer|cooperativo|coop|amigos?|convidados?|baus? compartilhados?|chat de jogo|codigo de convite)\b/,
   status:'pendente',contract:'Prismal Voxel trata P2P como experimental; não há sala WebRTC certificada no GameForge',
   test:'tests/voxel-training.test.js',next:'Separar simulação anfitrião/cliente; sequências/revisões de inventário; sinalização necessária e testes longos'},
- {id:'mobile',title:'Controle mobile e distância de renderização',regex:/\b(celulares?|mobile|android|touch|toque|fps baixo|fps no celular|desempenho mobile|fraco|leve|otimizacao|otimizar)\b/,
+ {id:'mobile',title:'Controle mobile e distância de renderização',regex:/\b(celular(?:es)?|mobile|android|touch|toque|fps no celular|desempenho mobile)\b/,
   status:'parcial',contract:'GameForge tem controles de toque; GameForgeVoxelKit prevê raio de chunks menor no mobile',
   test:'tests/voxel-kit.test.js',next:'Benchmark em aparelho real, ajuste adaptativo de pixelRatio, visibilidade de chunks e orçamento GPU'},
- {id:'fps-metrics',title:'Medição de FPS, 1% low e p95',regex:/\b(fps|benchmark|desempenho|performance|p95|1% low|frame time|draw calls|f3)\b/,
+ {id:'fps-metrics',title:'Medição de FPS, 1% low e p95',regex:/\b(medir fps|contador de fps|fps baixo|fps no celular|painel f3|benchmark|desempenho|performance|p95|1% low|frame time|draw calls|\bf3)\b/,
   status:'prototipo',contract:'GameForgeVoxelKit.frameMetrics gera FPS médio, 1% low e p95 sem telemetria remota',
   test:'tests/voxel-kit.test.js',next:'Expor painel de diagnóstico e armazenar amostras reais do loop de renderização'},
- {id:'mining-building',title:'Mineração e construção livre de blocos',regex:/\b(mineracao|minerar|quebrar blocos?|colocar blocos?|construir|construcao|casas? de blocos?|blocos destrutiveis|destruir blocos?)\b/,
+ {id:'mining-building',title:'Mineração e construção livre de blocos',regex:/\b(mineracao|minerar|quebrar blocos?|colocar blocos?|construir|construcao|construcoes?|criacao de casas?|casas? de blocos?|blocos destrutiveis|destruicao de blocos?|destruir blocos?)\b/,
   status:'pendente',contract:'Geração/edição de dados voxel existe no kit, mas falta gameplay de mineração/colocação',
   test:'tests/voxel-kit.test.js',next:'Implementar DDA raycast, colisão de blocos, controle de alcance, inventário e atualização da malha'}
 ]);
 const isVoxel=(gdd='',command='')=>/\b(voxel|minecraft|mundo de blocos|blocos 3d|prismal voxel|mundo prisma)\b/.test(normalize(gdd+' '+command));
 const denied=(line,id)=>{
  const topic=id==='coop-p2p'?'(?:p2p|multiplayer|coop|cooperativo|webrtc|amigo)':
-  id==='craft-stations'?'(?:craft|bancada|forno|receitas?|fabricar)':
+  id==='craft-stations'?'(?:craft(?:ing|ar)?|bancada|forno|receitas?|fabricar)':
   id==='world-save'?'(?:salvar|salvamento|save|backup)':
   id==='mobile'?'(?:celular|mobile|touch|toque|android)':
   id==='tree-replant'?'(?:arvores?|mudas?|replantar)':
   id==='mining-building'?'(?:mineracao|minerar|construir|blocos destrutiveis)':
   id==='chunk-stream'?'(?:chunks?|workers?|streaming|carregamento)':
-  id==='fps-metrics'?'(?:fps|benchmark|performance|p95)':
+  id==='fps-metrics'?'(?:medir\\s+fps|contador\\s+de\\s+fps|benchmark|performance|p95)':
   id==='waypoint'?'(?:bussola|navegacao|waypoint|ir para casa)':'(?:voxel|minecraft|mundo de blocos)';
  return new RegExp('\\b(?:sem|nao quero|nao usar|dispensar|evitar|excluir|desativar)\\s+(?:(?:o|a|os|as|um|uma)\\s+)?'+topic+'\\b').test(line);
 };

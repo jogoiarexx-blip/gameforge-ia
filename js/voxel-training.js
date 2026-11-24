@@ -29,7 +29,7 @@ const patterns=Object.freeze([
  {id:'mobile',title:'Controle mobile e distância de renderização',regex:/\b(celular(?:es)?|mobile|android|touch|toque|fps no celular|desempenho mobile)\b/,
   status:'parcial',contract:'GameForge tem controles de toque; GameForgeVoxelKit prevê raio de chunks menor no mobile',
   test:'tests/voxel-kit.test.js',next:'Benchmark em aparelho real, ajuste adaptativo de pixelRatio, visibilidade de chunks e orçamento GPU'},
- {id:'fps-metrics',title:'Medição de FPS, 1% low e p95',regex:/\b(medir fps|contador de fps|fps baixo|fps no celular|painel f3|benchmark|desempenho|performance|p95|1% low|frame time|draw calls|\bf3)\b/,
+ {id:'fps-metrics',title:'Medição de FPS, 1% low e p95',regex:/\b(medir fps|medidor(?: de)? fps|contador de fps|fps baixo|fps no celular|painel f3|benchmark|desempenho|performance|p95|1% low|frame time|draw calls|\bf3)\b/,
   status:'prototipo',contract:'GameForgeVoxelKit.frameMetrics gera FPS médio, 1% low e p95 sem telemetria remota',
   test:'tests/voxel-kit.test.js',next:'Expor painel de diagnóstico e armazenar amostras reais do loop de renderização'},
  {id:'mining-building',title:'Mineração e construção livre de blocos',regex:/\b(mineracao|minerar|quebrar blocos?|colocar blocos?|construir|construcao|construcoes?|criacao de casas?|casas? de blocos?|blocos destrutiveis|destruicao de blocos?|destruir blocos?)\b/,

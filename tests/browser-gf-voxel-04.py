@@ -44,6 +44,7 @@ def run():
                     tele=lambda:page.evaluate('window.__gameforgeTelemetry()')
                     count=lambda:sum(s['qty'] for s in tele()['inventory'] if s and s['id']==11)
                     assert count()==3
+                    page.wait_for_function("window.__gameforgeTelemetry().visuals.actors>0 && window.__gameforgeTelemetry().visuals.parts>10")
                     page.locator('#voxel-eat').click()
                     assert count()==2
                     assert tele()['survival']['hunger']>99
@@ -66,6 +67,7 @@ def run():
                     other.wait_for_function("window.__gameforgeTelemetry?.().survival!=null",timeout=30000)
                     other.locator('#start').click()
                     other.wait_for_function("window.__gameforgeTelemetry().survival.time>=80 && window.__gameforgeTelemetry().survival.animals.some(a=>a.kind==='shade')",timeout=30000)
+                    other.wait_for_function("window.__gameforgeTelemetry().visuals.actors===window.__gameforgeTelemetry().survival.animals.length")
                     assert not errors,errors
                     print('GF-VOXEL-04: alimentação, pausa, restauração e transição noturna em jogo exportado')
                 finally:game.shutdown()

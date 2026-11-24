@@ -1,0 +1,31 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {source}=require('../vendor/three-source.js');
+const T=new Function(source+'\nreturn THREE;')();
+const create=require('../js/voxel-actors.js');
+test('GF-VOXEL-05: modelos articulados compartilham geometria e removem atores antigos',()=>{
+ const V=create(T),scene=new T.Scene(),animals=[{id:0,kind:'sheep',x:1,y:51,z:2,hp:2},{id:4,kind:'shade',x:3,y:51,z:4,hp:3}];
+ V.sync(scene,animals,0,{x:0,z:0});
+ assert.equal(V.snapshot().actors,2);
+ assert.ok(V.snapshot().parts>=20);
+ const geometries=new Set();scene.traverse(n=>{if(n.isMesh)geometries.add(n.geometry);});
+ assert.equal(geometries.size,1);
+ animals[0].x+=.15;V.sync(scene,animals,.1,{x:0,z:0});
+ const legs=scene.children[0].children.filter(n=>n.name==='leg');
+ assert.equal(legs.length,4);assert.ok(legs.some(n=>Math.abs(n.rotation.x)>.1));
+ V.sync(scene,[animals[1]],.2,{x:0,z:0});assert.equal(scene.children.length,1);
+ V.reset(scene);assert.equal(scene.children.length,0);assert.equal(V.snapshot().actors,0);
+});
+test('GF-VOXEL-05: ferramenta, bloco e arco de ação, overlay não altera estado do renderer',()=>{
+ const V=create(T);
+ const base={time:0,active:true,equipped:false,selected:2,available:true,moving:false};
+ V.resize(.6);V.pose(base);assert.equal(V.snapshot().held,'block');
+ V.pose({...base,equipped:true});assert.equal(V.snapshot().held,'pickaxe');
+ assert.ok(V.swing(0,'mine'));
+ V.pose({...base,time:.15,equipped:true});assert.ok(V.snapshot().swingAngle<-.8);
+ V.pose({...base,time:.31,equipped:true});assert.equal(V.snapshot().swingAngle,0);
+ V.pose({...base,available:false});assert.equal(V.snapshot().held,'hand');
+ const calls=[];const renderer={autoClear:true,clearDepth(){calls.push('depth');},render(scene,camera){assert.equal(this.autoClear,false);assert.ok(camera.isPerspectiveCamera);calls.push('render');}};
+ V.render(renderer);assert.deepEqual(calls,['depth','render']);assert.equal(renderer.autoClear,true);
+ V.pose({...base,active:false});V.render(renderer);assert.equal(calls.length,2);
+});

@@ -78,6 +78,9 @@ function gameForgeVoxelActorsFactory(T){
  part(tool,'head',[.49,.10,.10],[0,.54,0],0x9ea6b3);
  for(const x of [-.25,.25])part(tool,'tip',[.10,.17,.11],[x,.48,0],0x7a8999);
  tool.rotation.z=-.32;
+ const axe=pivot(hand,'axe',[0,.10,-.08]);part(axe,'handle',[.075,.64,.075],[0,.23,0],0x825c37);part(axe,'blade',[.30,.24,.10],[.11,.48,0],0xbf8756);axe.rotation.z=-.32;
+ const shovel=pivot(hand,'shovel',[0,.10,-.08]);part(shovel,'handle',[.075,.60,.075],[0,.23,0],0x825c37);part(shovel,'blade',[.25,.28,.10],[0,.60,0],0xbf8756);shovel.rotation.z=-.32;
+ const sword=pivot(hand,'sword',[0,.10,-.08]);part(sword,'grip',[.09,.23,.09],[0,.10,0],0x825c37);part(sword,'guard',[.29,.07,.09],[0,.24,0],0x9ea6b3);part(sword,'blade',[.14,.65,.07],[0,.59,0],0xd3dce5);sword.rotation.z=-.32;
  const block=part(hand,'held-block',[.23,.23,.23],[0,.18,-.13],0x947654);
  const blockColors={1:0x74a64c,2:0x93623d,3:0x8a9399,4:0x9e7538,5:0x505963,6:0xbf5337,8:0x714721,10:0x6bb63a,12:0xb98537};
  let started=-100,action='none',actions=0,shown=false,held='hand',bob=0;
@@ -87,8 +90,8 @@ function gameForgeVoxelActorsFactory(T){
  }
  function pose({time,active,equipped,toolId=7,selected,available,moving}){
   shown=!!active;hand.visible=shown;
-  tool.visible=shown&&!!equipped;block.visible=shown&&!equipped&&!!available&&!!blockColors[selected];
-  held=tool.visible?'pickaxe':block.visible?'block':'hand';
+  tool.visible=shown&&!!equipped&&![17,18,19].includes(toolId);axe.visible=shown&&!!equipped&&toolId===17;shovel.visible=shown&&!!equipped&&toolId===18;sword.visible=shown&&!!equipped&&toolId===19;block.visible=shown&&!equipped&&!!available&&!!blockColors[selected];
+  held=axe.visible?'axe':shovel.visible?'shovel':sword.visible?'sword':tool.visible?'pickaxe':block.visible?'block':'hand';
   if(tool.visible){const color=toolId===13?0x9b7446:toolId===14?0xd3dce5:0x9ea6b3;for(const p of tool.children)if(p.name==='head'||p.name==='tip')p.material=mat(color);}
   if(block.visible)block.material=mat(blockColors[selected]);
   const progress=clamp((time-started)/.30,0,1),arc=progress<1?Math.sin(progress*Math.PI):0;

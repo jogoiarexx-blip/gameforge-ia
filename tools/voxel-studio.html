@@ -13,9 +13,13 @@
 <label style="display:flex;gap:8px;align-items:center"><input id="storage" type="checkbox" style="width:auto"> Baús e itens no chão (modo coleta)</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="tools" type="checkbox" style="width:auto"> Ferramentas duráveis e minério (ativa floresta)</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="advanced" type="checkbox" style="width:auto"> Equipamentos avançados (ativa ferramentas e floresta)</label>
+<label for="size">Dimensões do mundo</label><select id="size" style="width:100%;padding:10px;background:#233a51;color:white;border-radius:8px"><option value="64">64 × 64 (original)</option><option value="128">128 × 128 (4× área)</option><option value="256">256 × 256 (16× área)</option></select>
+<label style="display:flex;gap:8px;align-items:center"><input id="landscape" type="checkbox" style="width:auto"> Biomas, montanhas, rios e cavernas</label>
+<label style="display:flex;gap:8px;align-items:center"><input id="textures" type="checkbox" style="width:auto"> Texturas procedurais pixeladas</label>
+<label for="quality">Distância de renderização</label><select id="quality" style="width:100%;padding:10px;background:#233a51;color:white;border-radius:8px"><option value="low">Baixa</option><option value="medium" selected>Média</option><option value="high">Alta</option></select>
 <button id="build">Criar prévia jogável</button><button id="download" disabled>Exportar jogo em ZIP</button>
 <p id="status" role="status">Escolha a seed e crie seu primeiro mundo.</p>
-<p><strong>Incluído:</strong> mundo finito de 64 × 64 blocos, três materiais, construção/mineração criativa, colisão, toque, bússola, save local no jogo exportado.</p>
+<p><strong>Incluído:</strong> mundos finitos de 64, 128 ou 256 blocos por lado, três materiais, construção/mineração criativa, colisão, toque, bússola, save local no jogo exportado.</p>
 <p>No modo de coleta: inventário, bancada, forno, tijolo e picareta. Floresta opcional: madeira, mudas e replantio. Sobrevivência opcional: dia/noite, fome, vida, alimentação e criaturas articuladas. Mãos e ferramentas animadas em todos os modos. Sem mundo infinito ou P2P. A prévia isolada não mantém saves. O ZIP funciona offline e requer WebGL. Extraia todos os arquivos juntos.</p>
 </aside><section><iframe id="preview" title="Prévia do jogo voxel" sandbox="allow-scripts allow-modals" referrerpolicy="no-referrer"></iframe></section></main>
 <script src="../js/voxel-kit.js"></script>
@@ -26,6 +30,9 @@
 <script src="../js/voxel-storage.js"></script>
 <script src="../js/voxel-tools.js"></script>
 <script src="../js/voxel-advanced.js"></script>
+<script src="../js/voxel-landscape.js"></script>
+<script src="../js/voxel-textures.js"></script>
+<script src="../js/voxel-mesher.js"></script>
 <script src="../js/voxel-runtime.js"></script>
 <script src="../vendor/three-source.js"></script>
 <script src="../js/generator.js"></script>
@@ -38,12 +45,12 @@ function build(){
  try{
   const seed=$('seed').valueAsNumber;
   if(!Number.isSafeInteger(seed))throw Error('Informe uma seed inteira.');
-  files=GameForgeVoxelBuilder.generate({title:$('title').value,seed,mode:$('mode').value,forest:$('forest').checked,survival:$('survival').checked,storage:$('storage').checked,tools:$('tools').checked,advanced:$('advanced').checked});
+  files=GameForgeVoxelBuilder.generate({title:$('title').value,seed,mode:$('mode').value,forest:$('forest').checked,survival:$('survival').checked,storage:$('storage').checked,tools:$('tools').checked,advanced:$('advanced').checked,size:Number($('size').value),landscape:$('landscape').checked,textures:$('textures').checked,quality:$('quality').value});
   $('preview').srcdoc=GameForgeGenerator.shell($('title').value,files['style.css'],files['game.js'],true,files);
   $('download').disabled=false;$('status').textContent='Prévia criada. Clique em Jogar agora dentro dela.';
  }catch(e){files=null;$('download').disabled=true;$('status').textContent=e.message;}
 }
-for(const id of ['seed','title','mode','forest','survival','storage','tools','advanced'])$(id).addEventListener('input',()=>{$('download').disabled=true;files=null;$('status').textContent='Clique em Criar prévia para aplicar as alterações.';});
+for(const id of ['seed','title','mode','forest','survival','storage','tools','advanced','size','landscape','textures','quality'])$(id).addEventListener('input',()=>{$('download').disabled=true;files=null;$('status').textContent='Clique em Criar prévia para aplicar as alterações.';});
 $('build').addEventListener('click',build);
 $('download').addEventListener('click',()=>{
  if(!files)return;

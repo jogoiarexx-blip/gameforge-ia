@@ -47,6 +47,7 @@ def run():
                 page.locator('#atlas-import-tile').set_input_files({'name':'wood.webp','mimeType':'image/webp','buffer':image('image/webp','#aa7733')})
                 page.wait_for_function("(()=>{const d=document.querySelector('#texture-tile').getContext('2d').getImageData(0,0,1,1).data;return Math.abs(d[0]-170)<7&&Math.abs(d[1]-119)<7&&Math.abs(d[2]-51)<7})()")
                 assert page.locator('#textures').is_checked()
+                page.locator('#details').check()
                 page.locator('#build').click()
                 with page.expect_download(timeout=45000) as dl:page.locator('#download').click()
                 path=Path(tmp)/'world.zip';dl.value.save_as(path)
@@ -64,6 +65,7 @@ def run():
                     page.locator('#start').click()
                     page.wait_for_function("window.__gameforgeTelemetry().triangles>0",timeout=45000)
                     assert page.evaluate("GAME_SPEC.voxel.atlas.length") == 65536
+                    page.wait_for_function("window.__gameforgeTelemetry().details && window.__gameforgeTelemetry().foliageInstances>0",timeout=45000)
                     assert not errors,errors
                     print('GF-VOXEL-10: editor, undo, PNG/WEBP, atlas integrado e ZIP jogável')
                 finally:game.shutdown()

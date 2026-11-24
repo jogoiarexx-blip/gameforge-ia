@@ -154,6 +154,7 @@ function gameForgeUrban3DBoot(){
   state='play';paused=false;acc=0;last=0;keys.clear();clearTouches();
   $('pause').textContent='Pausar';
   fireCooldown=0;attackCooldown=0;reloadRemaining=0;invulnerable=0;shotNoise=0;deathRemaining=0;
+  actorAnimation.player?.reset?.();actorAnimation.enemy?.reset?.();
   hero.position.set(progress.x,0,progress.z);
   guard.visible=!progress.guardDefeated||deathRemaining>0;
   guard.position.set(0,0,1.5);
@@ -220,12 +221,12 @@ function gameForgeUrban3DBoot(){
  function fire(){
   if(state!=='play'||paused||fireCooldown>0||reloadRemaining>0)return;
   if(progress.ammo<=0){notice('Sem balas no pente. Pressione R.');return;}
-  fireCooldown=.25;progress.ammo--;shotNoise=1.1;
+  fireCooldown=.25;progress.ammo--;shotNoise=1.1;actorAnimation.player?.setState('attack');
   if(!progress.guardDefeated&&R.canHit(progress,guard.position,blockers)){
    progress.guardHp=Math.max(0,progress.guardHp-25);
    guardPhase=1;notice('Guarda atingido! '+progress.guardHp+' HP');
    if(progress.guardHp===0){
-    progress.guardDefeated=true;deathRemaining=actorAnimation.enemy?.map?.death ? .9 : 0;
+    progress.guardDefeated=true;deathRemaining=actorAnimation.enemy?.map?.death ? actorAnimation.enemy.duration('death')+.14 : 0;
     actorAnimation.enemy?.setState('death');guard.visible=deathRemaining>0;
     notice('Guarda neutralizado. Interaja com o armazém (E).');
    }
@@ -322,16 +323,16 @@ function gameForgeUrban3DBoot(){
   hero.userData.legs[1].rotation.x=-stride;
   hero.userData.legs[2].rotation.x=-stride*.6;
   hero.userData.legs[3].rotation.x=stride*.6;
-  actorAnimation.player?.setState(shotNoise>0?'attack':len>0?'walk':'idle');
+  actorAnimation.player?.setState(len>0?'walk':'idle');
   actorAnimation.player?.update(dt);
   if(!progress.guardDefeated){
    guardBrain=R.guardStep(guardBrain,{x:progress.x,z:progress.z,noise:len>0||shotNoise>0},dt,blockers);
    guard.position.x=guardBrain.x;guard.position.z=guardBrain.z;
    guard.rotation.y=-guardBrain.heading;
-   actorAnimation.enemy?.setState(guardBrain.canAttack?'attack':guardBrain.mode==='patrol'?'idle':'walk');
+   actorAnimation.enemy?.setState(guardBrain.mode==='patrol'?'idle':'walk');
    if(guardBrain.canAttack&&attackCooldown===0&&invulnerable===0){
     progress.health=Math.max(0,progress.health-12);
-    attackCooldown=1.15;invulnerable=.4;
+    attackCooldown=1.15;invulnerable=.4;actorAnimation.enemy?.setState('attack');actorAnimation.player?.setState('hit');
     notice('Você sofreu 12 de dano. Afaste-se do guarda!');
     save();
     if(progress.health===0){

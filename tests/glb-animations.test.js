@@ -122,3 +122,28 @@ test('GF-015 v2 morte urbana persiste em grupo independente após objetivo e nã
  assert.match(source,/deathOverlayPending=fallenGuards\.length>0/);
  assert.match(source,/if\(deathOverlayPending&&!fallenGuards\.length\)/);
 });
+
+test('GF-TRAIN-23: camada aditiva sobre canal constante não acumula e pode ser removida',()=>{
+ const T=three(),root=new T.Group(),bone=new T.Bone();bone.name='Spine';root.add(bone);
+ root.animations=[new T.AnimationClip('Idle',1,[new T.QuaternionKeyframeTrack('Spine.quaternion',[0,1],[0,0,0,1,0,0,0,1])])];
+ const anim=Animator.create(T,root),q=new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.12);
+ assert.equal(anim.setPoseLayer('Spine', {quaternion:q.toArray()}),true);
+ assert.equal(anim.setPoseLayer('Missing',{quaternion:q.toArray()}),false);
+ for(let i=0;i<120;i++)anim.update(1/60);
+ assert.ok(Math.abs(bone.quaternion.angleTo(new T.Quaternion())-.12)<1e-5);
+ anim.clearPoseLayers();anim.update(1/60);
+ assert.ok(bone.quaternion.angleTo(new T.Quaternion())<1e-5);
+ assert.equal(anim.setState('attack'),false);assert.equal(anim.state,'idle');
+ anim.dispose();
+});
+test('GF-TRAIN-23: morte é terminal, reinício libera novo personagem e ataque não usa clipe falso',()=>{
+ const T=three(),model=GLB.decode(T,fixture()),anim=Animator.create(T,model);
+ assert.equal(anim.setState('attack'),true);
+ assert.equal(anim.setState('attack'),false);
+ for(let i=0;i<12;i++)anim.update(.1);
+ assert.equal(anim.setState('attack'),true);
+ assert.equal(anim.setState('death'),true);
+ assert.equal(anim.setState('death'),false);
+ anim.reset();assert.equal(anim.state,'idle');assert.equal(anim.setState('walk'),true);
+ anim.dispose();
+});

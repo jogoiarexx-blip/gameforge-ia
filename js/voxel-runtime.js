@@ -26,9 +26,16 @@ function gameForgeVoxelBoot(){
  let worldTriangles=0,visualX=0,visualZ=0,frameSamples=[],perf=K.frameMetrics([]),perfAt=0,hudAt=0;
  let state='menu',paused=false,last=0,accumulator=0,clock=0,frames=0,saveAt=0,savedStatus='Ainda não salvo',notice='',noticeUntil=0;
  const dir=()=>[Math.sin(player.yaw)*Math.cos(player.pitch),Math.sin(player.pitch),-Math.cos(player.yaw)*Math.cos(player.pitch)];
- const key=W.saveKey(cfg);
+ const key=W.saveKey(cfg),regional=cfg.regional===true;
+ let checkpoint=null,regionalRecord=null,regionRevision=0,regionalReady=false;
+ if(regional){try{checkpoint=gameForgeVoxelRegionFactory().create(key,window.indexedDB);}catch{}}
  const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a)),clamp=(a,b,c)=>Math.max(b,Math.min(c,a));
- function getSaved(){try{return W.readSave(localStorage.getItem(key),cfg,E,S,D,U,A);}catch{return null;}}
+ function getSaved(){
+  let local=null;try{local=JSON.parse(localStorage.getItem(key));}catch{}
+  const candidates=[local,regionalRecord].filter(Boolean).sort((a,b)=>(b.regionRevision||0)-(a.regionRevision||0));
+  for(const record of candidates){const saved=W.readSave(JSON.stringify(record),cfg,E,S,D,U,A);if(saved){regionRevision=Math.max(regionRevision,record.regionRevision||0);return saved;}}
+  return null;
+ }
  function say(s){notice=s;noticeUntil=clock+3;$('message').textContent=s;}
  function discard(id){
   const plants=foliage.get(id);if(plants){scene.remove(plants);plants.dispose();foliage.delete(id);}
@@ -127,8 +134,13 @@ function gameForgeVoxelBoot(){
   if(state!=='play')return false;
   if(world.collides(player.x,player.y,player.z))return false;
   const record={version:1,title:cfg.title,seed:cfg.seed,...(size>64?{size}:{}),...(landscape?{landscape:true}:{}),...(details?{details:true}:{}),...(lighting?{lighting:true}:{}),player:{...player},edits:world.edits(),mined,placed,...(survival?{survival:life}:{}),...(storage?{storage:stash}:{}),...(tools?{tools:gear}:{}),...(advanced?{advanced:forge}:{}),...(resources?{mode:'resources',bag,equipped,selected,...(forest?{forest:true,trees:world.forestState()}: {})}:{})};
-  try{localStorage.setItem(key,JSON.stringify(record));savedStatus='Salvo neste navegador';saveAt=clock;return true;}
-  catch{savedStatus='Armazenamento indisponível';saveAt=clock;return false;}
+  if(regional){
+   regionRevision=Math.max(Date.now(),regionRevision+1);record.regionRevision=regionRevision;
+   regionalRecord=JSON.parse(JSON.stringify(record));
+   if(checkpoint&&regionalReady){checkpoint.enqueue(record);void checkpoint.flush().then(ok=>{if(ok&&checkpoint.status().committed>=record.regionRevision&&regionRevision===record.regionRevision)savedStatus='Salvo no IndexedDB';});}
+  }
+  try{localStorage.setItem(key,JSON.stringify(record));savedStatus=regional?'Cópia de emergência salva':'Salvo neste navegador';saveAt=clock;return true;}
+  catch{savedStatus=regional&&checkpoint&&regionalReady?'Checkpoint regional pendente':'Armazenamento indisponível';saveAt=clock;return false;}
  }
  function updateCamera(){
   const d=dir();camera.position.set(player.x,player.y+1.58,player.z);
@@ -381,7 +393,7 @@ function gameForgeVoxelBoot(){
  $('pause').addEventListener('click',togglePause);
  $('restart').addEventListener('click',()=>{
   if(!window.confirm('Apagar o progresso salvo deste mundo e começar novamente?'))return;
-  try{localStorage.removeItem(key);}catch{}clearInput();initialize(null);state='play';paused=false;
+  try{localStorage.removeItem(key);}catch{}regionalRecord=null;clearInput();initialize(null);state='play';paused=false;
   $('overlay').classList.add('hidden');$('pause').textContent='Pausar';savedStatus='Novo mundo';say('Novo mundo criado');save();
  });
  function frame(now){
@@ -411,7 +423,10 @@ function gameForgeVoxelBoot(){
  if(landscape)$('control-help').textContent+=' · 7 areia';
  if(lighting)$('control-help').textContent+=' · T tocha (Q coloca)';
  if(stored)$('start').textContent='Continuar mundo';
- window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.editCount(),selected,mode:resources?'resources':'creative',forest,advanced:advanced?JSON.parse(JSON.stringify(forge)):null,mining:advanced?{...mining}:null,tools:tools?JSON.parse(JSON.stringify(gear)):null,storage:storage?JSON.parse(JSON.stringify(stash)):null,survival:survival?JSON.parse(JSON.stringify(life)):null,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,chunks:meshes.size,mapSize:size,cache:world.cacheStats(),lighting:lightView?{...lightView.snapshot(),placed:world.torchCount()}:null,atmosphere:atmosphereView?.snapshot()||null,textured,landscape,details,performance:{...perf},foliageInstances:[...foliage.values()].reduce((n,m)=>n+m.count,0),stream:{quality,radius:streamed?radius():null,wanted:wanted.size,queued:queued.size,worker:workerMode,workerCompleted,terrainCompleted,center:K.chunkOf(player.x,player.z),keys:[...meshes.keys()],faces:[...meshes.values()].reduce((n,m)=>n+m.userData.faces,0),exposed:[...meshes.values()].reduce((n,m)=>n+m.userData.exposed,0)},target:target(),triangles:worldTriangles,visuals:visuals.snapshot()});
+ if(regional&&checkpoint){$('start').disabled=true;$('restart').disabled=true;
+  let timer;Promise.race([checkpoint.read(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Tempo limite IndexedDB')),4000);})]).then(record=>{regionalReady=true;regionalRecord=record;regionRevision=Math.max(regionRevision,record?.regionRevision||0);const saved=getSaved();if(saved){initialize(saved);$('start').textContent='Continuar mundo';}}).catch(()=>{regionalReady=false;}).finally(()=>{clearTimeout(timer);$('start').disabled=false;$('restart').disabled=false;});
+ }
+ window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.editCount(),selected,mode:resources?'resources':'creative',forest,advanced:advanced?JSON.parse(JSON.stringify(forge)):null,mining:advanced?{...mining}:null,tools:tools?JSON.parse(JSON.stringify(gear)):null,storage:storage?JSON.parse(JSON.stringify(stash)):null,survival:survival?JSON.parse(JSON.stringify(life)):null,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,regional:regional?{ready:regionalReady,revision:regionRevision,...(checkpoint?.status()||{})}:null,chunks:meshes.size,mapSize:size,cache:world.cacheStats(),lighting:lightView?{...lightView.snapshot(),placed:world.torchCount()}:null,atmosphere:atmosphereView?.snapshot()||null,textured,landscape,details,performance:{...perf},foliageInstances:[...foliage.values()].reduce((n,m)=>n+m.count,0),stream:{quality,radius:streamed?radius():null,wanted:wanted.size,queued:queued.size,worker:workerMode,workerCompleted,terrainCompleted,center:K.chunkOf(player.x,player.z),keys:[...meshes.keys()],faces:[...meshes.values()].reduce((n,m)=>n+m.userData.faces,0),exposed:[...meshes.values()].reduce((n,m)=>n+m.userData.exposed,0)},target:target(),triangles:worldTriangles,visuals:visuals.snapshot()});
  requestAnimationFrame(frame);
 }
 if(typeof globalThis!=='undefined')globalThis.gameForgeVoxelBoot=gameForgeVoxelBoot;

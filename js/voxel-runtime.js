@@ -12,7 +12,7 @@ function gameForgeVoxelBoot(){
  catch{$('overlay-title').textContent='WebGL indisponível';$('overlay-sub').textContent='Este protótipo requer WebGL. Nenhum save foi alterado.';$('start').disabled=true;return;}
  const scene=new T.Scene(),camera=new T.PerspectiveCamera(72,16/9,.05,145);
  scene.background=new T.Color(0x90b7d1);scene.fog=new T.Fog(0x90b7d1,30,92);
- const size=[64,128,256,512,1024].includes(cfg.size)?cfg.size:64,landscape=cfg.landscape===true,details=landscape&&cfg.details===true,atmosphere=cfg.atmosphere===true,lighting=cfg.lighting===true,textured=cfg.textures===true,streamed=size>64||landscape||textured||lighting;
+ const size=[64,128,256,512,1024,4096].includes(cfg.size)?cfg.size:64,landscape=cfg.landscape===true,details=landscape&&cfg.details===true,atmosphere=cfg.atmosphere===true,lighting=cfg.lighting===true,textured=cfg.textures===true,streamed=size>64||landscape||textured||lighting;
  const M=gameForgeVoxelMesherFactory(),X=gameForgeVoxelTextureFactory(K);
  const material=textured?X.material(T,cfg.seed,cfg.atlas,atmosphere):new T.MeshBasicMaterial({vertexColors:true});
  const lightView=lighting?gameForgeVoxelLightingFactory().install(T,material):null;

@@ -3,6 +3,7 @@ function gameForgeVoxelBoot(){
  'use strict';
  const T=THREE,K=gameForgeVoxelKitFactory(),W=gameForgeVoxelWorldFactory(K),cfg=GAME_SPEC.voxel;
  const E=gameForgeVoxelEconomyFactory(K),resources=cfg.mode==='resources',forest=resources&&cfg.forest===true,materials=forest?[1,2,3,4,5,6,8,10]:resources?[1,2,3,4,5,6]:[1,2,3];
+ const S=gameForgeVoxelSurvivalFactory(K,E),survival=resources&&cfg.survival===true;
  const $=id=>document.getElementById(id),canvas=$('game'),keys=new Set(),touch=new Set();
  let renderer;
  try{renderer=new T.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});}
@@ -11,12 +12,13 @@ function gameForgeVoxelBoot(){
  scene.background=new T.Color(0x90b7d1);scene.fog=new T.Fog(0x90b7d1,30,92);
  const material=new T.MeshBasicMaterial({vertexColors:true});
  const meshes=new Map();let world,player,velocity=0,grounded=false,mined=0,placed=0,selected=2;
- let bag=E.initial(),equipped=false,station=0;
+ let bag=E.initial(),equipped=false,station=0,life=S.initial();
+ const creatures=new Map(),animalGeometry=new T.BoxGeometry(.85,1.1,.75),animalMaterials={sheep:new T.MeshBasicMaterial({color:0xece6cc}),shade:new T.MeshBasicMaterial({color:0x9f435c})},daySky=new T.Color(0x90b7d1),nightSky=new T.Color(0x172943);
  let state='menu',paused=false,last=0,accumulator=0,clock=0,frames=0,saveAt=0,savedStatus='Ainda não salvo',notice='',noticeUntil=0;
  const dir=()=>[Math.sin(player.yaw)*Math.cos(player.pitch),Math.sin(player.pitch),-Math.cos(player.yaw)*Math.cos(player.pitch)];
  const key=W.saveKey(cfg);
  const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a)),clamp=(a,b,c)=>Math.max(b,Math.min(c,a));
- function getSaved(){try{return W.readSave(localStorage.getItem(key),cfg,E);}catch{return null;}}
+ function getSaved(){try{return W.readSave(localStorage.getItem(key),cfg,E,S);}catch{return null;}}
  function say(s){notice=s;noticeUntil=clock+3;$('message').textContent=s;}
  function rebuild(id){
   const [cx,cz]=id.split(',').map(Number),data=world.mesh(cx,cz);
@@ -36,6 +38,7 @@ function gameForgeVoxelBoot(){
   if(!player)throw Error('Sem ponto seguro de nascimento.');
   mined=saved?.mined||0;placed=saved?.placed||0;
   bag=resources?(saved?.bag||E.initial()):[];equipped=resources&&!!saved?.equipped;selected=saved?.selected||2;station=0;
+  life=saved?.survival||S.initial();if(survival){if(!saved)bag=E.change(bag,11,3);S.populate(life,world,player);syncCreatures();}
   velocity=0;grounded=false;clock=0;saveAt=0;accumulator=0;
   for(const id of world.chunkKeys())rebuild(id);
   resize();updateCamera();refreshBag();updateHUD();
@@ -43,7 +46,7 @@ function gameForgeVoxelBoot(){
  function save(){
   if(state!=='play')return false;
   if(world.collides(player.x,player.y,player.z))return false;
-  const record={version:1,title:cfg.title,seed:cfg.seed,player:{...player},edits:world.edits(),mined,placed,...(resources?{mode:'resources',bag,equipped,selected,...(forest?{forest:true,trees:world.forestState()}: {})}:{})};
+  const record={version:1,title:cfg.title,seed:cfg.seed,player:{...player},edits:world.edits(),mined,placed,...(survival?{survival:life}:{}),...(resources?{mode:'resources',bag,equipped,selected,...(forest?{forest:true,trees:world.forestState()}: {})}:{})};
   try{localStorage.setItem(key,JSON.stringify(record));savedStatus='Salvo neste navegador';saveAt=clock;return true;}
   catch{savedStatus='Armazenamento indisponível';saveAt=clock;return false;}
  }
@@ -51,10 +54,20 @@ function gameForgeVoxelBoot(){
   const d=dir();camera.position.set(player.x,player.y+1.58,player.z);
   camera.lookAt(player.x+d[0],player.y+1.58+d[1],player.z+d[2]);
  }
+ function syncCreatures(){
+  if(!survival)return;
+  for(const [id,m] of creatures)if(!life.animals.some(a=>a.id===id)){scene.remove(m);creatures.delete(id);}
+  for(const a of life.animals){let m=creatures.get(a.id);if(!m){m=new T.Mesh(animalGeometry,animalMaterials[a.kind]);scene.add(m);creatures.set(a.id,m);}m.position.set(a.x,a.y+.55,a.z);}
+  const dark=S.night(life);scene.background.copy(dark?nightSky:daySky);scene.fog.color.copy(scene.background);material.color.setScalar(dark?.53:1);
+ }
+ function eat(){if(!survival||state!=='play'||paused)return;const next=S.eat(life,bag);if(!next){say('Sem alimento ou fome já satisfeita.');return;}bag=next;say('Alimentado');refreshBag();save();updateHUD();}
+ function revive(){const p=world.spawn();if(!p)return false;player=p;S.respawn(life);velocity=0;grounded=false;clearInput();syncCreatures();say('Você renasceu; mundo e inventário preservados.');save();return true;}
  function target(){return world.ray([player.x,player.y+1.58,player.z],dir());}
  function act(kind){
   if(state!=='play'||paused)return false;
-  const hit=target();if(!hit){say('Aproxime-se de um bloco.');return false;}
+  const hit=target();
+  if(survival&&kind==='mine'){const a=S.target(life,[player.x,player.y+1.58,player.z],dir());if(a&&(!hit||a.distance<hit.distance)){const r=S.hit(life,a.id,bag,equipped);if(!r.ok)return false;bag=r.bag;syncCreatures();refreshBag();save();say('Criatura atingida');return true;}}
+  if(!hit){say('Aproxime-se de um bloco.');return false;}
   let dirty;
   if(resources){
    const result=E.edit(world,player,bag,hit,kind,selected,equipped);
@@ -67,10 +80,10 @@ function gameForgeVoxelBoot(){
   say(kind==='mine'?(hit.id===8||hit.id===9?'Madeira/folhas removidas':'Bloco removido'):selected===10?'Muda plantada: cresce em 20 s de jogo ativo.':'Bloco colocado');save();refreshBag();updateHUD();return true;
  }
  function updateHUD(){
-  $('health').textContent='100';$('score').textContent=String(mined+placed);
+  $('health').textContent=survival?String(Math.ceil(life.health)):'100';$('score').textContent=String(mined+placed);
   $('ammo').textContent=E.NAMES[selected]+(resources?' × '+E.count(bag,selected):'');$('level').textContent=String(cfg.seed);
-  $('timer').textContent=Math.floor(clock)+'s';
-  $('mission').textContent=(resources?'Coleta e fabricação':'Criativo')+' · removidos '+mined+' · colocados '+placed+' · '+world.edits().length+'/'+W.LIMIT+' edições';
+  $('timer').textContent=survival?('Dia '+(Math.floor(life.time/S.PERIOD)+1)+' · '+(S.night(life)?'Noite':'Dia')+' · Fome '+Math.ceil(life.hunger)+'%'):Math.floor(clock)+'s';
+  $('mission').textContent=(survival?'Sobrevivência':resources?'Coleta e fabricação':'Criativo')+' · removidos '+mined+' · colocados '+placed+' · '+world.edits().length+'/'+W.LIMIT+' edições';
   if(clock>noticeUntil)$('message').textContent=paused?'Pausado · '+savedStatus:('Seed '+cfg.seed+' · '+savedStatus);
   const marks=K.compassMarks(player.yaw,45).filter(m=>m.label);compass.textContent=marks.sort((a,b)=>a.left-b.left).map(m=>m.label).join('    ');
  }
@@ -100,6 +113,7 @@ function gameForgeVoxelBoot(){
   if(!moveAxis('y',velocity*dt)){grounded=before<0;velocity=0;}else grounded=false;
   if(keys.has('Space')&&grounded)jump();
   if(forest){const dirty=world.grow(dt,player);if(dirty.length){for(const id of dirty)rebuild(id);say('Uma muda cresceu!');save();}}
+  if(survival){S.tick(life,dt,world,player,!!(f||s));if(life.health<=0)revive();}
   if(clock-saveAt>=5)save();
  }
  function clearInput(){keys.clear();touch.clear();}
@@ -127,7 +141,7 @@ function gameForgeVoxelBoot(){
  function refreshBag(){
   selectButton.textContent='Material: '+E.NAMES[selected];
   if(!resources)return;
-  bagText.textContent=(forest?[1,2,3,4,5,6,7,8,10]:[1,2,3,4,5,6,7]).map(id=>E.NAMES[id]+': '+E.count(bag,id)).join(' · ')+(equipped?' · Picareta equipada':'');
+  bagText.textContent=([...(forest?[1,2,3,4,5,6,7,8,10]:[1,2,3,4,5,6,7]),...(survival?[11]:[])]).map(id=>E.NAMES[id]+': '+E.count(bag,id)).join(' · ')+(equipped?' · Picareta equipada':'');
   if(!inventoryPanel.hidden){
    recipeList.replaceChildren();
    for(const {recipe,index} of K.recipesAtStation(E.RECIPES,station)){
@@ -159,6 +173,7 @@ function gameForgeVoxelBoot(){
    const b=button(stationRow,label,()=>{station=id;refreshBag();});b.dataset.station=String(id);b.style.margin='4px';stationButtons[id]=b;
   }
  }
+ if(survival){const food=button(buttons,'Comer (C)',eat);food.id='voxel-eat';}
  const saveButton=button(buttons,'Salvar',()=>{save();updateHUD();});saveButton.id='voxel-save';
  const action=touchBar.querySelector('[data-control="fire"]');action.textContent='MINERAR';action.addEventListener('click',()=>act('mine'));
  const rightButtons=document.createElement('div');rightButtons.style.cssText='display:flex;flex-wrap:wrap;gap:4px;max-width:180px';touchBar.append(rightButtons);
@@ -177,7 +192,7 @@ function gameForgeVoxelBoot(){
   if(e.code==='KeyE')act('mine');if(e.code==='KeyQ')act('place');
   if(/^Digit[1-6]$/.test(e.code))selectMaterial(Number(e.code.slice(-1)));
   if(forest&&e.code==='Digit8')selectMaterial(8);if(forest&&e.code==='Digit0')selectMaterial(10);
-  if(e.code==='KeyI')toggleInventory();if(e.code==='KeyF')equip();
+  if(e.code==='KeyI')toggleInventory();if(e.code==='KeyF')equip();if(e.code==='KeyC')eat();
  });
  document.addEventListener('keyup',e=>keys.delete(e.code));
  let drag=null;
@@ -217,14 +232,15 @@ function gameForgeVoxelBoot(){
    accumulator+=dt;let count=0;
    while(accumulator>=1/60&&count++<6){step(1/60);accumulator-=1/60;}
   }
-  updateCamera();renderer.render(scene,camera);frames++;updateHUD();requestAnimationFrame(frame);
+  syncCreatures();updateCamera();renderer.render(scene,camera);frames++;updateHUD();requestAnimationFrame(frame);
  }
  const stored=getSaved();
  initialize(stored);$('overlay-title').textContent=cfg.title;$('overlay-sub').textContent=resources?'Coleta e fabricação · inventário limitado · construa a bancada e o forno. Requer WebGL.':'Mundo criativo de 64 × 64 blocos · terreno por seed · explore, mine e construa. Requer WebGL.';
  if(resources)$('control-help').textContent+=' · 4–6 estações/tijolo · I inventário · F picareta';
+ if(survival)$('control-help').textContent+=' · C comer · E atacar criatura · sobreviva à noite';
  if(forest)$('control-help').textContent+=' · 8 madeira · 0 muda · corte árvore com E';
  if(stored)$('start').textContent='Continuar mundo';
- window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.edits().length,selected,mode:resources?'resources':'creative',forest,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,chunks:meshes.size,target:target(),triangles:renderer.info.render.triangles});
+ window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.edits().length,selected,mode:resources?'resources':'creative',forest,survival:survival?JSON.parse(JSON.stringify(life)):null,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,chunks:meshes.size,target:target(),triangles:renderer.info.render.triangles});
  requestAnimationFrame(frame);
 }
 if(typeof globalThis!=='undefined')globalThis.gameForgeVoxelBoot=gameForgeVoxelBoot;

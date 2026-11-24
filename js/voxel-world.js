@@ -188,8 +188,8 @@ function gameForgeVoxelWorldFactory(K){
   }
   return {seed,get,edit,mesh,ray,spawn,collides,mine,place,treeHit,cutTree,plant,grow,forestState,edits:()=>[...edits.values()].map(e=>[...e]),chunkKeys:()=>[...chunks.keys()]};
  }
- function saveKey(config){return 'gameforge-voxel-v1:'+config.seed+':'+encodeURIComponent(config.title)+(config.mode==='resources'?':resources-v1':'')+(config.mode==='resources'&&config.forest===true?':forest-v1':'');}
- function readSave(raw,config,E){
+ function saveKey(config){return 'gameforge-voxel-v1:'+config.seed+':'+encodeURIComponent(config.title)+(config.mode==='resources'?':resources-v1':'')+(config.mode==='resources'&&config.forest===true?':forest-v1':'')+(config.survival===true?':survival-v1':'');}
+ function readSave(raw,config,E,S){
   if(typeof raw!=='string'||raw.length>160000)return null;
   try{
    const s=JSON.parse(raw);
@@ -199,15 +199,16 @@ function gameForgeVoxelWorldFactory(K){
     !s.player||![s.player.x,s.player.y,s.player.z,s.player.yaw,s.player.pitch].every(finite)||
     Math.abs(s.player.yaw)>Math.PI*2||Math.abs(s.player.pitch)>1.5||
     !int(s.mined)||s.mined<0||s.mined>1e9||!int(s.placed)||s.placed<0||s.placed>1e9)return null;
-   const resources=config.mode==='resources',forest=resources&&config.forest===true;
+   const resources=config.mode==='resources',forest=resources&&config.forest===true,survival=resources&&config.survival===true;
+   if(!survival&&s.survival!==undefined)return null;
    if(forest?(s.forest!==true||!Array.isArray(s.trees)):(s.forest===true||s.edits.some(e=>e[3]===8)))return null;
    if(resources){
-    if(s.mode!=='resources'||!E?.valid(s.bag)||(!forest&&s.bag.some(v=>v&&v.id>7))||typeof s.equipped!=='boolean'||
+    if(s.mode!=='resources'||!E?.valid(s.bag)||s.bag.some(v=>v&&((v.id===11&&!survival)||(!forest&&[8,10].includes(v.id))))||typeof s.equipped!=='boolean'||
      (s.equipped&&E.count(s.bag,7)<1)||!int(s.selected)||s.selected<1||!(forest?[1,2,3,4,5,6,8,10]:[1,2,3,4,5,6]).includes(s.selected))return null;
    }else if(s.mode==='resources'||s.edits.some(e=>e[3]>3))return null;
    const world=create(config.seed,s.edits,{forest,...(forest?{trees:s.trees}:{})});
-   if(world.collides(s.player.x,s.player.y,s.player.z))return null;
-   return {world,player:{x:s.player.x,y:s.player.y,z:s.player.z,yaw:s.player.yaw,pitch:s.player.pitch},mined:s.mined,placed:s.placed,...(resources?{bag:E.copy(s.bag),equipped:s.equipped,selected:s.selected}:{})};
+   if(world.collides(s.player.x,s.player.y,s.player.z)|| (survival&&!S?.valid(s.survival,world)))return null;
+   return {world,player:{x:s.player.x,y:s.player.y,z:s.player.z,yaw:s.player.yaw,pitch:s.player.pitch},mined:s.mined,placed:s.placed,...(survival?{survival:s.survival}:{}),...(resources?{bag:E.copy(s.bag),equipped:s.equipped,selected:s.selected}:{})};
   }catch{return null;}
  }
  return {create,readSave,saveKey,MIN,MAX,H,LIMIT};

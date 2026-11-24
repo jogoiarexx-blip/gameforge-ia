@@ -78,10 +78,10 @@ function gameForgeVoxelSurvivalFactory(K,E){
   }
   return best;
  }
- function hit(s,id,bag,equipped){
+ function hit(s,id,bag,equipped,damageOverride=null){
   if(s.health<=0||s.attack>0)return {ok:false,reason:'cooldown'};
   const a=s.animals.find(a=>a.id===id);if(!a)return {ok:false,reason:'invalid'};
-  const damage=equipped?2:1;
+  const damage=Number.isInteger(damageOverride)&&damageOverride>=1&&damageOverride<=3?damageOverride:equipped?2:1;
   let next=bag;
   if(a.hp<=damage&&a.kind==='sheep'){next=E.change(bag,11,2);if(!next)return {ok:false,reason:'inventory-full'};}
   s.attack=.5;a.hp-=damage;

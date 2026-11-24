@@ -195,7 +195,7 @@ function gameForgeUrbanMissionBoot(){
   }else if(sim.status==='intermission')sim=F.advance(plan,sim).state;
   else if(sim.status==='victory')sim=F.initial(plan);
   gameState='play';paused=false;clock=0;prev=0;acc=0;keys.clear();clearTouches();
-  attackCooldown=0;invuln=0;fireCooldown=0;reloading=0;shotNoise=0;
+  attackCooldown=0;invuln=0;fireCooldown=0;reloading=0;shotNoise=0;heroAnimation?.reset?.();
   lastStepId=null;deathOverlayPending=false;clearFallen();
   hero.position.set(sim.position.x,0,sim.position.z);
   syncObjects();hud();
@@ -225,7 +225,7 @@ function gameForgeUrbanMissionBoot(){
  function fire(){
   if(gameState!=='play'||paused||fireCooldown>0||reloading>0)return;
   if(sim.ammo<=0){notice('Munição esgotada: pressione R.');return;}
-  fireCooldown=.23;sim.ammo--;shotNoise=1.1;
+  fireCooldown=.23;sim.ammo--;shotNoise=1.1;heroAnimation?.setState('attack');
   const p={x:sim.position.x,z:sim.position.z,heading};
   const targets=guards.filter(g=>g.alive&&R.canHit(p,g.mesh.position,blockers));
   targets.sort((a,b)=>Math.hypot(a.mesh.position.x-p.x,a.mesh.position.z-p.z)-
@@ -317,7 +317,7 @@ function gameForgeUrbanMissionBoot(){
   const stride=len?Math.sin(walk)*.38:0;
   hero.userData.legs[0].rotation.x=stride;hero.userData.legs[1].rotation.x=-stride;
   hero.userData.legs[2].rotation.x=-stride*.6;hero.userData.legs[3].rotation.x=stride*.6;
-  heroAnimation?.setState(shotNoise>0?'attack':len>0?'walk':'idle');
+  heroAnimation?.setState(len>0?'walk':'idle');
   heroAnimation?.update(dt);
   const active=F.nextStep(plan,sim);
   if(active?.action==='collect'){
@@ -336,10 +336,10 @@ function gameForgeUrbanMissionBoot(){
    g.brain=R.guardStep(g.brain,{...sim.position,noise:len>0||shotNoise>0},dt,blockers);
    g.mesh.position.x=g.brain.x;g.mesh.position.z=g.brain.z;
    g.mesh.rotation.y=-g.brain.heading;
-   g.animation?.setState(g.brain.canAttack?'attack':g.brain.mode==='patrol'?'idle':'walk');
+   g.animation?.setState(g.brain.mode==='patrol'?'idle':'walk');
    g.animation?.update(dt);
    if(g.brain.canAttack&&attackCooldown===0&&invuln===0){
-    sim.health=Math.max(1,sim.health-8);attackCooldown=1.4;invuln=.5;save();
+    sim.health=Math.max(1,sim.health-8);attackCooldown=1.4;invuln=.5;g.animation?.setState('attack');heroAnimation?.setState('hit');save();
     notice('Guarda atacou! '+sim.health+' de vida.');
    }
   }

@@ -130,7 +130,7 @@ function gameForgeVoxelBoot(){
   $('timer').textContent=survival?('Dia '+(Math.floor(life.time/S.PERIOD)+1)+' · '+(S.night(life)?'Noite':'Dia')+' · Fome '+Math.ceil(life.hunger)+'%'):Math.floor(clock)+'s';
   $('mission').textContent=(survival?'Sobrevivência':resources?'Coleta e fabricação':'Criativo')+' · removidos '+mined+' · colocados '+placed+' · '+world.edits().length+'/'+W.LIMIT+' edições';
   if(clock>noticeUntil)$('message').textContent=paused?'Pausado · '+savedStatus:('Seed '+cfg.seed+' · '+savedStatus);
-  if(advanced){const j=A.get(forge,A.nearest(world,player));$('mission').textContent+=' · Defesa '+Math.round(A.defense(forge)*100)+'%'+(j?' · Forno '+(j.remaining>0?Math.ceil(j.remaining)+'s':'pronto'):'');}
+  if(advanced){const j=forge.jobs.length?A.get(forge,A.nearest(world,player)):null;$('mission').textContent+=' · Defesa '+Math.round(A.defense(forge)*100)+'%'+(j?' · Forno '+(j.remaining>0?Math.ceil(j.remaining)+'s':'pronto'):'');}
   const marks=K.compassMarks(player.yaw,45).filter(m=>m.label);compass.textContent=marks.sort((a,b)=>a.left-b.left).map(m=>m.label).join('    ');
  }
  function moveAxis(axis,delta){

@@ -42,7 +42,7 @@ def run():
                 assert 'Streaming leve' in report
                 assert 'Cooperação P2P' in report
                 assert 'pendente' in report
-                assert 'sem motor voxel completo' in report.lower()
+                assert 'não foi criado um motor voxel completo' in report.lower()
                 # As máquinas e o P2P não viram recursos já existentes no motor RPG.
                 assert page.evaluate('window.GameForgeVoxelTraining?.isVoxel?.("Minecraft","")') is True
                 page.locator('#generate').click()
@@ -63,7 +63,7 @@ def run():
                     assert byid['coop-p2p']['status']=='pendente'
                     assert byid['world-save']['status']=='pendente'
                     text=z.read('DIAGNOSTICO_VOXEL_GF22.md').decode('utf-8')
-                    assert 'sem motor voxel completo' in text.lower()
+                    assert 'não foi criado um motor voxel completo' in text.lower()
                     assert 'P2P' in text
                     assert 'game.js' in files
                 assert not js_errors,js_errors

@@ -3,7 +3,7 @@
  * Contratos: chunks/seed determinísticos, invalidação de worker, crafting atômico,
  * bússola por direção e métricas de frame sem rede.
  */
-(function(root){
+function gameForgeVoxelKitFactory(){
 'use strict';
 const DEFAULT_CHUNK=16,DEFAULT_HEIGHT=160;
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
@@ -170,6 +170,10 @@ function frameMetrics(seconds){
 }
 const api={DEFAULT_CHUNK,DEFAULT_HEIGHT,chunkOf,localBlock,key,hash,heightAt,generateChunk,
  streamRequests,batchEdits,meshJobValid,recipesAtStation,craft,guide,compassMarks,frameMetrics};
-root.GameForgeVoxelKit=api;
-if(typeof module!=='undefined')module.exports=api;
-})(typeof globalThis!=='undefined'?globalThis:this);
+return api;
+}
+if(typeof globalThis!=='undefined'){
+ globalThis.gameForgeVoxelKitFactory=gameForgeVoxelKitFactory;
+ globalThis.GameForgeVoxelKit=gameForgeVoxelKitFactory();
+}
+if(typeof module!=='undefined')module.exports=gameForgeVoxelKitFactory();

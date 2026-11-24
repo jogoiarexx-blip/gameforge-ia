@@ -83,6 +83,8 @@ jobs:
         run: python tests/browser-gf-train-19.py
       - name: GF-TRAIN-22 — treinar interpretacao voxel no navegador
         run: python tests/browser-gf-train-22-voxel.py
+      - name: GF-VOXEL-01 — jogar sandbox voxel exportado e restaurar save
+        run: python tests/browser-gf-voxel-01.py
       - name: Salvar capturas do navegador para auditoria
         if: always()
         uses: actions/upload-artifact@v4

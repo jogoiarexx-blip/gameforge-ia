@@ -10,7 +10,9 @@
     "optimize:glb": "node tools/optimize-glb.cjs",
     "verify:glb-optimizer": "node tools/smoke-glb-optimizer.cjs",
     "train:threejs": "node tools/evaluate-three-training.cjs",
-    "train:voxel": "node tools/evaluate-voxel-training.cjs"
+    "train:voxel": "node tools/evaluate-voxel-training.cjs",
+    "test:rapier": "node --test tests/rapier-real.integration.cjs",
+    "vendor:rapier": "node scripts/vendor-rapier.cjs"
   },
   "engines": {
     "node": ">=18"
@@ -18,6 +20,7 @@
   "devDependencies": {
     "esbuild": "0.25.11",
     "three": "0.180.0",
-    "@gltf-transform/cli": "4.5.1"
+    "@gltf-transform/cli": "4.5.1",
+    "@dimforge/rapier3d-compat": "0.21.0"
   }
 }

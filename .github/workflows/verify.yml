@@ -27,6 +27,8 @@ jobs:
         run: npm test
       - name: GF-TRAIN-19 — avaliar 50 briefs Three.js multigenero
         run: npm run train:threejs
+      - name: GF-TRAIN-22 — avaliar 47 briefs inspirados no Prismal Voxel
+        run: npm run train:voxel
       - name: Bloquear exportacoes com codigo invalido
         run: npm run verify:exports
       - name: Benchmark informativo da arena

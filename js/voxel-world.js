@@ -3,7 +3,7 @@ function gameForgeVoxelWorldFactory(K){
  'use strict';
  const S=16,H=160,MIN=-32,MAX=32,LIMIT=4096,finite=Number.isFinite,int=Number.isSafeInteger;
  const colors={1:[.36,.64,.23],2:[.57,.37,.23],3:[.52,.56,.58],4:[.69,.48,.22],5:[.32,.34,.38],6:[.73,.28,.19],8:[.44,.27,.12],9:[.19,.48,.16],10:[.37,.75,.21],12:[.65,.39,.13],15:[.67,.43,.31],20:[.23,.24,.25],21:[.67,.46,.20],28:[.18,.45,.72],29:[.67,.61,.44]};
- const mapSize=n=>[64,128,256,512,1024].includes(n)?n:64;
+ const mapSize=n=>[64,128,256,512,1024,4096].includes(n)?n:64;
  const inside=(x,y,z,bound=32)=>int(x)&&int(y)&&int(z)&&x>=-bound&&x<bound&&z>=-bound&&z<bound&&y>=0&&y<H;
  const cellKey=(x,y,z)=>x+','+y+','+z;
  const validEdit=(e,bound=32)=>Array.isArray(e)&&e.length===4&&inside(e[0],e[1],e[2],bound)&&e[1]>0&&int(e[3])&&e[3]>=0&&(e[3]<=6||e[3]===8||e[3]===12||e[3]===15||e[3]===20||e[3]===21||e[3]===29||e[3]===30);
@@ -121,7 +121,7 @@ function gameForgeVoxelWorldFactory(K){
    }else{
     // Guaranteed accessible tree north of spawn plus seed-dependent grid trees.
     const positions=[[0,-4]];
-    for(let x=MIN+6;x<=MAX-6;x+=(size===1024?16:8))for(let z=MIN+6;z<=MAX-6;z+=(size===1024?16:8)){
+    for(let x=MIN+6;x<=MAX-6;x+=(size>=1024?size/64:8))for(let z=MIN+6;z<=MAX-6;z+=(size>=1024?size/64:8)){
      if((details&&column(x,z).site)||Math.hypot(x,z)<7||K.hash(seed,x,z)<(landscape&&column(x,z).biome==='dry'?.78:.34))continue;
      positions.push([x,z]);
     }

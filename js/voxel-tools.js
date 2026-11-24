@@ -1,10 +1,13 @@
 /* GF-VOXEL-07: single durable tool per tier, independent of legacy stacks. */
-function gameForgeVoxelToolsFactory(E){
+function gameForgeVoxelToolsFactory(E,advanced){
  'use strict';
- const TIERS=[13,7,14],DEFS={
+ const TIERS=[13,7,14,...(advanced?[17,18,19]:[])],DEFS={
   13:{name:'Picareta de madeira',max:24,delay:.70,damage:1,repair:8},
   7:{name:'Picareta de pedra',max:64,delay:.38,damage:2,repair:3},
-  14:{name:'Picareta de ferro',max:160,delay:.18,damage:3,repair:16}
+  14:{name:'Picareta de ferro',max:160,delay:.18,damage:3,repair:16},
+  17:{name:'Machado de cobre',max:80,delay:.35,damage:2,repair:22},
+  18:{name:'Pá de cobre',max:80,delay:.22,damage:1,repair:22},
+  19:{name:'Espada de ferro',max:160,delay:.8,damage:4,repair:16}
  };
  const initial=()=>({version:1,active:0,wear:{}});
  const isTool=id=>TIERS.includes(id);
@@ -24,8 +27,8 @@ function gameForgeVoxelToolsFactory(E){
   return r;
  }
  function canMine(s,id){
-  if(id===3)return !!s.active;
-  if(id===15)return s.active===7||s.active===14;
+  if(id===3||id===20)return [13,7,14].includes(s.active);
+  if(id===15||id===21)return s.active===7||s.active===14;
   return true;
  }
  function wear(s,bag){

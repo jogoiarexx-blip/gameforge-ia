@@ -1,0 +1,21 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GameForge — Oficina de equipamentos</title>
+<style>body{background:#101827;color:#e8f1fb;font:16px system-ui;margin:auto;max-width:760px;padding:18px}button{padding:12px;margin:4px;border:0;border-radius:8px;background:#73d6bd;color:#102027;font-weight:bold}section{padding:14px;margin:12px 0;background:#1d2a3a;border-radius:12px}small{color:#acc3d2}.item{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;border-bottom:1px solid #3d4c5e;padding:8px 0}</style>
+<h1>Oficina de equipamentos</h1><p>GF-TRAIN-27 — demonstração independente, com inventário, melhorias e salvamento local.</p>
+<section><button id="loot">Coletar aço (+3)</button><button id="weapon">Obter espada</button><button id="armor">Obter armadura</button><button id="reset">Reiniciar</button></section>
+<section><h2>Equipado</h2><div id="stats"></div><div id="equipped"></div></section>
+<section><h2>Inventário</h2><div id="bag"></div></section><p role="status" id="status"></p>
+<script src="../js/equipment.js"></script><script>
+const catalog=[{id:'steel',name:'Aço',kind:'material',rarity:'common',stack:30},
+{id:'blade',name:'Espada de ferro',kind:'weapon',rarity:'rare',stats:{attack:20},upgrade:{material:'steel',cost:2,max:5}},
+{id:'armor',name:'Armadura leve',kind:'armor',rarity:'uncommon',stats:{defense:12,maxHealth:15}}];
+const game=gameForgeEquipmentFactory().create(catalog,{projectId:'gf-training-27-demo',capacity:12}),key='gf-training-27-demo-v1';
+const el=id=>document.getElementById(id);try{game.load(localStorage.getItem(key));}catch{}
+function act(fn){let ok=fn();el('status').textContent=ok?'Operação concluída.':'Operação indisponível (limite, material ou item equipado).';try{localStorage.setItem(key,game.serialize());}catch{el('status').textContent+=' Armazenamento indisponível.';}render();}
+function btn(label,fn){const b=document.createElement('button');b.textContent=label;b.onclick=()=>act(fn);return b;}
+function render(){const s=game.snapshot(),a=game.attributes();el('stats').textContent='Ataque +'+a.attack+' | Defesa +'+a.defense+' | Vida +'+a.maxHealth;
+ el('equipped').replaceChildren();for(const [slot,id] of Object.entries(s.equipped)){const it=s.items.find(x=>x.uid===id);const line=document.createElement('p');line.textContent=slot+': '+(it?catalog.find(d=>d.id===it.itemId).name:'vazio');if(it)line.append(btn('Retirar',()=>game.unequip(slot)));el('equipped').append(line);}
+ el('bag').replaceChildren();for(const it of s.items){const d=catalog.find(x=>x.id===it.itemId),row=document.createElement('div');row.className='item';const text=document.createElement('span');text.textContent=d.name+' ×'+it.qty+' · '+d.rarity+(d.upgrade?' · +'+it.level:'');row.append(text);if(d.kind!=='material'){row.append(btn('Equipar',()=>game.equip(it.uid)));if(d.upgrade)row.append(btn('Melhorar',()=>game.upgrade(it.uid)));}row.append(btn('Descartar',()=>game.discard(it.uid)));el('bag').append(row);}
+}
+el('loot').onclick=()=>act(()=>game.add('steel',3));el('weapon').onclick=()=>act(()=>game.add('blade'));el('armor').onclick=()=>act(()=>game.add('armor'));el('reset').onclick=()=>act(()=>{game.reset();return true;});render();
+</script></html>

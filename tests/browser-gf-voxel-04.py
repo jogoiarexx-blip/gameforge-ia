@@ -35,7 +35,8 @@ def run():
                 game,url=server(dest)
                 try:
                     page.close()
-                    page=browser.new_page(viewport={'width':1200,'height':950})
+                    context=browser.new_context(viewport={'width':1200,'height':950})
+                    page=context.new_page()
                     errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
                     page.goto(url+'/index.html')
                     page.wait_for_function("window.__gameforgeTelemetry?.().survival!=null",timeout=30000)

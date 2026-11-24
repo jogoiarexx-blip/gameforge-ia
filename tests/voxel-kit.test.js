@@ -5,7 +5,7 @@ test('GF-TRAIN-22: chunks de 16, inclusive coordenadas negativas e indices locai
  assert.deepEqual(Kit.chunkOf(-1,-17),{cx:-1,cz:-2});
  assert.deepEqual(Kit.chunkOf(15,16),{cx:0,cz:1});
  assert.deepEqual(Kit.chunkOf(16,0),{cx:1,cz:0});
- assert.deepEqual(Kit.localBlock(-1,68,16),{cx:-1,cz:1,lx:15,lz:0,index:((15*160)+68)*16});
+ assert.deepEqual(Kit.localBlock(-1,68,16),{cx:-1,cz:1,lx:15,lz:0,index:(68*16+0)*16+15});
  assert.throws(()=>Kit.chunkOf(Number.NaN,0),/inválida/);
  assert.throws(()=>Kit.localBlock(0,160,0),/inválido/);
 });
@@ -17,7 +17,7 @@ test('GF-TRAIN-22: geracao por seed e coordenadas globais independe de ordem dos
  assert.deepEqual(a.voxels,b.voxels);
  assert.notDeepEqual(a.voxels,other.voxels);
  const expected=(chunk,x,z)=>{
-  let top=-1;for(let y=159;y>=0;y--){if(chunk.voxels[((x*160)+y)*16+z]!==0){top=y;break;}}return top;
+  let top=-1;for(let y=159;y>=0;y--){if(chunk.voxels[(y*16+z)*16+x]!==0){top=y;break;}}return top;
  };
  for(const [chunk,cx] of [[west,-1],[a,0],[east,1]])for(const x of [0,15])for(const z of [0,15]){
   assert.equal(expected(chunk,x,z),Kit.heightAt(1234,cx*16+x,z));

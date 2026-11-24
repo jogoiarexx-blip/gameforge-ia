@@ -41,7 +41,24 @@ function gameForgeShooterBoot() {
   const keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
   let mouse={x:W/2,y:H/2,down:false},audio=null;
   const rand=(a,b)=>a+Math.random()*(b-a);
-  const stars=Array.from({length:LIMITS.stars},(_,i)=>({x:Math.random()*W,y:Math.random()*H,s:.7+(i%4)*.45,v:17+(i%3)*34,phase:Math.random()*TAU}));
+  // Scene choices follow stage titles when possible; fallback cycles are theme-specific.
+  const scenery={
+    dragon:[['mountains','#132f50','#447e88'],['castle','#242c48','#63758b'],['forest','#102f30','#366f50'],['volcano','#301a30','#733b38'],['ocean','#122a4c','#286a84'],['storm','#171e3a','#46566b']],
+    space:[['planets','#080f2b','#1c3258'],['asteroids','#121326','#34314b'],['nebula','#1b1035','#3d2465'],['station','#0c1829','#29465a'],['galaxy','#100b28','#263255']],
+    neon:[['megacity','#080b24','#24164a'],['highway','#090d22','#152e46'],['tunnel','#100825','#332047'],['hologram','#071929','#18395b'],['rain','#0b1427','#243c50']]
+  }[theme];
+  const sceneWords={mountains:/montanh|vale|serra|mountain|valley/,castle:/castel|fortalez|castle|fortress/,forest:/florest|selva|forest|jungle/,volcano:/vulc|lava|ardent|inferno/,ocean:/ocean|marit|ilha|sea|island/,storm:/tempest|storm|trovo/,planets:/planet|lua|moon/,asteroids:/astero|meteoro/,nebula:/nebul/,station:/estacao|orbital|station/,galaxy:/galax|cosmos/,megacity:/cidade|city|metropol/,highway:/rodovia|estrada|highway/,tunnel:/tunel|tunnel|nucleo|core/,hologram:/hologram|digital/,rain:/chuva|rain/};
+  const stageScenes=levels.map((name,i)=>{const n=String(name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return scenery.find(v=>sceneWords[v[0]].test(n))||scenery[i%scenery.length];});
+  let sceneCache=null,sceneDraws=0;
+  function sceneRandom(seed){let n=seed>>>0;return ()=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296;};}
+  function sceneData(){
+    if(sceneCache?.stage===stageIndex)return sceneCache;
+    const [id,top,bottom]=stageScenes[stageIndex],rng=sceneRandom((stageIndex+1)*8191+id.split('').reduce((a,b)=>a+b.charCodeAt(0),0));
+    const gradient=ctx.createLinearGradient(0,0,0,H);gradient.addColorStop(0,top);gradient.addColorStop(1,bottom);
+    const layers=[18,12,9].map((count,j)=>Array.from({length:count},(_,i)=>({x:rng()*W,y:rng()*(H+240),s:.45+rng()*.7,variant:Math.floor(rng()*5),phase:rng()*TAU,side:i%2?1:-1})));
+    return sceneCache={stage:stageIndex,id,gradient,layers};
+  }
+
   function sound(hz=470,duration=.05,type='sine',volume=.026){
     try{
       const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
@@ -255,27 +272,62 @@ function gameForgeShooterBoot() {
     $('mission').textContent=(configAt(stageIndex).objective?configAt(stageIndex).objective+' · ':'')+levels[stageIndex]+' · '+(boss?'CHEFE':`Ondas ${Math.min(waveSpawned,waves[stageIndex].amount)}/${waves[stageIndex].amount}`);
   }
   function background(){
-    ctx.fillStyle=T.bg;ctx.fillRect(0,0,W,H);
-    const offset=time*waves[stageIndex].scroll;
-    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,T.bg);g.addColorStop(1,T.mid);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-    ctx.globalAlpha=.22;ctx.strokeStyle=T.far;ctx.lineWidth=2;
-    if(theme==='neon'){
-      for(let i=0;i<12;i++){const x=i*83+8,h=120+(i*61)%150;
-        ctx.fillStyle=i%2?'#172947':'#182c63';ctx.fillRect(x,H-h+((offset*.08)%33),65,h);
-        ctx.strokeStyle=T.accent;ctx.strokeRect(x,H-h+((offset*.08)%33),65,h);
+    const scene=sceneData(),id=scene.id,scroll=stageTime*waves[stageIndex].scroll;
+    const low=quality==='low';sceneDraws=0;
+    ctx.fillStyle=scene.gradient;ctx.fillRect(0,0,W,H);
+    const wrap=(y,speed)=>((y+scroll*speed)%(H+240))-120;
+    // Back layer, midground and foreground travel at three different speeds.
+    for(let layer=0;layer<3;layer++){
+      const list=scene.layers[layer],limit=low?Math.ceil(list.length*.6):list.length;
+      const speed=[.12,.42,.85][layer];
+      for(let i=0;i<limit;i++){
+        const o=list[i],x=o.x,y=wrap(o.y,speed),z=o.s*(.7+layer*.42),side=o.side;
+        ctx.save();ctx.translate(x,y);ctx.scale(z,z);ctx.globalAlpha=[.30,.48,.65][layer];sceneDraws++;
+        if(theme==='dragon'){
+          if(layer===2||id==='storm'){
+            const c=id==='storm'?'#a9b6ca':id==='volcano'?'#ce8273':'#d8e8e5';
+            oval(-23,3,41,12,c);oval(13,-5,34,16,c);oval(36,6,32,10,c);
+            if(id==='storm'&&o.variant===0&&!low&&Math.sin(stageTime*3+o.phase)>.96)line([[0,12],[-8,30],[6,28],[-5,49]],'#e9e6b7',2);
+          }else if(id==='castle'){
+            ctx.fillStyle=layer?'#35414f':'#64748a';ctx.fillRect(-34,-40,68,72);ctx.fillRect(-46,-65,24,97);ctx.fillRect(22,-65,24,97);
+            for(const xx of [-44,-28,24,40])ctx.fillRect(xx,-73,8,8);ctx.fillStyle='#162337';ctx.fillRect(-9,7,18,25);
+          }else if(id==='forest'){
+            for(let k=-1;k<=1;k++){ctx.fillStyle='#3a493c';ctx.fillRect(k*24-3,0,6,23);polygon([[k*24,-48],[k*24-20,12],[k*24+20,12]],layer?'#234d39':'#54806a');}
+          }else if(id==='ocean'){
+            line([[-60,0],[-25,-7],[10,2],[45,-3],[68,0]],'#a9d6e6',layer+1);line([[-30,12],[0,7],[34,13]],'#8dc6dd',2);
+          }else{
+            polygon([[-100,50],[-42,-20],[0,-85],[39,-14],[90,50]],id==='volcano'?'#482c35':'#2c5361');
+            polygon([[-22,-51],[0,-85],[24,-48],[3,-57]],id==='volcano'?'#f17c49':'#c3d8df');
+            if(id==='volcano')line([[0,-78],[8,-42],[-7,-10],[18,48]],'#ffad55',4);
+          }
+        }else if(theme==='space'){
+          if(layer===0){
+            if(id==='nebula'||id==='galaxy'){oval(0,0,85,29,id==='nebula'?'#b65aa1':'#6c8ddc');oval(16,3,51,14,'#b8b4ec');}
+            else if(i<4&&id==='planets'){oval(0,0,62,62,'#698bb4');oval(-15,-11,46,39,'#a4bed1');ctx.strokeStyle='#d8c2a5';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(0,0,92,21,-.3,0,TAU);ctx.stroke();}
+            else {ctx.fillStyle='#d9e5ff';ctx.fillRect(0,0,2,2);}
+          }else if(id==='station'&&layer===1){
+            ctx.fillStyle='#667d93';ctx.fillRect(-24,-29,48,58);ctx.fillRect(-66,-9,132,18);
+            ctx.fillStyle='#263e6d';ctx.fillRect(-66,-19,30,38);ctx.fillRect(36,-19,30,38);oval(0,0,11,11,'#b9e8f1');
+          }else if(id==='asteroids'||(layer===1&&o.variant===0)){
+            ctx.rotate(o.phase+stageTime*.14);polygon([[-27,-12],[-10,-29],[17,-23],[29,4],[10,26],[-17,18]],'#777385');oval(-7,-5,9,6,'#454659');
+          }else {ctx.fillStyle='#d4e4ff';ctx.fillRect(0,0,layer+1,layer*4+2);}
+        }else{
+          if(id==='highway'||id==='tunnel'){
+            ctx.translate(side*(W*.38-x),0);const c=id==='tunnel'?'#bc66e3':'#47d4e3';
+            line([[side*24,-85],[side*38,0],[side*24,85]],c,layer+1);
+            if(layer===2)line([[side*4,-40],[side*4,36]],'#f9a3f9',3);
+          }else if(id==='hologram'||(id==='rain'&&layer===2)){
+            if(id==='rain'){line([[0,-28],[-8,20]],'#8dd9ff',1.6);}
+            else{ctx.strokeStyle='#57ead9';ctx.lineWidth=2;ctx.strokeRect(-25,-18,50,36);line([[-20,7],[-10,-6],[0,8],[10,-10],[20,4]],'#e493fa',2);}
+          }else if(layer<2){
+            const h=55+o.variant*12;ctx.fillStyle=layer?'#172845':'#29335d';ctx.fillRect(-22,-h/2,44,h);
+            ctx.strokeStyle=o.variant%2?'#e15bc4':'#4dc8e7';ctx.lineWidth=1.5;ctx.strokeRect(-22,-h/2,44,h);
+            ctx.fillStyle='#7bb7da';for(let j=0;j<(low?2:4);j++)ctx.fillRect(-14,-h/2+8+j*12,28,3);
+          }else{line([[0,-15],[0,15]],'#83c5ff',2);}
+        }
+        ctx.restore();
       }
-    }else if(theme==='dragon'){
-      for(let i=0;i<10;i++){const x=i*118-110,h=120+(i*77)%180,y=420+offset*.09%110;
-        ctx.fillStyle='#1c5d60';ctx.beginPath();ctx.ellipse(x,y,150,h,0,0,TAU);ctx.fill();
-      }
-    }else{
-      for(let i=0;i<6;i++){ctx.strokeStyle='#8492e766';ctx.beginPath();ctx.arc(W/2+Math.sin(i)*340,H/2+Math.cos(i)*220,70+i*24,0,TAU);ctx.stroke();}
     }
-    ctx.globalAlpha=1;
-    for(const s of stars){const y=(s.y+offset*(s.v/60))%(H+24)-12,twinkle=.65+.25*Math.sin(time*2+s.phase);
-      ctx.globalAlpha=twinkle;ctx.fillStyle=s.s>1.9?T.accent:'#c4d8ff';ctx.fillRect(s.x,y,s.s,s.s*2.2);
-    }ctx.globalAlpha=1;
-    ctx.fillStyle='#ffffff12';ctx.fillRect(0,0,W,5);
   }
   function polygon(points,color){ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);ctx.closePath();ctx.fill();}
   function line(points,color,width=2){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(...points[0]);for(let i=1;i<points.length;i++)ctx.lineTo(...points[i]);ctx.stroke();}
@@ -357,7 +409,6 @@ function gameForgeShooterBoot() {
   function render(){
     ctx.save();if(shake)ctx.translate(rand(-shake,shake),rand(-shake,shake));
     background();
-    V?.backdrop(ctx,W,H,time,theme);
     for(const a of player.afterimages){ctx.globalAlpha=a.life*.6;ship(a.x,a.y,.85);}
     ctx.globalAlpha=1;
     for(const d of drops){ctx.save();ctx.translate(d.x,d.y);ctx.rotate(time*2);ctx.shadowBlur=10;ctx.shadowColor=T.accent;
@@ -378,7 +429,7 @@ function gameForgeShooterBoot() {
     ctx.font='13px system-ui';ctx.fillText('ESCUDO  '+shield+'    CRÉDITOS  '+credits,30,61);ctx.fillText('ARMA '+weapon+'   '+(theme==='dragon'?'ASAS':'MOTOR')+' '+(speedLevel+1),30,78);ctx.fillText(profile.resource+' '+Math.floor(energy)+'%'+(theme==='neon'?' · x'+Math.max(1,combo):overheat?' · exausto':''),30,98);
     if(paused&&state==='play'){ctx.fillStyle='#030a22bd';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 54px system-ui';ctx.textAlign='center';ctx.fillText('PAUSADO',W/2,H/2);ctx.textAlign='left';}
   }
-  window.__gameforgeTelemetry=()=>({state,paused,frames,clock:time,stage:stageIndex,genre:'shooter',theme,energy,overheat,dash,combo,specialUses,projectileTypes:[...new Set(friendly.map(b=>b.kind||'bolt'))],player:{x:player.x,y:player.y,radius:player.r,screenX:player.x,screenY:player.y},enemies:enemies.length,heroModel:heroId,roster:roster.map(e=>e.id),enemySamples:enemies.slice(0,8).map(e=>({id:e.id,x:e.x,y:e.y,model:e.model,kind:e.kind,hp:e.hp})),bossAlive:!!boss,enemyBullets:hostile.length,playerBullets:friendly.length,bossHp:boss?.hp??null,spawned:waveSpawned,weapon,lives,credits,speedLevel,quality,simulationHz:60,simulationSteps});
+  window.__gameforgeTelemetry=()=>({state,paused,frames,clock:time,stage:stageIndex,genre:'shooter',theme,energy,overheat,dash,combo,specialUses,projectileTypes:[...new Set(friendly.map(b=>b.kind||'bolt'))],player:{x:player.x,y:player.y,radius:player.r,screenX:player.x,screenY:player.y},enemies:enemies.length,scenery:{id:stageScenes[stageIndex][0],layers:3,draws:sceneDraws,limit:39,stageScenes:stageScenes.map(s=>s[0])},heroModel:heroId,roster:roster.map(e=>e.id),enemySamples:enemies.slice(0,8).map(e=>({id:e.id,x:e.x,y:e.y,model:e.model,kind:e.kind,hp:e.hp})),bossAlive:!!boss,enemyBullets:hostile.length,playerBullets:friendly.length,bossHp:boss?.hp??null,spawned:waveSpawned,weapon,lives,credits,speedLevel,quality,simulationHz:60,simulationSteps});
   function loop(ms){
     const rawDt=Math.max(0,(ms-last)/1000);last=ms;
     if((!V||V.profile.quality==='auto')&&rawDt>0&&rawDt<.25){fpsEstimate=fpsEstimate*.96+(.04/rawDt);qualitySamples+=rawDt;if(qualitySamples>3){qualitySamples=0;quality=fpsEstimate<38?'low':'high';}}

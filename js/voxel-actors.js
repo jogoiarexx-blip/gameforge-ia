@@ -85,10 +85,11 @@ function gameForgeVoxelActorsFactory(T){
   if(!Number.isFinite(time)||!['mine','place','attack'].includes(kind))return false;
   started=time;action=kind;actions++;return true;
  }
- function pose({time,active,equipped,selected,available,moving}){
+ function pose({time,active,equipped,toolId=7,selected,available,moving}){
   shown=!!active;hand.visible=shown;
   tool.visible=shown&&!!equipped;block.visible=shown&&!equipped&&!!available&&!!blockColors[selected];
   held=tool.visible?'pickaxe':block.visible?'block':'hand';
+  if(tool.visible){const color=toolId===13?0x9b7446:toolId===14?0xd3dce5:0x9ea6b3;for(const p of tool.children)if(p.name==='head'||p.name==='tip')p.material=mat(color);}
   if(block.visible)block.material=mat(blockColors[selected]);
   const progress=clamp((time-started)/.30,0,1),arc=progress<1?Math.sin(progress*Math.PI):0;
   bob=moving?Math.sin(time*10)*.025:0;

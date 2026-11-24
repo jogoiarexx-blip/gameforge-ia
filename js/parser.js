@@ -12,7 +12,30 @@
   const missionSemantics=root.GameForgeMissionSemantics||(typeof require==='function'?require('./mission-semantics'):null);
   const threeTraining=root.GameForgeThreeTraining||(typeof require==='function'?require('./three-training'):null);
   const voxelTraining=root.GameForgeVoxelTraining||(typeof require==='function'?require('./voxel-training'):null);
+  // GF-TRAIN-26: sintaxe explícita e limitada; não confundir títulos livres com atos executáveis.
+  function compileCampaign(spec,gdd,command){
+    if(spec?.dimension!=='3d'||!['arena','fps','rpg'].includes(spec.genre)||spec.combatEconomy?.enabled||spec.stages?.length<2)return;
+    const lines=(String(gdd||'')+'\n'+String(command||'')).split(/\r?\n/);
+    const directive=lines.map(l=>l.trim()).filter(l=>/^atos de campanha\s*:/i.test(l)).pop();
+    const ending=lines.map(l=>l.trim()).filter(l=>/^finais alternativos\s*:/i.test(l)).pop();
+    if(!directive&&!ending)return;
+    const alternateEndings=!!ending&&/^finais alternativos\s*:\s*sim\s*$/i.test(ending);
+    if(ending&&!/^finais alternativos\s*:\s*(sim|n[aã]o)\s*$/i.test(ending))return;
+    const acts=[];let next=0;
+    const ranges=directive?directive.split(':').slice(1).join(':').split('|'):['1-'+spec.stages.length];
+    if(ranges.length>10)return;
+    for(const raw of ranges){
+      const m=raw.trim().match(/^(\d+)\s*-\s*(\d+)$/);
+      if(!m||Number(m[1])!==next+1||Number(m[2])<Number(m[1])||Number(m[2])>spec.stages.length)return;
+      acts.push({title:'Ato '+(acts.length+1),start:next,end:Number(m[2])-1});next=Number(m[2]);
+    }
+    if(next!==spec.stages.length)return;
+    spec.campaign={version:1,acts,alternateEndings};
+    spec.detected?.push('Campanha: '+acts.length+' ato(s) · '+(alternateEndings?'finais por decisões NPC':'final padrão'));
+    spec.implementation?.applied?.push({id:'campaign-acts-endings',description:'Atos contíguos, histórico de decisões concluídas, epílogo e estatísticas finais',where:'Arena/FPS/RPG 3D'});
+  }
   function training3D(spec,gdd,command){
+    compileCampaign(spec,gdd,command);
     if(spec?.dimension==='3d'&&threeTraining?.inspect)spec.threeTraining=threeTraining.inspect(spec,gdd,command);
     if(voxelTraining?.isVoxel?.(gdd,command)) {
       spec.voxelTraining=voxelTraining.inspect(spec,gdd,command);

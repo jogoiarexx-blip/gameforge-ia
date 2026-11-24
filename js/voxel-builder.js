@@ -26,7 +26,7 @@ function generate(input){
  if(typeof toolsFactory!=='function')throw Error('Módulo de ferramentas ausente.');
  const advancedFactory=root.gameForgeVoxelAdvancedFactory||(typeof require==='function'?require('./voxel-advanced.js'):null);
  if(typeof advancedFactory!=='function')throw Error('Módulo avançado ausente.');
- const size=[64,128,256,512,1024].includes(Number(input?.size))?Number(input.size):64,atmosphere=input?.atmosphere===true,details=input?.details===true,landscape=input?.landscape===true||details,textures=input?.textures===true,quality=['low','medium','high'].includes(input?.quality)?input.quality:'medium';
+ const size=[64,128,256,512,1024,4096].includes(Number(input?.size))?Number(input.size):64,atmosphere=input?.atmosphere===true,details=input?.details===true,landscape=input?.landscape===true||details,textures=input?.textures===true,quality=['low','medium','high'].includes(input?.quality)?input.quality:'medium';
  const landscapeFactory=root.gameForgeVoxelLandscapeFactory||(typeof require==='function'?require('./voxel-landscape.js'):null),textureFactory=root.gameForgeVoxelTextureFactory||(typeof require==='function'?require('./voxel-textures.js'):null),mesherFactory=root.gameForgeVoxelMesherFactory||(typeof require==='function'?require('./voxel-mesher.js'):null);
  if(!landscapeFactory||!textureFactory||!mesherFactory)throw Error('Módulos de paisagem indisponíveis.');
  const atlasFactory=root.gameForgeVoxelAtlasFactory||(typeof require==='function'?require('./voxel-atlas.js'):null);
@@ -36,7 +36,7 @@ function generate(input){
  if(!atmosphereFactory)throw Error('Módulo de atmosfera indisponível.');
  const terrainFactory=root.gameForgeVoxelTerrainFactory||(typeof require==='function'?require('./voxel-terrain.js'):null),lightFactory=root.gameForgeVoxelLightingFactory||(typeof require==='function'?require('./voxel-lighting.js'):null);
  if(!terrainFactory||!lightFactory)throw Error('Módulos de terreno e luz indisponíveis.');
- const regional=input?.regional===true,regionFactory=root.gameForgeVoxelRegionFactory||(typeof require==='function'?require('./voxel-regions.js'):null);
+ const regional=input?.regional===true||size===4096,regionFactory=root.gameForgeVoxelRegionFactory||(typeof require==='function'?require('./voxel-regions.js'):null);
  if(!regionFactory)throw Error('Módulo de persistência regional indisponível.');
  const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival,storage,tools,advanced,size,landscape,details,atmosphere,lighting,regional,textures:textures||!!atlas,quality,...(atlas?{atlas}:{})},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
  const source='/* GF-VOXEL-01 */\nconst GAME_SPEC = '+JSON.stringify(spec).replace(/<\//g,'<\\/')+';\n'+

@@ -1,22 +1,25 @@
 /* GF-VOXEL-02: inventory and station recipes for the optional resource mode. */
 function gameForgeVoxelEconomyFactory(K){
  'use strict';
- const NAMES=['','Grama','Terra','Pedra','Bancada de pedra','Forno','Tijolo','Picareta','Madeira','Folhas','Muda','Alimento','Baú'];
+ const NAMES=['','Grama','Terra','Pedra','Bancada de pedra','Forno','Tijolo','Picareta','Madeira','Folhas','Muda','Alimento','Baú','Picareta de madeira','Picareta de ferro','Minério de ferro','Lingote de ferro'];
  const RECIPES=[
   {station:0,output:{id:4,qty:1},requires:[{id:3,qty:4}]},
   {station:4,output:{id:5,qty:1},requires:[{id:3,qty:5}]},
   {station:4,output:{id:7,qty:1},requires:[{id:3,qty:2}]},
   {station:5,output:{id:6,qty:2},requires:[{id:2,qty:2}]},
-  {station:0,output:{id:12,qty:1},requires:[{id:3,qty:3}]}
+  {station:0,output:{id:12,qty:1},requires:[{id:3,qty:3}]},
+  {station:0,output:{id:13,qty:1},requires:[{id:8,qty:2}]},
+  {station:5,output:{id:16,qty:1},requires:[{id:15,qty:1},{id:8,qty:1}]},
+  {station:4,output:{id:14,qty:1},requires:[{id:16,qty:2}]}
  ];
  const SLOTS=12,STACK=99;
  const initial=()=>[{id:2,qty:4},{id:3,qty:12},...Array(SLOTS-2).fill(null)];
  const valid=bag=>Array.isArray(bag)&&bag.length===SLOTS&&bag.every(v=>v===null||
-  v&&Number.isInteger(v.id)&&[1,2,3,4,5,6,7,8,10,11,12].includes(v.id)&&Number.isInteger(v.qty)&&v.qty>=1&&v.qty<=STACK);
+  v&&Number.isInteger(v.id)&&[1,2,3,4,5,6,7,8,10,11,12,13,14,15,16].includes(v.id)&&Number.isInteger(v.qty)&&v.qty>=1&&v.qty<=STACK);
  const copy=bag=>bag.map(s=>s?{id:s.id,qty:s.qty}:null);
  const count=(bag,id)=>bag.reduce((n,s)=>n+(s?.id===id?s.qty:0),0);
  function change(bag,id,amount){
-  if(!valid(bag)||!Number.isInteger(id)||![1,2,3,4,5,6,7,8,10,11,12].includes(id)||!Number.isInteger(amount)||!amount||Math.abs(amount)>STACK)return null;
+  if(!valid(bag)||!Number.isInteger(id)||![1,2,3,4,5,6,7,8,10,11,12,13,14,15,16].includes(id)||!Number.isInteger(amount)||!amount||Math.abs(amount)>STACK)return null;
   const next=copy(bag);let left=Math.abs(amount);
   if(amount<0){
    if(count(next,id)<left)return null;
@@ -44,7 +47,7 @@ function gameForgeVoxelEconomyFactory(K){
   return K.craft({recipes:RECIPES,recipeIndex:index,station,inventory:bag,nearStation:near(world,player,station),maxStack:STACK});
  }
  // Prepare inventory BEFORE changing the world; commit only if the world edit succeeds.
- function edit(world,player,bag,hit,action,id,equipped){
+ function edit(world,player,bag,hit,action,id,equipped,advancedTool=null){
   if(!valid(bag)||!hit||!Array.isArray(hit.cell))return {ok:false,reason:'invalid'};
   const tree=action==='mine'?world.treeHit?.(hit):null;
   if(tree){
@@ -61,7 +64,8 @@ function gameForgeVoxelEconomyFactory(K){
    const dirty=world.plant(hit,player);
    return dirty?{ok:true,bag:next,dirty,planted:true}:{ok:false,reason:'plant-site'};
   }
-  if(action==='mine'&&hit.id===3&&(!equipped||count(bag,7)<1))return {ok:false,reason:'pickaxe'};
+  if(action==='mine'&&hit.id===3&&(advancedTool===null?(!equipped||count(bag,7)<1):![7,13,14].includes(advancedTool)))return {ok:false,reason:'pickaxe'};
+  if(action==='mine'&&hit.id===15&&![7,14].includes(advancedTool))return {ok:false,reason:'pickaxe'};
   if(action==='place'&&(!Number.isInteger(id)||![1,2,3,4,5,6,8].includes(id)))return {ok:false,reason:'invalid'};
   const next=action==='mine'?change(bag,hit.id,1):action==='place'?change(bag,id,-1):null;
   if(!next)return {ok:false,reason:action==='mine'?'inventory-full':'missing-materials'};

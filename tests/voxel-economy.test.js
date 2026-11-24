@@ -1,0 +1,48 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const K=require('../js/voxel-kit.js'),W=require('../js/voxel-world.js')(K),E=require('../js/voxel-economy.js')(K);
+test('GF-VOXEL-02: fabricação exige estação física correta e conserva materiais',()=>{
+ const w=W.create(12345),p=w.spawn(),bag=E.initial();
+ const made=E.craft(bag,0,0,w,p);assert.ok(made.ok);
+ assert.equal(E.count(made.inventory,4),1);assert.equal(E.count(made.inventory,3),8);assert.equal(E.count(bag,3),12);
+ assert.equal(E.craft(made.inventory,1,0,w,p).ok,false);
+ assert.equal(E.craft(made.inventory,1,4,w,p).ok,false);
+ w.edit(1,Math.floor(p.y)+1,0,4);
+ assert.equal(E.near(w,p,4),true);
+ const furnace=E.craft(made.inventory,1,4,w,p);assert.ok(furnace.ok);
+ assert.equal(E.count(furnace.inventory,5),1);assert.equal(E.count(furnace.inventory,3),3);
+ const tool=E.craft(furnace.inventory,2,4,w,p);assert.ok(tool.ok);assert.equal(E.count(tool.inventory,7),1);
+ assert.equal(E.craft(tool.inventory,3,5,w,p).ok,false);
+ w.edit(-1,Math.floor(p.y)+1,0,5);
+ const bricks=E.craft(tool.inventory,3,5,w,p);assert.ok(bricks.ok);
+ assert.equal(E.count(bricks.inventory,6),2);assert.equal(E.count(bricks.inventory,2),2);
+ assert.equal(E.near(w,{...p,x:20},4),false);
+});
+test('GF-VOXEL-02: mineração e construção são transações, ferramenta e capacidade obrigatórias',()=>{
+ const w=W.create(12345),p=w.spawn(),bag=E.initial(),hit=w.ray([p.x,p.y+1.58,p.z],[0,-1,0]);
+ assert.ok(hit&&hit.id===1);
+ const full=Array.from({length:12},()=>({id:3,qty:99}));
+ assert.equal(E.edit(w,p,full,hit,'mine',2,false).ok,false);assert.equal(w.get(...hit.cell),1);
+ const mined=E.edit(w,p,bag,hit,'mine',2,false);assert.ok(mined.ok);assert.equal(E.count(mined.bag,1),1);
+ assert.equal(w.get(...hit.cell),0);assert.equal(E.count(bag,1),0);
+ const next=w.ray([p.x,p.y+1.58,p.z],[0,-1,0]);
+ const fail=E.edit(w,p,mined.bag,next,'place',4,false);assert.equal(fail.ok,false);
+ assert.equal(w.get(...hit.cell),0);
+ const restored=E.edit(w,p,mined.bag,next,'place',2,false);assert.ok(restored.ok);assert.equal(E.count(restored.bag,2),3);
+ w.edit(1,Math.floor(p.y)+1,0,3);
+ const stone={cell:[1,Math.floor(p.y)+1,0],id:3};
+ assert.equal(E.edit(w,p,restored.bag,stone,'mine',2,false).reason,'pickaxe');
+ const withTool=E.change(restored.bag,7,1);
+ assert.equal(E.edit(w,p,withTool,stone,'mine',2,true).ok,true);
+});
+test('GF-VOXEL-02: save completo e isolado do criativo, rejeita inventário inválido',()=>{
+ const cfg={title:'Teste',seed:12345,mode:'resources'},w=W.create(cfg.seed),p=w.spawn();
+ const bag=E.change(E.initial(),7,1);w.edit(1,Math.floor(p.y)+1,0,5);
+ const raw={version:1,...cfg,player:p,edits:w.edits(),mined:1,placed:1,bag,equipped:true,selected:5};
+ const loaded=W.readSave(JSON.stringify(raw),cfg,E);assert.ok(loaded);
+ assert.deepEqual(loaded.bag,bag);assert.equal(loaded.world.get(1,Math.floor(p.y)+1,0),5);
+ assert.equal(loaded.equipped,true);assert.equal(loaded.selected,5);
+ assert.equal(W.readSave(JSON.stringify({...raw,bag:E.initial()}),cfg,E),null);
+ assert.equal(W.readSave(JSON.stringify(raw),{...cfg,mode:'creative'},E),null);
+ assert.notEqual(W.saveKey(cfg),W.saveKey({...cfg,mode:'creative'}));
+});

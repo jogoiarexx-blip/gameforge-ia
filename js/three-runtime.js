@@ -150,6 +150,8 @@ function gameForgeThreeBoot(){
  const keys=new Set(),touch={up:false,down:false,left:false,right:false,fire:false};
  let pointerDown=false,dragX=null,jumpHeld=false,lastDraw=-1000;
  const vec=new T.Vector3(),look=new T.Vector3(),camTarget=new T.Vector3();
+ let cameraMode=0,cameraZoom=1,cameraOccluded=false;
+ const cameraAdjustable=['arena','rpg','racing'].includes(genre);
  let gunRig=null,gunKick=0;
  // Economia de combate opt-in. Jogos existentes sem loja mantêm munição e comportamento originais.
  const storeEnabled=genre==='fps'&&spec.combatEconomy?.enabled===true;
@@ -286,8 +288,8 @@ function gameForgeThreeBoot(){
    if(platform){x=random()*(platforms.length*5.2+15)-8;z=(random()>.5?1:-1)*(7+random()*12);}
    else if(genre==='racing'){const t=random()*Math.PI*2,q=random()>.5?1.42:.57;x=Math.cos(t)*raceRx*q;z=Math.sin(t)*raceRz*q;}
    else if(Math.abs(x)<6||Math.abs(z)<5||distance({x,z},player)<5||enemies.some(e=>distance({x,z},e)<2.7))continue;
-   if(i%3){const tree=addTree(x,z,.7+random()*.6);if(platform)tree.position.y=-4.7;if(!platform&&genre!=='racing')solids.push({x,z,w:1,d:1});}
-   else{const rock=mesh(new T.DodecahedronGeometry(.8+random()*.8,0),mats.stone,world,x,.5,z);if(platform)rock.position.y=-4.2;rock.scale.y=.7;rock.rotation.y=random()*5;if(!platform&&genre!=='racing')solids.push({x,z,w:1.6,d:1.6});}
+   if(i%3){const tree=addTree(x,z,.7+random()*.6);if(platform)tree.position.y=-4.7;if(!platform&&genre!=='racing')solids.push({x,z,w:1,d:1,h:4.7});}
+   else{const rock=mesh(new T.DodecahedronGeometry(.8+random()*.8,0),mats.stone,world,x,.5,z);if(platform)rock.position.y=-4.2;rock.scale.y=.7;rock.rotation.y=random()*5;if(!platform&&genre!=='racing')solids.push({x,z,w:1.6,d:1.6,h:1.5});}
   }
  }
  function makeGate(x,z,index,yaw=0){
@@ -541,7 +543,7 @@ function gameForgeThreeBoot(){
      const x=side*size*.33;
      box(1.25,3.5,1.25,mats.stone,world,x,1.75,z);
      box(2,.24,2,mats.trim,world,x,3.6,z);
-     solids.push({x,z,w:1.25,d:1.25});
+     solids.push({x,z,w:1.25,d:1.25,h:3.72});
     }
     for(const z of [-size*.33,size*.33]){
      box(size*.67,.28,.6,mats.stone,world,0,.16,z);
@@ -552,11 +554,11 @@ function gameForgeThreeBoot(){
      const x=side*size*.34;
      box(5,2.5,7,mats.stone,world,x,1.25,-4);
      box(5.5,.22,7.5,mats.trim,world,x,2.6,-4);
-     solids.push({x,z:-4,w:5,d:7});
+     solids.push({x,z:-4,w:5,d:7,h:2.71});
      for(const z of [-size*.25,size*.18]){
       box(1.5,4,1.5,mats.stone,world,x,2,z);
       box(2.4,.25,2.4,mats.crystal,world,x,4.1,z);
-      solids.push({x,z,w:1.5,d:1.5});
+      solids.push({x,z,w:1.5,d:1.5,h:4.23});
      }
     }
    }else{
@@ -564,7 +566,7 @@ function gameForgeThreeBoot(){
     box(size*.8,.04,4,mats.road,world,0,.015,0);
     for(let i=0;i<4;i++){
      const side=i<2?-1:1,x=side*(8+(i%2)*5),z=(i%2?1:-1)*7;
-     box(2,1.8,2,mats.stone,world,x,.9,z);solids.push({x,z,w:2,d:2});
+     box(2,1.8,2,mats.stone,world,x,.9,z);solids.push({x,z,w:2,d:2,h:1.8});
     }
    }
    const baseCount=stageRules.enemies>0?R.clamp(stageRules.enemies,1,24):
@@ -612,7 +614,7 @@ function gameForgeThreeBoot(){
        bounds.getCenter(center);bounds.getSize(dims);
        if(Number.isFinite(center.x)&&Number.isFinite(center.z)&&
           Number.isFinite(dims.x)&&Number.isFinite(dims.z)&&dims.x>0.05&&dims.z>0.05){
-        solids.push({x:center.x,z:center.z,w:Math.min(dims.x,32),d:Math.min(dims.z,32)});
+        solids.push({x:center.x,z:center.z,w:Math.min(dims.x,32),d:Math.min(dims.z,32),minY:bounds.min.y,h:bounds.max.y});
        }
       }
      }
@@ -636,7 +638,7 @@ function gameForgeThreeBoot(){
     }
     if(entry.collidable&&w>0&&d>0){
      const a=Math.abs(Math.cos(angle)),b=Math.abs(Math.sin(angle));
-     solids.push({x,z,w:scale*(w*a+d*b),d:scale*(d*a+w*b)});
+     solids.push({x,z,w:scale*(w*a+d*b),d:scale*(d*a+w*b),h:scale*({crate:1.4,pillar:3,wall:2,tree:4.45,lamp:3.55}[entry.kind]||4.7)});
     }
    }
   }
@@ -819,10 +821,16 @@ function gameForgeThreeBoot(){
   if(genre==='fps'){
    camera.position.set(player.x,player.y+1.65,player.z);camera.lookAt(player.x+Math.sin(player.yaw)*10,player.y+1.55,player.z+Math.cos(player.yaw)*10);return;
   }
-  if(genre==='platform'){camTarget.set(player.x+2,player.y+9,player.z+16);look.set(player.x+2,player.y+.7,0);}
-  else if(genre==='racing'){camTarget.set(player.x-Math.sin(player.yaw)*8,7,player.z-Math.cos(player.yaw)*8);look.set(player.x+Math.sin(player.yaw)*4,1,player.z+Math.cos(player.yaw)*4);}
-  else{camTarget.set(player.x,15,player.z+13);look.set(player.x,0.7,player.z-1.8);}
-  camera.position.lerp(camTarget,Math.min(1,dt*7));camera.lookAt(look);
+  if(genre==='platform'){
+   camTarget.set(player.x+2,player.y+9,player.z+16);look.set(player.x+2,player.y+.7,0);
+   camera.position.lerp(camTarget,dt>=1?1:1-Math.exp(-7*dt));camera.lookAt(look);return;
+  }
+  const rig=R.cameraTargets(genre,player,cameraMode,cameraZoom);
+  const safe=R.cameraBlend(rig.eye,rig.wanted,camera.position,solids,dt,dt>=1);
+  camera.position.set(safe.x,safe.y,safe.z);cameraOccluded=safe.occluded;
+  camera.lookAt(rig.focus.x,rig.focus.y,rig.focus.z);
+  const fov=camera.fov+(rig.fov-camera.fov)*(dt>=1?1:1-Math.exp(-4*dt));
+  if(Math.abs(fov-camera.fov)>.005){camera.fov=fov;camera.updateProjectionMatrix();}
  }
  function updateHUD(){
   $('health').textContent=Math.ceil(health);$('score').textContent=score;$('ammo').textContent=genre==='racing'?Math.round(Math.abs(player.speed)*12)+' km/h':genre==='platform'?collected+'/'+required:genre==='rpg'?'🧪'+rpgPotions+' · '+ammo:combatStore?ammo+'/'+combatStore.state().reserve+' · ¢'+combatStore.state().credits:ammo;
@@ -888,6 +896,7 @@ function gameForgeThreeBoot(){
     choice:npcSelectedChoice,choices:npcAt().choices?.map(c=>({id:c.id,label:c.label}))||[]}:null,
    checkpointAvailable:!!loadCheckpoint(),checkpointStage:loadCheckpoint()?.stage??null,
    midStageAvailable:!!loadMidStage(),midStageRestored,
+   cameraRig:{mode:cameraMode,zoom:cameraZoom,occluded:cameraOccluded,fov:camera?.fov??null},
    clock,health,score,ammo,enemies:enemies.length,collected,required,missionMode:['arena','fps','rpg'].includes(genre)?missionAt(stage):'default',missionReady:['arena','fps','rpg'].includes(genre)?combatReady():null,rpg:{level:rpgLevel,xp:rpgXP,potions:rpgPotions},combatEconomy:combatStore?{...combatStore.state(),magazine:ammo,shopOpen}:null,surviveRemaining:missionAt(stage)==='survive'?Math.max(0,R.clamp(Number(configAt(stage).seconds)||45,5,180)-stageClock):null,playerBullets:bullets.length,checkpoint:race.next,lap:race.lap,render:{mode:renderer.mode||'webgl',triangles:renderer.info.render.triangles||0,pixelRatio:ratio,drawCalls:renderer.info.render.calls,geometries:renderer.info.memory.geometries},player:{x:player.x*100,y:player.z*100,z:player.y*100,angle:player.yaw,screenX:genre==='fps'?canvas.width/2:(vec.x*.5+.5)*canvas.width,screenY:genre==='fps'?canvas.height/2:(-.5*vec.y+.5)*canvas.height,radius:20}};
  };
  $('control-help').textContent=genre==='fps'?(combatStore?'WASD: mover · Espaço: atirar · R: recarregar · B: loja de armas/vida':'WASD / setas: mover · Q/E ou arrastar: mirar · Espaço/clique: atirar'):genre==='racing'?'W / ↑ acelerar · S / ↓ frear · A/D virar · Espaço turbo':genre==='platform'?'A/D ou ←/→: mover · W/↑/Espaço: saltar · Q/S: profundidade':genre==='rpg'?'WASD: explorar · Espaço: magia · H: poção · P: pausa':'WASD / setas: mover · Espaço/clique: ataque · P: pausa';
@@ -972,6 +981,30 @@ function gameForgeThreeBoot(){
   refreshNpcButton();
  }
  buildNpcUI();
+ if(cameraAdjustable){
+  const host=canvas.parentElement;
+  function cameraCycle(){cameraMode=1-cameraMode;canvas.focus();}
+  function zoomCycle(){cameraZoom=cameraZoom===1?.7:cameraZoom===.7?1.35:1;canvas.focus();}
+  if(host?.append&&document.createElement){
+   const controls=document.createElement('div');
+   controls.style.cssText='position:absolute;left:10px;top:70px;z-index:12;display:flex;gap:4px;';
+   for(const [label,action] of [['Câmera [C]',cameraCycle],['Zoom [Z]',zoomCycle]]){
+    const button=document.createElement('button');button.type='button';button.textContent=label;
+    button.setAttribute('aria-label',label);button.addEventListener('click',action);controls.append(button);
+   }
+   host.append(controls);
+  }
+  $('control-help').textContent+=' · C: câmera · Z: zoom';
+  addEventListener('keydown',e=>{
+   if(e.repeat||state!=='play'||paused)return;
+   if(e.key.toLowerCase()==='c'){e.preventDefault();cameraCycle();}
+   if(e.key.toLowerCase()==='z'){e.preventDefault();zoomCycle();}
+  });
+  canvas.addEventListener('wheel',e=>{
+   if(state!=='play'||paused)return;e.preventDefault();
+   cameraZoom=R.clamp(cameraZoom+Math.sign(e.deltaY)*.08,.7,1.35);
+  },{passive:false});
+ }
  if(stageConfig.some(c=>R.npcQuestContract(c?.npcQuest)))
   $('control-help').textContent+=' · E: conversar com NPC';
  $('start').addEventListener('click',()=>{if(state==='play'&&paused)togglePause();else start();});

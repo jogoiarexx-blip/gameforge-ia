@@ -348,11 +348,11 @@ function gameForgeUrban3DBoot(){
   if(len>0&&saveCooldown<=0){saveCooldown=1.5;save();}
   updateHud();
  }
- function draw(){
+ function draw(dt){
   guard.visible=!progress.guardDefeated||deathRemaining>0;
   const eye={x:progress.x,y:1.45,z:progress.z};
   const desired=R.cameraPosition(eye,{x:progress.x+2.6,y:4.4,z:progress.z+6.5},blockers);
-  camera.position.lerp(new T.Vector3(desired.x,desired.y,desired.z),.16);
+  camera.position.lerp(new T.Vector3(desired.x,desired.y,desired.z),desired.occluded?1:1-Math.exp(-10*Math.min(.1,dt)));
   const safe=R.cameraPosition(eye,camera.position,blockers);
   camera.position.set(safe.x,safe.y,safe.z);
   cameraOccluded=desired.occluded||safe.occluded;
@@ -371,7 +371,7 @@ function gameForgeUrban3DBoot(){
    }
    if(steps===MAX_STEPS&&accumulator>=SIM_DT)accumulator=0;
   }else accumulator=0;
-  draw();
+  draw(elapsed);
  }
  hero.position.set(progress.x,0,progress.z);
  guard.position.set(0,0,1.5);

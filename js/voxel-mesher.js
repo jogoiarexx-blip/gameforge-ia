@@ -8,13 +8,15 @@ function gameForgeVoxelMesherFactory(){
   const P=S+pad*2;if(![1,8].includes(pad)||snapshot.length!==P*P*H)throw Error('Snapshot inválido');
   const pos=[],rgb=[],uv=[],tiles=[];let faces=0,exposed=0;
   const index=(x,y,z)=>(y*P+z+pad)*P+x+pad;
-  const get=(x,y,z)=>y<0?3:y>=H||x< -pad||x>=S+pad||z< -pad||z>=S+pad?0:snapshot[index(x,y,z)];
+  const raw=(x,y,z)=>y<0?3:y>=H||x< -pad||x>=S+pad||z< -pad||z>=S+pad?0:snapshot[index(x,y,z)];
+  const get=(x,y,z)=>{const id=raw(x,y,z);return id>=40&&id<=47?28:id;};
+  const waterHeight=(x,y,z)=>{const id=raw(x,y,z);return id===28?8:id>=40&&id<=47?id-39:0;};
   const opaque=id=>id!==0&&id!==28&&id!==30;
   // Bounded multi-source BFS: eight levels, halo spans all possible contributors.
   const light=lighting?new Uint8Array(snapshot.length):null;
   if(light){const q=new Int32Array(snapshot.length);let head=0,tail=0;for(let i=0;i<snapshot.length;i++)if(snapshot[i]===30){light[i]=8;q[tail++]=i;}
    while(head<tail){const i=q[head++],n=light[i]-1;if(n<1)continue;const x=i%P,z=Math.floor(i/P)%P,y=Math.floor(i/(P*P));
-    const put=j=>{if(!light[j]&&!opaque(snapshot[j])){light[j]=n;q[tail++]=j;}};
+    const put=j=>{if(!light[j]&&!opaque(snapshot[j]>=40&&snapshot[j]<=47?28:snapshot[j])){light[j]=n;q[tail++]=j;}};
     if(x>0)put(i-1);if(x<P-1)put(i+1);if(z>0)put(i-P);if(z<P-1)put(i+P);if(y>0)put(i-P*P);if(y<H-1)put(i+P*P);
    }
   }
@@ -31,20 +33,26 @@ function gameForgeVoxelMesherFactory(){
     for(let j=0;j<nv;j++)for(let i=0;i<nu;i++){
      const p=[0,0,0];p[axis]=plane;p[u]=i;p[v]=j;const id=get(...p);
      if(!id||id===30)continue;p[axis]+=sign;const adjacent=get(...p);
-     if(adjacent&&adjacent!==30&&(adjacent!==28||id===28))continue;
+     let wh=0,nh=0;
+     if(id===28){const own=p.slice();own[axis]-=sign;const a=waterHeight(...own),b=waterHeight(...p);
+      if(adjacent===28){if(axis===1||a<=b)continue;wh=a;nh=b;}
+      else if(adjacent&&adjacent!==30)continue;
+      else if(a!==8)wh=a;
+     }else if(adjacent&&adjacent!==30&&adjacent!==28)continue;
      const sheltered=lighting&&p[1]<top[(p[2]+pad)*P+p[0]+pad];
      let ao=0;if(lighting&&id!==28){const corners=[[-1,-1],[1,-1],[1,1],[-1,1]];for(let k=0;k<4;k++)ao|=cornerAO(p,u,v,...corners[k])<<(k*2);}
-     mask[j*nu+i]=id+(sheltered?64:0)+(lit(p)<<7)+(ao<<11);exposed++;
+     mask[j*nu+i]=id+(sheltered?64:0)+(lit(p)<<7)+(ao<<11)+(wh<<19)+(nh<<23);exposed++;
     }
     for(let j=0;j<nv;j++)for(let i=0;i<nu;){
      const value=mask[j*nu+i];if(!value){i++;continue;}
-     let w=1,h=1;const ao=value>>>11;while(!ao&&i+w<nu&&mask[j*nu+i+w]===value)w++;
-     outer:while(!ao&&j+h<nv){for(let k=0;k<w;k++)if(mask[(j+h)*nu+i+k]!==value)break outer;h++;}
+     let w=1,h=1;const ao=(value>>>11)&255,wh=(value>>>19)&15,nh=(value>>>23)&15;while(!ao&&!wh&&i+w<nu&&mask[j*nu+i+w]===value)w++;
+     outer:while(!ao&&!wh&&j+h<nv){for(let k=0;k<w;k++)if(mask[(j+h)*nu+i+k]!==value)break outer;h++;}
      for(let yy=0;yy<h;yy++)mask.fill(0,(j+yy)*nu+i,(j+yy)*nu+i+w);
      const id=value%64,ambient=Math.max(value&64?.32:1,((value>>>7)&15)/8*1.28);
      const corners=[[0,0],[w,0],[w,h],[0,h]],order=sign>0?[0,1,2,0,2,3]:[0,2,1,0,3,2],c=textured?[1,1,1]:colors[id]||[1,0,1];
      for(const k of order){
       const [a,b]=corners[k],p=[0,0,0];p[axis]=plane+(sign>0?1:0);p[u]=i+a;p[v]=j+b;
+      if(wh){if(axis===1&&sign>0)p[1]=plane+wh/8;else if(axis!==1){const y0=u===1?i:j;p[1]=y0+(p[1]===y0?nh/8:wh/8);}}
       pos.push(p[0]+cx*S,p[1],p[2]+cz*S);const factor=shade*ambient*(1-((ao>>>(k*2))&3)*.18);rgb.push(c[0]*factor,c[1]*factor,c[2]*factor);
       // On vertical walls the texture V axis follows world height.
       uv.push(axis===0?b:a,axis===0?a:b);tiles.push(tile(id,axis,sign));

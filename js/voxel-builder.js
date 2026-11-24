@@ -36,11 +36,12 @@ function generate(input){
  if(!atmosphereFactory)throw Error('Módulo de atmosfera indisponível.');
  const terrainFactory=root.gameForgeVoxelTerrainFactory||(typeof require==='function'?require('./voxel-terrain.js'):null),lightFactory=root.gameForgeVoxelLightingFactory||(typeof require==='function'?require('./voxel-lighting.js'):null);
  if(!terrainFactory||!lightFactory)throw Error('Módulos de terreno e luz indisponíveis.');
- const swimming=input?.swimming===true,regional=input?.regional===true||size===4096,regionFactory=root.gameForgeVoxelRegionFactory||(typeof require==='function'?require('./voxel-regions.js'):null);
+ const dynamicWater=landscape&&input?.dynamicWater!==false&&(input?.dynamicWater===true||input?.swimming===true),swimming=input?.swimming===true||dynamicWater,regional=input?.regional===true||size===4096,regionFactory=root.gameForgeVoxelRegionFactory||(typeof require==='function'?require('./voxel-regions.js'):null);
  if(!regionFactory)throw Error('Módulo de persistência regional indisponível.');
- const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival,storage,tools,advanced,size,landscape,details,atmosphere,lighting,regional,swimming,biomes,textures:textures||!!atlas,quality,...(atlas?{atlas}:{})},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
+ const fluidFactory=root.gameForgeVoxelStreamingFactory||(typeof require==='function'?require('./voxel-streaming.js'):null);if(dynamicWater&&!fluidFactory)throw Error('Módulo de água indisponível.');
+ const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival,storage,tools,advanced,size,landscape,details,atmosphere,lighting,regional,swimming,biomes,dynamicWater,textures:textures||!!atlas,quality,...(atlas?{atlas}:{})},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
  const source='/* GF-VOXEL-01 */\nconst GAME_SPEC = '+JSON.stringify(spec).replace(/<\//g,'<\\/')+';\n'+
-  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n'+actorFactory.toString()+'\n'+storageFactory.toString()+'\n'+toolsFactory.toString()+'\n'+advancedFactory.toString()+'\n'+landscapeFactory.toString()+'\n'+atlasFactory.toString()+'\n'+textureFactory.toString()+'\n'+mesherFactory.toString()+'\n'+atmosphereFactory.toString()+'\n'+terrainFactory.toString()+'\n'+lightFactory.toString()+'\n'+regionFactory.toString()+'\n('+boot.toString()+')();\n';
+  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n'+actorFactory.toString()+'\n'+storageFactory.toString()+'\n'+toolsFactory.toString()+'\n'+advancedFactory.toString()+'\n'+landscapeFactory.toString()+'\n'+atlasFactory.toString()+'\n'+textureFactory.toString()+'\n'+mesherFactory.toString()+'\n'+atmosphereFactory.toString()+'\n'+terrainFactory.toString()+'\n'+lightFactory.toString()+'\n' +regionFactory.toString()+'\n'+(fluidFactory?fluidFactory.toString()+'\n':'')+'('+boot.toString()+')();\n';
  const css=root.GameForgeGenerator.BASE_CSS+'\n@media(max-width:700px){.touch{gap:4px;flex-wrap:wrap}.touch button{min-height:40px}.head .stats{gap:6px}}';
  const files={'game.js':source,'style.css':css,'engine-3d.js':root.GameForgeThreeSource,
   'THREE-LICENSE.txt':root.GameForgeThreeLicense,
@@ -60,6 +61,7 @@ function generate(input){
  if(atlas)files['LEIA-VOXEL.md']+='\nGF-VOXEL-10: atlas personalizado integrado ao código offline. A aparência não altera o save.\n';
  if(swimming)files['LEIA-VOXEL.md']+='\nGF-VOXEL-13: natação simples, velocidade reduzida e subida com Espaço na água. Água permanece estática, sem propagação ou correnteza.\n';
  if(biomes)files['LEIA-VOXEL.md']+='\nGF-VOXEL-14: biomas de neve, deserto e pântano, lagos rasos, neve/lama/cacto coletáveis, pinheiros e palmeiras no modo coleta. Novas texturas no editor. Use o botão Material para escolher os novos blocos. Save separado; água continua estática.\n';
+ if(dynamicWater)files['LEIA-VOXEL.md']+='\nGF-VOXEL-17: água local por fontes naturais, quedas, níveis, corrente simples e barragens. Fluxo recalculado após edições e travessia; não é salvo. Limite de células, simulação parcial e mundo finito.\n';
  if(regional)files['LEIA-VOXEL.md']+='\nGF-VOXEL-13: checkpoints em regiões de 128 × 128 no IndexedDB, transação atômica e cópia de emergência localStorage. Restauração do checkpoint mais recente válido. Save separado; limites atuais do mundo continuam.\n';
  files['index.html']=root.GameForgeGenerator.shell(title,css,source,false,files);
  return files;

@@ -17,7 +17,7 @@ function gameForgeVoxelTerrainFactory(K,L){
     a[(y*P+z+pad)*P+x+pad]=id;
    }
   }
-  for(const [i,id] of patches||[])if(Number.isSafeInteger(i)&&i>=0&&i<a.length&&Number.isInteger(id)&&id>=0&&id<=33)a[i]=id;
+  for(const [i,id] of patches||[])if(Number.isSafeInteger(i)&&i>=0&&i<a.length&&Number.isInteger(id)&&id>=0&&(id<=33||id>=40&&id<=47))a[i]=id;
   return a;
  }
  return {snapshot};

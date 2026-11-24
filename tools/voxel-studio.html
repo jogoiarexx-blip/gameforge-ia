@@ -3,7 +3,7 @@
 <style>
 :root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0b1421;color:#e7f0fa}*{box-sizing:border-box}body{margin:0}header{padding:16px;background:#16263b;border-bottom:1px solid #3b5068;display:flex;flex-wrap:wrap;gap:12px;align-items:center}h1{font-size:20px;margin:0}a{color:#9fe4cc}main{max-width:1250px;margin:auto;padding:16px;display:grid;grid-template-columns:minmax(220px,290px) 1fr;gap:16px}aside{background:#152438;padding:15px;border-radius:12px}label{display:block;font-size:13px;margin:12px 0 5px}input,button{font:inherit;width:100%;border-radius:8px;padding:10px;background:#233a51;border:1px solid #4c627c;color:#fff}button{margin-top:10px;cursor:pointer;background:#286a59;font-weight:700}button:disabled{opacity:.5;cursor:not-allowed}p{font-size:14px;line-height:1.5;color:#b8cadc}#status{min-height:3em}iframe{width:100%;height:min(78vh,760px);min-height:540px;border:1px solid #34485e;border-radius:12px;background:#0c1422}small{color:#b8cadc}@media(max-width:760px){main{display:block;padding:8px}aside{margin-bottom:10px}iframe{height:70vh;min-height:520px}}
 </style></head><body>
-<header><h1>GameForge · Criador Voxel 3D</h1><small>GF-VOXEL-01 · protótipo criativo</small><a href="../index.html">Voltar ao Studio</a></header>
+<header><h1>GameForge · Criador Voxel 3D</h1><small>GF-VOXEL-10 · editor de mundos e texturas</small><a href="../index.html">Voltar ao Studio</a></header>
 <main><aside>
 <label for="title">Nome do mundo</label><input id="title" value="Prisma — Novo mundo" maxlength="80">
 <label for="seed">Seed do terreno</label><input id="seed" type="number" value="12345" min="0" max="2147483647" step="1">
@@ -17,7 +17,16 @@
 <label style="display:flex;gap:8px;align-items:center"><input id="landscape" type="checkbox" style="width:auto"> Biomas, montanhas, rios e cavernas</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="textures" type="checkbox" style="width:auto"> Texturas procedurais pixeladas</label>
 <label for="quality">Distância de renderização</label><select id="quality" style="width:100%;padding:10px;background:#233a51;color:white;border-radius:8px"><option value="low">Baixa</option><option value="medium" selected>Média</option><option value="high">Alta</option></select>
-<details style="margin-top:12px"><summary>Prévia do atlas procedural</summary><canvas id="texture-atlas" width="128" height="64" style="width:100%;image-rendering:pixelated;display:block;border:1px solid #4c627c;margin-top:8px"></canvas><button type="button" id="atlas-download">Exportar atlas PNG</button><small>Texturas de 16 × 16 pixels geradas pela seed.</small></details>
+<details style="margin-top:12px"><summary>Editor de texturas</summary>
+<canvas id="texture-atlas" width="128" height="64" style="width:100%;image-rendering:pixelated;display:block;border:1px solid #4c627c;margin-top:8px"></canvas>
+<label for="atlas-material">Material</label><select id="atlas-material" style="width:100%;padding:8px;background:#233a51;color:white;border-radius:8px"></select>
+<canvas id="texture-tile" width="16" height="16" aria-label="Pinte a textura selecionada" style="width:100%;aspect-ratio:1;image-rendering:pixelated;display:block;border:1px solid #668399;margin-top:8px;touch-action:none;cursor:crosshair"></canvas>
+<label for="atlas-color">Cor do pincel</label><input type="color" id="atlas-color" value="#bb7943" style="height:42px;padding:4px">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px"><button type="button" id="atlas-fill">Preencher</button><button type="button" id="atlas-undo" disabled>Desfazer</button><button type="button" id="atlas-reset-tile">Restaurar textura</button><button type="button" id="atlas-reset-all">Restaurar atlas</button></div>
+<label for="atlas-import-tile">Importar textura PNG/WEBP</label><input id="atlas-import-tile" type="file" accept="image/png,image/webp">
+<label for="atlas-import-all">Importar atlas completo (2:1)</label><input id="atlas-import-all" type="file" accept="image/png,image/webp">
+<button type="button" id="tile-download">Exportar textura PNG</button><button type="button" id="atlas-download">Exportar atlas PNG</button>
+<p id="atlas-status" role="status">Edite os materiais de 16 × 16 pixels. Imagens são processadas localmente e reduzidas ao tamanho do tile.</p></details>
 <button id="build">Criar prévia jogável</button><button id="download" disabled>Exportar jogo em ZIP</button>
 <p id="status" role="status">Escolha a seed e crie seu primeiro mundo.</p>
 <p><strong>Incluído:</strong> mundos finitos de 64, 128 ou 256 blocos por lado, três materiais, construção/mineração criativa, colisão, toque, bússola, save local no jogo exportado.</p>
@@ -32,7 +41,9 @@
 <script src="../js/voxel-tools.js"></script>
 <script src="../js/voxel-advanced.js"></script>
 <script src="../js/voxel-landscape.js"></script>
+<script src="../js/voxel-atlas.js"></script>
 <script src="../js/voxel-textures.js"></script>
+<script src="../js/voxel-atlas-editor.js"></script>
 <script src="../js/voxel-mesher.js"></script>
 <script src="../js/voxel-runtime.js"></script>
 <script src="../vendor/three-source.js"></script>
@@ -42,18 +53,18 @@
 <script>
 'use strict';
 const $=id=>document.getElementById(id);let files=null;
-function drawAtlas(){const seed=$('seed').valueAsNumber;if(!Number.isSafeInteger(seed)||seed<0||seed>2147483647)return;const atlas=gameForgeVoxelTextureFactory(gameForgeVoxelKitFactory()).generate(seed);const ctx=$('texture-atlas').getContext('2d');const image=ctx.createImageData(atlas.width,atlas.height);image.data.set(atlas.data);ctx.putImageData(image,0,0);}
-$('seed').addEventListener('input',drawAtlas);$('atlas-download').addEventListener('click',()=>{drawAtlas();const a=document.createElement('a');a.href=$('texture-atlas').toDataURL('image/png');a.download='gameforge-atlas-'+$('seed').value+'.png';a.click();});drawAtlas();
+const invalidate=()=>{$('download').disabled=true;files=null;$('status').textContent='Clique em Criar prévia para aplicar as alterações.';};
+const atlasEditor=GameForgeVoxelAtlasEditor.mount({seed:()=>$('seed').valueAsNumber,onChange:invalidate});
 function build(){
  try{
   const seed=$('seed').valueAsNumber;
   if(!Number.isSafeInteger(seed))throw Error('Informe uma seed inteira.');
-  files=GameForgeVoxelBuilder.generate({title:$('title').value,seed,mode:$('mode').value,forest:$('forest').checked,survival:$('survival').checked,storage:$('storage').checked,tools:$('tools').checked,advanced:$('advanced').checked,size:Number($('size').value),landscape:$('landscape').checked,textures:$('textures').checked,quality:$('quality').value});
+  files=GameForgeVoxelBuilder.generate({title:$('title').value,seed,mode:$('mode').value,forest:$('forest').checked,survival:$('survival').checked,storage:$('storage').checked,tools:$('tools').checked,advanced:$('advanced').checked,size:Number($('size').value),landscape:$('landscape').checked,textures:$('textures').checked,quality:$('quality').value,atlas:atlasEditor.encoded()});
   $('preview').srcdoc=GameForgeGenerator.shell($('title').value,files['style.css'],files['game.js'],true,files);
   $('download').disabled=false;$('status').textContent='Prévia criada. Clique em Jogar agora dentro dela.';
  }catch(e){files=null;$('download').disabled=true;$('status').textContent=e.message;}
 }
-for(const id of ['seed','title','mode','forest','survival','storage','tools','advanced','size','landscape','textures','quality'])$(id).addEventListener('input',()=>{$('download').disabled=true;files=null;$('status').textContent='Clique em Criar prévia para aplicar as alterações.';});
+for(const id of ['seed','title','mode','forest','survival','storage','tools','advanced','size','landscape','textures','quality'])$(id).addEventListener('input',invalidate);
 $('build').addEventListener('click',build);
 $('download').addEventListener('click',()=>{
  if(!files)return;

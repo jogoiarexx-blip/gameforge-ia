@@ -18,7 +18,7 @@ function localBlock(x,y,z,size=DEFAULT_CHUNK,height=DEFAULT_HEIGHT){
  if(!int(x)||!int(y)||!int(z)||y<0||y>=height)throw Error('Bloco inválido');
  const {cx,cz}=chunkOf(x,z,size);
  const lx=x-cx*size,lz=z-cz*size;
- return {cx,cz,lx,lz,index:((lx*height)+y)*size+lz};
+ return {cx,cz,lx,lz,index:(y*size+lz)*size+lx};
 }
 function hash(seed,x,z){
  let n=(Number(seed)||0)|0;
@@ -43,7 +43,7 @@ function generateChunk(seed,cx,cz,{size=DEFAULT_CHUNK,height=DEFAULT_HEIGHT}={})
  const voxels=new Uint8Array(size*size*height);
  for(let x=0;x<size;x++)for(let z=0;z<size;z++){
   const h=clamp(heightAt(seed,cx*size+x,cz*size+z),1,height-1);
-  for(let y=0;y<=h;y++)voxels[((x*height)+y)*size+z]=
+  for(let y=0;y<=h;y++)voxels[(y*size+z)*size+x]=
    y===h?1:y>=h-3?2:3; // 1=grama, 2=terra, 3=pedra; 0=ar.
  }
  return {seed,cx,cz,size,height,voxels,generatorVersion:1};

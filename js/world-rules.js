@@ -268,8 +268,66 @@ function gameForgeWorldRules(){
    return null;
   return 'gameforge-campaign-v1:'+spec.genre+':'+spec.projectId;
  }
+ // GF-TRAIN-26: atos contíguos e histórico de decisões concluídas, não de diálogos.
+ function campaignPlan(spec){
+  const c=spec?.campaignNarrative;
+  if(!checkpointKey(spec)||!c||c.version!==1||!Array.isArray(spec.stages)||
+   spec.stages.length<2||spec.stages.length>30||!Array.isArray(c.acts)||
+   c.acts.length<1||c.acts.length>10||typeof c.alternateEndings!=='boolean')return null;
+  let next=0;const acts=[];
+  for(const act of c.acts){
+   if(!act||act.start!==next||!Number.isInteger(act.end)||act.end<next||act.end>=spec.stages.length||
+    typeof act.title!=='string'||!act.title.trim()||act.title.length>80||/[<>]/.test(act.title))return null;
+   acts.push({title:act.title,start:act.start,end:act.end});next=act.end+1;
+  }
+  if(next!==spec.stages.length)return null;
+  return {version:1,acts,alternateEndings:c.alternateEndings};
+ }
+ function campaignHistory(spec,raw,completed){
+  const plan=campaignPlan(spec);
+  if(!plan)return raw===undefined||raw===null?[]:null;
+  if(!Number.isInteger(completed)||completed<0||completed>spec.stages.length||
+   !Array.isArray(raw)||raw.length!==completed)return null;
+  const history=[];
+  for(let i=0;i<completed;i++){
+   const entry=raw[i],npc=npcQuestContract(spec.stageConfig?.[i]?.npcQuest);
+   if(!entry||entry.stage!==i||!(entry.choice===null||npc?.choices?.some(c=>c.id===entry.choice)))return null;
+   if(npc?.choices&&!npc.sideQuest&&entry.choice===null)return null;
+   history.push({stage:i,choice:entry.choice});
+  }
+  return history;
+ }
+ function campaignCommit(spec,history,stage,choice){
+  if(!campaignHistory(spec,history,stage)||!campaignPlan(spec))return null;
+  return campaignHistory(spec,[...history,{stage,choice}],stage+1);
+ }
+ function campaignEnding(spec,history){
+  const plan=campaignPlan(spec),validated=campaignHistory(spec,history,spec.stages?.length);
+  if(!plan||!validated)return null;
+  let aid=0,threat=0,decisions=0;
+  for(const entry of validated){
+   if(entry.choice)decisions++;
+   const npc=npcQuestContract(spec.stageConfig?.[entry.stage]?.npcQuest);
+   const effect=npc?.choices?.find(c=>c.id===entry.choice)?.effect;
+   if(effect==='aid')aid++;if(effect==='threat')threat++;
+  }
+  const id=!plan.alternateEndings?'standard':aid>threat?'alliance':threat>aid?'conflict':'neutral';
+  const endings={standard:['Jornada concluída','A campanha chegou ao fim.'],
+   alliance:['Final — Aliança','As alianças construídas abriram caminho para a reconstrução.'],
+   conflict:['Final — Conflito','A vitória teve um custo: as hostilidades continuam.'],
+   neutral:['Final — Equilíbrio','A jornada terminou, mas o futuro permanece em aberto.']};
+  return {id,title:endings[id][0],epilogue:endings[id][1],aid,threat,decisions,completed:validated.length};
+ }
+ function campaignSaveFields(spec,data){
+  const plan=campaignPlan(spec);
+  if(!plan)return data.history===undefined?{}:null;
+  if(data.campaignFingerprint!==midStageFingerprint(spec))return null;
+  const history=campaignHistory(spec,data.history,data.stage);
+  if(!history)return null;
+  return {history,campaignFingerprint:data.campaignFingerprint};
+ }
  function readCheckpoint(raw,spec){
-  if(!checkpointKey(spec)||typeof raw!=='string'||raw.length>1200)return null;
+  if(!checkpointKey(spec)||typeof raw!=='string'||raw.length>(campaignPlan(spec)?6000:1200))return null;
   let data;try{data=JSON.parse(raw);}catch{return null;}
   if(!data||data.version!==1||data.projectId!==spec.projectId||!Number.isInteger(data.stage)||
    data.stage<1||data.stage>=spec.stages?.length)return null;
@@ -288,10 +346,12 @@ function gameForgeWorldRules(){
    if(!valid||valid.kind!==effect.kind)return null;
    campaignEffect=valid;
   }
+  const campaign=campaignSaveFields(spec,data);if(!campaign)return null;
+  if(campaign.history){const prev=campaign.history[data.stage-1];const effect=npcMissionEffect(spec.stageConfig?.[prev?.stage]?.npcQuest,prev?.choice,prev?.stage);if((effect?.kind||null)!==(campaignEffect?.kind||null)||(effect?.choiceId||null)!==(campaignEffect?.choiceId||null))return null;}
   return {version:1,projectId:data.projectId,stage:data.stage,health:data.health,
    score:data.score,ammo:data.ammo,clock:data.clock,rpgLevel:data.rpgLevel,
    rpgXP:data.rpgXP,rpgPotions:data.rpgPotions,
-   ...(campaignEffect?{campaignEffect}:{})};
+   ...(campaignEffect?{campaignEffect}:{}),...campaign};
  }
  function checkpointPayload(spec,progress){
   if(!checkpointKey(spec))return null;
@@ -358,7 +418,7 @@ function gameForgeWorldRules(){
  }
  function midStageFingerprint(spec){
   const source=JSON.stringify([spec.projectId,spec.genre,spec.stages,
-   spec.stageConfig||[],spec.worldOptions||{},spec.tuning||{},spec.features||{}]);
+   spec.stageConfig||[],spec.worldOptions||{},spec.tuning||{},spec.features||{},...(campaignPlan(spec)?[campaignPlan(spec)]:[])]);
   let value=2166136261;
   for(let i=0;i<source.length;i++){value^=source.charCodeAt(i);value=Math.imul(value,16777619)>>>0;}
   return value.toString(36);
@@ -388,13 +448,13 @@ function gameForgeWorldRules(){
   for(const id of v.coinsTaken){
    if(!integer(id,0,31)||coinIds.has(id))return null;coinIds.add(id);
   }
-  const scripted=midStageScriptState(v,spec,size);if(!scripted)return null;
+  const scripted=midStageScriptState(v,spec,size),campaign=campaignSaveFields(spec,v);if(!scripted||!campaign)return null;
   return {version:1,projectId:v.projectId,fingerprint:v.fingerprint,stage:v.stage,
    health:v.health,score:v.score,ammo:v.ammo,clock:v.clock,stageClock:v.stageClock,
    rpgLevel:v.rpgLevel,rpgXP:v.rpgXP,rpgPotions:v.rpgPotions,
    player:{x:v.player.x,z:v.player.z,yaw:v.player.yaw},
    enemies:v.enemies.map(e=>({id:e.id,x:e.x,z:e.z,hp:e.hp})),
-   coinsTaken:[...v.coinsTaken],...scripted};
+   coinsTaken:[...v.coinsTaken],...scripted,...campaign};
  }
  function midStagePayload(spec,progress){
   if(!midStageKey(spec))return null;
@@ -405,7 +465,7 @@ function gameForgeWorldRules(){
  return {clamp,rng,cameraClip,cameraBlend,cameraTargets,moveCircle,crowdDirection,platformRoute,raceProgress,trackRibbon,goalReady,missionReady,
   enemyProfile,dueStageEvents,waypoint,enteredZone,missionStepReady,dueZoneEvents,
   npcQuestContract,npcPatrolPosition,npcDailyPeriod,npcRoutineTarget,npcMissionEffect,
-  npcNear,npcReward,checkpointKey,readCheckpoint,checkpointPayload,
+  npcNear,npcReward,campaignPlan,campaignHistory,campaignCommit,campaignEnding,checkpointKey,readCheckpoint,checkpointPayload,
   midStageKey,midStageEligible,midStageFingerprint,readMidStage,midStagePayload};
 }
 if(typeof module!=='undefined')module.exports=gameForgeWorldRules;

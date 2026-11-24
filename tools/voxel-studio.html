@@ -12,6 +12,7 @@
 <label style="display:flex;gap:8px;align-items:center"><input id="survival" type="checkbox" style="width:auto"> Sobrevivência (modo coleta)</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="storage" type="checkbox" style="width:auto"> Baús e itens no chão (modo coleta)</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="tools" type="checkbox" style="width:auto"> Ferramentas duráveis e minério (ativa floresta)</label>
+<label style="display:flex;gap:8px;align-items:center"><input id="advanced" type="checkbox" style="width:auto"> Equipamentos avançados (ativa ferramentas e floresta)</label>
 <button id="build">Criar prévia jogável</button><button id="download" disabled>Exportar jogo em ZIP</button>
 <p id="status" role="status">Escolha a seed e crie seu primeiro mundo.</p>
 <p><strong>Incluído:</strong> mundo finito de 64 × 64 blocos, três materiais, construção/mineração criativa, colisão, toque, bússola, save local no jogo exportado.</p>
@@ -24,6 +25,7 @@
 <script src="../js/voxel-actors.js"></script>
 <script src="../js/voxel-storage.js"></script>
 <script src="../js/voxel-tools.js"></script>
+<script src="../js/voxel-advanced.js"></script>
 <script src="../js/voxel-runtime.js"></script>
 <script src="../vendor/three-source.js"></script>
 <script src="../js/generator.js"></script>
@@ -36,12 +38,12 @@ function build(){
  try{
   const seed=$('seed').valueAsNumber;
   if(!Number.isSafeInteger(seed))throw Error('Informe uma seed inteira.');
-  files=GameForgeVoxelBuilder.generate({title:$('title').value,seed,mode:$('mode').value,forest:$('forest').checked,survival:$('survival').checked,storage:$('storage').checked,tools:$('tools').checked});
+  files=GameForgeVoxelBuilder.generate({title:$('title').value,seed,mode:$('mode').value,forest:$('forest').checked,survival:$('survival').checked,storage:$('storage').checked,tools:$('tools').checked,advanced:$('advanced').checked});
   $('preview').srcdoc=GameForgeGenerator.shell($('title').value,files['style.css'],files['game.js'],true,files);
   $('download').disabled=false;$('status').textContent='Prévia criada. Clique em Jogar agora dentro dela.';
  }catch(e){files=null;$('download').disabled=true;$('status').textContent=e.message;}
 }
-for(const id of ['seed','title','mode','forest','survival','storage','tools'])$(id).addEventListener('input',()=>{$('download').disabled=true;files=null;$('status').textContent='Clique em Criar prévia para aplicar as alterações.';});
+for(const id of ['seed','title','mode','forest','survival','storage','tools','advanced'])$(id).addEventListener('input',()=>{$('download').disabled=true;files=null;$('status').textContent='Clique em Criar prévia para aplicar as alterações.';});
 $('build').addEventListener('click',build);
 $('download').addEventListener('click',()=>{
  if(!files)return;

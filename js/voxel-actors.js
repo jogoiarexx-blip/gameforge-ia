@@ -79,7 +79,7 @@ function gameForgeVoxelActorsFactory(T){
  for(const x of [-.25,.25])part(tool,'tip',[.10,.17,.11],[x,.48,0],0x7a8999);
  tool.rotation.z=-.32;
  const block=part(hand,'held-block',[.23,.23,.23],[0,.18,-.13],0x947654);
- const blockColors={1:0x74a64c,2:0x93623d,3:0x8a9399,4:0x9e7538,5:0x505963,6:0xbf5337,8:0x714721,10:0x6bb63a};
+ const blockColors={1:0x74a64c,2:0x93623d,3:0x8a9399,4:0x9e7538,5:0x505963,6:0xbf5337,8:0x714721,10:0x6bb63a,12:0xb98537};
  let started=-100,action='none',actions=0,shown=false,held='hand',bob=0;
  function swing(time,kind){
   if(!Number.isFinite(time)||!['mine','place','attack'].includes(kind))return false;

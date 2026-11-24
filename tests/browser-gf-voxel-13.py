@@ -34,7 +34,8 @@ def run():
                 game,url=server(dest)
                 try:
                     page.close()
-                    page=browser.new_page(viewport={'width':390,'height':844})
+                    ctx=browser.new_context(viewport={'width':390,'height':844})
+                    page=ctx.new_page()
                     errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
                     page.goto(url+'/index.html')
                     page.wait_for_function("window.__gameforgeTelemetry?.().regional?.ready===true",timeout=45000)
@@ -50,12 +51,15 @@ def run():
                     saved=page.evaluate('window.__gameforgeTelemetry()')
                     assert saved['cache']['total']==65536
                     assert saved['cache']['resident']<=96
-                    page.evaluate('localStorage.clear()')
-                    page.reload()
-                    page.wait_for_function("window.__gameforgeTelemetry?.().regional?.ready===true",timeout=45000)
-                    assert page.locator('#start').inner_text()=='Continuar mundo'
-                    page.locator('#start').click()
-                    restored=page.evaluate('window.__gameforgeTelemetry()')
+                    other=ctx.new_page();other.on('pageerror',lambda e:errors.append(str(e)))
+                    other.goto(url+'/index.html')
+                    other.wait_for_function("window.__gameforgeTelemetry?.().regional?.ready===true",timeout=45000)
+                    other.evaluate('localStorage.clear()')
+                    other.reload()
+                    other.wait_for_function("window.__gameforgeTelemetry?.().regional?.ready===true",timeout=45000)
+                    assert other.locator('#start').inner_text()=='Continuar mundo'
+                    other.locator('#start').click()
+                    restored=other.evaluate('window.__gameforgeTelemetry()')
                     assert restored['mined']==saved['mined'] and restored['edits']==saved['edits']
                     assert restored['regional']['committed']>=saved['regional']['committed']
                     assert not errors,errors

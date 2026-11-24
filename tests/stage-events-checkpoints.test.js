@@ -781,7 +781,7 @@ test('GF-TRAIN-26: atos contíguos e finais dependem de decisões válidas',()=>
   assert.equal(R.readCheckpoint(JSON.stringify({...saved,history:[]}),spec),null);
   assert.equal(R.readCheckpoint(JSON.stringify({...saved,campaignFingerprint:'wrong'}),spec),null);
  }
- assert.equal(R.campaignPlan({...spec,campaign:{...spec.campaignNarrative,acts:[{title:'Ato',start:1,end:1}]}}),null);
+ assert.equal(R.campaignPlan({...spec,campaignNarrative:{...spec.campaignNarrative,acts:[{title:'Ato',start:1,end:1}]}}),null);
 });
 test('GF-TRAIN-26: campanha em execução restaura decisão e apresenta epílogo correto',()=>{
  const steps=[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},{id:'step-2',kind:'survive',seconds:5,label:'Resistir'}];

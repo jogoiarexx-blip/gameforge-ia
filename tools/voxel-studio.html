@@ -15,6 +15,7 @@
 <label style="display:flex;gap:8px;align-items:center"><input id="advanced" type="checkbox" style="width:auto"> Equipamentos avançados (ativa ferramentas e floresta)</label>
 <label for="size">Dimensões do mundo</label><select id="size" style="width:100%;padding:10px;background:#233a51;color:white;border-radius:8px"><option value="64">64 × 64 (original)</option><option value="128">128 × 128 (4× área)</option><option value="256">256 × 256 (16× área)</option></select>
 <label style="display:flex;gap:8px;align-items:center"><input id="landscape" type="checkbox" style="width:auto"> Biomas, montanhas, rios e cavernas</label>
+<label style="display:flex;gap:8px;align-items:center"><input id="details" type="checkbox" style="width:auto"> Vilarejos, pontes e vegetação (ativa paisagem)</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="textures" type="checkbox" style="width:auto"> Texturas procedurais pixeladas</label>
 <label for="quality">Distância de renderização</label><select id="quality" style="width:100%;padding:10px;background:#233a51;color:white;border-radius:8px"><option value="low">Baixa</option><option value="medium" selected>Média</option><option value="high">Alta</option></select>
 <details style="margin-top:12px"><summary>Editor de texturas</summary>
@@ -59,12 +60,12 @@ function build(){
  try{
   const seed=$('seed').valueAsNumber;
   if(!Number.isSafeInteger(seed))throw Error('Informe uma seed inteira.');
-  files=GameForgeVoxelBuilder.generate({title:$('title').value,seed,mode:$('mode').value,forest:$('forest').checked,survival:$('survival').checked,storage:$('storage').checked,tools:$('tools').checked,advanced:$('advanced').checked,size:Number($('size').value),landscape:$('landscape').checked,textures:$('textures').checked,quality:$('quality').value,atlas:atlasEditor.encoded()});
+  files=GameForgeVoxelBuilder.generate({title:$('title').value,seed,mode:$('mode').value,forest:$('forest').checked,survival:$('survival').checked,storage:$('storage').checked,tools:$('tools').checked,advanced:$('advanced').checked,size:Number($('size').value),landscape:$('landscape').checked,details:$('details').checked,textures:$('textures').checked,quality:$('quality').value,atlas:atlasEditor.encoded()});
   $('preview').srcdoc=GameForgeGenerator.shell($('title').value,files['style.css'],files['game.js'],true,files);
   $('download').disabled=false;$('status').textContent='Prévia criada. Clique em Jogar agora dentro dela.';
  }catch(e){files=null;$('download').disabled=true;$('status').textContent=e.message;}
 }
-for(const id of ['seed','title','mode','forest','survival','storage','tools','advanced','size','landscape','textures','quality'])$(id).addEventListener('input',invalidate);
+for(const id of ['seed','title','mode','forest','survival','storage','tools','advanced','size','landscape','details','textures','quality'])$(id).addEventListener('input',invalidate);
 $('build').addEventListener('click',build);
 $('download').addEventListener('click',()=>{
  if(!files)return;

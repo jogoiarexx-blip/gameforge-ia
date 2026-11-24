@@ -26,7 +26,7 @@ function generate(input){
  if(typeof toolsFactory!=='function')throw Error('Módulo de ferramentas ausente.');
  const advancedFactory=root.gameForgeVoxelAdvancedFactory||(typeof require==='function'?require('./voxel-advanced.js'):null);
  if(typeof advancedFactory!=='function')throw Error('Módulo avançado ausente.');
- const size=[64,128,256,512,1024].includes(Number(input?.size))?Number(input.size):64,atmosphere=input?.atmosphere===true,details=input?.details===true,landscape=input?.landscape===true||details,textures=input?.textures===true,quality=['low','medium','high'].includes(input?.quality)?input.quality:'medium';
+ const size=[64,128,256,512,1024,4096].includes(Number(input?.size))?Number(input.size):64,atmosphere=input?.atmosphere===true,details=input?.details===true,landscape=input?.landscape===true||details,textures=input?.textures===true,quality=['low','medium','high'].includes(input?.quality)?input.quality:'medium';
  const landscapeFactory=root.gameForgeVoxelLandscapeFactory||(typeof require==='function'?require('./voxel-landscape.js'):null),textureFactory=root.gameForgeVoxelTextureFactory||(typeof require==='function'?require('./voxel-textures.js'):null),mesherFactory=root.gameForgeVoxelMesherFactory||(typeof require==='function'?require('./voxel-mesher.js'):null);
  if(!landscapeFactory||!textureFactory||!mesherFactory)throw Error('Módulos de paisagem indisponíveis.');
  const atlasFactory=root.gameForgeVoxelAtlasFactory||(typeof require==='function'?require('./voxel-atlas.js'):null);
@@ -36,9 +36,11 @@ function generate(input){
  if(!atmosphereFactory)throw Error('Módulo de atmosfera indisponível.');
  const terrainFactory=root.gameForgeVoxelTerrainFactory||(typeof require==='function'?require('./voxel-terrain.js'):null),lightFactory=root.gameForgeVoxelLightingFactory||(typeof require==='function'?require('./voxel-lighting.js'):null);
  if(!terrainFactory||!lightFactory)throw Error('Módulos de terreno e luz indisponíveis.');
- const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival,storage,tools,advanced,size,landscape,details,atmosphere,lighting,textures:textures||!!atlas,quality,...(atlas?{atlas}:{})},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
+ const swimming=input?.swimming===true,regional=input?.regional===true||size===4096,regionFactory=root.gameForgeVoxelRegionFactory||(typeof require==='function'?require('./voxel-regions.js'):null);
+ if(!regionFactory)throw Error('Módulo de persistência regional indisponível.');
+ const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival,storage,tools,advanced,size,landscape,details,atmosphere,lighting,regional,swimming,textures:textures||!!atlas,quality,...(atlas?{atlas}:{})},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
  const source='/* GF-VOXEL-01 */\nconst GAME_SPEC = '+JSON.stringify(spec).replace(/<\//g,'<\\/')+';\n'+
-  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n'+actorFactory.toString()+'\n'+storageFactory.toString()+'\n'+toolsFactory.toString()+'\n'+advancedFactory.toString()+'\n'+landscapeFactory.toString()+'\n'+atlasFactory.toString()+'\n'+textureFactory.toString()+'\n'+mesherFactory.toString()+'\n'+atmosphereFactory.toString()+'\n'+terrainFactory.toString()+'\n'+lightFactory.toString()+'\n('+boot.toString()+')();\n';
+  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n'+actorFactory.toString()+'\n'+storageFactory.toString()+'\n'+toolsFactory.toString()+'\n'+advancedFactory.toString()+'\n'+landscapeFactory.toString()+'\n'+atlasFactory.toString()+'\n'+textureFactory.toString()+'\n'+mesherFactory.toString()+'\n'+atmosphereFactory.toString()+'\n'+terrainFactory.toString()+'\n'+lightFactory.toString()+'\n'+regionFactory.toString()+'\n('+boot.toString()+')();\n';
  const css=root.GameForgeGenerator.BASE_CSS+'\n@media(max-width:700px){.touch{gap:4px;flex-wrap:wrap}.touch button{min-height:40px}.head .stats{gap:6px}}';
  const files={'game.js':source,'style.css':css,'engine-3d.js':root.GameForgeThreeSource,
   'THREE-LICENSE.txt':root.GameForgeThreeLicense,
@@ -56,6 +58,8 @@ function generate(input){
  if(lighting)files['LEIA-VOXEL.md']+='\nGF-VOXEL-12: iluminação local opcional. Uma madeira + uma pedra fabricam 2 tochas na mochila. T seleciona, Q coloca, E remove. Até 256 tochas por mundo; 4 luzes próximas no celular, 8 no desktop. Oclusão vertical escurece superfícies cobertas. Luz aproximada sem sombras projetadas ou bloqueio por paredes. Save separado.\n';
  if(details)files['LEIA-VOXEL.md']+='\nGF-VOXEL-10: paisagem detalhada com povoados de casas simples, estradas, pontes e vegetação decorativa instanciada. A vegetação não é coletável; estruturas são blocos normais. Saves separados da paisagem anterior.\n';
  if(atlas)files['LEIA-VOXEL.md']+='\nGF-VOXEL-10: atlas personalizado integrado ao código offline. A aparência não altera o save.\n';
+ if(swimming)files['LEIA-VOXEL.md']+='\nGF-VOXEL-13: natação simples, velocidade reduzida e subida com Espaço na água. Água permanece estática, sem propagação ou correnteza.\n';
+ if(regional)files['LEIA-VOXEL.md']+='\nGF-VOXEL-13: checkpoints em regiões de 128 × 128 no IndexedDB, transação atômica e cópia de emergência localStorage. Restauração do checkpoint mais recente válido. Save separado; limites atuais do mundo continuam.\n';
  files['index.html']=root.GameForgeGenerator.shell(title,css,source,false,files);
  return files;
 }

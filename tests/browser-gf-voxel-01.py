@@ -59,6 +59,7 @@ def run():
                     tele=lambda:page.evaluate('window.__gameforgeTelemetry()')
                     initial=tele()
                     assert initial['chunks']==16 and initial['triangles']>0,initial
+                    page.wait_for_function("window.__gameforgeTelemetry().visuals.visible && window.__gameforgeTelemetry().visuals.held==='block'")
                     page.wait_for_function("window.__gameforgeTelemetry().grounded",timeout=15000)
                     page.keyboard.down('ArrowDown')
                     page.wait_for_function("window.__gameforgeTelemetry().player.pitch < -0.95",timeout=15000)
@@ -67,6 +68,7 @@ def run():
                     page.keyboard.press('e')
                     page.wait_for_function("window.__gameforgeTelemetry().mined===1",timeout=15000)
                     assert tele()['edits']==1
+                    assert tele()['visuals']['actions']>=1 and tele()['visuals']['action']=='mine'
                     # Mining may remove the floor under the player; aim at an adjacent surface
                     # and place a block outside the player collider, using real input only.
                     page.keyboard.down('ArrowUp')

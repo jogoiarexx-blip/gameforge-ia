@@ -81,6 +81,7 @@ def run():
                     assert count(5)==1 and count(7)==1 and count(3)==1,tele()
                     page.locator('#voxel-equip').click()
                     assert tele()['equipped']
+                    page.wait_for_function("window.__gameforgeTelemetry().visuals.held==='pickaxe'")
                     page.locator('#voxel-bag').click()
                     place(5);assert count(5)==0
                     page.locator('#voxel-bag').click()

@@ -14,9 +14,11 @@ function generate(input){
  const survival=mode==='resources'&&input?.survival===true;
  const survivalFactory=root.gameForgeVoxelSurvivalFactory||(typeof require==='function'?require('./voxel-survival.js'):null);
  if(typeof survivalFactory!=='function')throw Error('Módulo de sobrevivência ausente.');
+ const actorFactory=root.gameForgeVoxelActorsFactory||(typeof require==='function'?require('./voxel-actors.js'):null);
+ if(typeof actorFactory!=='function')throw Error('Módulo visual ausente.');
  const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
  const source='/* GF-VOXEL-01 */\nconst GAME_SPEC = '+JSON.stringify(spec).replace(/<\//g,'<\\/')+';\n'+
-  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n('+boot.toString()+')();\n';
+  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n'+actorFactory.toString()+'\n('+boot.toString()+')();\n';
  const css=root.GameForgeGenerator.BASE_CSS+'\n@media(max-width:700px){.touch{gap:4px;flex-wrap:wrap}.touch button{min-height:40px}.head .stats{gap:6px}}';
  const files={'game.js':source,'style.css':css,'engine-3d.js':root.GameForgeThreeSource,
   'THREE-LICENSE.txt':root.GameForgeThreeLicense,
@@ -24,6 +26,7 @@ function generate(input){
  if(mode==='resources')files['LEIA-VOXEL.md']='# GF-VOXEL-02 — Coleta e fabricação\n\nInventário de 12 slots com pilhas de até 99. Começa com terra e pedra. Minerar coleta um bloco; construir gasta um. I abre mochila, F equipa picareta, teclas 1–6 selecionam blocos, E minera e Q constrói. Faça bancada de pedra na mochila, coloque-a e fique a até 3 blocos para fabricar forno e picareta. Forno colocado transforma terra em tijolo. Pedra exige picareta equipada. O forno é uma estação de receita imediata (sem combustível ou tempo de cozimento). Save local independente do modo criativo; guarda inventário, ferramenta e edições. Sem fome, criaturas, árvores, P2P ou mundo infinito.\n';
  if(forest)files['LEIA-VOXEL.md']+='\nGF-VOXEL-03: árvores por seed. Mire em tronco ou folhas e mine para obter três madeiras e uma muda (inventário deve ter espaço). Tecla 8 seleciona madeira; 0 seleciona muda. Plante em grama ou terra com espaço livre. A muda cresce após 20 segundos de simulação ativa; se houver obstáculo ou jogador, aguarda. O save inclui árvores, mudas e tempo restante e é separado do modo sem floresta. Folhas desaparecem no corte; sem animação física de queda.\n';
  if(survival)files['LEIA-VOXEL.md']+='\nGF-VOXEL-04: sobrevivência opcional. Ciclo ativo de 120 segundos (80 dia, 40 noite), fome, vida, três alimentos iniciais, criaturas passivas e inimigos noturnos simples. C come, E ataca criatura ao alcance e na mira; picareta aumenta dano. Renasce preservando mundo e inventário. Save separado inclui tempo, fome, vida e criaturas. Sem dano de queda, animações complexas ou P2P.\n';
+ files['LEIA-VOXEL.md']+='\nGF-VOXEL-05: criaturas articuladas procedurais, mãos, blocos e picareta visíveis, animação de caminhada e ação. Malhas reutilizam uma geometria de cubo, sem assets externos. Sem mudanças no formato do save.\n';
  files['index.html']=root.GameForgeGenerator.shell(title,css,source,false,files);
  return files;
 }

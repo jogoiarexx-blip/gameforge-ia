@@ -7,7 +7,7 @@ function gameForgeVoxelSurvivalFactory(K,E){
  const night=s=>s.time%PERIOD>=DAY;
  function ground(world,x,z,nearY,up=1,down=2){
   for(let y=Math.min(158,Math.floor(nearY)+up);y>=Math.max(1,Math.floor(nearY)-down);y--)
-   if(world.get(Math.floor(x),y-1,Math.floor(z))&&!world.collides(x,y,z))return y;
+   if((world.solid?world.solid(Math.floor(x),y-1,Math.floor(z)):world.get(Math.floor(x),y-1,Math.floor(z)))&&!world.collides(x,y,z))return y;
   return null;
  }
  function populate(s,world,player){
@@ -26,7 +26,7 @@ function gameForgeVoxelSurvivalFactory(K,E){
    Array.isArray(s.animals)&&s.animals.length<=8&&new Set(s.animals.map(a=>a?.id)).size===s.animals.length&&
    s.animals.every(a=>a&&Number.isInteger(a.id)&&a.id>=0&&a.id<8&&['sheep','shade'].includes(a.kind)&&
     (a.kind==='sheep'?a.id<4:a.id>=4)&&[a.x,a.y,a.z].every(finite)&&Number.isInteger(a.hp)&&a.hp>0&&a.hp<=(a.kind==='sheep'?2:3)&&
-    Math.abs(a.x)<32&&Math.abs(a.z)<32&&a.y>=1&&a.y<159)&&(!world||s.animals.every(a=>!world.collides(a.x,a.y,a.z)));
+    a.x>=(world?.MIN??-32)&&a.x<(world?.MAX??32)&&a.z>=(world?.MIN??-32)&&a.z<(world?.MAX??32)&&a.y>=1&&a.y<159)&&(!world||s.animals.every(a=>!world.collides(a.x,a.y,a.z)));
  }
  function tick(s,dt,world,player,moving=false,defense=0){
   if(!finite(dt)||dt<=0||dt>.25||s.health<=0)return;

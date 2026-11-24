@@ -1,0 +1,56 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const K=require('../js/voxel-kit.js'),W=require('../js/voxel-world.js')(K),E=require('../js/voxel-economy.js')(K);
+const seed=12345,config={title:'Floresta',seed,mode:'resources',forest:true};
+function fresh(){const w=W.create(seed,[],{forest:true}),p=w.spawn(),t=w.forestState().find(t=>t.x===0&&t.z===-4);return {w,p,t,hit:{cell:[t.x,t.y,t.z],id:8}};}
+test('GF-VOXEL-03: floresta deterministica opt-in, corte inteiro e recursos uma vez',()=>{
+ const {w,p,t,hit}=fresh();
+ assert.deepEqual(w.forestState(),W.create(seed,[],{forest:true}).forestState());
+ assert.equal(W.create(seed).forestState().length,0);
+ assert.ok(w.forestState().length>10);
+ const full=Array.from({length:12},()=>({id:3,qty:99}));
+ assert.equal(E.edit(w,p,full,hit,'mine',2,false).ok,false);
+ assert.equal(w.get(...hit.cell),8);
+ assert.equal(w.edit(...hit.cell,0),null,'árvore não pode ser editada parcialmente');
+ assert.equal(w.edit(t.x,t.y-1,t.z,0),null,'solo sob árvore protegido');
+ const result=E.edit(w,p,E.initial(),hit,'mine',2,false);
+ assert.ok(result.ok);assert.equal(E.count(result.bag,8),3);assert.equal(E.count(result.bag,10),1);
+ assert.equal(w.get(t.x,t.y,t.z),0);assert.equal(w.get(t.x+1,t.y+2,t.z),0);
+ assert.equal(E.edit(w,p,result.bag,hit,'mine',2,false).ok,false);
+});
+test('GF-VOXEL-03: muda exige solo e espaço, cresce em tempo ativo sem atravessar jogador',()=>{
+ const {w,p,t,hit}=fresh();
+ let cut=E.edit(w,p,E.initial(),hit,'mine',2,false);
+ const site={cell:[t.x,t.y-1,t.z],previous:[t.x,t.y,t.z],id:1};
+ const fake={...site,previous:[t.x+1,t.y,t.z]};
+ assert.equal(E.edit(w,p,cut.bag,fake,'place',10,false).ok,false);
+ let plant=E.edit(w,p,cut.bag,site,'place',10,false);assert.ok(plant.ok);
+ assert.equal(E.count(plant.bag,10),0);assert.equal(w.get(...site.previous),10);
+ for(let i=0;i<19;i++)w.grow(1,p);
+ assert.equal(w.get(...site.previous),10);
+ const blocked={...p,x:t.x+.5,y:t.y+1,z:t.z+.5};
+ assert.deepEqual(w.grow(1,blocked),[]);
+ assert.equal(w.get(...site.previous),10);
+ w.edit(t.x+1,t.y+2,t.z,3);
+ assert.deepEqual(w.grow(1,p),[]);
+ assert.equal(w.get(...site.previous),10);
+ w.edit(t.x+1,t.y+2,t.z,0);
+ assert.ok(w.grow(.1,p).length>0);
+ assert.equal(w.get(...site.previous),8);assert.equal(w.get(t.x+1,t.y+2,t.z),9);
+});
+test('GF-VOXEL-03: save mantém corte e muda pendente mesmo com construção bloqueando copa',()=>{
+ const {w,p,t,hit}=fresh();
+ const cut=E.edit(w,p,E.initial(),hit,'mine',2,false);
+ const record=(bag)=>({version:1,...config,player:p,edits:w.edits(),trees:w.forestState(),mined:1,placed:0,bag,equipped:false,selected:10});
+ let save=record(cut.bag),loaded=W.readSave(JSON.stringify(save),config,E);
+ assert.ok(loaded);assert.equal(loaded.world.get(...hit.cell),0);
+ const plant=E.edit(w,p,cut.bag,{cell:[t.x,t.y-1,t.z],previous:hit.cell,id:1},'place',10,false);
+ assert.ok(plant.ok);
+ w.grow(1,p);w.edit(t.x+1,t.y+2,t.z,3);save=record(plant.bag);
+ loaded=W.readSave(JSON.stringify(save),config,E);
+ assert.ok(loaded);assert.equal(loaded.world.get(...hit.cell),10);
+ assert.equal(loaded.world.forestState().find(x=>x.x===t.x&&x.z===t.z).remaining,19);
+ assert.equal(W.readSave(JSON.stringify({...save,trees:[...save.trees,save.trees[0]]}),config,E),null);
+ assert.equal(W.readSave(JSON.stringify(save),{...config,forest:false},E),null);
+ assert.notEqual(W.saveKey(config),W.saveKey({...config,forest:false}));
+});

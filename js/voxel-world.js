@@ -3,22 +3,22 @@ function gameForgeVoxelWorldFactory(K){
  'use strict';
  const S=16,H=160,MIN=-32,MAX=32,LIMIT=4096,finite=Number.isFinite,int=Number.isSafeInteger;
  const colors={1:[.36,.64,.23],2:[.57,.37,.23],3:[.52,.56,.58],4:[.69,.48,.22],5:[.32,.34,.38],6:[.73,.28,.19],8:[.44,.27,.12],9:[.19,.48,.16],10:[.37,.75,.21],12:[.65,.39,.13],15:[.67,.43,.31],20:[.23,.24,.25],21:[.67,.46,.20],28:[.18,.45,.72],29:[.67,.61,.44]};
- const mapSize=n=>[64,128,256,512].includes(n)?n:64;
+ const mapSize=n=>[64,128,256,512,1024].includes(n)?n:64;
  const inside=(x,y,z,bound=32)=>int(x)&&int(y)&&int(z)&&x>=-bound&&x<bound&&z>=-bound&&z<bound&&y>=0&&y<H;
  const cellKey=(x,y,z)=>x+','+y+','+z;
- const validEdit=(e,bound=32)=>Array.isArray(e)&&e.length===4&&inside(e[0],e[1],e[2],bound)&&e[1]>0&&int(e[3])&&e[3]>=0&&(e[3]<=6||e[3]===8||e[3]===12||e[3]===15||e[3]===20||e[3]===21||e[3]===29);
+ const validEdit=(e,bound=32)=>Array.isArray(e)&&e.length===4&&inside(e[0],e[1],e[2],bound)&&e[1]>0&&int(e[3])&&e[3]>=0&&(e[3]<=6||e[3]===8||e[3]===12||e[3]===15||e[3]===20||e[3]===21||e[3]===29||e[3]===30);
  function create(seed,initial=[],options={}){
   if(!int(seed)||seed<0||seed>2147483647)throw Error('Seed inválida');
   const size=mapSize(options.size),MIN=-size/2,MAX=size/2,LIMIT=size===64?4096:16384,lo=MIN/S,hi=MAX/S;
-  const isInside=(x,y,z)=>inside(x,y,z,MAX),landscape=options.landscape===true,details=landscape&&options.details===true;
+  const isInside=(x,y,z)=>inside(x,y,z,MAX),landscape=options.landscape===true,details=landscape&&options.details===true,lighting=options.lighting===true;
   if(!Array.isArray(initial)||initial.length>LIMIT||!initial.every(e=>validEdit(e,MAX)))throw Error('Edições inválidas');
   const chunks=new Map(),edits=new Map(),trees=new Map(),owners=new Map(),forest=options.forest===true,storage=options.storage===true,tools=options.tools===true,advanced=options.advanced===true;
   const LF=typeof gameForgeVoxelLandscapeFactory==='function'?gameForgeVoxelLandscapeFactory:typeof require==='function'?require('./voxel-landscape.js'):null;
-  const land=landscape?LF(K):null,lazy=size===512,columns=landscape&&!lazy?new Array(size*size):null;
+  const land=landscape?LF(K):null,lazy=size>=512,columns=landscape&&!lazy?new Array(size*size):null;
   if(columns)for(let x=MIN;x<MAX;x++)for(let z=MIN;z<MAX;z++)columns[(z-MIN)*size+x-MIN]=land.column(seed,x,z,details);
   const column=(x,z)=>columns?columns[(z-MIN)*size+x-MIN]:land.column(seed,x,z,details);
   const height=(x,z)=>landscape?column(x,z).h:K.heightAt(seed,x,z);
-  const allKeys=[],overlay=new Map(),CACHE_LIMIT=96;
+  const allKeys=[],overlay=new Map(),torches=new Map(),CACHE_LIMIT=96;
   for(let cx=lo;cx<hi;cx++)for(let cz=lo;cz<hi;cz++)allKeys.push(K.key(cx,cz));
   const base=(x,y,z)=>{if(landscape)return land.block(seed,x,y,z,column(x,z),tools,advanced);const h=K.heightAt(seed,x,z);if(y>h)return 0;if(y===h)return 1;if(y>=h-3)return 2;if(!tools||y<=0||y<h-14)return 3;const r=K.hash(seed^Math.imul(y,2654435761),x,z);return r>.86?15:advanced&&r>.78?21:advanced&&r>.70?20:3;};
   let generated=0,evicted=0;
@@ -51,13 +51,14 @@ function gameForgeVoxelWorldFactory(K){
    if(a)return a[p.index];
    const changes=overlay.get(key);return changes?.has(p.index)?changes.get(p.index):base(x,y,z);
   }
-  const solid=(x,y,z)=>{const id=get(x,y,z);return id!==0&&id!==28;};
+  const solid=(x,y,z)=>{const id=get(x,y,z);return id!==0&&id!==28&&id!==30;};
   function edit(x,y,z,id){
-   if(!validEdit([x,y,z,id],MAX)||get(x,y,z)===id||owners.has(cellKey(x,y,z))||trees.has(cellKey(x,y+1,z))||(!forest&&id===8)||(!storage&&id===12)||(!tools&&id===15)||(!advanced&&[20,21].includes(id))||(!landscape&&id===29))return null;
+   if(!validEdit([x,y,z,id],MAX)||get(x,y,z)===id||owners.has(cellKey(x,y,z))||trees.has(cellKey(x,y+1,z))||(!forest&&id===8)||(!storage&&id===12)||(!tools&&id===15)||(!advanced&&[20,21].includes(id))||(!landscape&&id===29)||(!lighting&&id===30)||(id===30&&torches.size>=256))return null;
    const k=cellKey(x,y,z);
    if(id!==base(x,y,z)&&!edits.has(k)&&edits.size>=LIMIT)return null;
    const p=K.localBlock(x,y,z);
-   setCell(x,y,z,id);
+   const previous=get(x,y,z);setCell(x,y,z,id);
+   if(previous===30)torches.delete(k);if(id===30)torches.set(k,[x+.5,y+.45,z+.5]);
    if(id===base(x,y,z))edits.delete(k);else edits.set(k,[x,y,z,id]);
    const dirty=new Set([K.key(p.cx,p.cz)]);
    if(p.lx===0&&p.cx>lo)dirty.add(K.key(p.cx-1,p.cz));
@@ -120,7 +121,7 @@ function gameForgeVoxelWorldFactory(K){
    }else{
     // Guaranteed accessible tree north of spawn plus seed-dependent grid trees.
     const positions=[[0,-4]];
-    for(let x=MIN+6;x<=MAX-6;x+=8)for(let z=MIN+6;z<=MAX-6;z+=8){
+    for(let x=MIN+6;x<=MAX-6;x+=(size===1024?16:8))for(let z=MIN+6;z<=MAX-6;z+=(size===1024?16:8)){
      if((details&&column(x,z).site)||Math.hypot(x,z)<7||K.hash(seed,x,z)<(landscape&&column(x,z).biome==='dry'?.78:.34))continue;
      positions.push([x,z]);
     }
@@ -222,7 +223,7 @@ function gameForgeVoxelWorldFactory(K){
   }
   function place(hit,id,player){
    const p=hit?.previous;
-   if(!p||!hit.cell||!get(...hit.cell)||get(...p)!==0||![1,2,3,4,5,6,8,12,29].includes(id)||overlaps(player,...p))return null;
+   if(!p||!hit.cell||!get(...hit.cell)||get(...p)!==0||![1,2,3,4,5,6,8,12,29,30].includes(id)||overlaps(player,...p))return null;
    return edit(...p,id);
   }
   function decorations(cx,cz){
@@ -236,6 +237,21 @@ function gameForgeVoxelWorldFactory(K){
    }
    return out;
   }
+  function terrainJob(cx,cz){
+   if(cx<lo||cx>=hi||cz<lo||cz>=hi)throw Error('Chunk fora do mundo');
+   const patches=[];
+   for(let ax=cx-1;ax<=cx+1;ax++)for(let az=cz-1;az<=cz+1;az++){
+    const changed=overlay.get(K.key(ax,az));if(!changed)continue;
+    for(const [i,id] of changed){
+     const y=Math.floor(i/256),x=ax*16+i%16-cx*16,z=az*16+Math.floor(i/16)%16-cz*16;
+     if(x>=-1&&x<=16&&z>=-1&&z<=16)patches.push([(y*18+z+1)*18+x+1,id]);
+    }
+   }
+   return {seed,cx,cz,bound:MAX,landscape,details,tools,advanced,patches};
+  }
+  function nearbyTorches(p,limit=8,radius=12){
+   return [...torches.values()].map(v=>({v,d:(v[0]-p.x)**2+(v[1]-p.y)**2+(v[2]-p.z)**2})).filter(v=>v.d<=radius*radius).sort((a,b)=>a.d-b.d).slice(0,limit).map(v=>v.v.slice());
+  }
   function snapshot(cx,cz){
    const a=loadChunk(cx,cz);if(!a)throw Error('Chunk fora do mundo');
    const p=new Uint8Array(18*18*H);
@@ -243,12 +259,12 @@ function gameForgeVoxelWorldFactory(K){
    for(let y=0;y<H;y++){for(let z=-1;z<=S;z++){p[(y*18+z+1)*18]=get(cx*S-1,y,cz*S+z);p[(y*18+z+1)*18+17]=get(cx*S+S,y,cz*S+z);}for(let x=0;x<S;x++){p[y*324+x+1]=get(cx*S+x,y,cz*S-1);p[y*324+17*18+x+1]=get(cx*S+x,y,cz*S+S);}}
    return p;
   }
-  return {seed,size,MIN,MAX,LIMIT,get,solid,edit,mesh,snapshot,decorations,ray,spawn,collides,mine,place,treeHit,cutTree,plant,grow,forestState,edits:()=>[...edits.values()].map(e=>[...e]),editCount:()=>edits.size,chunkKeys:()=>allKeys.slice(),cacheStats:()=>({lazy,resident:chunks.size,total:allKeys.length,generated,evicted,limit:lazy?CACHE_LIMIT:allKeys.length,voxelBytes:chunks.size*S*S*H,overlayChunks:overlay.size})};
+  return {seed,size,MIN,MAX,LIMIT,get,solid,edit,mesh,snapshot,terrainJob,nearbyTorches,torchCount:()=>torches.size,decorations,ray,spawn,collides,mine,place,treeHit,cutTree,plant,grow,forestState,edits:()=>[...edits.values()].map(e=>[...e]),editCount:()=>edits.size,chunkKeys:()=>allKeys.slice(),cacheStats:()=>({lazy,resident:chunks.size,total:allKeys.length,generated,evicted,limit:lazy?CACHE_LIMIT:allKeys.length,voxelBytes:chunks.size*S*S*H,overlayChunks:overlay.size})};
  }
- function saveKey(config){return 'gameforge-voxel-v1:'+config.seed+':'+encodeURIComponent(config.title)+(config.mode==='resources'?':resources-v1':'')+(config.mode==='resources'&&config.forest===true?':forest-v1':'')+(config.survival===true?':survival-v1':'')+(config.storage===true?':storage-v1':'')+(config.tools===true?':tools-v1':'')+(config.advanced===true?':advanced-v1':'')+(mapSize(config.size)>64?':map-'+mapSize(config.size):'')+(config.landscape===true?':landscape-v1':'')+(config.details===true?':details-v1':'');}
+ function saveKey(config){return 'gameforge-voxel-v1:'+config.seed+':'+encodeURIComponent(config.title)+(config.mode==='resources'?':resources-v1':'')+(config.mode==='resources'&&config.forest===true?':forest-v1':'')+(config.survival===true?':survival-v1':'')+(config.storage===true?':storage-v1':'')+(config.tools===true?':tools-v1':'')+(config.advanced===true?':advanced-v1':'')+(mapSize(config.size)>64?':map-'+mapSize(config.size):'')+(config.landscape===true?':landscape-v1':'')+(config.details===true?':details-v1':'')+(config.lighting===true?':lighting-v1':'');}
  function readSave(raw,config,E,S,D,U,A){
   const size=mapSize(config.size),limit=size===64?4096:16384;
-  if(typeof raw!=='string'||raw.length>(size===64?160000:size===512?1800000:850000))return null;
+  if(typeof raw!=='string'||raw.length>(size===64?160000:size>=512?1800000:850000))return null;
   try{
    const s=JSON.parse(raw);
    if(!s||s.version!==1||s.seed!==config.seed||s.title!==config.title||
@@ -261,6 +277,7 @@ function gameForgeVoxelWorldFactory(K){
    if(!config.landscape&&(s.landscape===true||s.edits.some(e=>e[3]===29)))return null;
    if(config.landscape===true&&s.landscape!==true)return null;
    if((config.details===true)!==(s.details===true))return null;
+   if((config.lighting===true)!==(s.lighting===true)||(!config.lighting&&s.edits.some(e=>e[3]===30)))return null;
    if(size>64?s.size!==size:s.size!==undefined&&s.size!==64)return null;
    if(!advanced&&(s.advanced!==undefined||s.edits.some(e=>[20,21].includes(e[3]))))return null;
    if(!tools&&(s.tools!==undefined||s.edits.some(e=>e[3]===15)))return null;
@@ -268,10 +285,10 @@ function gameForgeVoxelWorldFactory(K){
    if(!survival&&s.survival!==undefined)return null;
    if(forest?(s.forest!==true||!Array.isArray(s.trees)):(s.forest===true||s.edits.some(e=>e[3]===8)))return null;
    if(resources){
-    if(s.mode!=='resources'||!E?.valid(s.bag)||s.bag.some(v=>v&&((v.id===11&&!survival)||(!forest&&[8,10].includes(v.id))||(v.id===12&&!storage)||(!tools&&v.id>=13&&v.id!==29)||(!advanced&&v.id>=17&&v.id!==29)||(!config.landscape&&v.id===29)))||typeof s.equipped!=='boolean'||
-     (tools?(!U?.valid(s.tools,s.bag)||s.equipped!==!!s.tools.active):(s.equipped&&E.count(s.bag,7)<1))||!int(s.selected)||s.selected<1||![1,2,3,4,5,6,...(forest?[8,10]:[]),...(storage?[12]:[]),...(config.landscape?[29]:[])].includes(s.selected))return null;
-   }else if(s.mode==='resources'||s.edits.some(e=>e[3]>3&&!(config.landscape&&e[3]===29)))return null;
-   const world=create(config.seed,s.edits,{forest,storage,tools,advanced,size,landscape:config.landscape===true,details:config.details===true,...(forest?{trees:s.trees}:{})});
+    if(s.mode!=='resources'||!E?.valid(s.bag)||s.bag.some(v=>v&&((v.id===11&&!survival)||(!forest&&[8,10].includes(v.id))||(v.id===12&&!storage)||(!tools&&v.id>=13&&![29,30].includes(v.id))||(!advanced&&v.id>=17&&![29,30].includes(v.id))||(!config.lighting&&v.id===30)||(!config.landscape&&v.id===29)))||typeof s.equipped!=='boolean'||
+     (tools?(!U?.valid(s.tools,s.bag)||s.equipped!==!!s.tools.active):(s.equipped&&E.count(s.bag,7)<1))||!int(s.selected)||s.selected<1||![1,2,3,4,5,6,...(forest?[8,10]:[]),...(storage?[12]:[]),...(config.landscape?[29]:[]),...(config.lighting?[30]:[])].includes(s.selected))return null;
+   }else if(s.mode==='resources'||s.edits.some(e=>e[3]>3&&!(config.landscape&&e[3]===29)&&!(config.lighting&&e[3]===30)))return null;
+   const world=create(config.seed,s.edits,{forest,storage,tools,advanced,size,landscape:config.landscape===true,details:config.details===true,lighting:config.lighting===true,...(forest?{trees:s.trees}:{})});
    if(world.collides(s.player.x,s.player.y,s.player.z)|| (survival&&!S?.valid(s.survival,world))||(storage&&!D?.valid(s.storage,world,config))||(advanced&&!A?.valid(s.advanced,s.bag,world)))return null;
    return {world,player:{x:s.player.x,y:s.player.y,z:s.player.z,yaw:s.player.yaw,pitch:s.player.pitch},mined:s.mined,placed:s.placed,...(survival?{survival:s.survival}:{}),...(storage?{storage:s.storage}:{}),...(tools?{tools:s.tools}:{}),...(advanced?{advanced:s.advanced}:{}),...(resources?{bag:E.copy(s.bag),equipped:s.equipped,selected:s.selected}:{})};
   }catch{return null;}

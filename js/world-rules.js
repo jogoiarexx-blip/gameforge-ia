@@ -254,17 +254,60 @@ function gameForgeWorldRules(){
   if(!checkpointKey(spec))return null;
   return readCheckpoint(JSON.stringify({version:1,projectId:spec.projectId,...progress}),spec);
  }
- // GF-TRAIN-21: save intermediário de fase simples, independente de checkpoint
- // entre fases. Não restaura quests NPC, eventos agendados ou economia de loja.
+ // GF-TRAIN-22: contrato declarativo de estado roteirizado, sem código injetado.
+ function midStageScript(spec,stage){
+  const c=spec.stageConfig?.[stage]||{},size=clamp(Number(spec.worldOptions?.size)||48,32,88);
+  const npc=c.npcQuest? npcQuestContract(c.npcQuest):null;
+  if((c.npcQuest&&!npc)||c.sideQuest||(Array.isArray(c.sideQuestSteps)&&c.sideQuestSteps.length))return null;
+  const events=c.events??[],zones=c.zoneEvents??[],main=c.missionSteps??[];
+  if(!Array.isArray(events)||events.length>2||!Array.isArray(zones)||zones.length>8||
+   !Array.isArray(main)||main.length>5)return null;
+  const ids=new Set();
+  for(const e of [...events,...zones]){
+   if(!e||ids.has(e.id))return null;ids.add(e.id);
+  }
+  if(events.some(e=>dueStageEvents([e],120,[]).length!==1)||
+   zones.some(e=>!waypoint(e.zone,size)||dueZoneEvents([e],waypoint(e.zone,size),size,[]).length!==1))return null;
+  if(main.some((s,i)=>!s||s.id!=='step-'+(i+1)||!['reach','eliminate','collect','survive'].includes(s.kind)||
+   typeof s.label!=='string'||(s.kind==='reach'&&!waypoint(s.zone,size))||
+   (s.kind==='survive'&&(!Number.isInteger(s.seconds)||s.seconds<5||s.seconds>180))))return null;
+  return {npc,events,zones,main,required:!!(npc||events.length||zones.length||main.length)};
+ }
  function midStageEligible(spec,stage){
-  if(!checkpointKey(spec)||!Number.isInteger(stage)||stage<0||stage>=spec.stages?.length)return false;
-  if(spec.stages.length<2)return false;
-  const c=spec.stageConfig?.[stage]||{};
-  return !c.npcQuest&&!c.sideQuest&&
-   (!Array.isArray(c.events)||!c.events.length)&&
-   (!Array.isArray(c.zoneEvents)||!c.zoneEvents.length)&&
-   (!Array.isArray(c.missionSteps)||!c.missionSteps.length)&&
-   (!Array.isArray(c.sideQuestSteps)||!c.sideQuestSteps.length);
+  return !!(checkpointKey(spec)&&Number.isInteger(stage)&&stage>=0&&stage<spec.stages?.length&&
+   spec.stages.length>=2&&midStageScript(spec,stage));
+ }
+ function midStageScriptState(v,spec,size){
+  const c=midStageScript(spec,v.stage),s=v.script;
+  if(!c)return null;
+  if(!s)return c.required?null:{};
+  if(typeof s!=='object'||Array.isArray(s)||!Array.isArray(s.fired)||s.fired.length>10||
+   new Set(s.fired).size!==s.fired.length)return null;
+  const all=[...c.events,...c.zones],fired=new Set(s.fired);
+  if(s.fired.some(id=>!all.some(e=>e.id===id))||
+   c.events.some(e=>fired.has(e.id)!==(v.stageClock>=e.at)))return null;
+  const npc=c.npc, status=s.npcStatus,choice=s.choice;
+  if(npc?!['idle','offered','active','completed'].includes(status):status!=='none')return null;
+  const accepted=['active','completed'].includes(status);
+  const chosen=npc?.choices?.find(x=>x.id===choice);
+  if(npc?.choices&&accepted?!chosen:choice!==null)return null;
+  const main=npc&&!npc.sideQuest?(chosen?.steps||npc.steps):c.main;
+  const side=npc?.sideQuest?(chosen?.steps||npc.steps):[];
+  const validIndex=(i,max)=>Number.isInteger(i)&&i>=0&&i<=max;
+  const validTime=t=>typeof t==='number'&&Number.isFinite(t)&&t>=0&&t<=v.stageClock;
+  if(!validIndex(s.mainIndex,main.length)||!validIndex(s.sideIndex,side.length)||
+   !validTime(s.mainStarted)||!validTime(s.sideStarted))return null;
+  if(npc){
+   const idx=npc.sideQuest?s.sideIndex:s.mainIndex, len=npc.sideQuest?side.length:main.length;
+   if(!accepted&&idx!==0||status==='active'&&idx>=len||status==='completed'&&idx!==len)return null;
+   if(!s.npcPosition||!['x','z'].every(k=>typeof s.npcPosition[k]==='number'&&
+    Number.isFinite(s.npcPosition[k])&&Math.abs(s.npcPosition[k])<=size*.5))return null;
+  }else if(s.npcPosition!==null)return null;
+  const reload=s.reloadDelay??0;
+  if(typeof reload!=='number'||!Number.isFinite(reload)||reload<0||reload>1.3)return null;
+  return {script:{fired:[...s.fired],npcStatus:status,choice,mainIndex:s.mainIndex,
+   mainStarted:s.mainStarted,sideIndex:s.sideIndex,sideStarted:s.sideStarted,
+   npcPosition:npc?{x:s.npcPosition.x,z:s.npcPosition.z}:null,reloadDelay:reload}};
  }
  function midStageKey(spec){
   if(!checkpointKey(spec)||!Array.isArray(spec.stages)||spec.stages.length<2)return null;
@@ -278,7 +321,7 @@ function gameForgeWorldRules(){
   return value.toString(36);
  }
  function readMidStage(raw,spec){
-  if(!midStageKey(spec)||typeof raw!=='string'||raw.length>15000)return null;
+  if(!midStageKey(spec)||typeof raw!=='string'||raw.length>30000)return null;
   let v;try{v=JSON.parse(raw);}catch{return null;}
   if(!v||typeof v!=='object'||Array.isArray(v)||v.version!==1||
    v.projectId!==spec.projectId||v.fingerprint!==midStageFingerprint(spec)||
@@ -291,23 +334,24 @@ function gameForgeWorldRules(){
    !integer(v.rpgLevel,1,30)||!integer(v.rpgXP,0,2000)||!integer(v.rpgPotions,0,9)||
    !v.player||!bounded(v.player.x,-size*.49,size*.49)||
    !bounded(v.player.z,-size*.49,size*.49)||!bounded(v.player.yaw,-1000,1000)||
-   !Array.isArray(v.enemies)||v.enemies.length>32||
+   !Array.isArray(v.enemies)||v.enemies.length>(midStageScript(spec,v.stage).required?106:32)||
    !Array.isArray(v.coinsTaken)||v.coinsTaken.length>32)return null;
   const ids=new Set(),coinIds=new Set();
   for(const e of v.enemies){
-   if(!e||!integer(e.id,0,64)||ids.has(e.id)||
+   if(!e||!integer(e.id,0,midStageScript(spec,v.stage).required?105:64)||ids.has(e.id)||
     !bounded(e.x,-size,size)||!bounded(e.z,-size,size)||!bounded(e.hp,0.01,500))return null;
    ids.add(e.id);
   }
   for(const id of v.coinsTaken){
    if(!integer(id,0,31)||coinIds.has(id))return null;coinIds.add(id);
   }
+  const scripted=midStageScriptState(v,spec,size);if(!scripted)return null;
   return {version:1,projectId:v.projectId,fingerprint:v.fingerprint,stage:v.stage,
    health:v.health,score:v.score,ammo:v.ammo,clock:v.clock,stageClock:v.stageClock,
    rpgLevel:v.rpgLevel,rpgXP:v.rpgXP,rpgPotions:v.rpgPotions,
    player:{x:v.player.x,z:v.player.z,yaw:v.player.yaw},
    enemies:v.enemies.map(e=>({id:e.id,x:e.x,z:e.z,hp:e.hp})),
-   coinsTaken:[...v.coinsTaken]};
+   coinsTaken:[...v.coinsTaken],...scripted};
  }
  function midStagePayload(spec,progress){
   if(!midStageKey(spec))return null;

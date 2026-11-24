@@ -702,7 +702,7 @@ test('GF-TRAIN-21: validações de snapshot rejeitam fraude e estado incompative
  assert.equal(R.readMidStage(JSON.stringify(valid),{...spec,stageConfig:[{mission:'eliminate'},{}]}),null);
  assert.equal(R.midStagePayload({...spec,combatEconomy:{enabled:true}},base),null);
 });
-test('GF-TRAIN-21: missões NPC/eventos, rota de shooter e plataforma não recebem save indevido',()=>{
+test('GF-TRAIN-22: contratos inválidos, shooter e plataforma não recebem save indevido',()=>{
  const base={genre:'rpg',dimension:'3d',projectId:'gf-01234567-abcdef01',stages:['A','B']};
  for(const config of [
   {npcQuest:{id:'npc'}},
@@ -724,4 +724,39 @@ test('GF-TRAIN-21: missões NPC/eventos, rota de shooter e plataforma não receb
  const key=R.midStageKey(spec);assert.ok(storage.has(key));
  const sameTitleDifferentProject={...spec,projectId:'gf-00000000-00000001'};
  assert.notEqual(R.midStageKey(spec),R.midStageKey(sameTitleDifferentProject));
+});
+
+test('GF-TRAIN-22: NPC completo, escolhas, cura e reforços não repetem após recarregar',()=>{
+ const steps=[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},
+  {id:'step-2',kind:'survive',seconds:5,label:'Resistir'}];
+ const npc={id:'npc-stage-01',name:'Guia',zone:'south',dialogue:'Escolha',
+  steps,reward:{score:200,health:0,ammo:30},choices:[
+   {id:'choice-1',label:'Aliados',steps,reward:{score:200,health:0,ammo:30}},
+   {id:'choice-2',label:'Outro',steps,reward:{score:300,health:0,ammo:20}}]};
+ const spec={genre:'arena',dimension:'3d',projectId:'gf-01234567-abcdef01',
+  stages:['Vila','Torre'],stageConfig:[{enemies:1,boss:'no',npcQuest:npc,
+   events:[{id:'event-heal',type:'heal',at:5,amount:10}],
+   zoneEvents:[{id:'zone-reinforcements-south',type:'reinforcements',zone:'south',amount:2}]},{}],
+  features:{bosses:false},worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const storage=new Map(),key=R.midStageKey(spec),a=boot(spec,storage);
+ assert.ok(R.midStageEligible(spec,0));a.start();a.tick(2);
+ a.key('keydown','e');a.key('keydown','1');a.tick(2);a.tick(130);a.elements.pause.click();
+ const active=R.readMidStage(storage.get(key),spec);assert.ok(active);
+ assert.equal(active.script.npcStatus,'active');assert.equal(active.script.choice,'choice-1');
+ assert.equal(active.script.mainIndex,1);assert.ok(active.script.fired.includes('zone-reinforcements-south'));
+ const b=boot(spec,storage);b.start();b.tick(1);
+ assert.equal(b.telemetry().midStageRestored,true);
+ assert.equal(b.telemetry().npc.choice,'choice-1');assert.equal(b.telemetry().enemies,active.enemies.length);
+ b.tick(200);assert.equal(b.telemetry().npc.state,'completed');assert.equal(b.telemetry().score,200);
+ assert.ok(b.telemetry().eventsFired.includes('event-heal'));b.elements.pause.click();
+ const done=R.readMidStage(storage.get(key),spec);assert.ok(done);
+ const c=boot(spec,storage);c.start();c.tick(1);assert.equal(c.telemetry().midStageRestored,true);
+ assert.equal(c.telemetry().npc.state,'completed');assert.equal(c.telemetry().score,200);
+ const count=c.telemetry().enemies;c.key('keydown','e');c.tick(60);
+ assert.equal(c.telemetry().score,200);assert.equal(c.telemetry().enemies,count);
+ for(const script of [{...done.script,fired:['unknown']},{...done.script,fired:[]},
+  {...done.script,mainIndex:0},{...done.script,choice:'choice-99'}]){
+  assert.equal(R.readMidStage(JSON.stringify({...done,script}),spec),null);
+ }
+ assert.equal(R.readMidStage(JSON.stringify({...done,script:undefined}),spec),null);
 });

@@ -80,7 +80,12 @@ function gameForgeThreeBoot(){
   const snap=R.midStagePayload(spec,{stage,health,score,ammo,clock,stageClock,
    rpgLevel,rpgXP,rpgPotions,player:{x:player.x,z:player.z,yaw:player.yaw},
    enemies:enemies.map(e=>({id:e.id,x:e.x,z:e.z,hp:e.hp})),
-   coinsTaken:coins.flatMap((c,i)=>c.taken?[i]:[])});
+   coinsTaken:coins.flatMap((c,i)=>c.taken?[i]:[]),
+   script:{fired:[...firedEvents],npcStatus,choice:npcSelectedChoice,
+    mainIndex:missionStepIndex,mainStarted:missionStepStartedAt,
+    sideIndex:npcSideStepIndex,sideStarted:npcSideStartedAt,
+    npcPosition:npcPosition?{x:npcPosition.x,z:npcPosition.z}:null,
+    reloadDelay:Math.max(0,reloadDelay)}});
   if(!snap)return false;
   try{window.localStorage?.setItem(midStageStorageKey,JSON.stringify(snap));
    lastMidSaveAt=stageClock;return true;}
@@ -88,8 +93,17 @@ function gameForgeThreeBoot(){
  }
  function restoreMidStage(saved){
   if(!saved||!R.midStageEligible(spec,stage)||saved.stage!==stage)return false;
+  // Recria apenas as ondas já disparadas, na ordem original de IDs; não reaplica cura.
+  const script=saved.script;
+  if(script){
+   const config=configAt(stage),events=[...(config.events||[]),...(config.zoneEvents||[])];
+   for(const id of script.fired){
+    const e=events.find(event=>event.id===id);
+    if(e?.type==='reinforcements')spawnEventWave(e);
+   }
+  }
   const byId=new Map(enemies.map(e=>[e.id,e])),keep=new Set(saved.enemies.map(e=>e.id));
-  if(saved.enemies.some(e=>!byId.has(e.id))||
+  if(saved.enemies.some(e=>!byId.has(e.id)||e.hp>byId.get(e.id).hp)||
    saved.coinsTaken.some(i=>i>=coins.length))return false;
   // Evita restaurar o jogador dentro de colisão de um cenário alterado.
   const blocked=solids.some(o=>Math.abs(saved.player.x-o.x)<o.w/2+.4&&
@@ -105,6 +119,17 @@ function gameForgeThreeBoot(){
   collected=saved.coinsTaken.length;
   player.x=saved.player.x;player.z=saved.player.z;player.yaw=saved.player.yaw;
   stageClock=saved.stageClock;lastMidSaveAt=stageClock;
+  if(script){
+   firedEvents=new Set(script.fired);npcStatus=script.npcStatus;npcSelectedChoice=script.choice;
+   missionStepIndex=script.mainIndex;missionStepStartedAt=script.mainStarted;
+   npcSideStepIndex=script.sideIndex;npcSideStartedAt=script.sideStarted;
+   reloadDelay=script.reloadDelay;
+   if(npcActor&&script.npcPosition){
+    npcPosition={...script.npcPosition};npcActor.position.set(npcPosition.x,0,npcPosition.z);
+    if(npcMarker)npcMarker.position.set(npcPosition.x,.04,npcPosition.z);
+   }
+   updateMissionGuides();
+  }
   hero.position.set(player.x,player.y,player.z);hero.rotation.y=player.yaw;
   updateCamera(1);updateHUD();return true;
  }
@@ -286,6 +311,14 @@ function gameForgeThreeBoot(){
    speed:baseSpeed*Math.sqrt(tuning.difficulty)*(boss?1:profile.speed),
    phase:random()*6,mesh:actor});
  }
+ function spawnEventWave(event){
+  const count=Math.min(8,event.amount);
+  for(let i=0;i<count;i++){
+   const a=(i/count)*Math.PI*2+stage*.35;
+   spawnCombatEnemy(i,Math.sin(a)*size*.2,Math.cos(a)*size*.2-3,false);
+  }
+  return count;
+ }
  function runStageEvents(){
   const events=[
    ...R.dueStageEvents(configAt(stage).events,stageClock,[...firedEvents]),
@@ -297,12 +330,7 @@ function gameForgeThreeBoot(){
     health=Math.min(100,health+event.amount);
     notice('Suprimentos de missão: +'+event.amount+' de vida',2);
    }else if(event.type==='reinforcements'){
-    const count=Math.min(8,event.amount);
-    for(let i=0;i<count;i++){
-     const a=(i/count)*Math.PI*2+stage*.35;
-     const x=Math.sin(a)*size*.2,z=Math.cos(a)*size*.2-3;
-     spawnCombatEnemy(i,x,z,false);
-    }
+    const count=spawnEventWave(event);
     notice('Reforços inimigos chegaram: '+count,2.6);
    }
   }

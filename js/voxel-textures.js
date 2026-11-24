@@ -21,8 +21,9 @@ function gameForgeVoxelTextureFactory(K){
   }
   return {data,width:W,height:H,tileSize:TILE,columns:COLS,rows:ROWS};
  }
- function material(T,seed){
-  const a=generate(seed),map=new T.DataTexture(a.data,a.width,a.height,T.RGBAFormat);
+ function material(T,seed,custom){
+  const a=generate(seed);if(custom){const F=typeof gameForgeVoxelAtlasFactory==='function'?gameForgeVoxelAtlasFactory:typeof require==='function'?require('./voxel-atlas.js'):null;a.data=F().decode(custom);}
+  const map=new T.DataTexture(a.data,a.width,a.height,T.RGBAFormat);
   map.colorSpace=T.SRGBColorSpace;map.magFilter=T.NearestFilter;map.minFilter=T.NearestFilter;map.generateMipmaps=false;map.needsUpdate=true;
   const m=new T.MeshBasicMaterial({map,vertexColors:true});
   m.onBeforeCompile=shader=>{

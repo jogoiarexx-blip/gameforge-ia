@@ -12,7 +12,8 @@ function generate(input){
  const mode=input?.mode==='resources'?'resources':'creative';
  const advanced=mode==='resources'&&input?.advanced===true;
  const tools=mode==='resources'&&(input?.tools===true||advanced);
- const forest=mode==='resources'&&(input?.forest===true||tools);
+ const lighting=input?.lighting===true;
+ const forest=mode==='resources'&&(input?.forest===true||tools||lighting);
  const survival=mode==='resources'&&input?.survival===true;
  const survivalFactory=root.gameForgeVoxelSurvivalFactory||(typeof require==='function'?require('./voxel-survival.js'):null);
  if(typeof survivalFactory!=='function')throw Error('Módulo de sobrevivência ausente.');
@@ -25,7 +26,7 @@ function generate(input){
  if(typeof toolsFactory!=='function')throw Error('Módulo de ferramentas ausente.');
  const advancedFactory=root.gameForgeVoxelAdvancedFactory||(typeof require==='function'?require('./voxel-advanced.js'):null);
  if(typeof advancedFactory!=='function')throw Error('Módulo avançado ausente.');
- const size=[64,128,256,512].includes(Number(input?.size))?Number(input.size):64,atmosphere=input?.atmosphere===true,details=input?.details===true,landscape=input?.landscape===true||details,textures=input?.textures===true,quality=['low','medium','high'].includes(input?.quality)?input.quality:'medium';
+ const size=[64,128,256,512,1024].includes(Number(input?.size))?Number(input.size):64,atmosphere=input?.atmosphere===true,details=input?.details===true,landscape=input?.landscape===true||details,textures=input?.textures===true,quality=['low','medium','high'].includes(input?.quality)?input.quality:'medium';
  const landscapeFactory=root.gameForgeVoxelLandscapeFactory||(typeof require==='function'?require('./voxel-landscape.js'):null),textureFactory=root.gameForgeVoxelTextureFactory||(typeof require==='function'?require('./voxel-textures.js'):null),mesherFactory=root.gameForgeVoxelMesherFactory||(typeof require==='function'?require('./voxel-mesher.js'):null);
  if(!landscapeFactory||!textureFactory||!mesherFactory)throw Error('Módulos de paisagem indisponíveis.');
  const atlasFactory=root.gameForgeVoxelAtlasFactory||(typeof require==='function'?require('./voxel-atlas.js'):null);
@@ -33,9 +34,11 @@ function generate(input){
  const atlas=typeof input?.atlas==='string'&&input.atlas?atlasFactory().encode(atlasFactory().decode(input.atlas)):null;
  const atmosphereFactory=root.gameForgeVoxelAtmosphereFactory||(typeof require==='function'?require('./voxel-atmosphere.js'):null);
  if(!atmosphereFactory)throw Error('Módulo de atmosfera indisponível.');
- const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival,storage,tools,advanced,size,landscape,details,atmosphere,textures:textures||!!atlas,quality,...(atlas?{atlas}:{})},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
+ const terrainFactory=root.gameForgeVoxelTerrainFactory||(typeof require==='function'?require('./voxel-terrain.js'):null),lightFactory=root.gameForgeVoxelLightingFactory||(typeof require==='function'?require('./voxel-lighting.js'):null);
+ if(!terrainFactory||!lightFactory)throw Error('Módulos de terreno e luz indisponíveis.');
+ const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival,storage,tools,advanced,size,landscape,details,atmosphere,lighting,textures:textures||!!atlas,quality,...(atlas?{atlas}:{})},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
  const source='/* GF-VOXEL-01 */\nconst GAME_SPEC = '+JSON.stringify(spec).replace(/<\//g,'<\\/')+';\n'+
-  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n'+actorFactory.toString()+'\n'+storageFactory.toString()+'\n'+toolsFactory.toString()+'\n'+advancedFactory.toString()+'\n'+landscapeFactory.toString()+'\n'+atlasFactory.toString()+'\n'+textureFactory.toString()+'\n'+mesherFactory.toString()+'\n'+atmosphereFactory.toString()+'\n('+boot.toString()+')();\n';
+  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n'+actorFactory.toString()+'\n'+storageFactory.toString()+'\n'+toolsFactory.toString()+'\n'+advancedFactory.toString()+'\n'+landscapeFactory.toString()+'\n'+atlasFactory.toString()+'\n'+textureFactory.toString()+'\n'+mesherFactory.toString()+'\n'+atmosphereFactory.toString()+'\n'+terrainFactory.toString()+'\n'+lightFactory.toString()+'\n('+boot.toString()+')();\n';
  const css=root.GameForgeGenerator.BASE_CSS+'\n@media(max-width:700px){.touch{gap:4px;flex-wrap:wrap}.touch button{min-height:40px}.head .stats{gap:6px}}';
  const files={'game.js':source,'style.css':css,'engine-3d.js':root.GameForgeThreeSource,
   'THREE-LICENSE.txt':root.GameForgeThreeLicense,
@@ -49,7 +52,8 @@ function generate(input){
  if(advanced)files['LEIA-VOXEL.md']+='\nGF-VOXEL-08: equipamentos avançados. E inicia mineração progressiva ou mantenha E pressionado; barra indica progresso, mudança de alvo reinicia. Cobre e carvão no subsolo. Fornos usam madeira ou carvão, processam tijolo/ferro/cobre em 4/6/5 segundos ativos e exigem J perto do forno para retirar. F alterna também machado, pá e espada. H equipa armadura de ferro: reduz dano de criaturas em 40% no modo sobrevivência. R repara ferramentas. Save separado preserva fornos e armadura.\n';
  if(size>64||landscape||textures)files['LEIA-VOXEL.md']+='\nGF-VOXEL-09: mundo '+size+' × '+size+' × 160, '+(landscape?'paisagem com biomas, rios rasos, túneis subterrâneos e ruínas. ':'')+(textures?'Atlas de texturas procedurais pixeladas. ':'')+'Malhas greedy carregadas por proximidade; Web Worker no jogo exportado com fallback para a thread principal. Botão Visão ajusta distância. A geração de dados do mundo ainda é feita na inicialização; somente malhas são processadas em segundo plano. Saves independentes por tamanho e paisagem; texturas e distância não alteram save.\n';
  if(atmosphere)files['LEIA-VOXEL.md']+='\nGF-VOXEL-11: atmosfera opcional com céu, sol, lua, nuvens, chuva e neblina por seed/tempo ativo. Superfície da água texturizada recebe animação de cor. Efeitos visuais, sem física de água ou clima.\n';
- if(size===512)files['LEIA-VOXEL.md']+='\nGF-VOXEL-11: mapa finito de 512 × 512 com cache de até 96 chunks de dados (LRU). Dados de terreno são materializados quando a malha é solicitada; consultas fora do cache usam a seed e edições esparsas. Árvores e edições preservadas após descarte.\n';
+ if(size>=512)files['LEIA-VOXEL.md']+='\nGF-VOXEL-11: mapa finito de '+size+' × '+size+' com cache de até 96 chunks de dados (LRU). Terreno e malha são gerados em Web Worker quando disponível; fallback local e cache limitado; consultas fora do cache usam a seed e edições esparsas. Árvores e edições preservadas após descarte.\n';
+ if(lighting)files['LEIA-VOXEL.md']+='\nGF-VOXEL-12: iluminação local opcional. Uma madeira + uma pedra fabricam 2 tochas na mochila. T seleciona, Q coloca, E remove. Até 256 tochas por mundo; 4 luzes próximas no celular, 8 no desktop. Oclusão vertical escurece superfícies cobertas. Luz aproximada sem sombras projetadas ou bloqueio por paredes. Save separado.\n';
  if(details)files['LEIA-VOXEL.md']+='\nGF-VOXEL-10: paisagem detalhada com povoados de casas simples, estradas, pontes e vegetação decorativa instanciada. A vegetação não é coletável; estruturas são blocos normais. Saves separados da paisagem anterior.\n';
  if(atlas)files['LEIA-VOXEL.md']+='\nGF-VOXEL-10: atlas personalizado integrado ao código offline. A aparência não altera o save.\n';
  files['index.html']=root.GameForgeGenerator.shell(title,css,source,false,files);

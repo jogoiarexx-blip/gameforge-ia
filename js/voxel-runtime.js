@@ -2,7 +2,7 @@
 function gameForgeVoxelBoot(){
  'use strict';
  const T=THREE,K=gameForgeVoxelKitFactory(),W=gameForgeVoxelWorldFactory(K),cfg=GAME_SPEC.voxel;
- const E=gameForgeVoxelEconomyFactory(K),resources=cfg.mode==='resources',forest=resources&&cfg.forest===true,materials=resources?[1,2,3,4,5,6,...(forest?[8,10]:[]),...(cfg.storage?[12]:[]),...(cfg.landscape?[29]:[])]:[1,2,3,...(cfg.landscape?[29]:[])];
+ const E=gameForgeVoxelEconomyFactory(K),resources=cfg.mode==='resources',forest=resources&&cfg.forest===true,materials=resources?[1,2,3,4,5,6,...(forest?[8,10]:[]),...(cfg.storage?[12]:[]),...(cfg.landscape?[29]:[]),...(cfg.lighting?[30]:[])]:[1,2,3,...(cfg.landscape?[29]:[]),...(cfg.lighting?[30]:[])];
  const S=gameForgeVoxelSurvivalFactory(K,E),survival=resources&&cfg.survival===true;
  const D=gameForgeVoxelStorageFactory(E),storage=resources&&cfg.storage===true;
  const tools=resources&&cfg.tools===true,advanced=tools&&cfg.advanced===true,U=gameForgeVoxelToolsFactory(E,advanced),A=gameForgeVoxelAdvancedFactory(E,U);
@@ -12,12 +12,13 @@ function gameForgeVoxelBoot(){
  catch{$('overlay-title').textContent='WebGL indisponível';$('overlay-sub').textContent='Este protótipo requer WebGL. Nenhum save foi alterado.';$('start').disabled=true;return;}
  const scene=new T.Scene(),camera=new T.PerspectiveCamera(72,16/9,.05,145);
  scene.background=new T.Color(0x90b7d1);scene.fog=new T.Fog(0x90b7d1,30,92);
- const size=[64,128,256,512].includes(cfg.size)?cfg.size:64,landscape=cfg.landscape===true,details=landscape&&cfg.details===true,atmosphere=cfg.atmosphere===true,textured=cfg.textures===true,streamed=size>64||landscape||textured;
+ const size=[64,128,256,512,1024].includes(cfg.size)?cfg.size:64,landscape=cfg.landscape===true,details=landscape&&cfg.details===true,atmosphere=cfg.atmosphere===true,lighting=cfg.lighting===true,textured=cfg.textures===true,streamed=size>64||landscape||textured||lighting;
  const M=gameForgeVoxelMesherFactory(),X=gameForgeVoxelTextureFactory(K);
  const material=textured?X.material(T,cfg.seed,cfg.atlas,atmosphere):new T.MeshBasicMaterial({vertexColors:true});
+ const lightView=lighting?gameForgeVoxelLightingFactory().install(T,material):null;
  const foliageGeometry=new T.BoxGeometry(1,1,1),foliageMaterial=new T.MeshBasicMaterial({color:0xffffff}),foliage=new Map();
  const atmosphereView=atmosphere?gameForgeVoxelAtmosphereFactory(K).create(T,scene,cfg.seed):null;
- const meshes=new Map(),versions=new Map(),queued=new Set();let wanted=new Set(),streamKey='',epoch=0,worker=null,inflight=null,workerMode='inactive',workerCompleted=0,quality=['low','medium','high'].includes(cfg.quality)?cfg.quality:'medium';
+ const meshes=new Map(),versions=new Map(),queued=new Set();let wanted=new Set(),streamKey='',epoch=0,worker=null,inflight=null,workerMode='inactive',workerCompleted=0,terrainCompleted=0,quality=['low','medium','high'].includes(cfg.quality)?cfg.quality:'medium';
  let world,player,velocity=0,grounded=false,mined=0,placed=0,selected=2;
  let bag=E.initial(),equipped=false,station=0,life=S.initial(),stash=D.initial(),activeChest=null,gear=U.initial(),nextMineAt=0,forge=A.initial(),mining=A.mining(),mineRequest=false;
  const dropMeshes=new Map(),dropGeometry=new T.BoxGeometry(.24,.24,.24),dropMaterial=new T.MeshBasicMaterial({color:0xf5c65c});
@@ -54,7 +55,7 @@ function gameForgeVoxelBoot(){
  }
  function buildNow(id){
   const [cx,cz]=id.split(',').map(Number);
-  applyMesh(id,streamed?M.build(world.snapshot(cx,cz),cx,cz,textured):world.mesh(cx,cz));
+  applyMesh(id,streamed?M.build(world.snapshot(cx,cz),cx,cz,textured,lighting):world.mesh(cx,cz));
  }
  function rebuild(id){
   if(!streamed){buildNow(id);return;}
@@ -80,13 +81,13 @@ function gameForgeVoxelBoot(){
  function initWorker(){
   if(!streamed||worker||workerMode==='fallback')return;
   try{
-   const source='const M=('+gameForgeVoxelMesherFactory.toString()+')();onmessage=e=>{const j=e.data;const d=M.build(j.snapshot,j.cx,j.cz,j.textured);postMessage({id:j.id,epoch:j.epoch,rev:j.rev,data:d},[d.positions.buffer,d.colors.buffer,d.uv.buffer,d.tiles.buffer]);}';
+   const source='const K=('+gameForgeVoxelKitFactory.toString()+')(),L=('+gameForgeVoxelLandscapeFactory.toString()+'),G=('+gameForgeVoxelTerrainFactory.toString()+')(K,L),M=('+gameForgeVoxelMesherFactory.toString()+')();onmessage=e=>{const j=e.data;const d=M.build(j.terrain?G.snapshot(j.terrain):j.snapshot,j.cx,j.cz,j.textured,j.lighting);postMessage({id:j.id,epoch:j.epoch,rev:j.rev,terrain:!!j.terrain,data:d},[d.positions.buffer,d.colors.buffer,d.uv.buffer,d.tiles.buffer]);}';
    const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
    try{worker=new Worker(url);}finally{URL.revokeObjectURL(url);}
    workerMode='worker';
    worker.onmessage=e=>{
     const j=e.data;inflight=null;
-    if(j.epoch===epoch&&wanted.has(j.id)&&j.rev===(versions.get(j.id)||0)){applyMesh(j.id,j.data);workerCompleted++;}
+    if(j.epoch===epoch&&wanted.has(j.id)&&j.rev===(versions.get(j.id)||0)){applyMesh(j.id,j.data);workerCompleted++;if(j.terrain)terrainCompleted++;}
     else if(wanted.has(j.id)&&!meshes.has(j.id))queued.add(j.id);
    };
    worker.onerror=e=>{e.preventDefault();if(inflight&&wanted.has(inflight.id))queued.add(inflight.id);inflight=null;worker.terminate();worker=null;workerMode='fallback';};
@@ -98,16 +99,16 @@ function gameForgeVoxelBoot(){
   for(const k of queued){const [x,z]=k.split(',').map(Number),d=(x-center.cx)**2+(z-center.cz)**2;if(d<best){best=d;id=k;}}
   queued.delete(id);if(!wanted.has(id))return;
   if(!worker){buildNow(id);return;}
-  const [cx,cz]=id.split(',').map(Number),snapshot=world.snapshot(cx,cz),job={id,cx,cz,epoch,rev:versions.get(id)||0,textured,snapshot};
+  const [cx,cz]=id.split(',').map(Number),terrain=size>=512?world.terrainJob(cx,cz):null,snapshot=terrain?null:world.snapshot(cx,cz),job={id,cx,cz,epoch,rev:versions.get(id)||0,textured,lighting,terrain,snapshot};
   inflight=job;
-  try{worker.postMessage(job,[snapshot.buffer]);}catch{inflight=null;worker.terminate();worker=null;workerMode='fallback';queued.add(id);}
+  try{worker.postMessage(job,snapshot?[snapshot.buffer]:[]);}catch{inflight=null;worker.terminate();worker=null;workerMode='fallback';queued.add(id);}
  }
  function resize(){const width=Math.max(1,canvas.clientWidth),height=Math.max(1,canvas.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,innerWidth<700?1:1.35));
   renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();visuals.resize(camera.aspect);
  }
  function initialize(saved){
-  world=saved?.world||W.create(cfg.seed,[],{forest,storage,tools,advanced,size,landscape,details});
+  world=saved?.world||W.create(cfg.seed,[],{forest,storage,tools,advanced,size,landscape,details,lighting});
   player=saved?.player||world.spawn();
   if(!player)throw Error('Sem ponto seguro de nascimento.');
   mined=saved?.mined||0;placed=saved?.placed||0;
@@ -117,7 +118,7 @@ function gameForgeVoxelBoot(){
   visuals.reset(scene);visualX=player.x;visualZ=player.z;
   life=saved?.survival||S.initial();if(survival){if(!saved)bag=E.change(bag,11,3);S.populate(life,world,player);syncCreatures();}
   velocity=0;grounded=false;clock=0;saveAt=0;accumulator=0;frameSamples=[];perf=K.frameMetrics([]);perfAt=0;hudAt=0;
-  epoch++;workerCompleted=0;for(const id of meshes.keys())discard(id);versions.clear();queued.clear();wanted.clear();streamKey='';
+  epoch++;workerCompleted=0;terrainCompleted=0;for(const id of meshes.keys())discard(id);versions.clear();queued.clear();wanted.clear();streamKey='';
   if(streamed){initWorker();refreshStream();const center=K.chunkOf(player.x,player.z),id=K.key(center.cx,center.cz);queued.delete(id);buildNow(id);}
   else for(const id of world.chunkKeys())buildNow(id);
   resize();updateCamera();refreshBag();updateHUD();
@@ -125,7 +126,7 @@ function gameForgeVoxelBoot(){
  function save(){
   if(state!=='play')return false;
   if(world.collides(player.x,player.y,player.z))return false;
-  const record={version:1,title:cfg.title,seed:cfg.seed,...(size>64?{size}:{}),...(landscape?{landscape:true}:{}),...(details?{details:true}:{}),player:{...player},edits:world.edits(),mined,placed,...(survival?{survival:life}:{}),...(storage?{storage:stash}:{}),...(tools?{tools:gear}:{}),...(advanced?{advanced:forge}:{}),...(resources?{mode:'resources',bag,equipped,selected,...(forest?{forest:true,trees:world.forestState()}: {})}:{})};
+  const record={version:1,title:cfg.title,seed:cfg.seed,...(size>64?{size}:{}),...(landscape?{landscape:true}:{}),...(details?{details:true}:{}),...(lighting?{lighting:true}:{}),player:{...player},edits:world.edits(),mined,placed,...(survival?{survival:life}:{}),...(storage?{storage:stash}:{}),...(tools?{tools:gear}:{}),...(advanced?{advanced:forge}:{}),...(resources?{mode:'resources',bag,equipped,selected,...(forest?{forest:true,trees:world.forestState()}: {})}:{})};
   try{localStorage.setItem(key,JSON.stringify(record));savedStatus='Salvo neste navegador';saveAt=clock;return true;}
   catch{savedStatus='Armazenamento indisponível';saveAt=clock;return false;}
  }
@@ -203,7 +204,7 @@ function gameForgeVoxelBoot(){
   $('mission').textContent=(survival?'Sobrevivência':resources?'Coleta e fabricação':'Criativo')+' · removidos '+mined+' · colocados '+placed+' · '+world.editCount()+'/'+world.LIMIT+' edições';
   if(clock>noticeUntil)$('message').textContent=paused?'Pausado · '+savedStatus:('Seed '+cfg.seed+' · '+savedStatus);
   if(advanced){const j=forge.jobs.length?A.get(forge,A.nearest(world,player)):null;$('mission').textContent+=' · Defesa '+Math.round(A.defense(forge)*100)+'%'+(j?' · Forno '+(j.remaining>0?Math.ceil(j.remaining)+'s':'pronto'):'');}
-  if(size===512)$('mission').textContent+=' · Cache '+world.cacheStats().resident+'/'+world.cacheStats().limit+' chunks';
+  if(size>=512)$('mission').textContent+=' · Cache '+world.cacheStats().resident+'/'+world.cacheStats().limit+' chunks';
   if(streamed&&perf.samples)$('mission').textContent+=' · '+perf.averageFPS+' FPS · p95 '+perf.p95Ms+' ms';
   const marks=K.compassMarks(player.yaw,45).filter(m=>m.label);compass.textContent=marks.sort((a,b)=>a.left-b.left).map(m=>m.label).join('    ');
  }
@@ -273,13 +274,12 @@ function gameForgeVoxelBoot(){
  function refreshBag(){
   selectButton.textContent='Material: '+E.NAMES[selected];
   if(!resources)return;
-  bagText.textContent=([...(forest?[1,2,3,4,5,6,7,8,10]:[1,2,3,4,5,6,7]),...(survival?[11]:[]),...(storage?[12]:[]),...(tools?[13,14,15,16]:[]),...(advanced?[17,18,19,20,21,22,23]:[]),...(landscape?[29]:[])]).map(id=>E.NAMES[id]+': '+E.count(bag,id)).join(' · ')+(tools?(gear.active?' · '+U.DEFS[gear.active].name+' '+gear.wear[gear.active]+'/'+U.DEFS[gear.active].max:' · Sem ferramenta'):(equipped?' · Picareta equipada':''));
+  bagText.textContent=([...(forest?[1,2,3,4,5,6,7,8,10]:[1,2,3,4,5,6,7]),...(survival?[11]:[]),...(storage?[12]:[]),...(tools?[13,14,15,16]:[]),...(advanced?[17,18,19,20,21,22,23]:[]),...(landscape?[29]:[]),...(lighting?[30]:[])]).map(id=>E.NAMES[id]+': '+E.count(bag,id)).join(' · ')+(tools?(gear.active?' · '+U.DEFS[gear.active].name+' '+gear.wear[gear.active]+'/'+U.DEFS[gear.active].max:' · Sem ferramenta'):(equipped?' · Picareta equipada':''));
   if(!inventoryPanel.hidden){
    recipeList.replaceChildren();
    for(const {recipe,index} of K.recipesAtStation(E.RECIPES,station)){
     if(recipe.output.id===12&&!storage)continue;
-    if(recipe.output.id>=13&&!tools)continue;
-    if(recipe.output.id>=17&&!advanced)continue;
+    if(recipe.output.id===30){if(!lighting)continue;}else{if(recipe.output.id>=13&&!tools)continue;if(recipe.output.id>=17&&!advanced)continue;}
     const label=advanced&&A.RECIPES[index]?'Processar '+E.NAMES[recipe.output.id]+' · '+A.RECIPES[index].duration+' s · madeira/carvão':recipe.output.qty+' × '+(tools&&U.isTool(recipe.output.id)?U.DEFS[recipe.output.id].name:E.NAMES[recipe.output.id])+' ('+recipe.requires.map(r=>r.qty+' '+E.NAMES[r.id]).join(' + ')+')';
     const b=button(recipeList,label,()=>craftRecipe(index));b.dataset.recipe=String(index);b.style.margin='4px';
    }
@@ -303,8 +303,7 @@ function gameForgeVoxelBoot(){
  function craftRecipe(index){
   if(!resources||state!=='play'||paused)return;
   if(!storage&&E.RECIPES[index]?.output.id===12)return;
-  if(!tools&&E.RECIPES[index]?.output.id>=13)return;
-  if(!advanced&&E.RECIPES[index]?.output.id>=17)return;
+  if(E.RECIPES[index]?.output.id===30){if(!lighting)return;}else{if(!tools&&E.RECIPES[index]?.output.id>=13)return;if(!advanced&&E.RECIPES[index]?.output.id>=17)return;}
   if(advanced&&E.RECIPES[index]?.output.id===23&&E.count(bag,23)>0){say('Você já possui armadura.');return;}
   if(advanced&&A.RECIPES[index]){if(station!==5)return;const next=A.start(forge,bag,world,player,index);if(!next){say('Forno distante/ocupado ou faltam insumos e combustível.');return;}bag=next;save();refreshBag();say('Processamento iniciado.');return;}
   const result=tools?U.craft(gear,bag,index,station,world,player):E.craft(bag,index,station,world,player);
@@ -351,7 +350,7 @@ function gameForgeVoxelBoot(){
   if(e.code==='KeyE')requestMine();if(e.code==='KeyQ')act('place');
   if(/^Digit[1-6]$/.test(e.code))selectMaterial(Number(e.code.slice(-1)));
   if(forest&&e.code==='Digit8')selectMaterial(8);if(forest&&e.code==='Digit0')selectMaterial(10);
-  if(e.code==='KeyI')toggleInventory();if(e.code==='KeyF')equip();if(tools&&e.code==='KeyR')repairTool();if(advanced&&e.code==='KeyH')armorToggle();if(advanced&&e.code==='KeyJ')furnaceCollect();if(e.code==='KeyC')eat();if(storage&&e.code==='KeyB')chestOpen();if(storage&&e.code==='KeyG')dropSelected();if(storage&&e.code==='Digit9')selectMaterial(12);if(landscape&&e.code==='Digit7')selectMaterial(29);
+  if(e.code==='KeyI')toggleInventory();if(e.code==='KeyF')equip();if(tools&&e.code==='KeyR')repairTool();if(advanced&&e.code==='KeyH')armorToggle();if(advanced&&e.code==='KeyJ')furnaceCollect();if(e.code==='KeyC')eat();if(storage&&e.code==='KeyB')chestOpen();if(storage&&e.code==='KeyG')dropSelected();if(storage&&e.code==='Digit9')selectMaterial(12);if(landscape&&e.code==='Digit7')selectMaterial(29);if(lighting&&e.code==='KeyT')selectMaterial(30);
  });
  document.addEventListener('keyup',e=>keys.delete(e.code));
  let drag=null;
@@ -394,6 +393,7 @@ function gameForgeVoxelBoot(){
   }
   pumpStream();syncDrops();syncCreatures();
   if(atmosphereView){const t=survival?life.time:clock;atmosphereView.update(t,player,innerWidth<700,streamed?radius()*16+12:92,material,foliageMaterial);if(material.userData.waterTime)material.userData.waterTime.value=t;}
+  if(lightView)lightView.update(world.nearbyTorches(player,innerWidth<700?4:8));
   updateCamera();renderer.render(scene,camera);worldTriangles=renderer.info.render.triangles;
   const moving=Math.hypot(player.x-visualX,player.z-visualZ)>.0001;
   visualX=player.x;visualZ=player.z;
@@ -409,8 +409,9 @@ function gameForgeVoxelBoot(){
  if(tools)$('control-help').textContent+=' · F alternar picaretas · R reparar na bancada';
  if(advanced)$('control-help').textContent+=' · E segurar para minerar · H armadura · J retirar forno';
  if(landscape)$('control-help').textContent+=' · 7 areia';
+ if(lighting)$('control-help').textContent+=' · T tocha (Q coloca)';
  if(stored)$('start').textContent='Continuar mundo';
- window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.editCount(),selected,mode:resources?'resources':'creative',forest,advanced:advanced?JSON.parse(JSON.stringify(forge)):null,mining:advanced?{...mining}:null,tools:tools?JSON.parse(JSON.stringify(gear)):null,storage:storage?JSON.parse(JSON.stringify(stash)):null,survival:survival?JSON.parse(JSON.stringify(life)):null,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,chunks:meshes.size,mapSize:size,cache:world.cacheStats(),atmosphere:atmosphereView?.snapshot()||null,textured,landscape,details,performance:{...perf},foliageInstances:[...foliage.values()].reduce((n,m)=>n+m.count,0),stream:{quality,radius:streamed?radius():null,wanted:wanted.size,queued:queued.size,worker:workerMode,workerCompleted,center:K.chunkOf(player.x,player.z),keys:[...meshes.keys()],faces:[...meshes.values()].reduce((n,m)=>n+m.userData.faces,0),exposed:[...meshes.values()].reduce((n,m)=>n+m.userData.exposed,0)},target:target(),triangles:worldTriangles,visuals:visuals.snapshot()});
+ window.__gameforgeTelemetry=()=>({engine:'voxel-v1',state,paused,clock,frames,player:{...player},grounded,mined,placed,edits:world.editCount(),selected,mode:resources?'resources':'creative',forest,advanced:advanced?JSON.parse(JSON.stringify(forge)):null,mining:advanced?{...mining}:null,tools:tools?JSON.parse(JSON.stringify(gear)):null,storage:storage?JSON.parse(JSON.stringify(stash)):null,survival:survival?JSON.parse(JSON.stringify(life)):null,trees:forest?world.forestState():[],inventory:resources?E.copy(bag):null,equipped,saveStatus:savedStatus,chunks:meshes.size,mapSize:size,cache:world.cacheStats(),lighting:lightView?{...lightView.snapshot(),placed:world.torchCount()}:null,atmosphere:atmosphereView?.snapshot()||null,textured,landscape,details,performance:{...perf},foliageInstances:[...foliage.values()].reduce((n,m)=>n+m.count,0),stream:{quality,radius:streamed?radius():null,wanted:wanted.size,queued:queued.size,worker:workerMode,workerCompleted,terrainCompleted,center:K.chunkOf(player.x,player.z),keys:[...meshes.keys()],faces:[...meshes.values()].reduce((n,m)=>n+m.userData.faces,0),exposed:[...meshes.values()].reduce((n,m)=>n+m.userData.exposed,0)},target:target(),triangles:worldTriangles,visuals:visuals.snapshot()});
  requestAnimationFrame(frame);
 }
 if(typeof globalThis!=='undefined')globalThis.gameForgeVoxelBoot=gameForgeVoxelBoot;

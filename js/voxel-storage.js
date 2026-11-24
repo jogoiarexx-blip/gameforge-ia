@@ -3,16 +3,16 @@ function gameForgeVoxelStorageFactory(E){
  'use strict';
  const CHEST=12,MAX_CHESTS=64,MAX_DROPS=96,SLOTS=12;
  const empty=()=>Array(SLOTS).fill(null),initial=()=>({version:1,chests:[],drops:[],nextId:1});
- const key=c=>c.join(','),cell=c=>Array.isArray(c)&&c.length===3&&c.every(Number.isSafeInteger)&&c[0]>=-32&&c[0]<32&&c[1]>=1&&c[1]<160&&c[2]>=-32&&c[2]<32;
+ const key=c=>c.join(','),cell=(c,bound=128)=>Array.isArray(c)&&c.length===3&&c.every(Number.isSafeInteger)&&c[0]>=-bound&&c[0]<bound&&c[1]>=1&&c[1]<160&&c[2]>=-bound&&c[2]<bound;
  const distance=(p,x,y,z)=>Math.hypot(p.x-x,p.y+.85-y,p.z-z);
- const idAllowed=(id,cfg)=>([1,2,3,4,5,6,12].includes(id)||(!cfg.tools&&id===7)||(cfg.tools&&[15,16].includes(id))||(cfg.advanced&&[20,21,22].includes(id)))||(cfg.forest&&[8,10].includes(id))||(cfg.survival&&id===11);
+ const idAllowed=(id,cfg)=>([1,2,3,4,5,6,12].includes(id)||(!cfg.tools&&id===7)||(cfg.tools&&[15,16].includes(id))||(cfg.advanced&&[20,21,22].includes(id)))||(cfg.forest&&[8,10].includes(id))||(cfg.survival&&id===11)||(cfg.landscape&&id===29);
  const bagAllowed=(bag,cfg)=>E.valid(bag)&&bag.every(s=>!s||idAllowed(s.id,cfg));
  function valid(s,world,cfg){
   if(!s||s.version!==1||!Number.isSafeInteger(s.nextId)||s.nextId<1||s.nextId>1e9||
    !Array.isArray(s.chests)||s.chests.length>MAX_CHESTS||!Array.isArray(s.drops)||s.drops.length>MAX_DROPS)return false;
   const keys=new Set(),ids=new Set();
   for(const c of s.chests){
-   if(!c||!cell(c.cell)||keys.has(key(c.cell))||world.get(...c.cell)!==CHEST||!bagAllowed(c.bag,cfg))return false;
+   if(!c||!cell(c.cell,world.MAX||32)||keys.has(key(c.cell))||world.get(...c.cell)!==CHEST||!bagAllowed(c.bag,cfg))return false;
    keys.add(key(c.cell));
   }
   // Every chest block must have a matching record.
@@ -20,7 +20,7 @@ function gameForgeVoxelStorageFactory(E){
   for(const d of s.drops){
    if(!d||!Number.isSafeInteger(d.uid)||d.uid<1||d.uid>=s.nextId||ids.has(d.uid)||
     !idAllowed(d.id,cfg)||!Number.isInteger(d.qty)||d.qty<1||d.qty>99||
-    ![d.x,d.y,d.z,d.delay].every(Number.isFinite)||d.x< -32||d.x>=32||d.z< -32||d.z>=32||d.y<1||d.y>=160||d.delay<0||d.delay>2)return false;
+    ![d.x,d.y,d.z,d.delay].every(Number.isFinite)||d.x<(world.MIN??-32)||d.x>=(world.MAX??32)||d.z<(world.MIN??-32)||d.z>=(world.MAX??32)||d.y<1||d.y>=160||d.delay<0||d.delay>2)return false;
    ids.add(d.uid);
   }
   return true;
@@ -47,8 +47,8 @@ function gameForgeVoxelStorageFactory(E){
   if(!a||!b)return null;
   target.bag=deposit?b:a;return deposit?a:b;
  }
- function drop(s,bag,p,id,qty){
-  if(!Number.isInteger(qty)||qty<1||qty>99||s.drops.length>=MAX_DROPS||s.nextId>=1e9||![p.x,p.y,p.z].every(Number.isFinite)||p.x< -32||p.x>=32||p.z< -32||p.z>=32||p.y<1||p.y>=159)return null;
+ function drop(s,bag,p,id,qty,bound=32){
+  if(!Number.isInteger(qty)||qty<1||qty>99||s.drops.length>=MAX_DROPS||s.nextId>=1e9||![p.x,p.y,p.z].every(Number.isFinite)||p.x< -bound||p.x>=bound||p.z< -bound||p.z>=bound||p.y<1||p.y>=159)return null;
   const next=E.change(bag,id,-qty);if(!next)return null;
   s.drops.push({uid:s.nextId++,id,qty,x:p.x,y:p.y+.35,z:p.z,delay:1.5});
   return next;

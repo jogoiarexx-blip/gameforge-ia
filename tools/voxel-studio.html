@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GameForge · Criador Voxel 3D</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0b1421;color:#e7f0fa}*{box-sizing:border-box}body{margin:0}header{padding:16px;background:#16263b;border-bottom:1px solid #3b5068;display:flex;flex-wrap:wrap;gap:12px;align-items:center}h1{font-size:20px;margin:0}a{color:#9fe4cc}main{max-width:1250px;margin:auto;padding:16px;display:grid;grid-template-columns:minmax(220px,290px) 1fr;gap:16px}aside{background:#152438;padding:15px;border-radius:12px}label{display:block;font-size:13px;margin:12px 0 5px}input,button{font:inherit;width:100%;border-radius:8px;padding:10px;background:#233a51;border:1px solid #4c627c;color:#fff}button{margin-top:10px;cursor:pointer;background:#286a59;font-weight:700}button:disabled{opacity:.5;cursor:not-allowed}p{font-size:14px;line-height:1.5;color:#b8cadc}#status{min-height:3em}iframe{width:100%;height:min(78vh,760px);min-height:540px;border:1px solid #34485e;border-radius:12px;background:#0c1422}small{color:#b8cadc}@media(max-width:760px){main{display:block;padding:8px}aside{margin-bottom:10px}iframe{height:70vh;min-height:520px}}
+</style></head><body>
+<header><h1>GameForge · Criador Voxel 3D</h1><small>GF-VOXEL-01 · protótipo criativo</small><a href="../index.html">Voltar ao Studio</a></header>
+<main><aside>
+<label for="title">Nome do mundo</label><input id="title" value="Prisma — Novo mundo" maxlength="80">
+<label for="seed">Seed do terreno</label><input id="seed" type="number" value="12345" min="0" max="2147483647" step="1">
+<button id="build">Criar prévia jogável</button><button id="download" disabled>Exportar jogo em ZIP</button>
+<p id="status" role="status">Escolha a seed e crie seu primeiro mundo.</p>
+<p><strong>Incluído:</strong> mundo finito de 64 × 64 blocos, três materiais, construção/mineração criativa, colisão, toque, bússola, save local no jogo exportado.</p>
+<p>Sem mundo infinito, crafting, P2P, criaturas ou sobrevivência ainda. A prévia isolada não mantém saves. O ZIP funciona offline e requer WebGL. Extraia todos os arquivos juntos.</p>
+</aside><section><iframe id="preview" title="Prévia do jogo voxel" sandbox="allow-scripts allow-modals" referrerpolicy="no-referrer"></iframe></section></main>
+<script src="../js/voxel-kit.js"></script>
+<script src="../js/voxel-world.js"></script>
+<script src="../js/voxel-runtime.js"></script>
+<script src="../vendor/three-source.js"></script>
+<script src="../js/generator.js"></script>
+<script src="../js/zip.js"></script>
+<script src="../js/voxel-builder.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);let files=null;
+function build(){
+ try{
+  const seed=$('seed').valueAsNumber;
+  if(!Number.isSafeInteger(seed))throw Error('Informe uma seed inteira.');
+  files=GameForgeVoxelBuilder.generate({title:$('title').value,seed});
+  $('preview').srcdoc=GameForgeGenerator.shell($('title').value,files['style.css'],files['game.js'],true,files);
+  $('download').disabled=false;$('status').textContent='Prévia criada. Clique em Jogar agora dentro dela.';
+ }catch(e){files=null;$('download').disabled=true;$('status').textContent=e.message;}
+}
+for(const id of ['seed','title'])$(id).addEventListener('input',()=>{$('download').disabled=true;files=null;$('status').textContent='Clique em Criar prévia para aplicar as alterações.';});
+$('build').addEventListener('click',build);
+$('download').addEventListener('click',()=>{
+ if(!files)return;
+ const zip=GameForgeZip.zipFiles(files),url=URL.createObjectURL(zip);
+ const link=document.createElement('a');link.href=url;link.download='gameforge-voxel.zip';link.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
+ $('status').textContent='ZIP gerado localmente.';
+});
+</script></body></html>

@@ -2,10 +2,10 @@
 function gameForgeVoxelWorldFactory(K){
  'use strict';
  const S=16,H=160,MIN=-32,MAX=32,LIMIT=4096,finite=Number.isFinite,int=Number.isSafeInteger;
- const colors={1:[.36,.64,.23],2:[.57,.37,.23],3:[.52,.56,.58]};
+ const colors={1:[.36,.64,.23],2:[.57,.37,.23],3:[.52,.56,.58],4:[.69,.48,.22],5:[.32,.34,.38],6:[.73,.28,.19]};
  const inside=(x,y,z)=>int(x)&&int(y)&&int(z)&&x>=MIN&&x<MAX&&z>=MIN&&z<MAX&&y>=0&&y<H;
  const cellKey=(x,y,z)=>x+','+y+','+z;
- const validEdit=e=>Array.isArray(e)&&e.length===4&&inside(e[0],e[1],e[2])&&e[1]>0&&int(e[3])&&e[3]>=0&&e[3]<=3;
+ const validEdit=e=>Array.isArray(e)&&e.length===4&&inside(e[0],e[1],e[2])&&e[1]>0&&int(e[3])&&e[3]>=0&&e[3]<=6;
  function create(seed,initial=[]){
   if(!int(seed)||seed<0||seed>2147483647)throw Error('Seed inválida');
   if(!Array.isArray(initial)||initial.length>LIMIT||!initial.every(validEdit))throw Error('Edições inválidas');
@@ -95,13 +95,13 @@ function gameForgeVoxelWorldFactory(K){
   }
   function place(hit,id,player){
    const p=hit?.previous;
-   if(!p||!hit.cell||!get(...hit.cell)||get(...p)!==0||![1,2,3].includes(id)||overlaps(player,...p))return null;
+   if(!p||!hit.cell||!get(...hit.cell)||get(...p)!==0||![1,2,3,4,5,6].includes(id)||overlaps(player,...p))return null;
    return edit(...p,id);
   }
   return {seed,get,edit,mesh,ray,spawn,collides,mine,place,edits:()=>[...edits.values()].map(e=>[...e]),chunkKeys:()=>[...chunks.keys()]};
  }
- function saveKey(config){return 'gameforge-voxel-v1:'+config.seed+':'+encodeURIComponent(config.title);}
- function readSave(raw,config){
+ function saveKey(config){return 'gameforge-voxel-v1:'+config.seed+':'+encodeURIComponent(config.title)+(config.mode==='resources'?':resources-v1':'');}
+ function readSave(raw,config,E){
   if(typeof raw!=='string'||raw.length>160000)return null;
   try{
    const s=JSON.parse(raw);
@@ -111,9 +111,14 @@ function gameForgeVoxelWorldFactory(K){
     !s.player||![s.player.x,s.player.y,s.player.z,s.player.yaw,s.player.pitch].every(finite)||
     Math.abs(s.player.yaw)>Math.PI*2||Math.abs(s.player.pitch)>1.5||
     !int(s.mined)||s.mined<0||s.mined>1e9||!int(s.placed)||s.placed<0||s.placed>1e9)return null;
+   const resources=config.mode==='resources';
+   if(resources){
+    if(s.mode!=='resources'||!E?.valid(s.bag)||typeof s.equipped!=='boolean'||
+     (s.equipped&&E.count(s.bag,7)<1)||!int(s.selected)||s.selected<1||s.selected>6)return null;
+   }else if(s.mode==='resources'||s.edits.some(e=>e[3]>3))return null;
    const world=create(config.seed,s.edits);
    if(world.collides(s.player.x,s.player.y,s.player.z))return null;
-   return {world,player:{x:s.player.x,y:s.player.y,z:s.player.z,yaw:s.player.yaw,pitch:s.player.pitch},mined:s.mined,placed:s.placed};
+   return {world,player:{x:s.player.x,y:s.player.y,z:s.player.z,yaw:s.player.yaw,pitch:s.player.pitch},mined:s.mined,placed:s.placed,...(resources?{bag:E.copy(s.bag),equipped:s.equipped,selected:s.selected}:{})};
   }catch{return null;}
  }
  return {create,readSave,saveKey,MIN,MAX,H,LIMIT};

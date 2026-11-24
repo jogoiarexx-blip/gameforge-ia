@@ -82,7 +82,7 @@ function gameForgeVoxelActorsFactory(T){
  const shovel=pivot(hand,'shovel',[0,.10,-.08]);part(shovel,'handle',[.075,.60,.075],[0,.23,0],0x825c37);part(shovel,'blade',[.25,.28,.10],[0,.60,0],0xbf8756);shovel.rotation.z=-.32;
  const sword=pivot(hand,'sword',[0,.10,-.08]);part(sword,'grip',[.09,.23,.09],[0,.10,0],0x825c37);part(sword,'guard',[.29,.07,.09],[0,.24,0],0x9ea6b3);part(sword,'blade',[.14,.65,.07],[0,.59,0],0xd3dce5);sword.rotation.z=-.32;
  const block=part(hand,'held-block',[.23,.23,.23],[0,.18,-.13],0x947654);
- const blockColors={1:0x74a64c,2:0x93623d,3:0x8a9399,4:0x9e7538,5:0x505963,6:0xbf5337,8:0x714721,10:0x6bb63a,12:0xb98537};
+ const blockColors={1:0x74a64c,2:0x93623d,3:0x8a9399,4:0x9e7538,5:0x505963,6:0xbf5337,8:0x714721,10:0x6bb63a,12:0xb98537,29:0xb9a77a};
  let started=-100,action='none',actions=0,shown=false,held='hand',bob=0;
  function swing(time,kind){
   if(!Number.isFinite(time)||!['mine','place','attack'].includes(kind))return false;

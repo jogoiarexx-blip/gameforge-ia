@@ -2,9 +2,9 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const manifest=require('../training/repository-study-v5.json'),queries=require('../training/repository-queries-v5.json');
 const Lessons=require('../js/repository-lessons'),K=require('../js/repository-knowledge'),Parser=require('../js/parser');
-test('estudo: 22 arquivos em nove projetos, hashes e tipo de evidência rastreáveis',()=>{
- assert.equal(manifest.sources.length,22);assert.equal(new Set(manifest.sources.map(s=>s.repository)).size,9);
- assert.equal(Lessons.entries.length,17);assert.equal(new Set(K.entries.map(e=>e.id)).size,K.entries.length);
+test('estudo: 28 arquivos em 12 projetos, hashes e tipo de evidência rastreáveis',()=>{
+ assert.equal(manifest.sources.length,28);assert.equal(new Set(manifest.sources.map(s=>s.repository)).size,12);
+ assert.equal(Lessons.entries.length,23);assert.equal(new Set(K.entries.map(e=>e.id)).size,K.entries.length);
  for(const lesson of Lessons.entries){
   const source=manifest.sources.find(s=>s.repository===lesson.repository&&s.path===lesson.path);
   assert.ok(source,lesson.id);assert.equal(lesson.sourceBlob,source.blob);assert.match(source.blob,/^[a-f0-9]{40}$/);
@@ -13,8 +13,8 @@ test('estudo: 22 arquivos em nove projetos, hashes e tipo de evidência rastreá
  }
  for(const id of ['nidara-design-study','arkhos-design-study'])assert.equal(Lessons.entries.find(e=>e.id===id).evidenceType,'document');
 });
-test('estudo: 34 pedidos recuperam a técnica relevante entre as oito primeiras',()=>{
- assert.equal(queries.cases.length,34);const failures=[];
+test('estudo: 40 pedidos recuperam a técnica relevante entre as oito primeiras',()=>{
+ assert.equal(queries.cases.length,40);const failures=[];
  for(const c of queries.cases)if(!K.rank(c.instruction,8).some(r=>r.id===c.expectedReference))failures.push({query:c.instruction,expected:c.expectedReference,found:K.rank(c.instruction,8).map(x=>x.id)});
  assert.deepEqual(failures,[]);
 });

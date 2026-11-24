@@ -1,6 +1,6 @@
 {
   "version": 5,
-  "auditedAt": "2026-11-17",
+  "auditedAt": "2026-11-23",
   "scope": "Leitura estática seletiva; não execução nem auditoria completa dos jogos externos.",
   "sources": [
     {
@@ -178,6 +178,54 @@
       "size": 9896,
       "url": "https://github.com/jogoiarexx-blip/ARKHOS-coliseu-primordial/blob/main/README.md",
       "kind": "document"
+    },
+    {
+      "repository": "luispauloalves500/sucata-zero",
+      "path": "src/persistence/save.ts",
+      "blob": "dd543cc86e0239d56f3716f2eb5646f5ef92dff9",
+      "size": 9025,
+      "url": "https://github.com/luispauloalves500/sucata-zero/blob/main/src/persistence/save.ts",
+      "kind": "source"
+    },
+    {
+      "repository": "luispauloalves500/sucata-zero",
+      "path": "src/progression/quests.ts",
+      "blob": "b1e41cf41217d22f340fde8d3d5eba2237f27fbe",
+      "size": 4176,
+      "url": "https://github.com/luispauloalves500/sucata-zero/blob/main/src/progression/quests.ts",
+      "kind": "source"
+    },
+    {
+      "repository": "luispauloalves500/sucata-zero",
+      "path": "src/engine/physics.ts",
+      "blob": "effba38fa5fbb1b4d4e5883e749d8a8125c753da",
+      "size": 3482,
+      "url": "https://github.com/luispauloalves500/sucata-zero/blob/main/src/engine/physics.ts",
+      "kind": "source"
+    },
+    {
+      "repository": "luispauloalves500/crise-no-vale",
+      "path": "js/campaign-rules.mjs",
+      "blob": "5d81763d60fb5169b1d8cf95eac8866ae0bac787",
+      "size": 6828,
+      "url": "https://github.com/luispauloalves500/crise-no-vale/blob/main/js/campaign-rules.mjs",
+      "kind": "source"
+    },
+    {
+      "repository": "luispauloalves500/limiar-ecos-da-quarentena",
+      "path": "tests/pose-restore.test.ts",
+      "blob": "2e96c4c79310f1d21e8f28602910192d707d5e79",
+      "size": 1381,
+      "url": "https://github.com/luispauloalves500/limiar-ecos-da-quarentena/blob/main/tests/pose-restore.test.ts",
+      "kind": "source"
+    },
+    {
+      "repository": "luispauloalves500/Driver-2",
+      "path": "js/render/driver-camera-rig.js",
+      "blob": "f102fc5687fb6d3ce2152e82619cd98f3d5e8d34",
+      "size": 4669,
+      "url": "https://github.com/luispauloalves500/Driver-2/blob/main/js/render/driver-camera-rig.js",
+      "kind": "source"
     }
   ],
   "lessons": [
@@ -197,6 +245,12 @@
     "abyss-value-study",
     "repair-feedback-study",
     "nidara-design-study",
-    "arkhos-design-study"
+    "arkhos-design-study",
+    "sucata-save-slots-study",
+    "sucata-quest-replay-study",
+    "sucata-rapier-study",
+    "crise-act-gates-study",
+    "limiar-pose-layer-study",
+    "driver-camera-occlusion-study"
   ]
 }

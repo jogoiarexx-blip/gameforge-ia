@@ -137,6 +137,30 @@
     {
       "instruction": "Quero estratégia com ordens, alcance e passagem de turno no tabuleiro",
       "expectedReference": "arkhos-design-study"
+    },
+    {
+      "instruction": "Slots versionados e validação de equipamento sucata zero indexeddb slots checksum backup migracao salvar equipamento instancia",
+      "expectedReference": "sucata-save-slots-study"
+    },
+    {
+      "instruction": "Eventos de missão e recompensas idempotentes sucata zero evento missao idempotente recompensa duplicada replay grant estagio quest",
+      "expectedReference": "sucata-quest-replay-study"
+    },
+    {
+      "instruction": "Adaptador Rapier com consultas ao cenário rapier wasm fisica 3d rampa colisor cinemático spherecast raycast plataforma movel",
+      "expectedReference": "sucata-rapier-study"
+    },
+    {
+      "instruction": "Fronteiras de atos e restauração coerente crise vale campanha atos fronteiras final alternativo flags chefe checkpoint transicao",
+      "expectedReference": "crise-act-gates-study"
+    },
+    {
+      "instruction": "Camadas aditivas sem rotação acumulada limiar pose restore mixer tronco girando rotacao acumulada camada aditiva osso zumbi",
+      "expectedReference": "limiar-pose-layer-study"
+    },
+    {
+      "instruction": "Câmera veicular com oclusão e FOV dependente da velocidade driver camera veicular carro perseguicao capô fov oclusao obstaculo amortecimento velocidade",
+      "expectedReference": "driver-camera-occlusion-study"
     }
   ]
 }

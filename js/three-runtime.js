@@ -39,6 +39,9 @@ function gameForgeThreeBoot(){
  let lastMidSaveAt=-100,midStageRestored=false;
  let missionStepIndex=0,missionStepStartedAt=0,missionGuides=[];
  let npcSideStepIndex=0,npcSideStartedAt=0,campaignEffect=null;
+ const campaignPlan=R.campaignPlan(spec);let campaignHistory=[],campaignEnding=null;
+ const campaignFields=()=>campaignPlan?{history:campaignHistory,campaignFingerprint:R.midStageFingerprint(spec)}:{};
+ const campaignAct=()=>campaignPlan?.acts.find(a=>stage>=a.start&&stage<=a.end)||null;
  let npcActor=null,npcMarker=null,npcStatus='none',npcTalkButton=null;
  let npcChoiceButtons=[],npcPosition=null,npcSelectedChoice=null;
  function npcNearby(npc=npcAt()){return npc&&R.npcNear(npc,player,size,2.6,npcPosition);}
@@ -78,7 +81,7 @@ function gameForgeThreeBoot(){
   if(!midStageStorageKey||!R.midStageEligible(spec,stage)||
    state!=='play'||health<=0||transition>0||stageClock<1)return false;
   const snap=R.midStagePayload(spec,{stage,health,score,ammo,clock,stageClock,
-   rpgLevel,rpgXP,rpgPotions,player:{x:player.x,z:player.z,yaw:player.yaw},
+   rpgLevel,rpgXP,rpgPotions,...campaignFields(),player:{x:player.x,z:player.z,yaw:player.yaw},
    enemies:enemies.map(e=>({id:e.id,x:e.x,z:e.z,hp:e.hp})),
    coinsTaken:coins.flatMap((c,i)=>c.taken?[i]:[]),
    script:{fired:[...firedEvents],npcStatus,choice:npcSelectedChoice,
@@ -136,7 +139,7 @@ function gameForgeThreeBoot(){
  function saveCheckpoint(){
   if(!checkpointStorageKey)return;
   const snap=R.checkpointPayload(spec,{stage,health,score,ammo,clock,rpgLevel,rpgXP,rpgPotions,
-   ...(campaignEffect?{campaignEffect}:{})});
+   ...(campaignEffect?{campaignEffect}:{}),...campaignFields()});
   if(!snap)return;
   try{window.localStorage?.setItem(checkpointStorageKey,JSON.stringify(snap));checkpointStored=snap;}
   catch{checkpointStored=null;}
@@ -664,13 +667,16 @@ function gameForgeThreeBoot(){
   if(!continueSaved)clearCheckpoint();
   const campaignSaved=continueSaved?loadCheckpoint():null;
   const midSaved=continueSaved?loadMidStage():null;
-  const mid=midSaved&&(!campaignSaved||midSaved.stage>=campaignSaved.stage)?midSaved:null;
+  const mid=midSaved&&(!campaignSaved||midSaved.stage>=campaignSaved.stage)&&
+   (!campaignPlan||midSaved.stage===0||campaignSaved?.stage===midSaved.stage&&
+    JSON.stringify(midSaved.history)===JSON.stringify(campaignSaved.history))?midSaved:null;
   const saved=mid||campaignSaved;
   midStageRestored=false;
   stage=saved?.stage??0;health=saved?.health??100;score=saved?.score??0;
   ammo=saved?.ammo??(storeEnabled?20:80);rpgLevel=saved?.rpgLevel??1;
   rpgXP=saved?.rpgXP??0;rpgPotions=saved?.rpgPotions??2;
   rpgHealHeld=false;clock=saved?.clock??0;
+  campaignHistory=saved?.history||[];campaignEnding=null;
   campaignEffect=campaignSaved?.stage===stage?campaignSaved.campaignEffect||null:null;
   simulationAccumulator=0;simulationSteps=0;
   state='play';paused=false;keys.clear();Object.keys(touch).forEach(k=>touch[k]=false);
@@ -684,6 +690,7 @@ function gameForgeThreeBoot(){
     score=campaignSaved?.score??0;ammo=campaignSaved?.ammo??(storeEnabled?20:80);
     rpgLevel=campaignSaved?.rpgLevel??1;rpgXP=campaignSaved?.rpgXP??0;
     rpgPotions=campaignSaved?.rpgPotions??2;clock=campaignSaved?.clock??0;
+    campaignHistory=campaignSaved?.history||[];
     campaignEffect=campaignSaved?.campaignEffect||null;buildStage();
    }
   }
@@ -695,17 +702,27 @@ function gameForgeThreeBoot(){
  function damage(amount){if(invulnerable>0||state!=='play')return;health=Math.max(0,health-amount);invulnerable=.9;notice('Dano recebido · '+health+' de vida',1.2);if(health<=0){state='defeat';overlay('Fim de jogo','Pontuação: '+score+' · Reinicie a jornada.','Tentar novamente');}}
  function finishStage(){if(transition>0||state!=='play')return;score+=300;transition=1.4;notice('Objetivo concluído! Próxima fase…',1.4);}
  function advance(){
+  if(campaignPlan){
+   const completed=R.campaignCommit(spec,campaignHistory,stage,npcStatus==='completed'?npcSelectedChoice:null);
+   if(!completed){transition=0;notice('Campanha: decisão obrigatória ainda não concluída.',3);return;}
+   campaignHistory=completed;
+  }
   if(stage+1>=stages.length){
+   campaignEnding=campaignPlan?R.campaignEnding(spec,campaignHistory):null;
    clearCheckpoint();state='victory';
-   overlay('Jornada concluída!','Todas as '+stages.length+' fases concluídas · Pontuação '+score,'Jogar novamente');
+   if(campaignEnding)overlay(campaignEnding.title,campaignEnding.epilogue+
+    ' · Fases '+campaignEnding.completed+'/'+stages.length+' · Pontuação '+score+
+    ' · Decisões '+campaignEnding.decisions+' · Tempo '+Math.floor(clock)+'s','Jogar novamente');
+   else overlay('Jornada concluída!','Todas as '+stages.length+' fases concluídas · Pontuação '+score,'Jogar novamente');
   }else{
    const npc=npcAt();
    const effect=npcStatus==='completed'?R.npcMissionEffect(npc,npcSelectedChoice,stage):null;
-   clearMidStage();
+   const priorAct=campaignAct();clearMidStage();
    stage++;campaignEffect=effect;
    health=Math.min(100,health+25+(effect?.kind==='aid'?20:0));
    if(!storeEnabled)ammo=Math.min(999,Math.max(80,ammo+40)+(effect?.kind==='aid'?20:0));
    saveCheckpoint();buildStage();
+   if(campaignAct()&&campaignAct()!==priorAct)notice(campaignAct().title+' · '+stages[stage],4);
    if(effect)notice(effect.kind==='aid'?'Aliados ajudaram! Até +20 vida e +20 balas.':
     'Emboscada! +2 inimigos nesta fase.',4);
   }
@@ -834,7 +851,7 @@ function gameForgeThreeBoot(){
  }
  function updateHUD(){
   $('health').textContent=Math.ceil(health);$('score').textContent=score;$('ammo').textContent=genre==='racing'?Math.round(Math.abs(player.speed)*12)+' km/h':genre==='platform'?collected+'/'+required:genre==='rpg'?'🧪'+rpgPotions+' · '+ammo:combatStore?ammo+'/'+combatStore.state().reserve+' · ¢'+combatStore.state().credits:ammo;
-  $('level').textContent=(stage+1)+'/'+stages.length+
+  $('level').textContent=(campaignAct()?campaignAct().title+' · ':'')+(stage+1)+'/'+stages.length+
    (campaignEffect?.kind==='aid'?' · Apoio':campaignEffect?.kind==='threat'?' · Emboscada':'');
   $('timer').textContent=Math.floor(clock)+'s';
   $('mission').textContent=(configAt(stage).objective?String(configAt(stage).objective).slice(0,140)+' · ':'')+(genre==='racing'?'Volta '+Math.min(lapTarget,race.lap+1)+'/'+lapTarget+' · Portal '+(race.next+1)+'/8':genre==='platform'?'Cristais '+collected+'/'+required+' · Alcance o portal':genre==='rpg'?'Nível '+rpgLevel+' · XP '+rpgXP+'/'+(rpgLevel*65)+' · '+combatObjective():combatObjective());
@@ -886,6 +903,7 @@ function gameForgeThreeBoot(){
    missionSteps:missionPlan().length,missionStepIndex,
    sideQuestSteps:sideQuestPlan().length,sideQuestStepIndex:npcSideStepIndex,
    campaignEffect:campaignEffect?{...campaignEffect}:null,
+   campaign:campaignPlan?{act:campaignAct()?.title||null,completed:campaignHistory.length,history:campaignHistory.map(e=>({...e})),ending:campaignEnding?{...campaignEnding}:null}:null,
    activeMissionStep:activeMissionStep()?.kind||null,
    zoneGuides:missionGuides.filter(g=>g.mesh.visible).map(g=>g.zone),
    npc:npcAt()?{id:npcAt().id,name:npcAt().name,zone:npcAt().zone,

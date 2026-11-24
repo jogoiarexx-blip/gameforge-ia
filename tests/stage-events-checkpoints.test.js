@@ -772,3 +772,56 @@ test('GF-TRAIN-24: câmera e zoom mudam no runtime sem mudar posição do jogado
  assert.equal(shoulder.player.x,before.player.x);assert.equal(shoulder.player.y,before.player.y);
  game.key('keydown','z');game.tick(2);assert.equal(game.telemetry().cameraRig.zoom,.7);
 });
+
+test('GF-TRAIN-26: atos contíguos e finais dependem de decisões válidas',()=>{
+ const steps=[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},{id:'step-2',kind:'survive',seconds:5,label:'Resistir'}];
+ const npc={id:'npc-stage-01',name:'Guia',zone:'south',dialogue:'Escolha',steps,
+  reward:{score:100,health:0,ammo:0},choices:[
+   {id:'choice-1',label:'Aliados',steps,reward:{score:100,health:0,ammo:0},effect:'aid'},
+   {id:'choice-2',label:'Rivais',steps,reward:{score:200,health:0,ammo:0},effect:'threat'}]};
+ const spec={genre:'arena',dimension:'3d',projectId:'gf-01234567-abcdef01',stages:['Vila','Torre'],
+  stageConfig:[{npcQuest:npc},{}],campaignNarrative:{version:1,acts:[{title:'Ato 1',start:0,end:0},{title:'Ato 2',start:1,end:1}],alternateEndings:true}};
+ assert.ok(R.campaignPlan(spec));assert.equal(R.campaignHistory(spec,[{stage:0,choice:null}],1),null);
+ assert.equal(R.campaignCommit(spec,[],1,null),null);
+ for(const [choice,id] of [['choice-1','alliance'],['choice-2','conflict']]){
+  const one=R.campaignCommit(spec,[],0,choice),two=R.campaignCommit(spec,one,1,null);
+  assert.equal(R.campaignEnding(spec,two).id,id);
+  const effect=R.npcMissionEffect(npc,choice,0);
+  const saved=R.checkpointPayload(spec,{stage:1,health:90,score:100,ammo:80,clock:30,rpgLevel:1,rpgXP:0,rpgPotions:2,
+   campaignEffect:effect,history:one,campaignFingerprint:R.midStageFingerprint(spec)});
+  assert.ok(saved);assert.deepEqual(saved.history,one);
+  assert.equal(R.readCheckpoint(JSON.stringify({...saved,history:[]}),spec),null);
+  assert.equal(R.readCheckpoint(JSON.stringify({...saved,campaignFingerprint:'wrong'}),spec),null);
+ }
+ assert.equal(R.campaignPlan({...spec,campaignNarrative:{...spec.campaignNarrative,acts:[{title:'Ato',start:1,end:1}]}}),null);
+});
+test('GF-TRAIN-26: campanha em execução restaura decisão e apresenta epílogo correto',()=>{
+ const steps=[{id:'step-1',kind:'reach',zone:'south',label:'Sul'},{id:'step-2',kind:'survive',seconds:5,label:'Resistir'}];
+ const npc={id:'npc-stage-01',name:'Guia',zone:'south',dialogue:'Escolha',steps,
+  reward:{score:100,health:0,ammo:0},choices:[
+   {id:'choice-1',label:'Aliados',steps,reward:{score:100,health:0,ammo:0},effect:'aid'},
+   {id:'choice-2',label:'Rivais',steps,reward:{score:200,health:0,ammo:0},effect:'threat'}]};
+ const spec={genre:'arena',dimension:'3d',projectId:'gf-01234567-abcdef01',stages:['Vila','Torre'],
+  stageConfig:[{enemies:1,boss:'no',npcQuest:npc},{mission:'survive',seconds:5,enemies:1,boss:'no'}],
+  campaignNarrative:{version:1,acts:[{title:'Ato 1',start:0,end:0},{title:'Ato 2',start:1,end:1}],alternateEndings:true},
+  features:{bosses:false},worldOptions:{size:48,seed:42,quality:'low'},tuning:{difficulty:.25}};
+ const storage=new Map(),a=boot(spec,storage);a.start();a.tick(2);
+ a.key('keydown','e');a.key('keydown','1');a.tick(320);
+ assert.equal(a.telemetry().npc.state,'completed');
+ a.key('keydown','w');a.tick(425);a.key('keyup','w');
+ assert.equal(a.telemetry().stage,2);
+ const b=boot(spec,storage);b.start();b.tick(2);
+ assert.equal(b.telemetry().campaign.act,'Ato 2');
+ assert.equal(b.telemetry().campaign.history[0].choice,'choice-1');
+ b.tick(315);b.key('keydown','w');b.tick(450);b.key('keyup','w');
+ assert.equal(b.telemetry().state,'victory');assert.equal(b.telemetry().campaign.ending.id,'alliance');
+ assert.match(b.elements['overlay-title'].textContent,/Aliança/);
+ b.restart();assert.equal(b.telemetry().campaign.completed,0);
+});
+test('GF-TRAIN-26: GDD opt-in compila atos válidos e rejeita intervalos sobrepostos',()=>{
+ const gdd='# Jornada\n## Fase 1 — Vila\n## Fase 2 — Torre\nAtos de campanha: 1-1 | 2-2\nFinais alternativos: sim';
+ const spec=Parser.parseGdd(gdd,'',{genre:'arena',dimension:'3d'});
+ assert.equal(spec.campaignNarrative.acts.length,2);assert.equal(spec.campaignNarrative.alternateEndings,true);
+ const bad=Parser.parseGdd(gdd.replace('1-1 | 2-2','1-2 | 2-2'),'',{genre:'arena',dimension:'3d'});
+ assert.equal(bad.campaignNarrative,undefined);
+});

@@ -284,7 +284,7 @@
       "id": "pv-028",
       "genre": "rpg",
       "dimension": "3d",
-      "command": "Minecraft com controle touch, FPS e mundos salvos.",
+      "command": "Minecraft com controle touch, painel para medir FPS e mundos salvos.",
       "expect": {
         "voxel-terrain": "prototipo",
         "mobile": "parcial",

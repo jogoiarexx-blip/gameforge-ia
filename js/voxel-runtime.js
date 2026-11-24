@@ -13,9 +13,10 @@ function gameForgeVoxelBoot(){
  const scene=new T.Scene(),camera=new T.PerspectiveCamera(72,16/9,.05,145);
  scene.background=new T.Color(0x90b7d1);scene.fog=new T.Fog(0x90b7d1,30,92);
  const size=[64,128,256,512,1024,4096].includes(cfg.size)?cfg.size:64,landscape=cfg.landscape===true,details=landscape&&cfg.details===true,biomes=landscape&&cfg.biomes===true,atmosphere=cfg.atmosphere===true,lighting=cfg.lighting===true,textured=cfg.textures===true,streamed=size>64||landscape||textured||lighting;
- const M=gameForgeVoxelMesherFactory(),X=gameForgeVoxelTextureFactory(K);
- const material=textured?X.material(T,cfg.seed,cfg.atlas,atmosphere):new T.MeshBasicMaterial({vertexColors:true});
- const lightView=lighting?gameForgeVoxelLightingFactory().install(T,material):null;
+ const M=gameForgeVoxelMesherFactory(),X=gameForgeVoxelTextureFactory(K),G=gameForgeVoxelTerrainFactory(K,gameForgeVoxelLandscapeFactory);
+ const material=textured?X.material(T,cfg.seed,cfg.atlas,true):new T.MeshBasicMaterial({vertexColors:true});
+ const waterMaterial=material.clone();waterMaterial.onBeforeCompile=material.onBeforeCompile;waterMaterial.customProgramCacheKey=material.customProgramCacheKey;waterMaterial.transparent=true;waterMaterial.opacity=.68;waterMaterial.depthWrite=false;waterMaterial.side=T.DoubleSide;
+ const lightView=lighting?{snapshot:()=>({active:world.torchCount(),max:256,radius:7,mode:'baked-occluded'})}:null;
  const foliageGeometry=new T.BoxGeometry(1,1,1),foliageMaterial=new T.MeshBasicMaterial({color:0xffffff}),foliage=new Map();
  const atmosphereView=atmosphere?gameForgeVoxelAtmosphereFactory(K).create(T,scene,cfg.seed):null;
  const meshes=new Map(),versions=new Map(),queued=new Set();let wanted=new Set(),streamKey='',epoch=0,worker=null,inflight=null,workerMode='inactive',workerCompleted=0,terrainCompleted=0,quality=['low','medium','high'].includes(cfg.quality)?cfg.quality:'medium';
@@ -60,16 +61,19 @@ function gameForgeVoxelBoot(){
   geometry.setAttribute('color',new T.BufferAttribute(data.colors,3));
   if(data.uv){geometry.setAttribute('uv',new T.BufferAttribute(data.uv,2));geometry.setAttribute('voxelTile',new T.BufferAttribute(data.tiles,1));}
   geometry.computeBoundingSphere();
-  const object=new T.Mesh(geometry,material);object.userData={faces:data.faces,exposed:data.exposed??data.faces};scene.add(object);meshes.set(id,object);decorate(id);
+  let materials=material;
+  if(data.tiles?.includes(26)){const opaque=[],water=[];for(let i=0;i<data.tiles.length;i++)(data.tiles[i]===26?water:opaque).push(i);geometry.setIndex(opaque.concat(water));geometry.addGroup(0,opaque.length,0);geometry.addGroup(opaque.length,water.length,1);materials=[material,waterMaterial];}
+  const object=new T.Mesh(geometry,materials);object.userData={faces:data.faces,exposed:data.exposed??data.faces};scene.add(object);meshes.set(id,object);decorate(id);
  }
  function buildNow(id){
   const [cx,cz]=id.split(',').map(Number);
-  applyMesh(id,streamed?M.build(world.snapshot(cx,cz),cx,cz,textured,lighting):world.mesh(cx,cz));
+  const pad=lighting?8:1;
+  applyMesh(id,streamed?M.build(lighting?G.snapshot(world.terrainJob(cx,cz,pad)):world.snapshot(cx,cz),cx,cz,textured,lighting,pad):world.mesh(cx,cz));
  }
  function rebuild(id){
   if(!streamed){buildNow(id);return;}
-  versions.set(id,(versions.get(id)||0)+1);
-  if(wanted.has(id))queued.add(id);
+  const [cx,cz]=id.split(',').map(Number),radius=lighting?1:0;
+  for(let dx=-radius;dx<=radius;dx++)for(let dz=-radius;dz<=radius;dz++){const k=K.key(cx+dx,cz+dz);if(!wanted.has(k))continue;versions.set(k,(versions.get(k)||0)+1);queued.add(k);}
  }
  function radius(){return (innerWidth<700?{low:1,medium:2,high:3}:{low:2,medium:3,high:4})[quality];}
  function refreshStream(){
@@ -90,7 +94,7 @@ function gameForgeVoxelBoot(){
  function initWorker(){
   if(!streamed||worker||workerMode==='fallback')return;
   try{
-   const source='const K=('+gameForgeVoxelKitFactory.toString()+')(),L=('+gameForgeVoxelLandscapeFactory.toString()+'),G=('+gameForgeVoxelTerrainFactory.toString()+')(K,L),M=('+gameForgeVoxelMesherFactory.toString()+')();onmessage=e=>{const j=e.data;const d=M.build(j.terrain?G.snapshot(j.terrain):j.snapshot,j.cx,j.cz,j.textured,j.lighting);postMessage({id:j.id,epoch:j.epoch,rev:j.rev,terrain:!!j.terrain,data:d},[d.positions.buffer,d.colors.buffer,d.uv.buffer,d.tiles.buffer]);}';
+   const source='const K=('+gameForgeVoxelKitFactory.toString()+')(),L=('+gameForgeVoxelLandscapeFactory.toString()+'),G=('+gameForgeVoxelTerrainFactory.toString()+')(K,L),M=('+gameForgeVoxelMesherFactory.toString()+')();onmessage=e=>{const j=e.data;const d=M.build(j.terrain?G.snapshot(j.terrain):j.snapshot,j.cx,j.cz,j.textured,j.lighting,j.terrain?.pad??1);postMessage({id:j.id,epoch:j.epoch,rev:j.rev,terrain:!!j.terrain,data:d},[d.positions.buffer,d.colors.buffer,d.uv.buffer,d.tiles.buffer]);}';
    const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
    try{worker=new Worker(url);}finally{URL.revokeObjectURL(url);}
    workerMode='worker';
@@ -108,7 +112,7 @@ function gameForgeVoxelBoot(){
   for(const k of queued){const [x,z]=k.split(',').map(Number),d=(x-center.cx)**2+(z-center.cz)**2;if(d<best){best=d;id=k;}}
   queued.delete(id);if(!wanted.has(id))return;
   if(!worker){buildNow(id);return;}
-  const [cx,cz]=id.split(',').map(Number),terrain=size>=512?world.terrainJob(cx,cz):null,snapshot=terrain?null:world.snapshot(cx,cz),job={id,cx,cz,epoch,rev:versions.get(id)||0,textured,lighting,terrain,snapshot};
+  const [cx,cz]=id.split(',').map(Number),terrain=size>=512||lighting?world.terrainJob(cx,cz,lighting?8:1):null,snapshot=terrain?null:world.snapshot(cx,cz),job={id,cx,cz,epoch,rev:versions.get(id)||0,textured,lighting,terrain,snapshot};
   inflight=job;
   try{worker.postMessage(job,snapshot?[snapshot.buffer]:[]);}catch{inflight=null;worker.terminate();worker=null;workerMode='fallback';queued.add(id);}
  }
@@ -409,7 +413,7 @@ function gameForgeVoxelBoot(){
   }
   pumpStream();syncDrops();syncCreatures();
   if(atmosphereView){const t=survival?life.time:clock;atmosphereView.update(t,player,innerWidth<700,streamed?radius()*16+12:92,material,foliageMaterial);if(material.userData.waterTime)material.userData.waterTime.value=t;}
-  if(lightView)lightView.update(world.nearbyTorches(player,innerWidth<700?4:8));
+  waterMaterial.color.copy(material.color);if(material.userData.waterTime)material.userData.waterTime.value=clock;
   updateCamera();renderer.render(scene,camera);worldTriangles=renderer.info.render.triangles;
   const moving=Math.hypot(player.x-visualX,player.z-visualZ)>.0001;
   visualX=player.x;visualZ=player.z;

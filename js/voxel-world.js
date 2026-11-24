@@ -249,17 +249,18 @@ function gameForgeVoxelWorldFactory(K){
    }
    return out;
   }
-  function terrainJob(cx,cz){
+  function terrainJob(cx,cz,pad=1){
+   if(![1,8].includes(pad))throw Error('Halo inválido');const width=16+2*pad;
    if(cx<lo||cx>=hi||cz<lo||cz>=hi)throw Error('Chunk fora do mundo');
    const patches=[];
    for(let ax=cx-1;ax<=cx+1;ax++)for(let az=cz-1;az<=cz+1;az++){
     const changed=overlay.get(K.key(ax,az));if(!changed)continue;
     for(const [i,id] of changed){
      const y=Math.floor(i/256),x=ax*16+i%16-cx*16,z=az*16+Math.floor(i/16)%16-cz*16;
-     if(x>=-1&&x<=16&&z>=-1&&z<=16)patches.push([(y*18+z+1)*18+x+1,id]);
+     if(x>=-pad&&x<16+pad&&z>=-pad&&z<16+pad)patches.push([(y*width+z+pad)*width+x+pad,id]);
     }
    }
-   return {seed,cx,cz,bound:MAX,landscape,details,biomes,tools,advanced,patches};
+   return {seed,cx,cz,bound:MAX,landscape,details,biomes,tools,advanced,patches,pad};
   }
   function nearbyTorches(p,limit=8,radius=12){
    return [...torches.values()].map(v=>({v,d:(v[0]-p.x)**2+(v[1]-p.y)**2+(v[2]-p.z)**2})).filter(v=>v.d<=radius*radius).sort((a,b)=>a.d-b.d).slice(0,limit).map(v=>v.v.slice());

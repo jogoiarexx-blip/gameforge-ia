@@ -1,0 +1,6 @@
+# GF-VOXEL-16 — Integração visual
+Base GF-VOXEL-15 (#72). O runtime exportado passa a usar luz de tocha BFS (8 níveis, alcance máximo de 7 blocos), halo de 8 blocos no gerador/worker, AO de três vizinhos por vértice e oclusão vertical da luz solar aproximada. Faces com AO não são mescladas para evitar perder detalhes. Edições invalidam chunks vizinhos quando a iluminação está ativa. Água usa grupo translúcido separado, depthWrite desativado e animação de cor com atlas. O material é compartilhado; no máximo dois grupos por chunk. Não há sombras projetadas, nem propagação de luz solar por portas.
+## Validação
+Sintaxe dos cinco JS, greedy original, AO e comparação de luz com/sem parede exercitados isoladamente. Testes Node adicionados para halo, luz e água. CI e Chromium ainda não executados; FPS em aparelho real não medido. Transparência por chunk pode apresentar artefatos de ordenação.
+## Pendente
+O fluxo dinâmico do GF-VOXEL-15 ainda não está ligado ao mundo, cachoeiras físicas/animadas e streaming regional infinito ainda pendentes. A versão jogável permanece finita, saves legados inalterados. Integrar fontes, colisão/natação, limites de simulação e migração regional em etapas posteriores.

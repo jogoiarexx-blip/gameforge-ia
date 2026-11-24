@@ -92,7 +92,7 @@ function gameForgeVoxelActorsFactory(T){
   if(block.visible)block.material=mat(blockColors[selected]);
   const progress=clamp((time-started)/.30,0,1),arc=progress<1?Math.sin(progress*Math.PI):0;
   bob=moving?Math.sin(time*10)*.025:0;
-  hand.position.set(.48+arc*.10,-.38+bob-arc*.12,-1.05+arc*.16);
+  hand.position.set(Math.min(.48,viewCamera.aspect*.32)+arc*.07,-.38+bob-arc*.12,-1.05+arc*.16);
   hand.rotation.set(-arc*(action==='place'?.25:.95),arc*.13,-arc*.28);
  }
  function resize(aspect){viewCamera.aspect=Math.max(.25,aspect);viewCamera.updateProjectionMatrix();}

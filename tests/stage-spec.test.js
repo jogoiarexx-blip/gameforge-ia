@@ -65,7 +65,7 @@ test('GF-006: runtime utiliza os 3 layouts reais com superfícies e colisões',(
  const source=fs.readFileSync(require.resolve('../js/three-runtime.js'),'utf8');
  assert.match(source,/layout==='courtyard'/);
  assert.match(source,/layout==='outpost'/);
- assert.match(source,/solids\.push\(\{x,z:-4,w:5,d:7\}\)/);
+ assert.match(source,/solids\.push\(\{x,z:-4,w:5,d:7(?:,h:[\d.]+)?\}\)/);
  assert.match(source,/layout:\['arena','fps','rpg'\]/);
  const html=fs.readFileSync(require.resolve('../index.html'),'utf8');
  assert.ok(html.indexOf('stage-spec.js')>0);

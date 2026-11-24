@@ -16,9 +16,12 @@ function generate(input){
  if(typeof survivalFactory!=='function')throw Error('Módulo de sobrevivência ausente.');
  const actorFactory=root.gameForgeVoxelActorsFactory||(typeof require==='function'?require('./voxel-actors.js'):null);
  if(typeof actorFactory!=='function')throw Error('Módulo visual ausente.');
- const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
+ const storage=mode==='resources'&&input?.storage===true;
+ const storageFactory=root.gameForgeVoxelStorageFactory||(typeof require==='function'?require('./voxel-storage.js'):null);
+ if(typeof storageFactory!=='function')throw Error('Módulo de armazenamento ausente.');
+ const spec={title,genre:'voxel',dimension:'3d',engineMode:'voxel-v1',voxel:{version:1,title,seed,mode,forest,survival,storage},stages:[mode==='resources'?'Coleta e fabricação':'Mundo criativo']};
  const source='/* GF-VOXEL-01 */\nconst GAME_SPEC = '+JSON.stringify(spec).replace(/<\//g,'<\\/')+';\n'+
-  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n'+actorFactory.toString()+'\n('+boot.toString()+')();\n';
+  kit.toString()+'\n'+world.toString()+'\n'+economy.toString()+'\n'+survivalFactory.toString()+'\n'+actorFactory.toString()+'\n'+storageFactory.toString()+'\n('+boot.toString()+')();\n';
  const css=root.GameForgeGenerator.BASE_CSS+'\n@media(max-width:700px){.touch{gap:4px;flex-wrap:wrap}.touch button{min-height:40px}.head .stats{gap:6px}}';
  const files={'game.js':source,'style.css':css,'engine-3d.js':root.GameForgeThreeSource,
   'THREE-LICENSE.txt':root.GameForgeThreeLicense,
@@ -27,6 +30,7 @@ function generate(input){
  if(forest)files['LEIA-VOXEL.md']+='\nGF-VOXEL-03: árvores por seed. Mire em tronco ou folhas e mine para obter três madeiras e uma muda (inventário deve ter espaço). Tecla 8 seleciona madeira; 0 seleciona muda. Plante em grama ou terra com espaço livre. A muda cresce após 20 segundos de simulação ativa; se houver obstáculo ou jogador, aguarda. O save inclui árvores, mudas e tempo restante e é separado do modo sem floresta. Folhas desaparecem no corte; sem animação física de queda.\n';
  if(survival)files['LEIA-VOXEL.md']+='\nGF-VOXEL-04: sobrevivência opcional. Ciclo ativo de 120 segundos (80 dia, 40 noite), fome, vida, três alimentos iniciais, criaturas passivas e inimigos noturnos simples. C come, E ataca criatura ao alcance e na mira; picareta aumenta dano. Renasce preservando mundo e inventário. Save separado inclui tempo, fome, vida e criaturas. Sem dano de queda, animações complexas ou P2P.\n';
  files['LEIA-VOXEL.md']+='\nGF-VOXEL-05: criaturas articuladas procedurais, mãos, blocos e picareta visíveis, animação de caminhada e ação. Malhas reutilizam uma geometria de cubo, sem assets externos. Sem mudanças no formato do save.\n';
+ if(storage)files['LEIA-VOXEL.md']+='\nGF-VOXEL-06: armazenamento opcional. Faça um baú na mochila com 3 pedras, selecione com 9 e coloque com Q. Mire no baú a até 3 blocos e pressione B para abrir; guarde ou retire itens unitários. Esvazie antes de minerar. G solta um bloco selecionado; coleta automática a até 1,4 bloco após 1,5 s de jogo ativo. Save local separado preserva baús e drops. Drops estáticos com animação visual; sem gravidade ou despawn.\n';
  files['index.html']=root.GameForgeGenerator.shell(title,css,source,false,files);
  return files;
 }

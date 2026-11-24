@@ -13,7 +13,7 @@
 <label style="display:flex;gap:8px;align-items:center"><input id="storage" type="checkbox" style="width:auto"> Baús e itens no chão (modo coleta)</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="tools" type="checkbox" style="width:auto"> Ferramentas duráveis e minério (ativa floresta)</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="advanced" type="checkbox" style="width:auto"> Equipamentos avançados (ativa ferramentas e floresta)</label>
-<label for="size">Dimensões do mundo</label><select id="size" style="width:100%;padding:10px;background:#233a51;color:white;border-radius:8px"><option value="64">64 × 64 (original)</option><option value="128">128 × 128 (4× área)</option><option value="256">256 × 256 (16× área)</option><option value="512">512 × 512 (64× área, cache dinâmico)</option><option value="1024">1024 × 1024 (256× área, worker)</option></select>
+<label for="size">Dimensões do mundo</label><select id="size" style="width:100%;padding:10px;background:#233a51;color:white;border-radius:8px"><option value="64">64 × 64 (original)</option><option value="128">128 × 128 (4× área)</option><option value="256">256 × 256 (16× área)</option><option value="512">512 × 512 (64× área, cache dinâmico)</option><option value="1024">1024 × 1024 (256× área, worker)</option><option value="4096">4096 × 4096 (exploração, save regional)</option></select>
 <label style="display:flex;gap:8px;align-items:center"><input id="landscape" type="checkbox" style="width:auto"> Biomas, montanhas, rios e cavernas</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="details" type="checkbox" style="width:auto"> Vilarejos, pontes e vegetação (ativa paisagem)</label>
 <label style="display:flex;gap:8px;align-items:center"><input id="textures" type="checkbox" style="width:auto"> Texturas procedurais pixeladas</label>
@@ -33,7 +33,7 @@
 <p id="atlas-status" role="status">Edite os materiais de 16 × 16 pixels. Imagens são processadas localmente e reduzidas ao tamanho do tile.</p></details>
 <button id="build">Criar prévia jogável</button><button id="download" disabled>Exportar jogo em ZIP</button>
 <p id="status" role="status">Escolha a seed e crie seu primeiro mundo.</p>
-<p><strong>Incluído:</strong> mundos finitos de 64, 128, 256, 512 ou 1024 blocos por lado, três materiais, construção/mineração criativa, colisão, toque, bússola, save local no jogo exportado.</p>
+<p><strong>Incluído:</strong> mundos finitos de 64, 128, 256, 512, 1024 ou 4096 blocos por lado, três materiais, construção/mineração criativa, colisão, toque, bússola, save local no jogo exportado.</p>
 <p>No modo de coleta: inventário, bancada, forno, tijolo e picareta. Floresta opcional: madeira, mudas e replantio. Sobrevivência opcional: dia/noite, fome, vida, alimentação e criaturas articuladas. Mãos e ferramentas animadas em todos os modos. Sem mundo infinito ou P2P. A prévia isolada não mantém saves. O ZIP funciona offline e requer WebGL. Extraia todos os arquivos juntos.</p>
 </aside><section><iframe id="preview" title="Prévia do jogo voxel" sandbox="allow-scripts allow-modals" referrerpolicy="no-referrer"></iframe></section></main>
 <script src="../js/voxel-kit.js"></script>

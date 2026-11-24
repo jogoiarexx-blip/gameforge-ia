@@ -10,19 +10,19 @@ function gameForgeVoxelWorldFactory(K){
  function create(seed,initial=[],options={}){
   if(!int(seed)||seed<0||seed>2147483647)throw Error('Seed inválida');
   const size=mapSize(options.size),MIN=-size/2,MAX=size/2,LIMIT=size===64?4096:16384,lo=MIN/S,hi=MAX/S;
-  const isInside=(x,y,z)=>inside(x,y,z,MAX),landscape=options.landscape===true;
+  const isInside=(x,y,z)=>inside(x,y,z,MAX),landscape=options.landscape===true,details=landscape&&options.details===true;
   if(!Array.isArray(initial)||initial.length>LIMIT||!initial.every(e=>validEdit(e,MAX)))throw Error('Edições inválidas');
   const chunks=new Map(),edits=new Map(),trees=new Map(),owners=new Map(),forest=options.forest===true,storage=options.storage===true,tools=options.tools===true,advanced=options.advanced===true;
   const LF=typeof gameForgeVoxelLandscapeFactory==='function'?gameForgeVoxelLandscapeFactory:typeof require==='function'?require('./voxel-landscape.js'):null;
   const land=landscape?LF(K):null,columns=landscape?new Array(size*size):null;
-  if(landscape)for(let x=MIN;x<MAX;x++)for(let z=MIN;z<MAX;z++)columns[(z-MIN)*size+x-MIN]=land.column(seed,x,z);
+  if(landscape)for(let x=MIN;x<MAX;x++)for(let z=MIN;z<MAX;z++)columns[(z-MIN)*size+x-MIN]=land.column(seed,x,z,details);
   const column=(x,z)=>columns[(z-MIN)*size+x-MIN];
   const height=(x,z)=>landscape?column(x,z).h:K.heightAt(seed,x,z);
   for(let cx=lo;cx<hi;cx++)for(let cz=lo;cz<hi;cz++){
    const a=landscape?new Uint8Array(S*S*H):K.generateChunk(seed,cx,cz).voxels;
    if(landscape)for(let x=0;x<S;x++)for(let z=0;z<S;z++){
     const gx=cx*S+x,gz=cz*S+z,c=column(gx,gz);
-    for(let y=0;y<=Math.max(c.h+c.wall,54);y++)a[(y*S+z)*S+x]=land.block(seed,gx,y,gz,c,tools,advanced);
+    for(let y=0;y<=Math.max(c.h+c.wall,54,c.top||0);y++)a[(y*S+z)*S+x]=land.block(seed,gx,y,gz,c,tools,advanced);
    }
    chunks.set(K.key(cx,cz),a);
   }
@@ -108,7 +108,7 @@ function gameForgeVoxelWorldFactory(K){
     // Guaranteed accessible tree north of spawn plus seed-dependent grid trees.
     const positions=[[0,-4]];
     for(let x=MIN+6;x<=MAX-6;x+=8)for(let z=MIN+6;z<=MAX-6;z+=8){
-     if(Math.hypot(x,z)<7||K.hash(seed,x,z)<(landscape&&column(x,z).biome==='dry'?.78:.34))continue;
+     if((details&&column(x,z).site)||Math.hypot(x,z)<7||K.hash(seed,x,z)<(landscape&&column(x,z).biome==='dry'?.78:.34))continue;
      positions.push([x,z]);
     }
     for(const [x,z] of positions)addTree({x,y:height(x,z)+1,z,grown:true,remaining:0,...(landscape?{style:K.hash(seed^734,x,z)>.48?1:0}:{})});
@@ -212,6 +212,17 @@ function gameForgeVoxelWorldFactory(K){
    if(!p||!hit.cell||!get(...hit.cell)||get(...p)!==0||![1,2,3,4,5,6,8,12,29].includes(id)||overlaps(player,...p))return null;
    return edit(...p,id);
   }
+  function decorations(cx,cz){
+   if(!details)return [];
+   const out=[];
+   for(let x=cx*S;x<(cx+1)*S;x++)for(let z=cz*S;z<(cz+1)*S;z++){
+    if(!isInside(x,1,z))continue;const c=column(x,z),y=c.h+1;
+    if(c.site||get(x,y-1,z)!==1||get(x,y,z)!==0||get(x,y+1,z)!==0)continue;
+    const h=K.hash(seed^97531,x,z);if(h<.88)continue;
+    out.push({x:x+.5,y,z:z+.5,kind:h>.98?'shrub':h>.945?'flower':'grass',variant:K.hash(seed^273,x,z)>.5?1:0});
+   }
+   return out;
+  }
   function snapshot(cx,cz){
    const a=chunks.get(K.key(cx,cz));if(!a)throw Error('Chunk fora do mundo');
    const p=new Uint8Array(18*18*H);
@@ -219,9 +230,9 @@ function gameForgeVoxelWorldFactory(K){
    for(let y=0;y<H;y++){for(let z=-1;z<=S;z++){p[(y*18+z+1)*18]=get(cx*S-1,y,cz*S+z);p[(y*18+z+1)*18+17]=get(cx*S+S,y,cz*S+z);}for(let x=0;x<S;x++){p[y*324+x+1]=get(cx*S+x,y,cz*S-1);p[y*324+17*18+x+1]=get(cx*S+x,y,cz*S+S);}}
    return p;
   }
-  return {seed,size,MIN,MAX,LIMIT,get,solid,edit,mesh,snapshot,ray,spawn,collides,mine,place,treeHit,cutTree,plant,grow,forestState,edits:()=>[...edits.values()].map(e=>[...e]),editCount:()=>edits.size,chunkKeys:()=>[...chunks.keys()]};
+  return {seed,size,MIN,MAX,LIMIT,get,solid,edit,mesh,snapshot,decorations,ray,spawn,collides,mine,place,treeHit,cutTree,plant,grow,forestState,edits:()=>[...edits.values()].map(e=>[...e]),editCount:()=>edits.size,chunkKeys:()=>[...chunks.keys()]};
  }
- function saveKey(config){return 'gameforge-voxel-v1:'+config.seed+':'+encodeURIComponent(config.title)+(config.mode==='resources'?':resources-v1':'')+(config.mode==='resources'&&config.forest===true?':forest-v1':'')+(config.survival===true?':survival-v1':'')+(config.storage===true?':storage-v1':'')+(config.tools===true?':tools-v1':'')+(config.advanced===true?':advanced-v1':'')+(mapSize(config.size)>64?':map-'+mapSize(config.size):'')+(config.landscape===true?':landscape-v1':'');}
+ function saveKey(config){return 'gameforge-voxel-v1:'+config.seed+':'+encodeURIComponent(config.title)+(config.mode==='resources'?':resources-v1':'')+(config.mode==='resources'&&config.forest===true?':forest-v1':'')+(config.survival===true?':survival-v1':'')+(config.storage===true?':storage-v1':'')+(config.tools===true?':tools-v1':'')+(config.advanced===true?':advanced-v1':'')+(mapSize(config.size)>64?':map-'+mapSize(config.size):'')+(config.landscape===true?':landscape-v1':'')+(config.details===true?':details-v1':'');}
  function readSave(raw,config,E,S,D,U,A){
   const size=mapSize(config.size),limit=size===64?4096:16384;
   if(typeof raw!=='string'||raw.length>(size===64?160000:850000))return null;
@@ -236,6 +247,7 @@ function gameForgeVoxelWorldFactory(K){
    const resources=config.mode==='resources',forest=resources&&config.forest===true,survival=resources&&config.survival===true,storage=resources&&config.storage===true,tools=resources&&config.tools===true,advanced=tools&&config.advanced===true;
    if(!config.landscape&&(s.landscape===true||s.edits.some(e=>e[3]===29)))return null;
    if(config.landscape===true&&s.landscape!==true)return null;
+   if((config.details===true)!==(s.details===true))return null;
    if(size>64?s.size!==size:s.size!==undefined&&s.size!==64)return null;
    if(!advanced&&(s.advanced!==undefined||s.edits.some(e=>[20,21].includes(e[3]))))return null;
    if(!tools&&(s.tools!==undefined||s.edits.some(e=>e[3]===15)))return null;
@@ -246,7 +258,7 @@ function gameForgeVoxelWorldFactory(K){
     if(s.mode!=='resources'||!E?.valid(s.bag)||s.bag.some(v=>v&&((v.id===11&&!survival)||(!forest&&[8,10].includes(v.id))||(v.id===12&&!storage)||(!tools&&v.id>=13&&v.id!==29)||(!advanced&&v.id>=17&&v.id!==29)||(!config.landscape&&v.id===29)))||typeof s.equipped!=='boolean'||
      (tools?(!U?.valid(s.tools,s.bag)||s.equipped!==!!s.tools.active):(s.equipped&&E.count(s.bag,7)<1))||!int(s.selected)||s.selected<1||![1,2,3,4,5,6,...(forest?[8,10]:[]),...(storage?[12]:[]),...(config.landscape?[29]:[])].includes(s.selected))return null;
    }else if(s.mode==='resources'||s.edits.some(e=>e[3]>3&&!(config.landscape&&e[3]===29)))return null;
-   const world=create(config.seed,s.edits,{forest,storage,tools,advanced,size,landscape:config.landscape===true,...(forest?{trees:s.trees}:{})});
+   const world=create(config.seed,s.edits,{forest,storage,tools,advanced,size,landscape:config.landscape===true,details:config.details===true,...(forest?{trees:s.trees}:{})});
    if(world.collides(s.player.x,s.player.y,s.player.z)|| (survival&&!S?.valid(s.survival,world))||(storage&&!D?.valid(s.storage,world,config))||(advanced&&!A?.valid(s.advanced,s.bag,world)))return null;
    return {world,player:{x:s.player.x,y:s.player.y,z:s.player.z,yaw:s.player.yaw,pitch:s.player.pitch},mined:s.mined,placed:s.placed,...(survival?{survival:s.survival}:{}),...(storage?{storage:s.storage}:{}),...(tools?{tools:s.tools}:{}),...(advanced?{advanced:s.advanced}:{}),...(resources?{bag:E.copy(s.bag),equipped:s.equipped,selected:s.selected}:{})};
   }catch{return null;}

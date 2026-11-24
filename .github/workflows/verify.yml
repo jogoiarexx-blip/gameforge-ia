@@ -103,6 +103,8 @@ jobs:
         run: python tests/browser-gf-voxel-10.py
       - name: GF-VOXEL-11 — mundo 512, cache dinâmico e atmosfera
         run: python tests/browser-gf-voxel-11.py
+      - name: GF-VOXEL-12 — mundo 1024, terreno worker e luz local
+        run: python tests/browser-gf-voxel-12.py
       - name: Salvar capturas do navegador para auditoria
         if: always()
         uses: actions/upload-artifact@v4

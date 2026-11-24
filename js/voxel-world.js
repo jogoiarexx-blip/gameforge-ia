@@ -19,6 +19,7 @@ function gameForgeVoxelWorldFactory(K){
   const column=(x,z)=>columns?columns[(z-MIN)*size+x-MIN]:land.column(seed,x,z,details,biomes);
   const height=(x,z)=>landscape?column(x,z).h:K.heightAt(seed,x,z);
   const allKeys=[],overlay=new Map(),torches=new Map(),CACHE_LIMIT=96;
+  const dynamicWater=landscape&&options.dynamicWater===true;let fluid=new Map(),fluidTag='',fluidRevision=0,fluidTruncated=false;
   for(let cx=lo;cx<hi;cx++)for(let cz=lo;cz<hi;cz++)allKeys.push(K.key(cx,cz));
   const base=(x,y,z)=>{if(landscape)return land.block(seed,x,y,z,column(x,z),tools,advanced);const h=K.heightAt(seed,x,z);if(y>h)return 0;if(y===h)return 1;if(y>=h-3)return 2;if(!tools||y<=0||y<h-14)return 3;const r=K.hash(seed^Math.imul(y,2654435761),x,z);return r>.86?15:advanced&&r>.78?21:advanced&&r>.70?20:3;};
   let generated=0,evicted=0;
@@ -38,6 +39,7 @@ function gameForgeVoxelWorldFactory(K){
    return a;
   }
   function setCell(x,y,z,id){
+   fluidRevision++;
    const p=K.localBlock(x,y,z),key=K.key(p.cx,p.cz),original=base(x,y,z);
    let changes=overlay.get(key);
    if(id===original){if(changes){changes.delete(p.index);if(!changes.size)overlay.delete(key);}}
@@ -45,19 +47,20 @@ function gameForgeVoxelWorldFactory(K){
    const a=chunks.get(key);if(a)a[p.index]=id;
   }
   if(!lazy)for(let cx=lo;cx<hi;cx++)for(let cz=lo;cz<hi;cz++)loadChunk(cx,cz);
-  function get(x,y,z){
+  function getRaw(x,y,z){
    if(y<0)return 3;if(!isInside(x,y,z))return 0;
    const p=K.localBlock(x,y,z),key=K.key(p.cx,p.cz),a=chunks.get(key);
    if(a)return a[p.index];
    const changes=overlay.get(key);return changes?.has(p.index)?changes.get(p.index):base(x,y,z);
   }
+  function get(x,y,z){const raw=getRaw(x,y,z);return raw===0&&fluid.has(cellKey(x,y,z))?28:raw;}
   const solid=(x,y,z)=>{const id=get(x,y,z);return id!==0&&id!==28&&id!==30;};
   function edit(x,y,z,id){
-   if(!validEdit([x,y,z,id],MAX)||get(x,y,z)===id||owners.has(cellKey(x,y,z))||trees.has(cellKey(x,y+1,z))||(!forest&&id===8)||(!storage&&id===12)||(!tools&&id===15)||(!advanced&&[20,21].includes(id))||(!landscape&&id===29)||(!lighting&&id===30)||(!biomes&&[31,32,33].includes(id))||(id===30&&torches.size>=256))return null;
+   if(!validEdit([x,y,z,id],MAX)||getRaw(x,y,z)===id||owners.has(cellKey(x,y,z))||trees.has(cellKey(x,y+1,z))||(!forest&&id===8)||(!storage&&id===12)||(!tools&&id===15)||(!advanced&&[20,21].includes(id))||(!landscape&&id===29)||(!lighting&&id===30)||(!biomes&&[31,32,33].includes(id))||(id===30&&torches.size>=256))return null;
    const k=cellKey(x,y,z);
    if(id!==base(x,y,z)&&!edits.has(k)&&edits.size>=LIMIT)return null;
    const p=K.localBlock(x,y,z);
-   const previous=get(x,y,z);setCell(x,y,z,id);
+   const previous=getRaw(x,y,z);setCell(x,y,z,id);
    if(previous===30)torches.delete(k);if(id===30)torches.set(k,[x+.5,y+.45,z+.5]);
    if(id===base(x,y,z))edits.delete(k);else edits.set(k,[x,y,z,id]);
    const dirty=new Set([K.key(p.cx,p.cz)]);
@@ -235,7 +238,7 @@ function gameForgeVoxelWorldFactory(K){
   }
   function place(hit,id,player){
    const p=hit?.previous;
-   if(!p||!hit.cell||!get(...hit.cell)||get(...p)!==0||![1,2,3,4,5,6,8,12,29,30,31,32,33].includes(id)||overlaps(player,...p))return null;
+   if(!p||!hit.cell||!get(...hit.cell)||(get(...p)!==0&&!(dynamicWater&&get(...p)===28))||![1,2,3,4,5,6,8,12,29,30,31,32,33].includes(id)||overlaps(player,...p))return null;
    return edit(...p,id);
   }
   function decorations(cx,cz){
@@ -249,6 +252,37 @@ function gameForgeVoxelWorldFactory(K){
    }
    return out;
   }
+  function updateWater(player,solver,{radius=24,budget=4096,extraSources=[]}={}){
+   if(!dynamicWater)return [];
+   if(!solver||typeof solver.water!=='function'||![16,24,32].includes(radius)||!Array.isArray(extraSources)||extraSources.length>32)throw Error('Simulador de água inválido');
+   const center=K.chunkOf(player.x,player.z),ox=center.cx*S+8,oz=center.cz*S+8,tag=[center.cx,center.cz,radius,budget,fluidRevision,JSON.stringify(extraSources)].join(':');
+   if(tag===fluidTag)return [];
+   const active=(x,y,z)=>isInside(x,y,z)&&Math.abs(x-ox)<radius&&Math.abs(z-oz)<radius;
+   const memo=new Map(),raw=(x,y,z)=>{const k=cellKey(x,y,z);if(!memo.has(k))memo.set(k,getRaw(x,y,z));return memo.get(k);};
+   const sources=[],seen=new Set(),dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+   function source(x,y,z){const k=cellKey(x,y,z);if(active(x,y,z)&&!seen.has(k)&&[0,28].includes(raw(x,y,z))){sources.push([x,y,z]);seen.add(k);}}
+   for(const p of extraSources)if(Array.isArray(p)&&p.length===3&&p.every(int))source(...p);
+   for(let x=Math.max(MIN,ox-radius+1);x<Math.min(MAX,ox+radius);x++)for(let z=Math.max(MIN,oz-radius+1);z<Math.min(MAX,oz+radius);z++){
+    const c=column(x,z);
+    if(c.river||c.waterLevel){for(let y=Math.max(1,c.h+1);y<=(c.waterLevel||54);y++)if(raw(x,y,z)===28&&(raw(x,y-1,z)===0||dirs.some(([dx,dz])=>active(x+dx,y,z+dz)&&raw(x+dx,y,z+dz)===0)))source(x,y,z);}
+    // Sparse deterministic cliff springs; no persistent terrain mutation.
+    if(x%8===0&&z%8===0&&c.h>=65&&!c.site&&!c.wall&&!c.cactus&&K.hash(seed^74123,x,z)>.55&&raw(x,c.h,z)!==0&&dirs.some(([dx,dz])=>active(x+dx,c.h,z+dz)&&height(x+dx,z+dz)<=c.h-2))source(x,c.h+1,z);
+   }
+   sources.sort((a,b)=>(a[0]-ox)**2+(a[2]-oz)**2-(b[0]-ox)**2-(b[2]-oz)**2||a[0]-b[0]||a[2]-b[2]||a[1]-b[1]);
+   const result=solver.water({sources,active,budget,solid:(x,y,z)=>{const v=raw(x,y,z);return v!==0&&!(v===28&&seen.has(cellKey(x,y,z)));}});
+   const next=new Map();for(const [k,v] of result.cells)if(raw(...v.p)===0)next.set(k,v);
+   const dirty=new Set();
+   function mark(v){const p=K.localBlock(...v.p);for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){const x=p.cx+dx,z=p.cz+dz;if(x>=lo&&x<hi&&z>=lo&&z<hi&&(dx===0||dx===-1&&p.lx===0||dx===1&&p.lx===15)&&(dz===0||dz===-1&&p.lz===0||dz===1&&p.lz===15))dirty.add(K.key(x,z));}}
+   for(const [k,v] of fluid){const n=next.get(k);if(!n||v.level!==n.level||v.falling!==n.falling)mark(v);}
+   for(const [k,v] of next){const old=fluid.get(k);if(!old||old.level!==v.level||old.falling!==v.falling)mark(v);}
+   fluid=next;fluidTag=tag;fluidTruncated=result.truncated;return [...dirty];
+  }
+  function waterCurrent(x,y,z){
+   const v=fluid.get(cellKey(x,y,z));if(!v||getRaw(x,y,z)!==0)return [0,0,0];
+   if(v.falling)return [0,-1,0];
+   let dx=0,dz=0;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const n=fluid.get(cellKey(x+a,y,z+b));if(n&&n.level<v.level){dx+=a;dz+=b;}}
+   const d=Math.hypot(dx,dz)||1;return [dx/d,0,dz/d];
+  }
   function terrainJob(cx,cz,pad=1){
    if(![1,8].includes(pad))throw Error('Halo inválido');const width=16+2*pad;
    if(cx<lo||cx>=hi||cz<lo||cz>=hi)throw Error('Chunk fora do mundo');
@@ -260,6 +294,7 @@ function gameForgeVoxelWorldFactory(K){
      if(x>=-pad&&x<16+pad&&z>=-pad&&z<16+pad)patches.push([(y*width+z+pad)*width+x+pad,id]);
     }
    }
+   for(const v of fluid.values()){const [gx,y,gz]=v.p,x=gx-cx*S,z=gz-cz*S;if(x>=-pad&&x<S+pad&&z>=-pad&&z<S+pad&&getRaw(gx,y,gz)===0)patches.push([(y*width+z+pad)*width+x+pad,39+(v.falling?8:v.level)]);}
    return {seed,cx,cz,bound:MAX,landscape,details,biomes,tools,advanced,patches,pad};
   }
   function nearbyTorches(p,limit=8,radius=12){
@@ -272,7 +307,7 @@ function gameForgeVoxelWorldFactory(K){
    for(let y=0;y<H;y++){for(let z=-1;z<=S;z++){p[(y*18+z+1)*18]=get(cx*S-1,y,cz*S+z);p[(y*18+z+1)*18+17]=get(cx*S+S,y,cz*S+z);}for(let x=0;x<S;x++){p[y*324+x+1]=get(cx*S+x,y,cz*S-1);p[y*324+17*18+x+1]=get(cx*S+x,y,cz*S+S);}}
    return p;
   }
-  return {seed,size,MIN,MAX,LIMIT,get,solid,edit,mesh,snapshot,terrainJob,biomeAt:(x,z)=>landscape&&isInside(Math.floor(x),1,Math.floor(z))?column(Math.floor(x),Math.floor(z)).biome:'plain',nearbyTorches,torchCount:()=>torches.size,decorations,ray,spawn,collides,mine,place,treeHit,cutTree,plant,grow,forestState,edits:()=>[...edits.values()].map(e=>[...e]),editCount:()=>edits.size,chunkKeys:()=>allKeys.slice(),cacheStats:()=>({lazy,resident:chunks.size,total:allKeys.length,generated,evicted,limit:lazy?CACHE_LIMIT:allKeys.length,voxelBytes:chunks.size*S*S*H,overlayChunks:overlay.size})};
+  return {seed,size,MIN,MAX,LIMIT,get,solid,edit,mesh,snapshot,terrainJob,updateWater,waterCurrent,waterStats:()=>({enabled:dynamicWater,cells:fluid.size,falling:[...fluid.values()].filter(v=>v.falling).length,truncated:fluidTruncated}),biomeAt:(x,z)=>landscape&&isInside(Math.floor(x),1,Math.floor(z))?column(Math.floor(x),Math.floor(z)).biome:'plain',nearbyTorches,torchCount:()=>torches.size,decorations,ray,spawn,collides,mine,place,treeHit,cutTree,plant,grow,forestState,edits:()=>[...edits.values()].map(e=>[...e]),editCount:()=>edits.size,chunkKeys:()=>allKeys.slice(),cacheStats:()=>({lazy,resident:chunks.size,total:allKeys.length,generated,evicted,limit:lazy?CACHE_LIMIT:allKeys.length,voxelBytes:chunks.size*S*S*H,overlayChunks:overlay.size})};
  }
  function saveKey(config){return 'gameforge-voxel-v1:'+config.seed+':'+encodeURIComponent(config.title)+(config.mode==='resources'?':resources-v1':'')+(config.mode==='resources'&&config.forest===true?':forest-v1':'')+(config.survival===true?':survival-v1':'')+(config.storage===true?':storage-v1':'')+(config.tools===true?':tools-v1':'')+(config.advanced===true?':advanced-v1':'')+(mapSize(config.size)>64?':map-'+mapSize(config.size):'')+(config.landscape===true?':landscape-v1':'')+(config.details===true?':details-v1':'')+(config.lighting===true?':lighting-v1':'')+(config.regional===true?':regions-v1':'')+(config.biomes===true?':biomes-v1':'');}
  function readSave(raw,config,E,S,D,U,A){
@@ -302,7 +337,7 @@ function gameForgeVoxelWorldFactory(K){
     if(s.mode!=='resources'||!E?.valid(s.bag)||s.bag.some(v=>v&&((v.id===11&&!survival)||(!forest&&[8,10].includes(v.id))||(v.id===12&&!storage)||(!tools&&v.id>=13&&![29,30,31,32,33].includes(v.id))||(!advanced&&v.id>=17&&![29,30,31,32,33].includes(v.id))||(!config.lighting&&v.id===30)||(!config.biomes&&[31,32,33].includes(v.id))||(!config.landscape&&v.id===29)))||typeof s.equipped!=='boolean'||
      (tools?(!U?.valid(s.tools,s.bag)||s.equipped!==!!s.tools.active):(s.equipped&&E.count(s.bag,7)<1))||!int(s.selected)||s.selected<1||![1,2,3,4,5,6,...(forest?[8,10]:[]),...(storage?[12]:[]),...(config.landscape?[29]:[]),...(config.lighting?[30]:[]),...(config.biomes?[31,32,33]:[])].includes(s.selected))return null;
    }else if(s.mode==='resources'||s.edits.some(e=>e[3]>3&&!(config.landscape&&e[3]===29)&&!(config.lighting&&e[3]===30)&&!(config.biomes&&[31,32,33].includes(e[3]))))return null;
-   const world=create(config.seed,s.edits,{forest,storage,tools,advanced,size,landscape:config.landscape===true,details:config.details===true,lighting:config.lighting===true,biomes:config.biomes===true,...(forest?{trees:s.trees}:{})});
+   const world=create(config.seed,s.edits,{forest,storage,tools,advanced,size,landscape:config.landscape===true,details:config.details===true,lighting:config.lighting===true,biomes:config.biomes===true,dynamicWater:config.dynamicWater===true,...(forest?{trees:s.trees}:{})});
    if(world.collides(s.player.x,s.player.y,s.player.z)|| (survival&&!S?.valid(s.survival,world))||(storage&&!D?.valid(s.storage,world,config))||(advanced&&!A?.valid(s.advanced,s.bag,world)))return null;
    return {world,player:{x:s.player.x,y:s.player.y,z:s.player.z,yaw:s.player.yaw,pitch:s.player.pitch},mined:s.mined,placed:s.placed,...(survival?{survival:s.survival}:{}),...(storage?{storage:s.storage}:{}),...(tools?{tools:s.tools}:{}),...(advanced?{advanced:s.advanced}:{}),...(resources?{bag:E.copy(s.bag),equipped:s.equipped,selected:s.selected}:{})};
   }catch{return null;}
